@@ -46,7 +46,7 @@ test('spawn reconciles and starts once; conflicting retry and uncertain send fai
   } finally { await rm(directory, { recursive: true, force: true }); }
 });
 
-test('spawn retries failed launch and reconciles after journal loss without resubmitting', async () => {
+test('spawn refuses ambiguous dispatch after launch failure or journal loss', async () => {
   const firstDirectory = await mkdtemp(join(tmpdir(), 'act-journal-'));
   const secondDirectory = await mkdtemp(join(tmpdir(), 'act-journal-'));
   try {
@@ -66,14 +66,15 @@ test('spawn retries failed launch and reconciles after journal loss without resu
     await assert.rejects(first.spawn(parent, request), /container unavailable/);
     assert.equal(submits, 1);
     assert.equal(started.size, 0);
-    await first.spawn(parent, request);
+    await assert.rejects(first.spawn(parent, request), /dispatch outcome is uncertain/);
     assert.equal(submits, 1);
-    assert.deepEqual([...started], ['child']);
-    // A replacement journal starts empty; on-chain reconciliation still prevents a new allocation.
+    assert.equal(launchAttempts, 1);
+    // A replacement journal finds the allocation but cannot prove whether its one-shot task ran.
     const restarted = new SpawnCoordinator(chain, new FileSpawnJournal(secondDirectory), launch);
     await restarted.spawn(parent, request);
     assert.equal(submits, 1);
-    assert.deepEqual([...started], ['child']);
+    assert.equal(launchAttempts, 1);
+    await assert.rejects(restarted.spawn(parent, request), /dispatch outcome is uncertain/);
   } finally {
     await rm(firstDirectory, { recursive: true, force: true });
     await rm(secondDirectory, { recursive: true, force: true });

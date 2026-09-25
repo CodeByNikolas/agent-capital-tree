@@ -9,8 +9,8 @@ export type SpawnRequest = Readonly<{
   amount: string;
   restrictions: unknown;
 }>;
-export type SpawnReceipt = Readonly<{ childId: string; txHash: string; blockHash: string }>;
-export type SpawnRecord = Readonly<{ scope: string; requestHash: string; childId?: string; started?: boolean }>;
+export type SpawnReceipt = Readonly<{ childId: string; txHash?: string; blockHash: string; blockNumber?: string }>;
+export type SpawnRecord = Readonly<{ scope: string; requestHash: string; childId?: string; dispatchAttempted?: boolean; started?: boolean }>;
 
 /** SDK adapter must enforce current parent mandate and contract parameter hashing. */
 export type SpawnChain = {
@@ -40,7 +40,8 @@ function fingerprint(request: SpawnRequest): string {
 
 export class SpawnCoordinator {
   #pending = new Map<string, { hash: string; promise: Promise<SpawnReceipt> }>();
-  constructor(private chain: SpawnChain, private journal: SpawnJournal, private launch: WorkerLauncher) {}
+  constructor(private chain: SpawnChain, private journal: SpawnJournal, private launch: WorkerLauncher,
+    private prepare?: WorkerLauncher) {}
 
   spawn(parent: WorkerContext, request: SpawnRequest): Promise<SpawnReceipt> {
     if (!/^0x[\da-fA-F]{64}$/.test(request.operationKey) || !/^\d+$/.test(request.amount)) throw new Error('invalid spawn request');
@@ -63,15 +64,23 @@ export class SpawnCoordinator {
     if (!previous) await this.journal.put({ scope, requestHash });
     // Always reconcile on-chain first: a lost journal or uncertain send must not create a second allocation.
     let receipt = await this.chain.reconcile(parent, request);
+    const existedBeforeSubmit = Boolean(receipt);
     if (!receipt) {
       await this.chain.submit(parent, request);
       receipt = await this.chain.reconcile(parent, request);
     }
     if (!receipt || !(await this.chain.confirmed(receipt))) throw new Error('spawn transaction not confirmed');
     if (previous?.started && previous.childId === receipt.childId) return receipt;
-    await this.journal.put({ scope, requestHash, childId: receipt.childId });
+    if (!previous && existedBeforeSubmit) {
+      await this.journal.put({ scope, requestHash, childId: receipt.childId, dispatchAttempted: true });
+      return receipt; // Lost journal: allocation is real, task dispatch history is unknown.
+    }
+    if (previous?.dispatchAttempted) throw new Error('worker dispatch outcome is uncertain; task will not be repeated');
+    await this.prepare?.(parent, receipt.childId, request);
+    // Persist intent before handing the one-shot task to Docker. A crash may lose liveness, never repeat writes.
+    await this.journal.put({ scope, requestHash, childId: receipt.childId, dispatchAttempted: true });
     await this.launch(parent, receipt.childId, request);
-    await this.journal.put({ scope, requestHash, childId: receipt.childId, started: true });
+    await this.journal.put({ scope, requestHash, childId: receipt.childId, dispatchAttempted: true, started: true });
     return receipt;
   }
 }
