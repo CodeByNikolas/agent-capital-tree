@@ -47,6 +47,9 @@ try {
   assert.equal(root5.nodes.length, 4);
   await page.goto(`${base}/?root=5`);
   await expect(page.getByText('Live root 5.', { exact: true })).toBeVisible({ timeout: 60000 });
+  const root5Metric = page.locator('article').filter({ has: page.getByText('Vaults in tree', { exact: true }) });
+  await expect(root5Metric.locator('.metric-value')).toContainText('4');
+  await expect(root5Metric.locator('.metric-detail')).toContainText(`${root5.nodes.filter(node => node.state === 'active').length} active`);
   const expectedNames = ['5', '6', '7', '8'].map(id => {
     const node = root5.nodes.find(node => node.id === id);
     assert(node, `root 5 node ${id}`);
