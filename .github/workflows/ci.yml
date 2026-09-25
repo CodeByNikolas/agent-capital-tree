@@ -41,9 +41,11 @@ jobs:
         run: |
           curl --fail --silent --show-error --location https://github.com/foundry-rs/foundry/releases/download/v1.8.3/foundry_v1.8.3_linux_amd64.tar.gz --output "$RUNNER_TEMP/foundry.tar.gz"
           printf '7ca48e6ca3cac1bce1403ca67e5bc1dc3bc1fd818199c9957c7165079c228568  %s\n' "$RUNNER_TEMP/foundry.tar.gz" | sha256sum --check
-          tar -xzf "$RUNNER_TEMP/foundry.tar.gz" -C "$RUNNER_TEMP" forge
+          tar -xzf "$RUNNER_TEMP/foundry.tar.gz" -C "$RUNNER_TEMP" forge anvil
           printf '%s\n' "$RUNNER_TEMP" >> "$GITHUB_PATH"
       - run: forge fmt --check
         working-directory: contracts
       - run: forge test
         working-directory: contracts
+      - name: Verify transaction retry journal on disposable Anvil
+        run: ACT_ANVIL_BIN="$RUNNER_TEMP/anvil" node scripts/test-transaction-journal.mjs

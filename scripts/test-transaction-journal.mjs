@@ -10,7 +10,7 @@ import { journaledTransaction } from './lib/sepolia-transactions.mjs';
 
 const reserve=createServer();await new Promise(ok=>reserve.listen(0,'127.0.0.1',ok));const port=reserve.address().port;await new Promise(ok=>reserve.close(ok));
 const directory=await mkdtemp(join(tmpdir(),'act-journal-test-'));
-const anvil=spawn(join(homedir(),'.agent-capital-tree/tools/foundry-v1.8.3/anvil'),['--port',String(port),'--chain-id','11155111','--silent'],{stdio:'ignore'});
+const anvil=spawn(process.env.ACT_ANVIL_BIN ?? join(homedir(),'.agent-capital-tree/tools/foundry-v1.8.3/anvil'),['--port',String(port),'--chain-id','11155111','--silent'],{stdio:'ignore'});
 const rpc=new JsonRpcProvider(`http://127.0.0.1:${port}`,11155111,{staticNetwork:true,cacheTimeout:-1});
 let startupError;anvil.on('error',error=>startupError=error);
 try {
