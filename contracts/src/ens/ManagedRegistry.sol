@@ -24,11 +24,13 @@ contract ManagedRegistry is PermissionedRegistry {
     uint256 private constant FINANCE_ADMIN =
         (DELEGATE | SWAP | MANAGE_LP | COLLECT_FEES | EXIT_LP | RESTRICT | RECLAIM) << 128;
 
-    constructor(ILabelStore labelStore, address controller)
-        PermissionedRegistry(
-            labelStore, controller, RegistryRolesLib.ROLE_REGISTRAR | RegistryRolesLib.ROLE_SET_PARENT | FINANCE_ADMIN
-        )
-    {}
+    constructor(ILabelStore labelStore, address controller, IRegistry parent, string memory label)
+        PermissionedRegistry(labelStore, controller, RegistryRolesLib.ROLE_REGISTRAR | FINANCE_ADMIN)
+    {
+        _parentRegistry = parent;
+        _childLabel = label;
+        emit ParentUpdated(parent, label, msg.sender);
+    }
 
     /// @dev Initial roles are assigned separately to the agent on this name's EAC resource.
     function register(

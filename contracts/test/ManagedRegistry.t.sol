@@ -23,12 +23,11 @@ contract ManagedRegistryTest is Test {
 
     function setUp() public {
         ILabelStore labels = new LabelStoreStub();
-        registry = new ManagedRegistry(labels, address(this));
-        child = new ManagedRegistry(labels, address(this));
+        registry = new ManagedRegistry(labels, address(this), IRegistry(address(0xE7)), "project");
+        child = new ManagedRegistry(labels, address(this), registry, "alice");
     }
 
     function testNestedNameAndResourceRoles() public {
-        child.setParent(registry, "alice");
         uint64 expiry = uint64(block.timestamp + 1 days);
         uint256 tokenId = registry.register("alice", agent, child, address(0), 0, expiry);
         IPermissionedRegistry.State memory state = registry.getState(uint256(keccak256("alice")));
@@ -60,6 +59,8 @@ contract ManagedRegistryTest is Test {
         registry.setSubregistry(tokenId, IRegistry(address(0)));
         vm.expectRevert(ManagedRegistry.ManagedNameLocked.selector);
         registry.setResolver(tokenId, operator);
+        vm.expectRevert();
+        child.setParent(IRegistry(operator), "evil");
     }
 
     function testRegistrationCannotPregrantAdministrativeRoles() public {
