@@ -165,9 +165,8 @@ contract CapitalControllerTest is Test {
         address newOperator = address(0xA04);
         vm.prank(owner);
         controller.setRootOperator(rootId, newOperator, _policy(FinanceRoles.ALL, 3, 100));
-        vm.prank(childAgent);
         vm.expectRevert(CapitalController.Inactive.selector);
-        controller.allocateCapital(childId, childId, [uint256(1), uint256(0)]);
+        controller.checkAction(childId, FinanceRoles.DELEGATE, childAgent, 2, 0);
         uint256 newChild = _spawnAs(newOperator, rootId, "new", address(0xA05), _policy(FinanceRoles.ALL, 1, 50), 20);
         assertTrue(newChild > childId);
         vm.prank(rootAgent);
@@ -213,6 +212,57 @@ contract CapitalControllerTest is Test {
         vm.prank(address(0xBAD));
         vm.expectRevert(CapitalController.Unauthorized.selector);
         controller.allocateCapital(rootId, childId, [uint256(1), uint256(0)]);
+    }
+
+    function testTighteningRemovesEacRoleWithoutChangingSibling() public {
+        uint256 childId = _spawn(rootId, "child", childAgent, _policy(FinanceRoles.ALL, 1, 50), 40);
+        uint256 siblingId = _spawn(rootId, "sibling", address(0xA07), _policy(FinanceRoles.ALL, 1, 50), 40);
+        CapitalController.Node memory child = controller.getNode(childId);
+        CapitalController.Node memory sibling = controller.getNode(siblingId);
+        assertTrue(child.registry.hasRoles(child.resource, FinanceRoles.SWAP, childAgent));
+        CapitalController.Policy memory tighter = _policy(FinanceRoles.ALL & ~FinanceRoles.SWAP, 1, 50);
+        vm.prank(rootAgent);
+        controller.tightenPolicy(childId, tighter);
+        assertFalse(child.registry.hasRoles(child.resource, FinanceRoles.SWAP, childAgent));
+        assertTrue(sibling.registry.hasRoles(sibling.resource, FinanceRoles.SWAP, address(0xA07)));
+        vm.expectRevert(CapitalController.Unauthorized.selector);
+        controller.checkAction(childId, FinanceRoles.SWAP, childAgent, 0, 1);
+        controller.checkAction(siblingId, FinanceRoles.SWAP, address(0xA07), 0, 1);
+    }
+
+    function testResourceReregistrationBlocksOldMandateAndOwnerStillRecovers() public {
+        CapitalController.Policy memory shortPolicy = _policy(FinanceRoles.ALL, 1, 50);
+        shortPolicy.expiry = uint64(block.timestamp + 1 days);
+        uint256 childId = _spawn(rootId, "short", childAgent, shortPolicy, 40);
+        CapitalController.Node memory child = controller.getNode(childId);
+        vm.warp(block.timestamp + 1 days);
+        vm.prank(address(controller));
+        child.registry
+            .register("short", address(0xA99), child.childRegistry, address(0), 0, uint64(block.timestamp + 1 days));
+        assertNotEq(child.registry.getResource(uint256(keccak256("short"))), child.resource);
+        vm.expectRevert(CapitalController.InvalidPath.selector);
+        controller.checkAction(childId, FinanceRoles.DELEGATE, childAgent, 2, 0);
+        vm.prank(owner);
+        controller.ownerEmergencyRecover(childId);
+        assertEq(token0.balanceOf(address(controller.getNode(rootId).vault)), 500);
+    }
+
+    function testFuzzAllocationAndReclaimConserveCapital(uint96 raw) public {
+        uint256 amount = bound(uint256(raw), 1, 100);
+        uint256 childId = _spawn(rootId, "fuzz", childAgent, _policy(FinanceRoles.ALL, 1, 100), amount);
+        CapitalController.Node memory root = controller.getNode(rootId);
+        CapitalController.Node memory child = controller.getNode(childId);
+        assertEq(token0.balanceOf(address(root.vault)) + token0.balanceOf(address(child.vault)), 500);
+        uint256 extra = 100 - amount;
+        if (extra != 0) {
+            vm.prank(rootAgent);
+            controller.allocateCapital(rootId, childId, [extra, uint256(0)]);
+        }
+        assertEq(token0.balanceOf(address(root.vault)) + token0.balanceOf(address(child.vault)), 500);
+        vm.prank(rootAgent);
+        controller.reclaimAssets(rootId, childId);
+        assertEq(token0.balanceOf(address(root.vault)), 500);
+        assertEq(token0.balanceOf(address(child.vault)), 0);
     }
 
     function _spawn(
