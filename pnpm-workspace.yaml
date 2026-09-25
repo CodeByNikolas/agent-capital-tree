@@ -3,4 +3,7 @@ packages:
   - packages/*
   - contracts
 
+minimumReleaseAgeExclude:
+  - viem@2.56.9
+
 onlyBuiltDependencies: []
