@@ -1,0 +1,67 @@
+{
+  "chainId": 11155111,
+  "controller": "0x55caFFf719B5FA70c0e8942eEe2C7EE6B8c7Db6b",
+  "rootId": "5",
+  "childId": "6",
+  "grandchildId": "7",
+  "siblingId": "8",
+  "status": "awaiting-owner-close",
+  "stage": "companion-stop",
+  "startedAt": "2026-09-25T21:21:03.511Z",
+  "siblingKey": "0x517ec27ca2b4e1bee914b59b213560b6551e5b3d561b6b735fdcd37c0f532fce",
+  "transactions": {
+    "siblingSpawn": {
+      "transactionHash": "0x00b8c613666fb82d0a34d2f1fc392d6ecf5c6a302f997fcdb7068a82d5c78072",
+      "blockNumber": 11781848,
+      "blockHash": "0xada55504fe93db8f364c78793a50cb5f4c1c4648ff17cb6b7255270009ca39b8",
+      "gasUsed": "5560057",
+      "status": "confirmed"
+    },
+    "siblingGrant": {
+      "transactionHash": "0x177e3891d3c506115e67c3c1017edb379daea1a3b939d2b7b0d75f18527ea414",
+      "blockNumber": 11781850,
+      "blockHash": "0x44a0d699a72a54143ac16f0f65d006ebdc50db1240c24b44b86718e50e8e0856",
+      "gasUsed": "21000",
+      "status": "confirmed"
+    },
+    "revokeChild": {
+      "transactionHash": "0xfb99c27e34ef465b0c6d808bbe366b4640f90d0b275f08ea8f9bdf6de91c32c6",
+      "blockNumber": 11781853,
+      "blockHash": "0xb755d265718fca1ae0421ba715b1bb87b1df78d4f7717608b7fc76e682b70836",
+      "gasUsed": "195653",
+      "status": "confirmed"
+    },
+    "siblingSwap": {
+      "transactionHash": "0x3129fabf6866bf473cc02531de6cf77b42735b0224ad8aa5300d572643225f56",
+      "blockNumber": 11781856,
+      "blockHash": "0xb157578fade6fc26ecf1fc82ef44ebe260e93051d8c1111eaa90e32ac2b1800c",
+      "gasUsed": "275407",
+      "status": "confirmed"
+    }
+  },
+  "checks": {
+    "restart": {
+      "originalChildId": "6",
+      "noNewNodeGasOrRootNonce": true,
+      "workerNoncesAndAssetsUnchanged": true,
+      "noRedispatchedWorker": true,
+      "blockNumber": "11781847"
+    },
+    "branchIsolation": {
+      "childInactive": true,
+      "grandchildInactive": true,
+      "siblingActive": true,
+      "blockNumber": "11781854",
+      "siblingActiveAfterRevoke": true
+    },
+    "siblingSwap": {
+      "tokenA": "900000000000000000",
+      "tokenB": "99535252678901692"
+    }
+  },
+  "limitations": [
+    "Child LP remains open; browser owner must close it and recover the grandchild before phase two.",
+    "Phase-two parent reclaim and reallocation use journaled programmatic root-operator transactions; this does not test a MultiBaas-informed Master model decision."
+  ],
+  "reservedWei": "16351374045653760"
+}
