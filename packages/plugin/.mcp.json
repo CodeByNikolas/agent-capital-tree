@@ -1,0 +1,8 @@
+{
+  "mcpServers": {
+    "capital-tree": {
+      "command": "node",
+      "args": ["${PLUGIN_ROOT}/bundle/server.mjs"]
+    }
+  }
+}
