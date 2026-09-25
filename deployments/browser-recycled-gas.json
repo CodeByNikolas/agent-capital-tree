@@ -1,0 +1,23 @@
+{
+  "rootId": "5",
+  "recipient": "0x4eC0dc927b085a3e08a066C2D5782c5D103B46b4",
+  "entries": [
+    {
+      "nodeId": "6",
+      "address": "0x06Bb8B805eCfBe8D6cdc483874501dd8df56Ee43",
+      "amountWei": "5260725705552806",
+      "keyId": "child-7d9c2dfedd51850f283296ac60fb4692f846053cb7152336c2356a4a1e03fbc0",
+      "transactionHash": "0x8dadc501f51992b6e0a5ae88123b569146ceb6f5e7ad210b366d77b6b3caa4ee",
+      "blockNumber": 11781841
+    },
+    {
+      "nodeId": "7",
+      "address": "0x6e8CcEd2d089288ae6D12751d7C6Ee9D3fa48f9d",
+      "amountWei": "3566349683027533",
+      "keyId": "child-18fc3294cd2e5cce6351a109a3e6f3f01caa73aa8f205df84ef7b636dbf69507",
+      "transactionHash": "0x7aae24aa2f99c49c71d091d46eb48c0524d0bbc1feb17c88e26c0db1a59d9ef3",
+      "blockNumber": 11781843
+    }
+  ],
+  "status": "passed"
+}

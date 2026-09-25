@@ -182,6 +182,7 @@ try {
     };
     const beforeNonce = await rpc.getTransactionCount(rootWallet.address);
     const beforeEth = await rpc.getBalance(rootWallet.address);
+    const workerNonces = await Promise.all([child, grandchild].map(node => rpc.getTransactionCount(node.agent)));
     const gasRecordsBefore = await gasRecords(config.runtimeRoot);
     stage = 'restart-reconciliation';
     const repeated = await call('spawnChild', originalArgs);
@@ -191,8 +192,18 @@ try {
     assert.equal(afterRepeat.nodes.length, 3);
     assert.equal(await rpc.getTransactionCount(rootWallet.address), beforeNonce);
     assert.equal(await rpc.getBalance(rootWallet.address), beforeEth);
+    assert.deepEqual(await Promise.all([child, grandchild].map(node => rpc.getTransactionCount(node.agent))), workerNonces);
+    for (const node of tree.nodes) {
+      const after = afterRepeat.nodes.find(item => item.id === node.id);
+      assert.deepEqual(after.balances, node.balances);
+      assert.deepEqual(after.position, node.position);
+    }
+    const { stdout: containersAfterRepeat } = await promisify(execFile)('docker', ['ps', '--format', '{{.Names}}']);
+    assert(!containersAfterRepeat.split('\n').some(name => /^act-worker-node-[a-f0-9]+-5-/.test(name)),
+      'Historical spawn must not redispatch a completed model task');
     assert.deepEqual(await gasRecords(config.runtimeRoot), gasRecordsBefore);
     report.checks.restart = { originalChildId: repeated.childId, noNewNodeGasOrRootNonce: true,
+      workerNoncesAndAssetsUnchanged: true, noRedispatchedWorker: true,
       blockNumber: afterRepeat.source.blockNumber.toString() };
     await save();
     stage = 'sibling-spawn';
