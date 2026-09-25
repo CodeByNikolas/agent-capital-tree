@@ -1,6 +1,6 @@
 {
   "base": "https://agent-capital-tree.vercel.app",
-  "checkedAt": "2026-09-25T22:13:01.661Z",
+  "checkedAt": "2026-09-25T22:17:46.037Z",
   "checks": [
     "root 1: HTTP 200",
     "root 2: HTTP 200",
@@ -9,6 +9,8 @@
     "live default, root navigation, revoked tree count and disconnected faucet",
     "desktop: no horizontal overflow",
     "mobile: no horizontal overflow",
+    "desktop: keyboard-only grandchild selection updates mandate with visible focus",
+    "mobile: keyboard-only grandchild selection updates mandate with visible focus",
     "live root 5: mobile descendants stay with their parent; desktop/mobile without overflow",
     "explicit sample preview; no browser JavaScript errors"
   ],

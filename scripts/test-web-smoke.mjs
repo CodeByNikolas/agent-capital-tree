@@ -60,6 +60,22 @@ try {
     await page.setViewportSize({ width, height });
     assert(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth), `root 5 ${name} overflow`);
     await page.screenshot({ path: new URL(`root5-current-${name}.png`, output).pathname, fullPage: true });
+    // Start at document focus; reach and select a grandchild using only Tab/Enter.
+    await page.goto(`${base}/?root=5`);
+    await expect(page.getByText('Live root 5.', { exact: true })).toBeVisible({ timeout: 60000 });
+    const grandchild = page.locator('.tree-node:visible').filter({ has: page.getByText(expectedNames[2], { exact: true }) });
+    for (let tabs = 0; tabs < 80 && !await grandchild.evaluate(node => node === document.activeElement); tabs++) {
+      await page.keyboard.press('Tab');
+    }
+    await expect(grandchild).toBeFocused();
+    assert(await grandchild.evaluate(node => {
+      const style = getComputedStyle(node);
+      return style.outlineStyle !== 'none' && parseFloat(style.outlineWidth) >= 2;
+    }), `${name} keyboard focus must remain visible`);
+    await page.keyboard.press('Enter');
+    await expect(grandchild).toHaveAttribute('aria-pressed', 'true');
+    await expect(page.locator('.selected-vault-summary')).toContainText(expectedNames[2]);
+    checks.push(`${name}: keyboard-only grandchild selection updates mandate with visible focus`);
   }
   checks.push('live root 5: mobile descendants stay with their parent; desktop/mobile without overflow');
   await page.goto(`${base}/?preview=1`);
