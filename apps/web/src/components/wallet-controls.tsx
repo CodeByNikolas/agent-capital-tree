@@ -272,6 +272,7 @@ export function WalletControlsPanel({
     ? parentAgentConnected
     : ownerConnected;
   const selectedAgentConnected = Boolean(liveStateReady && walletAddress && walletOnSepolia && selectedNode.agentAddress.toLowerCase() === walletAddress.toLowerCase());
+  const canClaimDemoTokens = deployment.contractsConfigured && walletOnSepolia && walletAddress !== null && Boolean(actions.claimDemoTokens);
   const canCreateRoot = deployment.contractsConfigured && walletOnSepolia && walletAddress !== null && Boolean(actions.createRoot);
   const canManageRoot = ownerConnected && Boolean(actions.fundRoot && actions.setRootOperator);
   const canSpawn = selectedNode.state === "active" && selectedNode.authorizedPermissions.includes("delegate") && data.source === "direct-rpc" && data.contractsConfigured && selectedAgentConnected && Boolean(actions.spawnChild);
@@ -328,8 +329,9 @@ export function WalletControlsPanel({
           {deployment.contractsConfigured ? deployment.poolConfigured ? "Sepolia pool ready" : "Contracts ready · pool pending" : "Contract deployment pending"}
         </span>
       </div>
-      <p className="wallet-controls-intro">Every action is simulated against the current controller before your connected wallet is asked to sign.</p>
+      <p className="wallet-controls-intro">Every action is simulated before your wallet is asked to sign. Each Sepolia wallet can claim both valueless demo tokens once.</p>
       <div className="wallet-action-shortcuts">
+        <button className="button button-secondary button-small" type="button" disabled={!canClaimDemoTokens || busy} onClick={() => void actions.claimDemoTokens?.().catch(() => undefined)}>Claim demo tokens</button>
         <button className="button button-secondary button-small" type="button" disabled={!canCreateRoot || busy} onClick={() => toggle("create-root")}>Create root</button>
         <button className="button button-secondary button-small" type="button" disabled={!canManageRoot || busy} onClick={() => toggle("fund-root")}>Fund root</button>
         <button className="button button-secondary button-small" type="button" disabled={!canManageRoot || busy} onClick={() => toggle("set-root-operator")}>Bind operator</button>

@@ -58,6 +58,10 @@ const vaultPositionAbi = [
   parseAbiItem("function positionTokenId() view returns (uint256)"),
   parseAbiItem("function positionLiquidity() view returns (uint128)"),
 ];
+const demoTokenAbi = [
+  parseAbiItem("function claimed(address account) view returns (bool)"),
+  parseAbiItem("function mint()"),
+] as const;
 
 function policyToSdk(policy: Policy, tokens: readonly [Address, Address]): SdkPolicy {
   const capabilities = policy.permissions.reduce((mask, permission) => mask | permissionBits[permission], 0n);
@@ -270,6 +274,73 @@ export function useWalletActions({
   }
 
   const actions: DashboardActions = {
+    async claimDemoTokens() {
+      if (busy.current) throw new Error("Another wallet action is still in progress.");
+      busy.current = true;
+      const claimed: string[] = [];
+      const skipped: string[] = [];
+      try {
+        const context = await createContext();
+        for (const index of [0, 1] as const) {
+          const tokenLabel = `Demo token ${index + 1}`;
+          setNotice({
+            stage: "simulating",
+            label: "Claim demo tokens",
+            message: `Checking whether ${tokenLabel} has already been claimed by this wallet.`,
+          });
+          const alreadyClaimed = await context.publicClient.readContract({
+            address: context.tokens[index],
+            abi: demoTokenAbi,
+            functionName: "claimed",
+            args: [context.account],
+          });
+          if (alreadyClaimed) {
+            skipped.push(tokenLabel);
+            continue;
+          }
+
+          await submitWithContext(context, `Claim ${tokenLabel}`, async (tx, awaitingWallet) => {
+            const { request } = await tx.publicClient.simulateContract({
+              account: tx.account,
+              address: tx.tokens[index],
+              abi: demoTokenAbi,
+              functionName: "mint",
+              args: [],
+            });
+            awaitingWallet();
+            return tx.walletClient.writeContract(request);
+          }, false);
+          claimed.push(tokenLabel);
+        }
+
+        if (claimed.length === 0) {
+          setNotice({
+            stage: "confirmed",
+            label: "Demo tokens already claimed",
+            message: "This wallet has already claimed both demo tokens.",
+          });
+          return;
+        }
+
+        const skippedMessage = skipped.length > 0
+          ? ` ${skipped.join(" and ")} already claimed and skipped.`
+          : "";
+        setNotice({
+          stage: "confirmed",
+          label: "Demo tokens claimed",
+          message: `${claimed.join(" and ")} confirmed on Sepolia.${skippedMessage}`,
+        });
+        onConfirmed();
+      } catch (cause) {
+        const progressMessage = claimed.length > 0 ? `${claimed.join(" and ")} confirmed. ` : "";
+        const message = `${progressMessage}${errorMessage(cause)}`;
+        setNotice({ stage: "error", label: "Claim demo tokens", message });
+        throw cause;
+      } finally {
+        busy.current = false;
+      }
+    },
+
     async createRoot(label, draft) {
       const normalizedLabel = label.trim().toLowerCase();
       if (!/^[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?$/.test(normalizedLabel)) {
