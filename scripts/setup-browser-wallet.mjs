@@ -20,6 +20,8 @@ const context = await chromium.launchPersistentContext(profile, {
   channel: 'chromium', headless: true,
   args: [`--disable-extensions-except=${extension}`, `--load-extension=${extension}`],
 });
+context.setDefaultTimeout(60000);
+context.setDefaultNavigationTimeout(60000);
 let stage = 'extension startup';
 try {
   const worker = context.serviceWorkers()[0] ?? await context.waitForEvent('serviceworker');
