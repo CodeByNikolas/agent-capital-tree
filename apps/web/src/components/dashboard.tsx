@@ -54,6 +54,7 @@ import type {
   VaultState,
 } from "@/lib/dashboard-types";
 import type { PublicDeployment } from "@/lib/deployment";
+import { formatAmount, formatCompactAmount } from "@/lib/format-display-amount";
 
 type InjectedProvider = Parameters<typeof custom>[0] & {
   on?: (event: string, listener: (...args: unknown[]) => void) => void;
@@ -196,16 +197,6 @@ function useInjectedWallet(): InjectedWalletState {
   }
 
   return { address, chainId, pending, error, connect, switchToSepolia };
-}
-
-function formatAmount(amount: TokenAmount): string {
-  const raw = BigInt(amount.rawAmount);
-  const scale = 10n ** BigInt(amount.decimals);
-  const whole = raw / scale;
-  const fraction = (raw % scale).toString().padStart(amount.decimals, "0");
-  const groupedWhole = whole.toLocaleString("en-US");
-  const visibleFraction = fraction.replace(/0+$/, "");
-  return visibleFraction ? `${groupedWhole}.${visibleFraction}` : groupedWhole;
 }
 
 interface AssetIdentity {
@@ -650,6 +641,8 @@ function MetricCard({
   icon,
   accent = false,
   source,
+  exactValue,
+  exactDetail,
 }: {
   label: string;
   value: string;
@@ -658,12 +651,14 @@ function MetricCard({
   icon: React.ReactNode;
   accent?: boolean;
   source: DataSource;
+  exactValue?: string;
+  exactDetail?: string;
 }) {
   return (
     <article className={`metric-card${accent ? " metric-card-accent" : ""}`}>
       <div className="metric-card-top"><span>{label}</span><span className="metric-icon">{icon}</span></div>
-      <div className="metric-value">{value}<span>{unit}</span></div>
-      <div className="metric-detail"><PreviewFlag source={source} compact /> <span>{detail}</span></div>
+      <div className="metric-value" role={exactValue ? "group" : undefined} aria-label={exactValue ? `Exact balance: ${exactValue}` : undefined} title={exactValue}>{value}<span>{unit}</span></div>
+      <div className="metric-detail"><PreviewFlag source={source} compact /> <span role={exactDetail ? "group" : undefined} aria-label={exactDetail ? `Exact balance: ${exactDetail}` : undefined} title={exactDetail}>{detail}</span></div>
     </article>
   );
 }
@@ -680,9 +675,11 @@ function SummaryMetrics({ data }: { data: DashboardData }) {
     <section className="metrics-grid" aria-label={data.source === "preview" ? "Preview summary" : "Capital summary"}>
       <MetricCard
         label="Assets across vaults"
-        value={formatAmount(primaryAsset)}
+        value={formatCompactAmount(primaryAsset)}
         unit={primaryAsset.symbol ? ` ${primaryAsset.symbol}` : ""}
-        detail={secondaryAsset ? `${formatAmount(secondaryAsset)} ${secondaryAsset.symbol} also shown` : "Current vault token balances"}
+        detail={secondaryAsset ? `${formatCompactAmount(secondaryAsset)} ${secondaryAsset.symbol} also shown` : "Current vault token balances"}
+        exactValue={`${formatAmount(primaryAsset)} ${primaryAsset.symbol}`.trim()}
+        exactDetail={secondaryAsset ? `${formatAmount(secondaryAsset)} ${secondaryAsset.symbol}` : undefined}
         icon={<Coins size={17} aria-hidden="true" />}
         accent
         source={data.source}
@@ -738,7 +735,7 @@ function TreeCard({
       onClick={() => onSelect(node.id)}
       aria-pressed={selected}
       aria-description={parentLabel ? `Delegated by ${parentLabel}` : "Human owner root vault"}
-      aria-label={`${node.label}, ${node.ensName}, ${stateLabel}`}
+      aria-label={`${node.label}, ${node.ensName}, ${stateLabel}${firstAvailable ? `, exact free balance ${formatAmount(firstAvailable)} ${firstAvailable.symbol}` : ", no free balance"}`}
     >
       <div className="tree-node-head">
         <span className={`node-avatar node-avatar-${node.depth}`}>
@@ -750,7 +747,7 @@ function TreeCard({
       <strong className="tree-node-name">{node.label}</strong>
       <span className="tree-node-ens">{node.ensName}</span>
       <div className="tree-node-foot">
-        <span><span className="capital-dot" />{firstAvailable ? <>{formatAmount(firstAvailable)} <i>{firstAvailable.symbol}</i></> : "No free balance"}</span>
+        <span title={firstAvailable ? `Exact free balance: ${formatAmount(firstAvailable)} ${firstAvailable.symbol}` : undefined}><span className="capital-dot" />{firstAvailable ? <>{formatCompactAmount(firstAvailable)} <i>{firstAvailable.symbol}</i></> : "No free balance"}</span>
         <span className="node-depth">L{node.depth}</span>
       </div>
     </button>
