@@ -12,32 +12,38 @@ const units = (rawAmount: string, symbol: string): TokenAmount => ({
   symbol,
 });
 
+const previewPoolId = `0x${"0".repeat(64)}` as const;
+
 const rootPolicy: Policy = {
   permissions: ["delegate", "swap", "manage-liquidity", "collect-fees", "exit-liquidity", "reclaim"],
   allowedTokens: ["ACT-A", "ACT-B"],
-  maxActionAmount: units("2500000", "ACT-A"),
+  maxActionAmounts: [units("2500000", "ACT-A"), units("2500000", "ACT-B")],
   expiresAt: "2026-12-31T23:59:59.000Z",
+  poolId: previewPoolId,
 };
 
 const marketPolicy: Policy = {
   permissions: ["swap", "manage-liquidity", "collect-fees", "exit-liquidity"],
   allowedTokens: ["ACT-A", "ACT-B"],
-  maxActionAmount: units("1250000", "ACT-A"),
+  maxActionAmounts: [units("1250000", "ACT-A"), units("1250000", "ACT-B")],
   expiresAt: "2026-11-30T23:59:59.000Z",
+  poolId: previewPoolId,
 };
 
 const researchPolicy: Policy = {
   permissions: ["swap"],
   allowedTokens: ["ACT-A"],
-  maxActionAmount: units("400000", "ACT-A"),
+  maxActionAmounts: [units("400000", "ACT-A"), units("0", "ACT-B")],
   expiresAt: "2026-10-31T23:59:59.000Z",
+  poolId: previewPoolId,
 };
 
 const scoutPolicy: Policy = {
   permissions: ["swap"],
   allowedTokens: ["ACT-A"],
-  maxActionAmount: units("150000", "ACT-A"),
+  maxActionAmounts: [units("150000", "ACT-A"), units("0", "ACT-B")],
   expiresAt: "2026-10-18T23:59:59.000Z",
+  poolId: previewPoolId,
 };
 
 const previewSource = "preview" as const;
@@ -60,6 +66,8 @@ export const previewNodes: readonly VaultNode[] = [
     localPolicy: rootPolicy,
     inheritedConstraints: [],
     effectivePolicy: rootPolicy,
+    authorizedPermissions: rootPolicy.permissions,
+    position: null,
     source: previewSource,
   },
   {
@@ -79,6 +87,8 @@ export const previewNodes: readonly VaultNode[] = [
     localPolicy: marketPolicy,
     inheritedConstraints: [{ ancestorId: "root", ancestorLabel: "Cedar desk", policy: rootPolicy }],
     effectivePolicy: marketPolicy,
+    authorizedPermissions: marketPolicy.permissions,
+    position: null,
     source: previewSource,
   },
   {
@@ -101,6 +111,8 @@ export const previewNodes: readonly VaultNode[] = [
       { ancestorId: "market", ancestorLabel: "Market maker", policy: marketPolicy },
     ],
     effectivePolicy: scoutPolicy,
+    authorizedPermissions: scoutPolicy.permissions,
+    position: null,
     source: previewSource,
   },
   {
@@ -123,6 +135,8 @@ export const previewNodes: readonly VaultNode[] = [
       { ancestorId: "market", ancestorLabel: "Market maker", policy: marketPolicy },
     ],
     effectivePolicy: marketPolicy,
+    authorizedPermissions: marketPolicy.permissions,
+    position: { tokenId: "18", liquidity: "42800" },
     source: previewSource,
   },
   {
@@ -142,6 +156,8 @@ export const previewNodes: readonly VaultNode[] = [
     localPolicy: researchPolicy,
     inheritedConstraints: [{ ancestorId: "root", ancestorLabel: "Cedar desk", policy: rootPolicy }],
     effectivePolicy: researchPolicy,
+    authorizedPermissions: researchPolicy.permissions,
+    position: null,
     source: previewSource,
   },
   {
@@ -164,6 +180,8 @@ export const previewNodes: readonly VaultNode[] = [
       { ancestorId: "research", ancestorLabel: "Signal research", policy: researchPolicy },
     ],
     effectivePolicy: scoutPolicy,
+    authorizedPermissions: scoutPolicy.permissions,
+    position: null,
     source: previewSource,
   },
 ];
@@ -211,14 +229,18 @@ const previewActivity: readonly CapitalActivity[] = [
 
 export const previewDashboard: DashboardData = {
   source: previewSource,
+  activitySource: "preview",
   chainId: 11155111,
   rootId: "root",
+  rootOwner: null,
+  rootOperator: null,
   contractsConfigured: false,
   nodes: previewNodes,
   activity: previewActivity,
   positions: [
     {
       id: "#018",
+      nodeId: "liquidity",
       poolLabel: "ACT-A / ACT-B · 0.30%",
       state: "open",
       liquidity: "42,800",

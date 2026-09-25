@@ -1,6 +1,7 @@
 "use client";
 
 import {
+  AlertCircle,
   Activity as ActivityIcon,
   ArrowDownLeft,
   ArrowLeftRight,
@@ -35,17 +36,24 @@ import {
   type Address,
 } from "viem";
 import { sepolia } from "viem/chains";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
+import { WalletControlsPanel, type WalletActionMode } from "@/components/wallet-controls";
+import { useWalletActions } from "@/lib/use-wallet-actions";
 import type {
+  ActivityFeedResult,
   ActivityKind,
+  CapitalActivity,
   DashboardActions,
   DashboardData,
   DataSource,
+  IndexedCapitalActivity,
   Permission,
   TokenAmount,
   VaultNode,
   VaultState,
 } from "@/lib/dashboard-types";
+import type { PublicDeployment } from "@/lib/deployment";
 
 type InjectedProvider = Parameters<typeof custom>[0] & {
   on?: (event: string, listener: (...args: unknown[]) => void) => void;
@@ -60,7 +68,8 @@ declare global {
 
 interface DashboardProps {
   data: DashboardData;
-  actions?: DashboardActions;
+  deployment: PublicDeployment;
+  rootQuery: string | null;
 }
 
 const permissionLabels: Record<Permission, string> = {
@@ -69,21 +78,30 @@ const permissionLabels: Record<Permission, string> = {
   "manage-liquidity": "Manage LP position",
   "collect-fees": "Collect fees",
   "exit-liquidity": "Exit LP position",
+  restrict: "Tighten or revoke child",
   reclaim: "Reclaim assets",
 };
 
 const activityLabels: Record<ActivityKind, string> = {
   "capital-assigned": "Capital assigned",
+  "capital-funded": "Root funded",
+  "capital-reclaimed": "Capital returned",
+  "node-created": "Vault created",
+  "operator-changed": "Operator bound",
   swap: "Swap",
   "position-opened": "Position opened",
+  "position-increased": "Position increased",
+  "position-closed": "Position closed",
   "fees-collected": "Fees collected",
   "policy-tightened": "Policy narrowed",
   "subtree-revoked": "Subtree revoked",
+  "owner-recovered": "Owner recovery",
   "assets-reclaimed": "Assets reclaimed",
 };
 
 const vaultStateLabels: Record<VaultState, string> = {
   active: "Active",
+  blocked: "No live authority",
   revoked: "Revoked",
   expired: "Expired",
   "setup-pending": "Setup pending",
@@ -117,7 +135,14 @@ function useInjectedWallet(): InjectedWalletState {
 
   useEffect(() => {
     const provider = window.ethereum;
-    if (!provider?.on) return;
+    if (!provider) return;
+
+    const wallet = createWalletClient({ chain: sepolia, transport: custom(provider) });
+    void Promise.all([wallet.getAddresses(), wallet.getChainId()]).then(([accounts, activeChain]) => {
+      setAddress(accounts[0] ?? null);
+      setChainId(activeChain);
+    }).catch(() => undefined);
+    if (!provider.on) return;
 
     const onAccountsChanged = (...args: unknown[]) => {
       const accounts = args[0];
@@ -218,15 +243,157 @@ function sourceLabel(source: DataSource): string {
   switch (source) {
     case "preview":
       return "Preview record";
-    case "onchain-indexer":
-      return "Indexed on Sepolia";
+    case "direct-rpc":
+      return "Direct Sepolia RPC";
     case "local-diagnostic":
       return "Local diagnostic";
   }
 }
 
+function policyAmountLabel(policy: VaultNode["effectivePolicy"]): string {
+  const amounts = policy.maxActionAmounts.filter((amount) => policy.allowedTokens.includes(amount.symbol));
+  return amounts.length > 0
+    ? amounts.map((amount) => `≤ ${formatAmount(amount)} ${amount.symbol}`).join(" · ")
+    : "No asset allowance";
+}
+
 function nodeById(data: DashboardData, id: string): VaultNode | undefined {
   return data.nodes.find((node) => node.id === id);
+}
+
+function indexedTokenAmount(data: DashboardData, tokenAddress: string, rawAmount: string): TokenAmount | undefined {
+  const token = data.nodes.find((node) => node.depth === 0)?.tokenHoldings.find(
+    (amount) => amount.tokenAddress?.toLowerCase() === tokenAddress.toLowerCase(),
+  );
+  return token ? { ...token, rawAmount } : undefined;
+}
+
+function formatIndexedRaw(data: DashboardData, tokenAddress: string, rawAmount: string): string {
+  const amount = indexedTokenAmount(data, tokenAddress, rawAmount);
+  return amount ? `${formatAmount(amount)} ${amount.symbol}` : `${rawAmount} raw units of ${shortAddress(tokenAddress)}`;
+}
+
+function indexedActivityLabel(data: DashboardData, nodeId: string): string {
+  return nodeById(data, nodeId)?.ensName ?? `Vault ${nodeId}`;
+}
+
+function mapIndexedActivity(data: DashboardData, item: IndexedCapitalActivity): CapitalActivity {
+  const rootName = indexedActivityLabel(data, data.rootId);
+  let nodeId = data.rootId;
+  let description = "";
+  let amount: TokenAmount | undefined;
+  const rawAmount = "amount" in item ? item.amount : undefined;
+  const tokenAddress = "token" in item ? item.token : undefined;
+
+  switch (item.kind) {
+    case "node_created":
+      nodeId = item.nodeId;
+      description = `Created ${indexedActivityLabel(data, item.nodeId)} for agent ${shortAddress(item.agent)}.`;
+      break;
+    case "root_funded":
+      description = `Owner funded ${rootName} from the bound wallet.`;
+      break;
+    case "capital_allocated":
+      nodeId = item.childId;
+      description = `Assigned capital from ${indexedActivityLabel(data, item.parentId)} to ${indexedActivityLabel(data, item.childId)}.`;
+      break;
+    case "capital_reclaimed":
+      nodeId = item.childId;
+      description = `Returned capital from ${indexedActivityLabel(data, item.childId)} to ${indexedActivityLabel(data, item.parentId)}.`;
+      break;
+    case "emergency_recovered":
+      nodeId = item.nodeId;
+      description = `Owner recovery returned assets to ${shortAddress(item.recipient)}.`;
+      break;
+    case "policy_tightened":
+      nodeId = item.nodeId;
+      description = `The mandate for ${indexedActivityLabel(data, item.nodeId)} was narrowed.`;
+      break;
+    case "operator_changed":
+      description = `Root operator bound to ${shortAddress(item.operator)} (generation ${item.generation}).`;
+      break;
+    case "node_revoked":
+      nodeId = item.nodeId;
+      description = `Revoked ${indexedActivityLabel(data, item.nodeId)} and its delegated authority.`;
+      break;
+    case "swap_executed":
+      nodeId = item.nodeId;
+      amount = indexedTokenAmount(data, item.inputToken, item.amountIn);
+      description = `Swapped ${formatIndexedRaw(data, item.inputToken, item.amountIn)} for ${formatIndexedRaw(data, item.outputToken, item.amountOut)}.`;
+      break;
+    case "position_opened":
+    case "position_increased":
+    case "position_closed":
+      nodeId = item.nodeId;
+      amount = indexedTokenAmount(data, data.nodes[0]?.tokenHoldings[0]?.tokenAddress ?? "", item.amount0);
+      description = `Position #${item.tokenId} · liquidity ${item.liquidity} · ${formatIndexedRaw(data, data.nodes[0]?.tokenHoldings[0]?.tokenAddress ?? "", item.amount0)} and ${formatIndexedRaw(data, data.nodes[0]?.tokenHoldings[1]?.tokenAddress ?? "", item.amount1)}.`;
+      break;
+    case "fees_collected":
+      nodeId = item.nodeId;
+      description = `Collected fees from position #${item.tokenId}: ${formatIndexedRaw(data, data.nodes[0]?.tokenHoldings[0]?.tokenAddress ?? "", item.amount0)} and ${formatIndexedRaw(data, data.nodes[0]?.tokenHoldings[1]?.tokenAddress ?? "", item.amount1)}.`;
+      break;
+  }
+
+  if (rawAmount !== undefined && tokenAddress) {
+    amount = indexedTokenAmount(data, tokenAddress, rawAmount);
+    if (!amount) description += ` Amount: ${rawAmount} raw units of ${shortAddress(tokenAddress)}.`;
+  }
+
+  return {
+    id: item.id,
+    kind: item.kind === "node_created" ? "node-created"
+      : item.kind === "root_funded" ? "capital-funded"
+        : item.kind === "capital_allocated" ? "capital-assigned"
+                  : item.kind === "capital_reclaimed" ? "capital-reclaimed"
+                    : item.kind === "emergency_recovered" ? "owner-recovered"
+                      : item.kind === "policy_tightened" ? "policy-tightened"
+                        : item.kind === "operator_changed" ? "operator-changed"
+                          : item.kind === "swap_executed" ? "swap"
+                            : item.kind === "position_opened" ? "position-opened"
+                              : item.kind === "position_increased" ? "position-increased"
+                                : item.kind === "position_closed" ? "position-closed"
+                                  : item.kind === "fees_collected" ? "fees-collected"
+                                    : "subtree-revoked",
+    nodeId,
+    nodeLabel: indexedActivityLabel(data, nodeId),
+    description,
+    amount,
+    source: "multi-baas",
+    transactionHash: item.provenance.transactionHash,
+    blockNumber: item.provenance.blockNumber,
+    transactionIndex: item.provenance.transactionIndex,
+    logIndex: item.provenance.logIndex,
+    finality: item.provenance.finality,
+  };
+}
+
+async function requestActivity(rootId: string, cursor?: string, signal?: AbortSignal): Promise<ActivityFeedResult> {
+  const params = new URLSearchParams({ root: rootId });
+  if (cursor) params.set("cursor", cursor);
+  const response = await fetch(`/api/activity?${params}`, { cache: "no-store", signal });
+  const body = await response.json() as ActivityFeedResult | { error?: { message?: unknown } };
+  if (!response.ok || !("source" in body)) {
+    const message = "error" in body && typeof body.error?.message === "string"
+      ? body.error.message
+      : "MultiBaas activity is unavailable.";
+    return { source: "unavailable", reason: "upstream_error", message };
+  }
+  if (body.source === "multi-baas" && (body.page.rootId !== rootId || body.page.items.some((item) => item.rootId !== rootId))) {
+    return { source: "unavailable", reason: "upstream_error", message: "MultiBaas returned activity for a different root." };
+  }
+  return body;
+}
+
+async function requestLiveTree(rootId: string, signal?: AbortSignal): Promise<DashboardData> {
+  const response = await fetch(`/api/tree?root=${encodeURIComponent(rootId)}`, { cache: "no-store", signal });
+  const body = await response.json() as Partial<DashboardData> & { error?: { message?: unknown } };
+  if (!response.ok || body.source !== "direct-rpc") {
+    throw new Error(typeof body.error?.message === "string" ? body.error.message : "The live Sepolia root could not be loaded.");
+  }
+  if (body.rootId !== rootId || !Array.isArray(body.nodes) || !Array.isArray(body.positions)) {
+    throw new Error("The live read returned an incomplete or mismatched root snapshot.");
+  }
+  return body as DashboardData;
 }
 
 function IconButton({ label, children }: { label: string; children: React.ReactNode }) {
@@ -340,7 +507,7 @@ function Sidebar({
           <strong>{runtimeLabel}</strong>
           <span>Wallet authority and agent runtime are separate.</span>
         </div>
-        <span className={`runtime-status-dot${runtimeLabel === "Runtime connected" ? " runtime-status-dot-active" : ""}`} aria-label={runtimeLabel} />
+        <span className={`runtime-status-dot${runtimeLabel === "Runtime connected" ? " runtime-status-dot-active" : runtimeLabel === "Runtime status unknown" ? " runtime-status-dot-unknown" : ""}`} aria-label={runtimeLabel} />
       </div>
       <div className="sidebar-footer">
         <span className="version-label">SEP · TEST NETWORK</span>
@@ -357,7 +524,11 @@ function Topbar({ mobileOpen, onMenuToggle, source, wallet }: { mobileOpen: bool
         <span>Workspace</span><span className="breadcrumb-divider">/</span><strong>Treasury overview</strong>
       </div>
       <div className="topbar-actions">
-        <span className="topbar-environment"><span />{source === "preview" ? "Preview workspace" : source === "onchain-indexer" ? "Indexed workspace" : "Local diagnostics"}</span>
+        <span className="topbar-environment"><span />{source === "preview" ? "Preview workspace" : source === "direct-rpc" ? "Direct RPC view" : "Local diagnostics"}</span>
+        <a className="topbar-wallet-actions" href="#wallet-controls" aria-label="Wallet actions" title="Create or fund roots, spawn a child vault, or recover owner control">
+          <ShieldCheck size={15} aria-hidden="true" />
+          <span>Wallet actions</span>
+        </a>
         <WalletControl wallet={wallet} />
         <button className="mobile-menu icon-button" type="button" aria-label={mobileOpen ? "Close menu" : "Open menu"} aria-expanded={mobileOpen} onClick={onMenuToggle}><Menu size={19} /></button>
       </div>
@@ -365,13 +536,45 @@ function Topbar({ mobileOpen, onMenuToggle, source, wallet }: { mobileOpen: bool
   );
 }
 
-function PreviewNotice({ data }: { data: DashboardData }) {
+function PreviewNotice({ data, deployment }: { data: DashboardData; deployment: PublicDeployment }) {
   if (data.source !== "preview") return null;
   return (
     <div className="preview-notice" role="note">
       <span className="notice-symbol"><CircleDashed size={16} aria-hidden="true" /></span>
-      <p><strong>Preview workspace.</strong> Balances, ENS labels, policies, LP positions and activity below are illustrative sample records. {data.contractsConfigured ? "Preview records cannot be used for wallet actions." : "No contract addresses are configured."}</p>
+      <p><strong>Preview workspace.</strong> Balances, ENS labels, policies, LP positions and activity below are illustrative sample records. {deployment.contractsConfigured ? "Preview records cannot be used for wallet actions; add a root ID to load live chain state." : "Controller deployment is still pending."}</p>
       <a href="#setup">Why preview data? <ArrowRight size={13} aria-hidden="true" /></a>
+    </div>
+  );
+}
+
+function LiveReadNotice({
+  rootId,
+  data,
+  loading,
+  error,
+  onRetry,
+}: {
+  rootId: string;
+  data: DashboardData;
+  loading: boolean;
+  error: string | null;
+  onRetry: () => void;
+}) {
+  const isStale = data.source === "direct-rpc" && error !== null;
+  return (
+    <div className={`live-read-notice${error ? " live-read-notice-error" : loading ? " live-read-notice-loading" : ""}`} role={error ? "alert" : "status"} aria-live={error ? "assertive" : "polite"}>
+      <span className="live-read-icon">{error ? <AlertCircle size={16} aria-hidden="true" /> : <CircleDashed size={16} aria-hidden="true" />}</span>
+      <p>
+        <strong>{error ? "Sepolia read unavailable." : loading ? "Reading live root." : `Live root ${rootId}.`}</strong>{" "}
+        {error
+          ? `${error} ${isStale ? "The last live snapshot remains visible, but wallet actions are locked until it refreshes." : "The dashboard is showing clearly labeled preview records."}`
+          : loading
+            ? isStale
+              ? "Refreshing balances, current EAC permissions, and LP state. The last snapshot remains visible and wallet actions are locked."
+              : "Loading balances, current EAC permissions, and LP state from the server-side Sepolia RPC."
+            : `Current state was read from Sepolia${data.snapshot ? ` at block ${data.snapshot.blockNumber}` : ""}. Activity history is fetched from MultiBaas separately.`}
+      </p>
+      <button className="button button-secondary button-small" type="button" disabled={loading} onClick={onRetry}>{loading ? "Refreshing…" : "Refresh"}</button>
     </div>
   );
 }
@@ -607,7 +810,7 @@ function layoutTree(nodes: readonly VaultNode[]) {
   };
 }
 
-function CapitalTree({ data, selectedId, onSelect, actions, walletOnSepolia }: { data: DashboardData; selectedId: string; onSelect: (id: string) => void; actions?: DashboardActions; walletOnSepolia: boolean }) {
+function CapitalTree({ data, selectedId, onSelect, canSpawnVault, onRequestSpawn }: { data: DashboardData; selectedId: string; onSelect: (id: string) => void; canSpawnVault: boolean; onRequestSpawn: () => void }) {
   const tree = layoutTree(data.nodes);
   const nodes = tree.nodes.map((item) => item.node);
 
@@ -619,7 +822,7 @@ function CapitalTree({ data, selectedId, onSelect, actions, walletOnSepolia }: {
           <h2 id="tree-title">Your agent tree</h2>
         </div>
         <div className="panel-heading-actions">
-          <button className="button button-secondary button-small" disabled={data.source === "preview" || !data.contractsConfigured || !walletOnSepolia || !actions?.spawnChild} onClick={() => void actions?.spawnChild?.(selectedId)} title="Available after live Sepolia contract and spawn integration">
+          <button className="button button-secondary button-small" disabled={!canSpawnVault} onClick={onRequestSpawn} title={canSpawnVault ? "Create a child vault with a narrower policy and initial allocation" : "Connect the active agent assigned to this vault on Sepolia"}>
             <Plus size={14} aria-hidden="true" /> Add a vault
           </button>
           <IconButton label="Tree options"><MoreHorizontal size={18} aria-hidden="true" /></IconButton>
@@ -713,7 +916,8 @@ function AddressLine({ label, value, source }: { label: string; value: string; s
 
 function CapitalLedger({ data, node }: { data: DashboardData; node: VaultNode }) {
   const children = data.nodes.filter((candidate) => candidate.parentId === node.id);
-  const outgoing = children.flatMap((child) => child.capitalReceivedFromParent);
+  const allocationHistoryAvailable = children.every((child) => child.capitalReceivedFromParent !== null);
+  const outgoing = children.flatMap((child) => child.capitalReceivedFromParent ?? []);
   const assets = uniqueAssets([...node.tokenHoldings, ...node.freeCapital, ...outgoing]);
 
   const parent = node.parentId ? nodeById(data, node.parentId) : undefined;
@@ -730,21 +934,22 @@ function CapitalLedger({ data, node }: { data: DashboardData; node: VaultNode })
             <span className="capital-ledger-asset" role="cell"><i />{asset.symbol}</span>
             <strong role="cell">{formatAmount(sumAsset(node.tokenHoldings, asset))}</strong>
             <span role="cell">{formatAmount(sumAsset(node.freeCapital, asset))}</span>
-            <span role="cell">{formatAmount(sumAsset(outgoing, asset))}</span>
+            <span role="cell">{allocationHistoryAvailable ? formatAmount(sumAsset(outgoing, asset)) : "—"}</span>
           </div>
         ))}
       </div>
       <div className="capital-origin">
         <span>{parent ? `Gross assigned in by ${parent.label}` : "Root funding origin"}</span>
-        <strong>{parent ? node.capitalReceivedFromParent.map(formatAmount).join(" · ") || "0" : "Owner wallet · no parent vault"}</strong>
+        <strong>{parent ? node.capitalReceivedFromParent === null ? "Not indexed" : node.capitalReceivedFromParent.map(formatAmount).join(" · ") || "0" : "Owner wallet · no parent vault"}</strong>
       </div>
-      <p className="capital-ledger-note">Assignments are transfers between vaults. They are tracked separately from current holdings.</p>
+      <p className="capital-ledger-note">{allocationHistoryAvailable ? "Assignments are transfers between vaults. They are tracked separately from current holdings." : "Balances come from direct RPC. Allocation totals require the separate MultiBaas activity source."}</p>
     </section>
   );
 }
 
-function MandatePanel({ data, node, contractsConfigured, actions, walletOnSepolia }: { data: DashboardData; node: VaultNode; contractsConfigured: boolean; actions?: DashboardActions; walletOnSepolia: boolean }) {
-  const actionCeiling = formatAmount(node.effectivePolicy.maxActionAmount);
+function MandatePanel({ data, node, canTighten, canRevoke, canRecover, onRequestAction }: { data: DashboardData; node: VaultNode; canTighten: boolean; canRevoke: boolean; canRecover: boolean; onRequestAction: (mode: Exclude<WalletActionMode, null>) => void }) {
+  const actionCeiling = policyAmountLabel(node.effectivePolicy);
+  const notCurrentlyAuthorized = node.effectivePolicy.permissions.filter((permission) => !node.authorizedPermissions.includes(permission));
 
   return (
     <section className="panel mandate-panel" aria-labelledby="mandate-title">
@@ -772,24 +977,25 @@ function MandatePanel({ data, node, contractsConfigured, actions, walletOnSepoli
       <div className="mandate-divider" />
       <div className="policy-section-heading">
         <span className="policy-heading-icon"><ShieldCheck size={15} aria-hidden="true" /></span>
-        <div><strong>Explicit permissions</strong><small>Granted at this vault</small></div>
-        <span className="permission-count">{node.localPolicy.permissions.length}</span>
+        <div><strong>Live authorized capabilities</strong><small>Current EAC roles at this vault</small></div>
+        <span className="permission-count">{node.authorizedPermissions.length}</span>
       </div>
-      <PermissionList permissions={node.localPolicy.permissions} />
+      <PermissionList permissions={node.authorizedPermissions} />
+      {notCurrentlyAuthorized.length > 0 && <p className="authorization-gap">Policy lists {notCurrentlyAuthorized.map((permission) => permissionLabels[permission]).join(" · ")}, but current EAC state does not authorize those actions.</p>}
 
       <div className="inherited-box">
         <div className="inherited-box-heading"><Network size={14} aria-hidden="true" /><strong>Inherited limits</strong><span>{node.inheritedConstraints.length} ancestors</span></div>
         <p>This mandate is capped by every parent on the path to the owner.</p>
         <div className="inherited-limit-row"><span>Allowed assets</span><strong>{node.effectivePolicy.allowedTokens.join(" · ")}</strong></div>
-        <div className="inherited-limit-row"><span>Maximum per action</span><strong>≤ {actionCeiling} {node.effectivePolicy.maxActionAmount.symbol}</strong></div>
-        <div className="inherited-limit-row"><span>Effective permissions</span><strong>{node.effectivePolicy.permissions.length} capabilities</strong></div>
+        <div className="inherited-limit-row"><span>Maximum per token</span><strong>{actionCeiling}</strong></div>
+        <div className="inherited-limit-row"><span>Authorized now</span><strong>{node.authorizedPermissions.length} capabilities</strong></div>
         {node.inheritedConstraints.length > 0 && (
           <div className="ancestor-rules">
             {node.inheritedConstraints.map((constraint) => (
               <div className="ancestor-rule" key={constraint.ancestorId}>
                 <strong>{constraint.ancestorLabel}</strong>
                 <span>{constraint.policy.permissions.map((permission) => permissionLabels[permission]).join(" · ")}</span>
-                <small>≤ {formatAmount(constraint.policy.maxActionAmount)} {constraint.policy.maxActionAmount.symbol} per action</small>
+                <small>{policyAmountLabel(constraint.policy)} per token</small>
               </div>
             ))}
           </div>
@@ -799,26 +1005,56 @@ function MandatePanel({ data, node, contractsConfigured, actions, walletOnSepoli
 
       <div className="mandate-footnote"><Clock3 size={13} aria-hidden="true" /> Expires {new Date(node.effectivePolicy.expiresAt).toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric", timeZone: "UTC" })}<span>·</span><span className="source-label">{sourceLabel(node.source)}</span></div>
       <div className="mandate-actions">
-        <button className="button button-secondary button-small" disabled={data.source === "preview" || !contractsConfigured || !walletOnSepolia || !actions?.tightenPolicy} onClick={() => void actions?.tightenPolicy?.(node.id)} title="Available after live Sepolia wallet and policy integration"><Shield size={14} /> Tighten policy</button>
-        <button className="button button-danger button-small" disabled={data.source === "preview" || !contractsConfigured || !walletOnSepolia || !actions?.revokeSubtree} onClick={() => void actions?.revokeSubtree?.(node.id)} title="Available after live Sepolia wallet and revoke integration"><ShieldAlert size={14} /> Revoke subtree</button>
+        <button className="button button-secondary button-small" disabled={!canTighten} onClick={() => onRequestAction("tighten-policy")} title="Connect the recorded root owner or parent agent on Sepolia"><Shield size={14} /> Tighten policy</button>
+        <button className="button button-danger button-small" disabled={!canRevoke} onClick={() => onRequestAction("revoke-subtree")} title="Connect the parent agent with current EAC restriction authority"><ShieldAlert size={14} /> Revoke subtree</button>
       </div>
       <div className="owner-recovery-callout">
         <div><strong>Owner emergency recovery</strong><span>ENS-independent recovery remains separate from agent permissions.</span></div>
-        <button className="button button-danger button-small" disabled={data.source === "preview" || !contractsConfigured || !walletOnSepolia || !actions?.ownerEmergencyRecover} onClick={() => void actions?.ownerEmergencyRecover?.(node.id)} title="Available after live Sepolia wallet and owner recovery integration">Review exit</button>
+        <button className="button button-danger button-small" disabled={!canRecover} onClick={() => onRequestAction("owner-recovery")} title="Only the recorded root owner can use emergency recovery">Review exit</button>
       </div>
     </section>
   );
 }
 
-function ActivityPanel({ data }: { data: DashboardData }) {
+function ActivityPanel({
+  data,
+  feed,
+  loading,
+  loadingMore,
+  loadMoreError,
+  onRetry,
+  onLoadMore,
+}: {
+  data: DashboardData;
+  feed: ActivityFeedResult | null;
+  loading: boolean;
+  loadingMore: boolean;
+  loadMoreError: string | null;
+  onRetry: () => void;
+  onLoadMore: () => void;
+}) {
+  const page = feed?.source === "multi-baas" ? feed.page : null;
+  const indexLag = page?.indexing.indexGapBlocks;
+  const provenance = data.activitySource === "preview"
+    ? "This is sample history. Transaction links appear only after an indexed on-chain receipt exists."
+    : data.activitySource === "multi-baas" && page
+      ? `MultiBaas ${page.indexing.state.replaceAll("_", " ")} · ${indexLag === 0 ? "caught up" : `${Math.abs(indexLag ?? 0).toLocaleString()} blocks ${indexLag && indexLag < 0 ? "ahead" : "behind"}`} · ${page.verification ? `RPC verified at block ${page.verification.checkedAtBlock}; ${page.verification.orphanedItems} orphaned record${page.verification.orphanedItems === 1 ? "" : "s"} removed.` : "Canonical receipt verification pending."}`
+      : data.activitySource === "unavailable"
+        ? feed?.source === "unavailable" ? feed.message : "Activity history is not configured. Direct RPC data is not used as an activity-history fallback."
+        : "Activity is reported by a local diagnostic source.";
+  const activitySource = data.activitySource === "preview" ? "preview" : data.source;
+
   return (
     <section className="panel activity-panel" id="activity" aria-labelledby="activity-title">
       <div className="panel-heading">
         <div>
-          <div className="panel-overline">CAPITAL & POLICY LOG <PreviewFlag source={data.source} compact /></div>
+          <div className="panel-overline">CAPITAL & POLICY LOG <PreviewFlag source={activitySource} compact /></div>
           <h2 id="activity-title">Recent activity</h2>
         </div>
-        <span className="activity-count">{data.activity.length}{data.source === "preview" ? " preview" : ""} records</span>
+        <div className="activity-heading-actions">
+          <span className="activity-count">{data.activity.length}{data.activitySource === "preview" ? " preview" : ""} records</span>
+          {(feed?.source === "unavailable" || loadMoreError) && <button className="button button-secondary button-small" type="button" disabled={loading} onClick={onRetry}>{loading ? "Checking…" : "Retry history"}</button>}
+        </div>
       </div>
       <ol className="activity-list" id="activity-list">
         {data.activity.map((activity, index) => {
@@ -826,9 +1062,9 @@ function ActivityPanel({ data }: { data: DashboardData }) {
             ? <ArrowDownLeft size={15} />
             : activity.kind === "swap"
               ? <ArrowLeftRight size={15} />
-              : activity.kind === "position-opened"
+              : activity.kind === "position-opened" || activity.kind === "position-increased" || activity.kind === "position-closed" || activity.kind === "node-created"
                 ? <Layers3 size={15} />
-                : activity.kind === "policy-tightened" || activity.kind === "subtree-revoked"
+                : activity.kind === "policy-tightened" || activity.kind === "subtree-revoked" || activity.kind === "operator-changed" || activity.kind === "owner-recovered"
                   ? <ShieldCheck size={15} />
                   : <Coins size={15} />;
           return (
@@ -840,19 +1076,23 @@ function ActivityPanel({ data }: { data: DashboardData }) {
               </div>
               <div className="activity-meta">
                 {activity.amount && <strong>{formatAmount(activity.amount)} <span>{activity.amount.symbol}</span></strong>}
-                <time dateTime={activity.timestamp}>{new Date(activity.timestamp).toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit", timeZone: "UTC" })} UTC</time>
-                {activity.transactionHash && activity.source === "onchain-indexer" && data.chainId === sepolia.id && (
+                <time dateTime={activity.timestamp}>{activity.timestamp ? `${new Date(activity.timestamp).toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit", timeZone: "UTC" })} UTC` : activity.blockNumber !== undefined ? `Block ${activity.blockNumber.toLocaleString()}` : ""}</time>
+                {activity.finality && <small className={`activity-finality activity-finality-${activity.finality}`}>{activity.finality.replaceAll("_", " ")}</small>}
+                {activity.transactionHash && activity.source === "multi-baas" && data.chainId === sepolia.id && (
                   <a className="activity-transaction-link" href={`https://sepolia.etherscan.io/tx/${activity.transactionHash}`} target="_blank" rel="noreferrer">
                     Receipt <ExternalLink size={9} aria-hidden="true" />
                   </a>
                 )}
               </div>
-              <span className="activity-source">{activity.source === "preview" ? "PREVIEW" : activity.source === "onchain-indexer" ? "INDEXED" : "LOCAL"}</span>
+              <span className="activity-source">{activity.source === "preview" ? "PREVIEW" : activity.source === "multi-baas" ? "INDEXED" : "LOCAL"}</span>
             </li>
           );
         })}
       </ol>
-      <div className="activity-provenance"><span className="provenance-dot" />{data.source === "preview" ? "This is sample history. Transaction links appear only after an indexed on-chain receipt exists." : data.source === "onchain-indexer" ? "Activity is sourced from indexed on-chain events and receipts." : "Activity is reported by a local diagnostic source."}</div>
+      {data.activity.length === 0 && <p className="activity-empty">{loading ? "Loading activity history…" : data.activitySource === "preview" ? "Preview records are shown above when available." : feed?.source === "unavailable" ? "Indexed activity is unavailable for this root." : "No activity records are available for this root yet."}</p>}
+      {loadMoreError && feed?.source !== "unavailable" && <p className="activity-load-error" role="alert">{loadMoreError}</p>}
+      {page?.hasMore && <button className="button button-secondary button-small activity-load-more" type="button" disabled={loadingMore} onClick={onLoadMore}>{loadingMore ? "Loading…" : "Load earlier activity"}</button>}
+      <div className="activity-provenance"><span className="provenance-dot" />{loading && data.activitySource !== "preview" ? "Refreshing MultiBaas activity…" : provenance}</div>
     </section>
   );
 }
@@ -870,15 +1110,16 @@ function PositionsPanel({ data, actions, walletOnSepolia }: { data: DashboardDat
       {data.positions.length > 0 ? data.positions.map((position) => (
         <div className="position-record" key={position.id}>
           <div className="position-pool-row">
-            <span className="token-pair-icon"><span>{position.token0.symbol.slice(0, 1)}</span><span>{position.token1.symbol.slice(0, 1)}</span></span>
+            <span className="token-pair-icon"><span>{position.token0?.symbol.slice(0, 1) ?? "?"}</span><span>{position.token1?.symbol.slice(0, 1) ?? "?"}</span></span>
             <div><strong>{position.poolLabel}</strong><small>Vault-owned NFT · {position.source === "preview" ? "example " : ""}position {position.id}</small></div>
             <span className={`position-open-pill position-state-${position.state}`}><span />{position.source === "preview" ? `Example ${position.state}` : position.state === "unknown" ? "Status unknown" : position.state}</span>
           </div>
-          <div className="position-stats">
+      <div className="position-stats">
             <div><span>Liquidity</span><strong>{position.liquidity}<small> units</small></strong></div>
-            <div><span>Uncollected fees</span><strong>{formatAmount(position.fees0)} <small>{position.fees0.symbol}</small></strong><strong>{formatAmount(position.fees1)} <small>{position.fees1.symbol}</small></strong></div>
+            <div><span>Position principal</span><strong>{position.token0 ? `${formatAmount(position.token0)} ${position.token0.symbol}` : "Not queried"}</strong><strong>{position.token1 ? `${formatAmount(position.token1)} ${position.token1.symbol}` : "Not queried"}</strong></div>
+            <div><span>Uncollected fees</span><strong>{position.fees0 ? `${formatAmount(position.fees0)} ${position.fees0.symbol}` : "Not queried"}</strong><strong>{position.fees1 ? `${formatAmount(position.fees1)} ${position.fees1.symbol}` : "Not queried"}</strong></div>
           </div>
-          <div className="position-separation"><LockKeyhole size={13} aria-hidden="true" /><span>Fee collection, routine exit, and owner recovery are separate permissions.</span></div>
+          <div className="position-separation"><LockKeyhole size={13} aria-hidden="true" /><span>{position.source === "direct-rpc" ? "Position NFT and liquidity are read from Sepolia; principal and fees are not queried." : "Fee collection, routine exit, and owner recovery are separate permissions."}</span></div>
           <div className="position-actions">
             <button className="button button-secondary button-small" disabled={data.source === "preview" || !data.contractsConfigured || !walletOnSepolia || !actions?.collectFees} onClick={() => void actions?.collectFees?.(position.id)} title="Available after live Sepolia wallet and fee integration">Collect fees</button>
             <button className="button button-secondary button-small" disabled={data.source === "preview" || !data.contractsConfigured || !walletOnSepolia || !actions?.closePosition} onClick={() => void actions?.closePosition?.(position.id)} title="Available after live Sepolia wallet and exit integration">Close position</button>
@@ -891,25 +1132,33 @@ function PositionsPanel({ data, actions, walletOnSepolia }: { data: DashboardDat
   );
 }
 
-function ContractSetupPanel({ data, actions, wallet }: { data: DashboardData; actions?: DashboardActions; wallet: InjectedWalletState }) {
-  const { contractsConfigured } = data;
-  const indexerConnected = data.source === "onchain-indexer";
+function ContractSetupPanel({ data, deployment, actions, wallet, liveStateReady }: { data: DashboardData; deployment: PublicDeployment; actions: DashboardActions; wallet: InjectedWalletState; liveStateReady: boolean }) {
+  const { contractsConfigured } = deployment;
+  const indexerConnected = data.activitySource === "multi-baas";
   const walletOnSepolia = wallet.address !== null && wallet.chainId === sepolia.id;
-  const ownerRecoveryReady = data.source !== "preview" && contractsConfigured && walletOnSepolia && Boolean(actions?.ownerEmergencyRecover);
+  const ownerRecoveryReady = liveStateReady && data.source === "direct-rpc" && contractsConfigured && walletOnSepolia &&
+    wallet.address?.toLowerCase() === data.rootOwner?.toLowerCase() && Boolean(actions?.ownerEmergencyRecover);
   const walletStepReady = walletOnSepolia;
+  const setupDescription = ownerRecoveryReady
+    ? "The recorded root owner is connected. Each owner recovery transaction is simulated against Sepolia before wallet approval."
+    : contractsConfigured
+      ? liveStateReady
+        ? "Live state is available. Root and child actions unlock only for the recorded owner or an agent with current parent authority."
+        : "Load a root ID to read current balances and EAC authority. Creating a new root remains available from Wallet actions."
+      : "The Sepolia controller and demo-token addresses are not configured. Wallet actions remain locked until deployment is recorded.";
   return (
     <section className="setup-panel" id="setup" aria-labelledby="setup-title">
       <div className="setup-orbit" aria-hidden="true"><span /><span /><span /></div>
       <div className="setup-copy">
-        <div className="setup-status"><span className="setup-status-dot" /> {ownerRecoveryReady ? "OWNER RECOVERY AVAILABLE" : contractsConfigured ? "CONTRACTS CONFIGURED · ACTIONS PENDING" : "DEPLOYMENT PENDING"}</div>
+        <div className="setup-status"><span className="setup-status-dot" /> {ownerRecoveryReady ? "OWNER CONTROLS READY" : contractsConfigured ? "CONTRACTS CONFIGURED" : "DEPLOYMENT PENDING"}</div>
         <h2 id="setup-title">Owner control<br />starts on-chain.</h2>
-        <p>{ownerRecoveryReady ? "The owner recovery adapter is connected. Recovery actions still require wallet approval." : contractsConfigured ? "Contracts are configured, but wallet action integration is still pending." : "The Sepolia controller and vault addresses have not been configured. Wallet actions stay locked until they are."}</p>
-        {ownerRecoveryReady ? <a className="button button-setup" href="#capital-tree">Review owner controls<ArrowUpRight size={15} aria-hidden="true" /></a> : <button className="button button-setup" disabled title="Available after wallet action integration">Setup is pending<ArrowUpRight size={15} aria-hidden="true" /></button>}
+        <p>{setupDescription}</p>
+        {contractsConfigured ? <a className="button button-setup" href="#wallet-controls">Review wallet actions<ArrowUpRight size={15} aria-hidden="true" /></a> : <button className="button button-setup" disabled title="Available after the controller and demo tokens are deployed">Setup is pending<ArrowUpRight size={15} aria-hidden="true" /></button>}
       </div>
       <div className="setup-steps" aria-label="Setup status">
         <div className={walletStepReady ? "setup-step setup-step-complete" : "setup-step setup-step-pending"}><span>{walletStepReady ? <Check size={12} /> : "1"}</span><div><strong>{walletStepReady ? "Wallet connected" : wallet.address ? "Switch to Sepolia" : "Connect wallet"}</strong><small>{walletStepReady ? shortAddress(wallet.address ?? "") : wallet.address ? "Connected on another network" : "Injected wallet · Sepolia"}</small></div></div>
         <div className={contractsConfigured ? "setup-step setup-step-complete" : "setup-step setup-step-pending"}><span>{contractsConfigured ? <Check size={12} /> : "2"}</span><div><strong>Controller deploy</strong><small>{contractsConfigured ? "Address configuration present" : "Contract address pending"}</small></div></div>
-        <div className={indexerConnected ? "setup-step setup-step-complete" : "setup-step setup-step-pending"}><span>{indexerConnected ? <Check size={12} /> : "3"}</span><div><strong>Indexer connect</strong><small>{indexerConnected ? "Indexed event source active" : "MultiBaas source pending"}</small></div></div>
+        <div className={indexerConnected ? "setup-step setup-step-complete" : "setup-step setup-step-pending"}><span>{indexerConnected ? <Check size={12} /> : "3"}</span><div><strong>Indexer connect</strong><small>{indexerConnected ? "MultiBaas activity source active" : "MultiBaas activity source pending"}</small></div></div>
         <div className="setup-step setup-step-pending"><span>4</span><div><strong>Codex plugin</strong><small>Independent setup pending</small></div></div>
       </div>
       <div className="setup-border" aria-hidden="true" />
@@ -920,26 +1169,207 @@ function ContractSetupPanel({ data, actions, wallet }: { data: DashboardData; ac
 function Footer({ source, walletConnected }: { source: DataSource; walletConnected: boolean }) {
   return (
     <footer className="dashboard-footer">
-      <span><span className="footer-indicator" /> CONTROL PANEL · {source === "preview" ? "READ-ONLY PREVIEW" : source === "onchain-indexer" ? "READ-ONLY INDEXED DATA" : "LOCAL DIAGNOSTICS"}</span>
+      <span><span className="footer-indicator" /> CONTROL PANEL · {source === "preview" ? "READ-ONLY PREVIEW" : source === "direct-rpc" ? "DIRECT RPC VIEW" : "LOCAL DIAGNOSTICS"}</span>
       <span>{walletConnected ? "Owner authority remains with your connected wallet" : "Connect your wallet to review owner controls"}</span>
       <a href="#setup">Integration status <ArrowUpRight size={12} aria-hidden="true" /></a>
     </footer>
   );
 }
 
-export function Dashboard({ data, actions }: DashboardProps) {
-  const [selectedId, setSelectedId] = useState(data.rootId);
+export function Dashboard({ data: initialData, deployment, rootQuery }: DashboardProps) {
+  const router = useRouter();
+  const [selectedId, setSelectedId] = useState(initialData.rootId);
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [walletActionMode, setWalletActionMode] = useState<WalletActionMode>(null);
+  const [liveSnapshot, setLiveSnapshot] = useState<{ rootId: string; data: DashboardData } | null>(null);
+  const [readState, setReadState] = useState<{ rootId: string | null; status: "idle" | "loading" | "ready" | "error"; error: string | null }>({ rootId: null, status: "idle", error: null });
+  const [activityState, setActivityState] = useState<{ rootId: string | null; feed: ActivityFeedResult | null; loading: boolean; loadingMore: boolean; loadMoreError: string | null }>({ rootId: null, feed: null, loading: false, loadingMore: false, loadMoreError: null });
+  const [treeRetry, setTreeRetry] = useState(0);
+  const [activityRetry, setActivityRetry] = useState(0);
   const wallet = useInjectedWallet();
   const walletOnSepolia = wallet.address !== null && wallet.chainId === sepolia.id;
-  const selectedNode = nodeById(data, selectedId) ?? data.nodes[0];
-  const activeVaults = data.nodes.filter((node) => node.state === "active").length;
+  const currentSnapshot = rootQuery && liveSnapshot?.rootId === rootQuery ? liveSnapshot.data : null;
+  const currentReadState = rootQuery && readState.rootId === rootQuery
+    ? readState
+    : { rootId: rootQuery, status: rootQuery ? "loading" as const : "idle" as const, error: null };
+  const liveStateReady = Boolean(rootQuery && currentSnapshot && currentReadState.status === "ready");
+  const data = currentSnapshot ?? initialData;
+  const activeActivityState = rootQuery && activityState.rootId === rootQuery
+    ? activityState
+    : { rootId: rootQuery, feed: null, loading: Boolean(rootQuery), loadingMore: false, loadMoreError: null };
+  const activityFeed = rootQuery ? activeActivityState.feed : null;
+  const activityItems = activityFeed?.source === "multi-baas"
+    ? activityFeed.page.items.map((item) => mapIndexedActivity({ ...data, rootId: rootQuery ?? data.rootId }, item))
+    : [];
+  const dashboardData: DashboardData = rootQuery
+    ? {
+      ...data,
+      rootId: rootQuery,
+      activitySource: activityFeed?.source === "multi-baas" ? "multi-baas" : "unavailable",
+      activity: activityItems,
+    }
+    : data;
+  const selectedNode = nodeById(data, selectedId) ?? nodeById(data, data.rootId) ?? data.nodes[0];
   const rootNode = nodeById(data, data.rootId);
+  const walletAddress = wallet.address?.toLowerCase();
+  const ownerConnected = Boolean(liveStateReady && walletOnSepolia && walletAddress && data.rootOwner && walletAddress === data.rootOwner.toLowerCase());
+  const selectedAgentConnected = Boolean(liveStateReady && walletOnSepolia && walletAddress && selectedNode?.agentAddress.toLowerCase() === walletAddress);
+  const selectedParent = selectedNode?.parentId ? nodeById(data, selectedNode.parentId) : undefined;
+  const parentCanRestrict = Boolean(liveStateReady && walletOnSepolia && walletAddress && selectedParent?.agentAddress.toLowerCase() === walletAddress && selectedParent.authorizedPermissions.includes("restrict"));
+  const canSpawnVault = Boolean(liveStateReady && selectedNode && selectedNode.state === "active" && selectedNode.authorizedPermissions.includes("delegate") && selectedAgentConnected);
+  const canTighten = Boolean(liveStateReady && selectedNode && (selectedNode.parentId ? parentCanRestrict : ownerConnected));
+  const canRevoke = Boolean(liveStateReady && selectedNode?.parentId && selectedNode.state !== "revoked" && selectedNode.state !== "expired" && parentCanRestrict);
+  const canRecover = Boolean(liveStateReady && ownerConnected);
+  const activeVaults = data.nodes.filter((node) => node.state === "active").length;
   const runtimeConnected = data.nodes.some((node) => node.runtime === "connected");
   const runtimeUnknown = data.nodes.some((node) => node.runtime === "unknown");
   const runtimeLabel = runtimeConnected ? "Runtime connected" : runtimeUnknown ? "Runtime status unknown" : "Runtime not linked";
 
+  const refreshConfirmedState = useCallback(() => {
+    setTreeRetry((value) => value + 1);
+    setActivityRetry((value) => value + 1);
+  }, []);
+  const { actions, notice } = useWalletActions({
+    data,
+    deployment,
+    address: wallet.address,
+    chainId: wallet.chainId,
+    onConfirmed: refreshConfirmedState,
+  });
+
+  useEffect(() => {
+    if (!rootQuery) {
+      setReadState({ rootId: null, status: "idle", error: null });
+      return;
+    }
+    let cancelled = false;
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    let controller: AbortController | undefined;
+
+    const scheduleRefresh = () => {
+      timer = setTimeout(() => {
+        if (document.visibilityState === "visible") void load();
+        else scheduleRefresh();
+      }, 10_000);
+    };
+    const load = async () => {
+      controller = new AbortController();
+      setReadState({ rootId: rootQuery, status: "loading", error: null });
+      try {
+        const nextData = await requestLiveTree(rootQuery, controller.signal);
+        if (cancelled) return;
+        setLiveSnapshot({ rootId: rootQuery, data: nextData });
+        setSelectedId((current) => nextData.nodes.some((node) => node.id === current) ? current : nextData.rootId);
+        setReadState({ rootId: rootQuery, status: "ready", error: null });
+      } catch (cause) {
+        if (cancelled || controller?.signal.aborted) return;
+        setReadState({ rootId: rootQuery, status: "error", error: cause instanceof Error ? cause.message : "The Sepolia read failed." });
+      }
+      if (!cancelled) scheduleRefresh();
+    };
+
+    void load();
+    return () => {
+      cancelled = true;
+      if (timer) clearTimeout(timer);
+      controller?.abort();
+    };
+  }, [rootQuery, treeRetry]);
+
+  useEffect(() => {
+    if (!rootQuery) {
+      setActivityState({ rootId: null, feed: null, loading: false, loadingMore: false, loadMoreError: null });
+      return;
+    }
+    let cancelled = false;
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    let controller: AbortController | undefined;
+
+    const scheduleRefresh = () => {
+      timer = setTimeout(() => {
+        if (document.visibilityState === "visible") void load();
+        else scheduleRefresh();
+      }, 10_000);
+    };
+    const load = async () => {
+      controller = new AbortController();
+      setActivityState((current) => ({
+        rootId: rootQuery,
+        feed: current.rootId === rootQuery ? current.feed : null,
+        loading: true,
+        loadingMore: current.rootId === rootQuery && current.loadingMore,
+        loadMoreError: null,
+      }));
+      try {
+        const result = await requestActivity(rootQuery, undefined, controller.signal);
+        if (cancelled) return;
+        setActivityState((current) => ({
+          rootId: rootQuery,
+          feed: result.source === "unavailable" && current.rootId === rootQuery && current.feed?.source === "multi-baas" ? current.feed : result,
+          loading: false,
+          loadingMore: current.rootId === rootQuery && current.loadingMore,
+          loadMoreError: result.source === "unavailable" ? result.message : null,
+        }));
+      } catch (cause) {
+        if (cancelled || controller?.signal.aborted) return;
+        setActivityState((current) => ({
+          rootId: rootQuery,
+          feed: current.rootId === rootQuery && current.feed?.source === "multi-baas"
+            ? current.feed
+            : { source: "unavailable", reason: "upstream_error", message: cause instanceof Error ? cause.message : "MultiBaas activity is unavailable." },
+          loading: false,
+          loadingMore: current.rootId === rootQuery && current.loadingMore,
+          loadMoreError: cause instanceof Error ? cause.message : "MultiBaas activity is unavailable.",
+        }));
+      }
+      if (!cancelled) scheduleRefresh();
+    };
+
+    void load();
+    return () => {
+      cancelled = true;
+      if (timer) clearTimeout(timer);
+      controller?.abort();
+    };
+  }, [rootQuery, activityRetry]);
+
+  async function loadEarlierActivity() {
+    if (!rootQuery || activeActivityState.loadingMore || activeActivityState.feed?.source !== "multi-baas") return;
+    const cursor = activeActivityState.feed.page.nextCursor;
+    if (!cursor) return;
+    const requestedRoot = rootQuery;
+    setActivityState((current) => current.rootId === requestedRoot ? { ...current, loadingMore: true, loadMoreError: null } : current);
+    try {
+      const result = await requestActivity(requestedRoot, cursor);
+      if (result.source === "unavailable") {
+        setActivityState((current) => current.rootId === requestedRoot ? { ...current, loadingMore: false, loadMoreError: result.message } : current);
+        return;
+      }
+      setActivityState((current) => {
+        if (current.rootId !== requestedRoot || current.feed?.source !== "multi-baas") return current;
+        const seen = new Set<string>();
+        const items = [...current.feed.page.items, ...result.page.items].filter((item) => {
+          if (seen.has(item.id)) return false;
+          seen.add(item.id);
+          return true;
+        });
+        return {
+          ...current,
+          feed: { source: "multi-baas", page: { ...result.page, items } },
+          loadingMore: false,
+          loadMoreError: null,
+        };
+      });
+    } catch (cause) {
+      setActivityState((current) => current.rootId === requestedRoot
+        ? { ...current, loadingMore: false, loadMoreError: cause instanceof Error ? cause.message : "Earlier activity could not be loaded." }
+        : current);
+    }
+  }
+
   if (!selectedNode) return null;
+
+  const liveError = currentReadState.status === "error" ? currentReadState.error : null;
 
   return (
     <div className="app-shell">
@@ -953,21 +1383,52 @@ export function Dashboard({ data, actions }: DashboardProps) {
       <main className="main-shell">
         <Topbar mobileOpen={mobileOpen} onMenuToggle={() => setMobileOpen((open) => !open)} source={data.source} wallet={wallet} />
         <div className="dashboard-content">
-          <PreviewNotice data={data} />
+          <PreviewNotice data={data} deployment={deployment} />
+          {rootQuery && <LiveReadNotice rootId={rootQuery} data={data} loading={currentReadState.status === "loading"} error={liveError} onRetry={() => setTreeRetry((value) => value + 1)} />}
           <OverviewHeader activeVaults={activeVaults} positions={data.positions.length} source={data.source} />
           <SummaryMetrics data={data} />
 
           <div className="primary-grid">
-            <CapitalTree data={data} selectedId={selectedNode.id} onSelect={setSelectedId} actions={actions} walletOnSepolia={walletOnSepolia} />
-            <MandatePanel data={data} node={selectedNode} contractsConfigured={data.contractsConfigured} actions={actions} walletOnSepolia={walletOnSepolia} />
+            <CapitalTree data={data} selectedId={selectedNode.id} onSelect={setSelectedId} canSpawnVault={canSpawnVault} onRequestSpawn={() => {
+              setWalletActionMode("spawn-child");
+              router.push("#wallet-controls");
+            }} />
+            <MandatePanel data={data} node={selectedNode} canTighten={canTighten} canRevoke={canRevoke} canRecover={canRecover} onRequestAction={(mode) => {
+              setWalletActionMode(mode);
+              router.push("#wallet-controls");
+            }} />
           </div>
 
           <div className="secondary-grid">
-            <ActivityPanel data={data} />
+            <ActivityPanel
+              data={dashboardData}
+              feed={activityFeed}
+              loading={activeActivityState.loading}
+              loadingMore={activeActivityState.loadingMore}
+              loadMoreError={activeActivityState.loadMoreError}
+              onRetry={() => setActivityRetry((value) => value + 1)}
+              onLoadMore={() => void loadEarlierActivity()}
+            />
             <PositionsPanel data={data} actions={actions} walletOnSepolia={walletOnSepolia} />
           </div>
 
-          <ContractSetupPanel data={data} actions={actions} wallet={wallet} />
+          <WalletControlsPanel
+            data={data}
+            deployment={deployment}
+            selectedNode={selectedNode}
+            walletAddress={wallet.address}
+            walletOnSepolia={walletOnSepolia}
+            liveStateReady={liveStateReady}
+            actions={actions}
+            notice={notice}
+            mode={walletActionMode}
+            onModeChange={setWalletActionMode}
+            onRootCreated={(rootId) => {
+              setWalletActionMode(null);
+              router.push(`/?root=${encodeURIComponent(rootId)}`);
+            }}
+          />
+          <ContractSetupPanel data={dashboardData} deployment={deployment} actions={actions} wallet={wallet} liveStateReady={liveStateReady} />
           <Footer source={data.source} walletConnected={walletOnSepolia} />
         </div>
       </main>
