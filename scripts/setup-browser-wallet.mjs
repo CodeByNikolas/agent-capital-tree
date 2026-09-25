@@ -1,0 +1,79 @@
+import { chromium } from '@playwright/test';
+import { readFile, mkdir } from 'node:fs/promises';
+import { homedir } from 'node:os';
+import { join } from 'node:path';
+import { Wallet } from 'ethers';
+
+// Local test wallet only. Never trace, screenshot, or print setup inputs.
+const root = join(homedir(), '.agent-capital-tree');
+const extension = join(root, 'tools/metamask-13.49.0');
+const profile = join(root, 'browser/jury');
+await mkdir(profile, { recursive: true, mode: 0o700 });
+const context = await chromium.launchPersistentContext(profile, {
+  channel: 'chromium', headless: true,
+  args: [`--disable-extensions-except=${extension}`, `--load-extension=${extension}`],
+});
+let stage = 'extension startup';
+try {
+  const worker = context.serviceWorkers()[0] ?? await context.waitForEvent('serviceworker');
+  const page = await context.newPage();
+  await page.goto(`chrome-extension://${new URL(worker.url()).host}/home.html`);
+  const password = await readFile(join(root, 'keys/jury.password'), 'utf8');
+  const wallet = await Wallet.fromEncryptedJson(await readFile(join(root, 'keys/jury.keystore.json'), 'utf8'), password);
+  await Promise.any(['unlock-submit', 'onboarding-import-wallet', 'passkey-maybe-later-button', 'account-menu-icon', 'metametrics-i-agree', 'onboarding-complete-done'].map(id => page.getByTestId(id).waitFor({ timeout: 25000 })));
+  if (await page.getByTestId('unlock-submit').isVisible()) {
+    stage = 'unlock';
+    await page.locator('input[type="password"]').fill(password);
+    await page.getByTestId('unlock-submit').click();
+  } else if (await page.getByRole('button', { name: 'I have an existing wallet' }).isVisible()) {
+    stage = 'existing wallet';
+    await page.getByRole('button', { name: 'I have an existing wallet' }).click();
+    await page.getByRole('button', { name: 'Import using Secret Recovery Phrase' }).click();
+    await page.locator('textarea').waitFor();
+    if (!wallet.mnemonic) throw new Error('Test wallet mnemonic unavailable');
+    stage = 'recovery phrase';
+    const words = wallet.mnemonic.phrase.split(' ');
+    // MetaMask converts each word into a separate field on Space. Whole-text fill
+    // does not invoke its paste handler; no security setting is modified to work around it.
+    await page.locator('textarea').fill(words[0]);
+    await page.locator('textarea').press('Space');
+    for (let i = 1; i < words.length; i++) {
+      const input = page.locator('input').nth(i);
+      await input.fill(words[i]);
+      if (i < words.length - 1) await input.press('Space');
+    }
+    await page.getByRole('heading').first().click();
+    await page.getByTestId('import-srp-confirm').click();
+    stage = 'password';
+    await page.getByTestId('create-password-new-input').fill(password);
+    await page.getByTestId('create-password-confirm-input').fill(password);
+    await page.getByRole('checkbox').check();
+    await page.getByTestId('create-password-submit').click();
+  }
+  stage = 'post-import';
+  await page.waitForTimeout(2000);
+  if (await page.getByTestId('passkey-maybe-later-button').isVisible()) {
+    await page.getByTestId('passkey-maybe-later-button').click();
+    await page.waitForTimeout(1000);
+  }
+  if (await page.getByTestId('metametrics-i-agree').isVisible()) {
+    const ids = ['metametrics-checkbox', 'metametrics-data-collection-checkbox'];
+    for (let i = 0; i < ids.length; i++) {
+      if (await page.locator('input[type="checkbox"]').nth(i).isChecked()) await page.getByTestId(ids[i]).click();
+    }
+    await page.getByTestId('metametrics-i-agree').click();
+    await page.waitForTimeout(2000);
+  }
+  if (await page.getByTestId('onboarding-complete-done').isVisible()) {
+    await page.getByTestId('onboarding-complete-done').click();
+    await page.waitForTimeout(1500);
+  }
+  stage = 'wallet overview';
+  await page.getByTestId('account-menu-icon').waitFor({ timeout: 15000 });
+  console.log(JSON.stringify({ walletUiReady: true, extensionId: new URL(page.url()).host, expectedAddress: wallet.address }));
+} catch {
+  console.error(`Wallet setup failed during ${stage}; sensitive details suppressed.`);
+  process.exitCode = 1;
+} finally {
+  await context.close();
+}
