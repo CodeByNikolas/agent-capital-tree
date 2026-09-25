@@ -134,6 +134,18 @@ try {
     const { browserOwnerSetup } = await import('./lib/browser-owner-flow.mjs');
     await browserOwnerSetup({ context, app, origin, address, privateBase: root });
   }
+  if (process.argv.includes('--owner-close') || process.argv.includes('--owner-recovery')) {
+    if (walletName !== 'jury-e2e') throw new Error('Owner recovery requires the independent fresh wallet');
+    stage = 'owner recovery';
+    const { browserOwnerRecovery } = await import('./lib/browser-owner-recovery.mjs');
+    await browserOwnerRecovery({ context, app, origin, address, privateBase: root, appUrl, closeOnly: process.argv.includes('--owner-close') });
+  }
+  if (process.argv.includes('--negative-cases')) {
+    if (walletName !== 'jury-e2e') throw new Error('Negative cases require the independent fresh wallet');
+    stage = 'negative cases';
+    const { browserNegativeCases } = await import('./lib/browser-negative-cases.mjs');
+    await browserNegativeCases({ context, app, origin, address, appUrl });
+  }
 } catch (error) {
   if (error?.message === 'MetaMask safety warning: connection was not approved') console.error(error.message);
   // Report only fixed UI labels, never wallet page text, account names or inputs.

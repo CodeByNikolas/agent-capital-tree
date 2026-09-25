@@ -1,0 +1,15 @@
+{
+  "status": "passed",
+  "checkedAt": "2026-09-25T21:15:43.952Z",
+  "appUrl": "https://agent-capital-tree.vercel.app",
+  "rootId": "5",
+  "owner": "0xbcea84ed1dafbb59aaf9797cb4170394db688d34",
+  "checks": [
+    "Real MetaMask rejection leaves owner nonce unchanged and releases busy UI",
+    "Real mainnet switch disables financial UI; Sepolia switch restores network",
+    "Simulated tree API outage locks stale-state management and recovers after reload"
+  ],
+  "limitations": [
+    "RPC outage injected at the HTTP response boundary; the public RPC service was not disrupted."
+  ]
+}
