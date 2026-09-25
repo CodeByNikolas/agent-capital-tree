@@ -2,7 +2,7 @@
 
 Scoped capital and permissions for agent teams: ENSv2-authorized vaults, bounded Uniswap v4 strategies, and a shared activity view powered by Curvegrid MultiBaas.
 
-**Development status:** implementation in progress on Ethereum Sepolia. Contracts and the public application are not deployed yet. This repository does not currently provide an audited custody product. Demo assets will have no monetary value.
+**Development status:** implementation in progress on Ethereum Sepolia. A [public preview](https://agent-capital-tree.vercel.app) is deployed. The ENS namespace and demo tokens are on Sepolia; the final controller and live integrations are still in progress. This repository does not currently provide an audited custody product. Demo assets have no monetary value.
 
 ## What we are building
 
@@ -21,9 +21,9 @@ Use Node.js 22 and pnpm 11.13.1. Dependency install scripts are disabled.
 
 ```sh
 pnpm install --frozen-lockfile --ignore-scripts
+pnpm build
 pnpm typecheck
 pnpm test
-pnpm build
 ```
 
 Packages, contract instructions, tested deployment addresses and installation steps are added as each feature is implemented. See [PLAN.md](PLAN.md) for the complete specification and [STATUS.md](STATUS.md) for actual progress and unresolved gates.
@@ -40,4 +40,4 @@ Only public addresses are stored in [deployments/sepolia.json](deployments/sepol
 
 ## Sponsor integration evidence
 
-Implementation links and transaction evidence will be added after the integrations work. ENSv2, Uniswap v4 and MultiBaas are planned integrations, not completed claims. Independent wallet/plugin onboarding and deployed-browser tests are release requirements.
+ENS authority is implemented in [ManagedRegistry](contracts/src/ens/ManagedRegistry.sol) and [CapitalController](contracts/src/CapitalController.sol). Bounded Uniswap actions live in [CapitalVault](contracts/src/CapitalVault.sol); [FEEDBACK.md](FEEDBACK.md) records integration feedback and the outstanding form submission. [MultiBaas](packages/multibaas) reads indexed activity and can reconcile it against canonical receipts; live access is still pending. These implementation links do not imply that end-to-end acceptance is complete. Independent wallet/plugin onboarding and deployed-browser tests are release requirements.
