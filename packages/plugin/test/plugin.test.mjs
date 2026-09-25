@@ -8,8 +8,15 @@ import { fileURLToPath } from 'node:url';
 import { Client } from '@modelcontextprotocol/sdk/client/index.js';
 import { StdioClientTransport } from '@modelcontextprotocol/sdk/client/stdio.js';
 import { RuntimeClient } from '../dist/runtime-client.js';
+import { toolSpecs } from '../dist/tools.js';
 
 const rootId = 'root-1';
+
+test('mandates expose restriction authority and explicit allowed assets', () => {
+  const restrictions = { capabilities: ['restrict', 'swap'], allowedAssets: ['0x' + 'a'.repeat(40)] };
+  assert.deepEqual(toolSpecs.tightenPolicy.schema.parse({ nodeId: '2', restrictions }).restrictions, restrictions);
+  assert.throws(() => toolSpecs.tightenPolicy.schema.parse({ nodeId: '2', restrictions: { allowedAssets: ['not-an-address'] } }));
+});
 
 test('runtime client fails closed when unconfigured and rejects forged agentId', async () => {
   const client = new RuntimeClient();

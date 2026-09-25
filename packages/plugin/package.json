@@ -3,6 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "type": "module",
+  "exports": { "./tools": { "types": "./dist/tools.d.ts", "default": "./dist/tools.js" } },
   "engines": { "node": ">=22.18" },
   "scripts": {
     "build": "tsc -p tsconfig.json && esbuild src/server.ts --bundle --platform=node --format=esm --target=node22 --outfile=bundle/server.mjs",

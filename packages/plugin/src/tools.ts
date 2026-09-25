@@ -6,7 +6,8 @@ const address = z.string().regex(/^0x[a-fA-F0-9]{40}$/);
 const operationKey = z.string().regex(/^0x[a-fA-F0-9]{64}$/);
 const deadline = z.number().int().positive();
 const restrictions = z.object({
-  capabilities: z.array(z.enum(['delegate', 'swap', 'lpManage', 'collectFees', 'exit', 'reclaim'])).optional(),
+  capabilities: z.array(z.enum(['delegate', 'swap', 'lpManage', 'collectFees', 'exit', 'restrict', 'reclaim'])).optional(),
+  allowedAssets: z.array(address).max(2).optional(),
   expiresAt: deadline.optional(),
   maxPerAction: z.record(address, amount).optional()
 }).strict();

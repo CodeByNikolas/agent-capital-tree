@@ -36480,7 +36480,8 @@ var address = external_exports.string().regex(/^0x[a-fA-F0-9]{40}$/);
 var operationKey = external_exports.string().regex(/^0x[a-fA-F0-9]{64}$/);
 var deadline = external_exports.number().int().positive();
 var restrictions = external_exports.object({
-  capabilities: external_exports.array(external_exports.enum(["delegate", "swap", "lpManage", "collectFees", "exit", "reclaim"])).optional(),
+  capabilities: external_exports.array(external_exports.enum(["delegate", "swap", "lpManage", "collectFees", "exit", "restrict", "reclaim"])).optional(),
+  allowedAssets: external_exports.array(address).max(2).optional(),
   expiresAt: deadline.optional(),
   maxPerAction: external_exports.record(address, amount).optional()
 }).strict();
