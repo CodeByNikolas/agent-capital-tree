@@ -2,11 +2,11 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { createServer, request as httpRequest } from 'node:http';
 import { setTimeout as delay } from 'node:timers/promises';
-import { mkdtemp, mkdir, readFile, rm, stat, symlink, writeFile } from 'node:fs/promises';
+import { chmod, mkdtemp, mkdir, readFile, rm, stat, symlink, writeFile } from 'node:fs/promises';
 import { spawn } from 'node:child_process';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { WorkerSessions, authorizedWorkerCall, SpawnCoordinator, FileSpawnJournal, workerDockerArgs, startWorkerGateway, InferenceBroker } from '../dist/index.js';
+import { WorkerSessions, authorizedWorkerCall, SpawnCoordinator, FileSpawnJournal, workerDockerArgs, startWorkerGateway, DockerWorkerLauncher, InferenceBroker } from '../dist/index.js';
 
 const parent = { workerId: 'w1', rootId: 'root', nodeId: 'parent', authorityGeneration: '3' };
 const request = { operationKey: `0x${'a'.repeat(64)}`, task: 'study', model: 'gpt-6-sol', token: '0xasset', amount: '10', restrictions: { swap: false, assets: ['a'] } };
@@ -137,6 +137,40 @@ test('gateway recovers a dead owner socket but refuses an active one', async () 
     try { await assert.rejects(startWorkerGateway(config), /already active/); }
     finally { await gateway.close(); }
   } finally { child.kill('SIGKILL'); await rm(runtimeRoot, { recursive: true, force: true }); }
+});
+
+test('launcher shares a concurrent launch and stops its one worker', async () => {
+  const runtimeRoot = await mkdtemp(join(tmpdir(), 'act-launcher-'));
+  const workerRoot = join(runtimeRoot, 'workers', 'launch');
+  const workspace = join(workerRoot, 'workspace');
+  const keyFile = join(workerRoot, 'key');
+  const gatewaySocket = join(workerRoot, 'gateway.sock');
+  const fakeDocker = join(runtimeRoot, 'fake-docker');
+  const state = join(runtimeRoot, 'state');
+  const log = join(runtimeRoot, 'log');
+  await mkdir(workspace, { recursive: true, mode: 0o700 });
+  await writeFile(keyFile, 'synthetic-only', { mode: 0o600 });
+  await writeFile(fakeDocker, `#!/bin/sh
+case "$1" in
+ inspect) test -f '${state}' && echo true ;;
+ run) echo run >> '${log}'; touch '${state}'; cat >/dev/null; sleep 5 ;;
+ stop) rm -f '${state}' ;;
+esac
+`);
+  await chmod(fakeDocker, 0o755);
+  const launcher = new DockerWorkerLauncher(fakeDocker);
+  let revoked = 0;
+  const spec = {
+    files: { workerId: 'launch', uid: process.getuid(), gid: process.getgid(), runtimeRoot, workspace, keyFile, gatewaySocket, imageId: `sha256:${'a'.repeat(64)}`, model: 'gpt-6-luna' },
+    gateway: { socket: gatewaySocket, workerRoot, uid: process.getuid(), brokerOrigin: 'http://127.0.0.1:1', brokerToken: 'broker', companionOrigin: 'http://127.0.0.1:1', mcpToken: 'mcp' },
+    task: 'synthetic task', maxLifetimeMs: 5000, revoke: () => { revoked++; }
+  };
+  try {
+    await Promise.all([launcher.launch(spec), launcher.launch(spec)]);
+    assert.equal((await readFile(log, 'utf8')).trim(), 'run');
+    await launcher.stop('launch');
+    assert.equal(revoked, 1);
+  } finally { await launcher.close(); await rm(runtimeRoot, { recursive: true, force: true }); }
 });
 
 test('broker forwards only allowed model and path with host-only upstream key and call limit', async () => {
