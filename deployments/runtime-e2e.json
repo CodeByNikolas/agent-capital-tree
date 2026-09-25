@@ -25,8 +25,8 @@
   ],
   "eventVerification": {
     "source": "Sepolia RPC",
-    "checkedAtBlock": 11781379,
-    "blockHash": "0x40977d5e7ae4a7efdef43c0ee55414beea1a080e55945f7b77e662c9a158b5dd",
+    "checkedAtBlock": 11781397,
+    "blockHash": "0x86d24c31ae8c8536cb7a22fe34c1652193321f7c3b3c6e0469c38b0750e85940",
     "events": [
       {
         "name": "NodeCreated",
@@ -339,6 +339,24 @@
           "amount": "102092033043314703380",
           "recipient": "0x0B59E040F864AFd07Ed448F58199a296413333bf"
         }
+      }
+    ]
+  },
+  "directAuthorizationChecks": {
+    "chainId": 11155111,
+    "blockNumber": 11781397,
+    "checks": [
+      {
+        "nodeId": "3",
+        "operation": "checkAction(SWAP, recorded agent, token0, amount1)",
+        "result": "Inactive",
+        "method": "eth_call"
+      },
+      {
+        "nodeId": "4",
+        "operation": "checkAction(SWAP, recorded agent, token0, amount1)",
+        "result": "Inactive",
+        "method": "eth_call"
       }
     ]
   }
