@@ -15,6 +15,11 @@ const INPUT_EVENTS = [
   'PolicyTightened',
   'OperatorChanged',
   'NodeRevoked',
+  'SwapExecuted',
+  'PositionOpened',
+  'PositionIncreased',
+  'FeesCollected',
+  'PositionClosed',
 ] as const;
 
 type RecordValue = Record<string, unknown>;
@@ -45,7 +50,12 @@ export type CapitalActivityKind =
   | 'emergency_recovered'
   | 'policy_tightened'
   | 'operator_changed'
-  | 'node_revoked';
+  | 'node_revoked'
+  | 'swap_executed'
+  | 'position_opened'
+  | 'position_increased'
+  | 'fees_collected'
+  | 'position_closed';
 
 export interface ActivityProvenance {
   chainId: typeof CHAIN_ID;
@@ -73,7 +83,10 @@ export type CapitalActivity =
   | (ActivityBase & { kind: 'emergency_recovered'; nodeId: string; token: string; amount: string; recipient: string })
   | (ActivityBase & { kind: 'policy_tightened'; nodeId: string })
   | (ActivityBase & { kind: 'operator_changed'; operator: string; generation: string })
-  | (ActivityBase & { kind: 'node_revoked'; nodeId: string });
+  | (ActivityBase & { kind: 'node_revoked'; nodeId: string })
+  | (ActivityBase & { kind: 'swap_executed'; nodeId: string; inputToken: string; outputToken: string; amountIn: string; amountOut: string })
+  | (ActivityBase & { kind: 'position_opened' | 'position_increased' | 'position_closed'; nodeId: string; tokenId: string; liquidity: string; amount0: string; amount1: string })
+  | (ActivityBase & { kind: 'fees_collected'; nodeId: string; tokenId: string; amount0: string; amount1: string });
 
 export interface CapitalActivityPage {
   rootId: string;
@@ -97,7 +110,7 @@ export interface CapitalActivityPage {
     chainId: typeof CHAIN_ID;
     controllerAddress: string;
     ordering: 'block_number_ascending_then_transaction_then_log';
-    activityCoverage: 'capital_core_events_only';
+    activityCoverage: 'capital_and_strategy_events';
   };
 }
 
@@ -224,7 +237,7 @@ export function createMultiBaasHistoryClient(config: MultiBaasHistoryConfig) {
         chainId: CHAIN_ID,
         controllerAddress,
         ordering: 'block_number_ascending_then_transaction_then_log',
-        activityCoverage: 'capital_core_events_only',
+        activityCoverage: 'capital_and_strategy_events',
       },
     };
     return rpc ? reconcileCapitalActivity(page, rpc) : page;
@@ -390,6 +403,14 @@ function mapActivity(event: ParsedEvent, rootId: string, controllerAddress: stri
       return { ...common, kind: 'operator_changed', operator: inputAddress(event, 'operator'), generation: inputUint(event, 'generation') };
     case 'NodeRevoked':
       return { ...common, kind: 'node_revoked', nodeId: inputUint(event, 'nodeId') };
+    case 'SwapExecuted':
+      return { ...common, kind: 'swap_executed', nodeId: inputUint(event, 'nodeId'), inputToken: inputAddress(event, 'inputToken'), outputToken: inputAddress(event, 'outputToken'), amountIn: inputUint(event, 'amountIn'), amountOut: inputUint(event, 'amountOut') };
+    case 'PositionOpened':
+    case 'PositionIncreased':
+    case 'PositionClosed':
+      return { ...common, kind: event.eventName === 'PositionOpened' ? 'position_opened' : event.eventName === 'PositionIncreased' ? 'position_increased' : 'position_closed', nodeId: inputUint(event, 'nodeId'), tokenId: inputUint(event, 'tokenId'), liquidity: inputUint(event, 'liquidity'), amount0: inputUint(event, 'amount0'), amount1: inputUint(event, 'amount1') };
+    case 'FeesCollected':
+      return { ...common, kind: 'fees_collected', nodeId: inputUint(event, 'nodeId'), tokenId: inputUint(event, 'tokenId'), amount0: inputUint(event, 'amount0'), amount1: inputUint(event, 'amount1') };
     default:
       throw new UnsupportedMultiBaasEventError(event.eventName);
   }

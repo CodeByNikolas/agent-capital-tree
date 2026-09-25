@@ -105,6 +105,11 @@ test('builds a root-filtered Event Query from the canonical event names', () => 
     'PolicyTightened',
     'OperatorChanged',
     'NodeRevoked',
+    'SwapExecuted',
+    'PositionOpened',
+    'PositionIncreased',
+    'FeesCollected',
+    'PositionClosed',
   ]);
   assert.ok(query.events.every(({ filter }) =>
     filter.rule === 'and' && filter.children[0].value === '7' && filter.children[1].fieldType === 'contract_address' && filter.children[1].value === controllerAddress));
@@ -288,4 +293,27 @@ test('canonical receipts verify amounts/finality and remove orphaned indexer ent
   await assert.rejects(reconcileCapitalActivity(page, { ...rpc, getTransactionReceipt: async () => { throw new Error('network unavailable'); } }), /Unable to verify/);
   checked = await reconcileCapitalActivity(page, { ...rpc, getTransactionReceipt: async () => { const e = new Error(); e.name = 'TransactionReceiptNotFoundError'; throw e; } });
   assert.equal(checked.items.length, 0);
+});
+
+
+test('strategy history preserves raw swap/LP amounts and NFT identity', async () => {
+  const definitions = [
+    ['SwapExecuted', 'SwapExecuted(uint256,uint256,address,address,uint256,uint256)', {rootId:'7',nodeId:'8',inputToken:tokenA,outputToken:tokenB,amountIn:'100',amountOut:'99'}],
+    ['PositionOpened', 'PositionOpened(uint256,uint256,uint256,uint128,uint256,uint256)', {rootId:'7',nodeId:'8',tokenId:'912',liquidity:'90071992547409930',amount0:'80',amount1:'80'}],
+    ['PositionIncreased', 'PositionIncreased(uint256,uint256,uint256,uint128,uint256,uint256)', {rootId:'7',nodeId:'8',tokenId:'912',liquidity:'12',amount0:'1',amount1:'0'}],
+    ['FeesCollected', 'FeesCollected(uint256,uint256,uint256,uint256,uint256)', {rootId:'7',nodeId:'8',tokenId:'912',amount0:'1',amount1:'2'}],
+    ['PositionClosed', 'PositionClosed(uint256,uint256,uint256,uint128,uint256,uint256)', {rootId:'7',nodeId:'8',tokenId:'912',liquidity:'90071992547409942',amount0:'82',amount1:'82'}],
+  ];
+  const fetcher = async input => {
+    const url = new URL(String(input));
+    if (url.pathname.endsWith('/queries')) return jsonResponse(envelope({rows:definitions.map(([,signature]) => queryRow('7',txA,signature))}));
+    if (url.pathname.endsWith('/events')) return jsonResponse(envelope(definitions.map(([name,signature,inputs],index) => event({name,signature,inputs,logIndex:index,txHash:txA}))));
+    return jsonResponse(url.pathname.includes('/contracts/') ? indexingResponse() : chainResponse());
+  };
+  const page = await client(fetcher,10).getCapitalActivity('7');
+  assert.deepEqual(page.items.map(item => item.kind), ['swap_executed','position_opened','position_increased','fees_collected','position_closed']);
+  assert.equal(page.items[1].liquidity,'90071992547409930');
+  assert.equal(page.items[4].tokenId,'912');
+  assert.equal(page.items[0].amountOut,'99');
+  assert.equal(page.source.activityCoverage,'capital_and_strategy_events');
 });
