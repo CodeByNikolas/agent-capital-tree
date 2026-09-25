@@ -30,6 +30,7 @@ Stand: 25. September 2026. Nach Komprimierung zusammen mit PLAN.md lesen.
 5. MultiBaas-Key/administrative ABI- und Adressregistrierung fehlen; Live-Konfiguration durchführen, sobald verfügbar.
 6. Echte MetaMask-Verbindung zur veröffentlichten App jetzt zweimal bestanden: Jury-Adresse0x0B59…33bf und Chain-ID11155111 per Wallet-RPC verifiziert, deployments/browser-wallet.json. Ursache des Netzwerk-Testfehlers: Unter Xvfb blieb die Freigabe in notification.html liegen, ohne sichtbares Fenster; Test öffnet MetaMasks eigene UI, wartet auf gerendertes Confirm und prüft Sepolia im Dialog. Keine Sicherheitswarnung umgangen. Wallet-Transaktionssignaturen und vollständiger veröffentlichter Wallet-E2E bleiben separat offen.
 7. Gesamtabnahme aus PLAN.md inklusive echter Plugin-Childs, Swap/LP, Widerruf, Sibling-Isolation und Owner-Rückholung bleibt offen.
+8. Der Root-Codex-Abnahmerunner `scripts/test-root-codex.mjs` ist vorbereitet: Syntaxcheck und schreibfreier Dryrun bestanden. Der private Browser-Runtime-Konfigurationswert fehlt noch; `--execute` wurde nicht gestartet. Der Runner schreibt den Ergebnisbericht erst beim späteren Live-Versuch und meldet Erfolg erst nach gestopptem Companion.
 
 ## Externe Voraussetzungen
 
