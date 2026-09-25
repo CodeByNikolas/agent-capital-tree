@@ -8,8 +8,48 @@ import { Contract, Interface, JsonRpcProvider, parseEther } from 'ethers';
 import { expect } from '@playwright/test';
 import { capitalClient } from '../../packages/sdk/dist/index.js';
 
+export async function verifyPartialOwnerRecovery({ rpc, sdk, abi, report, setup, followup, address }) {
+  const siblingTx = report.transactions[0];
+  const receipt = await rpc.getTransactionReceipt(siblingTx.transactionHash);
+  assert(receipt?.status === 1 && receipt.from.toLowerCase() === address.toLowerCase());
+  assert.equal(receipt.blockNumber, siblingTx.blockNumber);
+  assert.equal(receipt.blockHash, siblingTx.blockHash);
+  assert.equal((await rpc.getBlock(receipt.blockNumber)).hash, receipt.blockHash);
+  assert((await rpc.getBlockNumber()) >= receipt.blockNumber + 2, 'Sibling receipt needs two confirmations');
+  const tree = await sdk.getTree(BigInt(setup.rootId));
+  const sibling = tree.nodes.find(item => item.id.toString() === followup.siblingId);
+  const root = tree.nodes.find(item => item.id.toString() === setup.rootId);
+  assert(sibling && root && sibling.parentId === root.id);
+  assert(sibling.revoked && sibling.position.tokenId === 0n && sibling.balances.every(value => value === 0n));
+  assert(!root.revoked && root.position.tokenId === 0n && root.balances.some(value => value > 0n));
+  const recovered = receipt.logs.filter(log => log.address.toLowerCase() === setup.controller.toLowerCase())
+    .map(log => { try { return abi.parseLog(log); } catch { return null; } })
+    .filter(event => event?.name === 'EmergencyRecovered' && event.args.rootId.toString() === setup.rootId && event.args.nodeId.toString() === followup.siblingId);
+  let expectedRecoveries = 0;
+  for (const token of tree.tokens) {
+    const historicalBalance = await new Contract(token, ['function balanceOf(address) view returns(uint256)'], rpc)
+      .balanceOf(sibling.vault, { blockTag: receipt.blockNumber - 1 });
+    const matching = recovered.filter(event => event.args.token.toLowerCase() === token.toLowerCase());
+    assert.equal(matching.length, historicalBalance > 0n ? 1 : 0);
+    if (historicalBalance > 0n) {
+      expectedRecoveries += 1;
+      assert.equal(matching[0].args.amount, historicalBalance);
+      assert.equal(matching[0].args.recipient.toLowerCase(), root.vault.toLowerCase());
+    }
+  }
+  assert(expectedRecoveries > 0, 'Sibling recovery lacks historical token balances');
+  assert.equal(recovered.length, expectedRecoveries);
+  for (const name of ['EmergencyRecovered', 'NodeRevoked']) {
+    const topics = abi.encodeFilterTopics(abi.getEvent(name), [BigInt(setup.rootId), BigInt(setup.rootId)]);
+    assert.equal((await rpc.getLogs({ address: setup.controller, fromBlock: receipt.blockNumber, toBlock: 'latest', topics })).length, 0,
+      'Root recovery already reached the chain; do not sign again');
+  }
+  assert.equal(await rpc.getTransactionCount(address, 'pending'), await rpc.getTransactionCount(address, 'latest'),
+    'Owner wallet has a pending transaction');
+}
+
 // Real owner UI + MetaMask. Inspect exact unsigned calldata before normal wallet consent.
-export async function browserOwnerRecovery({ context, app, origin, address, closeOnly, privateBase, appUrl }) {
+export async function browserOwnerRecovery({ context, app, origin, address, closeOnly, resume, privateBase, appUrl }) {
   const read = async path => JSON.parse(await readFile(new URL(`../../${path}`, import.meta.url)));
   const setup = await read('deployments/browser-owner-e2e.json');
   const models = await read('deployments/root-codex-e2e.json');
@@ -24,14 +64,26 @@ export async function browserOwnerRecovery({ context, app, origin, address, clos
   const { stdout: containers } = await promisify(execFile)('docker', ['ps', '--format', '{{.Names}}']);
   assert(!containers.includes(`act-worker-node-${domain}-${setup.rootId}-`), 'Stop root workers before owner recovery');
   const reportPath = new URL(`../../deployments/browser-owner-${closeOnly ? 'close' : 'recovery'}.json`, import.meta.url);
-  try { await readFile(reportPath); throw new Error('Reconcile previous owner recovery attempt before retry'); }
+  let previous;
+  try { previous = JSON.parse(await readFile(reportPath, 'utf8')); }
   catch (error) { if (error.code !== 'ENOENT') throw error; }
+  if (resume) {
+    assert(!closeOnly && previous?.status === 'incomplete' && previous.failedStep === `recover-${setup.rootId}`,
+      'Resume is restricted to the incomplete final root recovery');
+    assert.equal(previous.rootId, setup.rootId);
+    assert.equal(previous.owner.toLowerCase(), address.toLowerCase());
+    assert.deepEqual(previous.transactions.map(item => item.step), [`recover-${followup.siblingId}`]);
+    assert(previous.diagnostics?.submitted && previous.diagnostics?.approved && !previous.diagnostics?.returnedHash,
+      'Previous root transaction state requires separate reconciliation');
+  } else {
+    assert(!previous, 'Reconcile previous owner recovery attempt before retry');
+  }
   const rpcUrl = 'https://ethereum-sepolia.publicnode.com';
   const rpc = new JsonRpcProvider(rpcUrl);
   const sdk = capitalClient(rpcUrl, setup.controller);
   const abi = new Interface((await read('contracts/out/CapitalController.sol/CapitalController.json')).abi);
   const controller = new Contract(setup.controller, abi, rpc);
-  const report = { rootId: setup.rootId, owner: address, status: 'running', transactions: [], startedAt: new Date().toISOString() };
+  const report = previous ?? { rootId: setup.rootId, owner: address, status: 'running', transactions: [], startedAt: new Date().toISOString() };
   const save = () => writeFile(reportPath, JSON.stringify(report, null, 2) + '\n');
   let step = 'preflight';
   let expectedData;
@@ -46,6 +98,25 @@ export async function browserOwnerRecovery({ context, app, origin, address, clos
     recoveryLock = true;
     assert.equal((await rpc.getNetwork()).chainId, 11155111n);
     assert.equal((await controller.rootOwner(setup.rootId)).toLowerCase(), address.toLowerCase());
+    if (resume) {
+      step = 'reconcile-resume';
+      await verifyPartialOwnerRecovery({ rpc, sdk, abi, report, setup, followup, address });
+      // A click timeout can leave an unsigned MetaMask request queued. Cancel only
+      // the visibly identified controller request; never confirm a stale request.
+      let popup = context.pages().find(page => page.url().startsWith(`${origin}/notification.html`));
+      if (!popup) { popup = await context.newPage(); await popup.goto(`${origin}/notification.html`); }
+      const confirm = popup.getByRole('button', { name: 'Confirm', exact: true });
+      await confirm.waitFor({ timeout: 15000 });
+      assert(await popup.getByRole('button', { name: 'Cancel', exact: true }).isVisible(), 'Stale request has no normal Cancel control');
+      const visibleText = (await popup.locator('body').innerText()).toLowerCase();
+      assert(visibleText.includes(setup.controller.toLowerCase()) && visibleText.includes('sepolia'),
+        'Stale wallet request is not clearly identified as the Sepolia controller; inspect it manually');
+      await popup.getByRole('button', { name: 'Cancel', exact: true }).click();
+      await expect.poll(() => popup.isClosed() ? false : confirm.isVisible().catch(() => false), { timeout: 30000 }).toBe(false);
+      await app.bringToFront();
+      await verifyPartialOwnerRecovery({ rpc, sdk, abi, report, setup, followup, address });
+      report.status = 'running'; report.resumedAt = new Date().toISOString();
+    }
     await save();
     await app.exposeFunction('actReviewRecovery', transaction => {
       assert(expectedData && !submitted, 'Unexpected or duplicate owner write');
@@ -104,7 +175,9 @@ export async function browserOwnerRecovery({ context, app, origin, address, clos
       }
       throw new Error('Owner action timed out; reconcile before resuming');
     }
-    const actions = closeOnly
+    const actions = resume
+      ? [['recover', setup.rootId]]
+      : closeOnly
       ? [['close', models.childId], ['recover', models.grandchildId]]
       : [['recover', followup.siblingId], ['recover', setup.rootId]];
     for (const [action, nodeId] of actions) {
@@ -173,8 +246,11 @@ export async function browserOwnerRecovery({ context, app, origin, address, clos
     await save();
     console.log(JSON.stringify({ status: report.status, rootId: setup.rootId, phase: closeOnly ? 'close' : 'final', transactions: report.transactions.length }));
   } catch (error) {
-    report.status = 'incomplete'; report.failedStep = step;
-    report.diagnostics = { submitted, approved, returnedHash: returnedHash ?? null, timeout: error?.name === 'TimeoutError', assertion: error?.name === 'AssertionError' };
+    report.status = 'incomplete';
+    if (!resume || step !== 'reconcile-resume') {
+      report.failedStep = step;
+      report.diagnostics = { submitted, approved, returnedHash: returnedHash ?? null, timeout: error?.name === 'TimeoutError', assertion: error?.name === 'AssertionError' };
+    }
     await save();
     console.error(JSON.stringify({ step, ...report.diagnostics }));
     throw error;

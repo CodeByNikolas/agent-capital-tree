@@ -9,6 +9,7 @@ import { spawn } from 'node:child_process';
 const root = join(homedir(), '.agent-capital-tree');
 const walletName = process.env.ACT_TEST_WALLET ?? 'jury';
 if (!['jury', 'jury-e2e'].includes(walletName)) throw new Error('Unknown isolated test wallet');
+const resumeOwnerRecovery = process.argv.includes('--resume-owner-recovery');
 const expectedAddress = `0x${JSON.parse(await readFile(join(root, `keys/${walletName}.keystore.json`), 'utf8')).address}`;
 const profileName = process.env.ACT_BROWSER_PROFILE ?? walletName;
 if (!/^jury(?:-[a-z0-9]+)?$/.test(profileName)) throw new Error('Invalid test profile name');
@@ -37,7 +38,7 @@ context.setDefaultNavigationTimeout(30000);
 let stage = 'unlock';
 try {
   const worker = context.serviceWorkers()[0] ?? await context.waitForEvent('serviceworker');
-  let wallet = context.pages().find(p => p.url().startsWith('chrome-extension://')) ?? await context.newPage();
+  let wallet = resumeOwnerRecovery ? await context.newPage() : context.pages().find(p => p.url().startsWith('chrome-extension://')) ?? await context.newPage();
   const origin = `chrome-extension://${new URL(worker.url()).host}`;
   await wallet.goto(`${origin}/home.html`);
   await Promise.any(['unlock-submit', 'account-menu-icon'].map(id => wallet.getByTestId(id).waitFor({ timeout: 60000 })));
@@ -46,7 +47,9 @@ try {
     await wallet.getByTestId('unlock-submit').click();
   }
   await wallet.getByTestId('account-menu-icon').waitFor({ timeout: 60000 });
-  for (const stale of context.pages()) if (stale !== wallet) await stale.close();
+  for (const stale of context.pages()) {
+    if (stale !== wallet && !(resumeOwnerRecovery && stale.url().startsWith(`${origin}/notification.html`))) await stale.close();
+  }
   stage = 'public app';
   const app = await context.newPage();
   await app.goto(appUrl);
@@ -126,7 +129,7 @@ try {
   assert.equal(address.toLowerCase(), expectedAddress.toLowerCase());
   assert.equal(await app.evaluate(() => window.ethereum.request({ method: 'eth_chainId' })), '0xaa36a7');
   const evidence = { checkedAt: new Date().toISOString(), deployedApp: app.url(), realMetaMask: true, address, chainId: 11155111, connected: true, transactionSigningTested: false };
-  await writeFile(new URL(`../deployments/browser-wallet${walletName === 'jury' ? '' : '-fresh'}.json`, import.meta.url), `${JSON.stringify(evidence, null, 2)}\n`);
+  if (!resumeOwnerRecovery) await writeFile(new URL(`../deployments/browser-wallet${walletName === 'jury' ? '' : '-fresh'}.json`, import.meta.url), `${JSON.stringify(evidence, null, 2)}\n`);
   console.log(JSON.stringify(evidence));
   if (process.argv.includes('--owner-setup')) {
     if (walletName !== 'jury-e2e') throw new Error('Owner setup requires the independent fresh wallet');
@@ -134,11 +137,13 @@ try {
     const { browserOwnerSetup } = await import('./lib/browser-owner-flow.mjs');
     await browserOwnerSetup({ context, app, origin, address, privateBase: root });
   }
-  if (process.argv.includes('--owner-close') || process.argv.includes('--owner-recovery')) {
+  if (process.argv.includes('--owner-close') || process.argv.includes('--owner-recovery') || resumeOwnerRecovery) {
     if (walletName !== 'jury-e2e') throw new Error('Owner recovery requires the independent fresh wallet');
+    const resume = resumeOwnerRecovery;
+    if (resume && (process.argv.includes('--owner-close') || process.argv.includes('--owner-recovery'))) throw new Error('Use only one owner recovery mode');
     stage = 'owner recovery';
     const { browserOwnerRecovery } = await import('./lib/browser-owner-recovery.mjs');
-    await browserOwnerRecovery({ context, app, origin, address, privateBase: root, appUrl, closeOnly: process.argv.includes('--owner-close') });
+    await browserOwnerRecovery({ context, app, origin, address, privateBase: root, appUrl, closeOnly: process.argv.includes('--owner-close'), resume });
   }
   if (process.argv.includes('--negative-cases')) {
     if (walletName !== 'jury-e2e') throw new Error('Negative cases require the independent fresh wallet');
