@@ -1,4 +1,4 @@
-import { capitalClient, capitalControllerAbi, narrowPolicy, tokenAmounts, type Restrictions } from '@agent-capital-tree/sdk';
+import { capitalClient, capitalControllerAbi, narrowPolicy, tokenAmounts, rawAmount, tokenIndex, type Restrictions } from '@agent-capital-tree/sdk';
 import { createWalletClient, http, type Address, type LocalAccount } from 'viem';
 import { sepolia } from 'viem/chains';
 import type { WorkerContext } from './context.js';
@@ -72,6 +72,50 @@ export function chainHandlers(config: ChainConfig): Partial<Record<ToolName, Too
       }
       const receipt = await client.rpc.waitForTransactionReceipt({ hash, confirmations: 2, timeout: 120000 });
       if (receipt.status !== 'success') throw new Error('Transaction reverted');
+      return { transactionHash: hash, blockNumber: receipt.blockNumber, blockHash: receipt.blockHash, status: 'confirmed' };
+    });
+  }
+  for (const name of ['swap', 'openPosition', 'increasePosition', 'collectFees', 'closePosition'] as const) {
+    handlers[name] = (context, args) => serialized(context, async () => {
+      const { node, account } = await authority(context);
+      const targetId = BigInt(String(args.nodeId));
+      const wallet = createWalletClient({ account, chain: sepolia, transport: http(config.rpcUrl) });
+      const common = { address: config.controller, abi: capitalControllerAbi, account };
+      const uint128 = (value: unknown) => {
+        const parsed = rawAmount(String(value));
+        if (parsed >= (1n << 128n)) throw new Error('Strategy amount exceeds uint128');
+        return parsed;
+      };
+      if (!Number.isSafeInteger(args.deadline) || Number(args.deadline) <= 0) throw new Error('Invalid strategy deadline');
+      const deadline = BigInt(Number(args.deadline));
+      let hash: `0x${string}`;
+      if (targetId !== node.id) {
+        if (name !== 'closePosition') throw new Error('Strategy must use this worker’s own vault');
+        const child = await client.controller.read.getNode([targetId]);
+        if (child.parentId !== node.id || child.rootId !== node.rootId) throw new Error('Recovery target is not a direct child');
+        const minimums = [uint128(args.minAmount0Out), uint128(args.minAmount1Out)] as const;
+        const simulation = await client.rpc.simulateContract({ ...common, functionName: 'parentClosePosition', args: [node.id, child.id, minimums, deadline] });
+        hash = await wallet.writeContract(simulation.request);
+      } else if (name === 'swap') {
+        const tokens = await Promise.all([client.controller.read.TOKEN0(), client.controller.read.TOKEN1()]);
+        const zeroForOne = tokenIndex([tokens[0], tokens[1]], String(args.tokenIn)) === 0;
+        // Pinned v4 TickMath boundary; the explicit min output remains the user's price protection.
+        const priceLimit = zeroForOne ? 4295128740n : 1461446703485210103287273052203988822378723970341n;
+        const simulation = await client.rpc.simulateContract({ ...common, functionName: name,
+          args: [node.id, zeroForOne, uint128(args.amountIn), uint128(args.minAmountOut), priceLimit, deadline] });
+        hash = await wallet.writeContract(simulation.request);
+      } else if (name === 'openPosition' || name === 'increasePosition') {
+        const maximums = [uint128(args.maxAmount0), uint128(args.maxAmount1)] as const;
+        const simulation = await client.rpc.simulateContract({ ...common, functionName: name,
+          args: [node.id, uint128(args.liquidity), maximums, deadline] });
+        hash = await wallet.writeContract(simulation.request);
+      } else {
+        const minimums = [uint128(args.minAmount0Out ?? '0'), uint128(args.minAmount1Out ?? '0')] as const;
+        const simulation = await client.rpc.simulateContract({ ...common, functionName: name, args: [node.id, minimums, deadline] });
+        hash = await wallet.writeContract(simulation.request);
+      }
+      const receipt = await client.rpc.waitForTransactionReceipt({ hash, confirmations: 2, timeout: 120000 });
+      if (receipt.status !== 'success') throw new Error('Strategy transaction reverted');
       return { transactionHash: hash, blockNumber: receipt.blockNumber, blockHash: receipt.blockHash, status: 'confirmed' };
     });
   }

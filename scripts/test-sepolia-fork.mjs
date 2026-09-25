@@ -1,4 +1,6 @@
 import { capitalClient } from '../packages/sdk/dist/index.js';
+import { chainHandlers } from '../packages/runtime/dist/index.js';
+import { createRequire } from 'node:module';
 import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import { spawn } from 'node:child_process';
@@ -6,9 +8,10 @@ import { createServer } from 'node:net';
 import { join, resolve } from 'node:path';
 import { homedir } from 'node:os';
 import { setTimeout as delay } from 'node:timers/promises';
-import { Contract, ContractFactory, JsonRpcProvider, JsonRpcSigner, AbiCoder, keccak256, ZeroAddress, id, parseEther } from 'ethers';
+import { Contract, ContractFactory, JsonRpcProvider, JsonRpcSigner, AbiCoder, keccak256, ZeroAddress, id, parseEther, Wallet } from 'ethers';
 
-// Fork-only: no private keys, no transaction is submitted to the public endpoint.
+// Fork-only: ephemeral test keys; no transaction is submitted to the public endpoint.
+const {privateKeyToAccount}=createRequire(new URL('../packages/runtime/package.json',import.meta.url))('viem/accounts');
 const manifest=JSON.parse(await readFile(new URL('../deployments/sepolia.json',import.meta.url),'utf8'));
 const artifacts=resolve(process.env.ACT_CONTRACT_ARTIFACTS ?? new URL('../contracts/out/',import.meta.url).pathname);
 const artifact=async name=>JSON.parse(await readFile(join(artifacts,`${name}.sol`,`${name}.json`),'utf8'));
@@ -27,6 +30,14 @@ try{
   await rpc.send('anvil_impersonateAccount',[manifest.deployer]);
   await rpc.send('anvil_setBalance',[manifest.deployer,'0x56bc75e2d63100000']);
   const owner=new JsonRpcSigner(rpc,manifest.deployer);
+  // Well-known Anvil accounts already carry EIP-7702 code on Sepolia. Use fresh EOAs.
+  const rootAccount=privateKeyToAccount(Wallet.createRandom().privateKey);
+  const childAccount=privateKeyToAccount(Wallet.createRandom().privateKey);
+  for(const account of [rootAccount,childAccount]){
+    assert.equal(await rpc.getCode(account.address),'0x');
+    await rpc.send('anvil_impersonateAccount',[account.address]);
+    await rpc.send('anvil_setBalance',[account.address,'0x56bc75e2d63100000']);
+  }
   async function deploy(name,args){const a=await artifact(name);const c=await new ContractFactory(a.abi,a.bytecode.object,owner).deploy(...args);const r=await c.deploymentTransaction().wait();assert.equal(r.status,1);evidence.gas[`deploy_${name}`]=r.gasUsed.toString();console.log(JSON.stringify({stage:`deploy_${name}`,gas:r.gasUsed.toString()}));return c;}
   async function write(name,c,fn,args){const tx=await c[fn](...args);const r=await tx.wait();assert.equal(r.status,1);evidence.gas[name]=r.gasUsed.toString();console.log(JSON.stringify({stage:name,gas:r.gasUsed.toString()}));return r;}
   const tokens=manifest.tokens.map(t=>t.address);
@@ -47,21 +58,37 @@ try{
   const created=await write('create_root',controller,'createRoot',['fork-verification',policy]);
   const log=created.logs.map(l=>{try{return controller.interface.parseLog(l);}catch{return null;}}).find(l=>l?.name==='NodeCreated');
   const rootId=log.args.rootId;
-  await write('operator',controller,'setRootOperator',[rootId,manifest.deployer,policy]);
+  await write('operator',controller,'setRootOperator',[rootId,rootAccount.address,policy]);
+  const rootController=controller.connect(new JsonRpcSigner(rpc,rootAccount.address));
   for(let i=0;i<2;i++){const token=new Contract(tokens[i],['function mint()','function claimed(address) view returns(bool)','function approve(address,uint256) returns(bool)'],owner);if(!await token.claimed(manifest.deployer)) await write(`mint${i}`,token,'mint',[]);await write(`approve${i}`,token,'approve',[await controller.getAddress(),parseEther('100')]);}
   await write('fund',controller,'fundRoot',[rootId,[parseEther('100'),parseEther('100')]]);
-  const childAddress='0x000000000000000000000000000000000000A123';
+  const childAddress=childAccount.address;
   const childPolicy={...policy,maxAmounts:[parseEther('10'),parseEther('10')]};
-  await write('spawn_child',controller,'spawnChild',[rootId,'child',childAddress,childPolicy,[parseEther('10'),parseEther('10')],id('fork-child')]);
+  await write('spawn_child',rootController,'spawnChild',[rootId,'child',childAddress,childPolicy,[parseEther('10'),parseEther('10')],id('fork-child')]);
   const childId=(await controller.getOperation(rootId,rootId,1,id('fork-child'))).nodeId;
   await rpc.send('anvil_impersonateAccount',[childAddress]);await rpc.send('anvil_setBalance',[childAddress,'0x56bc75e2d63100000']);
   const childController=controller.connect(new JsonRpcSigner(rpc,childAddress));
   await write('spawn_grandchild',childController,'spawnChild',[childId,'grandchild','0x000000000000000000000000000000000000A124',{...childPolicy,maxAmounts:[parseEther('1'),parseEther('1')]},[parseEther('1'),parseEther('1')],id('fork-grandchild')]);
   const deadline=latest.timestamp+3600;
-  await write('open_lp',controller,'openPosition',[rootId,parseEther('1000'),[parseEther('50'),parseEther('50')],deadline]);
-  await write('increase_lp',controller,'increasePosition',[rootId,parseEther('100'),[parseEther('10'),parseEther('10')],deadline]);
-  await write('swap',childController,'swap',[childId,true,parseEther('1'),parseEther('0.9'),4295128740n,deadline]);
-  await write('collect_fees',controller,'collectFees',[rootId,[1,0],deadline]);
+  const handlers=chainHandlers({rpcUrl:`http://127.0.0.1:${port}`,controller:await controller.getAddress(),accountFor:async context=>context.nodeId===String(rootId)?rootAccount:childAccount});
+  const rootContext={workerId:'fork-root',rootId:String(rootId),nodeId:String(rootId),authorityGeneration:'1'};
+  const childContext={...rootContext,workerId:'fork-child',nodeId:String(childId)};
+  const mine=setInterval(()=>{void rpc.send('evm_mine',[]).catch(()=>{});},500);
+  async function strategy(stage,name,context,args){
+    const result=await handlers[name](context,args);
+    assert.equal(result.status,'confirmed');
+    const receipt=await rpc.getTransactionReceipt(result.transactionHash);
+    evidence.gas[stage]=receipt.gasUsed.toString();
+    console.log(JSON.stringify({stage,via:'runtime handler',gas:receipt.gasUsed.toString()}));
+  }
+  try{
+    await strategy('open_lp','openPosition',rootContext,{nodeId:String(rootId),liquidity:parseEther('1000').toString(),maxAmount0:parseEther('50').toString(),maxAmount1:parseEther('50').toString(),deadline});
+    await strategy('increase_lp','increasePosition',rootContext,{nodeId:String(rootId),liquidity:parseEther('100').toString(),maxAmount0:parseEther('10').toString(),maxAmount1:parseEther('10').toString(),deadline});
+    await assert.rejects(handlers.swap(childContext,{nodeId:String(rootId),tokenIn:tokens[0],amountIn:'1',minAmountOut:'0',deadline}),/own vault/);
+    await assert.rejects(handlers.swap(childContext,{nodeId:String(childId),tokenIn:tokens[0],amountIn:(1n<<128n).toString(),minAmountOut:'0',deadline}),/uint128/);
+    await strategy('swap','swap',childContext,{nodeId:String(childId),tokenIn:tokens[0],amountIn:parseEther('1').toString(),minAmountOut:parseEther('0.9').toString(),deadline});
+    await strategy('collect_fees','collectFees',rootContext,{nodeId:String(rootId),minAmount0Out:'1',minAmount1Out:'0',deadline});
+  }finally{clearInterval(mine);}
   const node=await controller.getNode(rootId);const vault=new Contract(node.vault,['function positionLiquidity() view returns(uint128)'],rpc);
   assert.equal(await vault.positionLiquidity(),parseEther('1100'));
   const sdk=capitalClient(`http://127.0.0.1:${port}`,await controller.getAddress());
