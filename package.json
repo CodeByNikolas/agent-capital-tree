@@ -10,6 +10,7 @@
     "wallet:create": "node scripts/create-test-wallet.mjs"
   },
   "devDependencies": {
+    "@playwright/test": "1.63.0",
     "ethers": "6.17.0",
     "typescript": "5.9.3"
   }
