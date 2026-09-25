@@ -20,6 +20,12 @@ importers:
 
   apps/web:
     dependencies:
+      '@agent-capital-tree/multibaas':
+        specifier: workspace:*
+        version: link:../../packages/multibaas
+      '@agent-capital-tree/sdk':
+        specifier: workspace:*
+        version: link:../../packages/sdk
       lucide-react:
         specifier: 1.48.0
         version: 1.48.0(react@19.3.0)
