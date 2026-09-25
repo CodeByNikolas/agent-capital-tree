@@ -13,6 +13,7 @@ import {CapitalController} from "../src/CapitalController.sol";
 import {CapitalVault} from "../src/CapitalVault.sol";
 import {NodeFactory} from "../src/NodeFactory.sol";
 import {FinanceRoles} from "../src/ens/FinanceRoles.sol";
+import {IPoolManager} from "@uniswap/v4-core/src/interfaces/IPoolManager.sol";
 
 contract TestLabelStore is ILabelStore {
     function setLabel(string calldata) external {}
@@ -41,6 +42,7 @@ contract CapitalControllerTest is Test {
     address internal childAgent = address(0xA02);
     address internal grandchildAgent = address(0xA03);
     uint256 internal rootId;
+    bytes32 internal poolId;
 
     function setUp() public {
         ILabelStore labels = new TestLabelStore();
@@ -60,12 +62,15 @@ contract CapitalControllerTest is Test {
         );
         token0 = new TestToken("Demo A", "A");
         token1 = new TestToken("Demo B", "B");
+        if (address(token0) > address(token1)) (token0, token1) = (token1, token0);
         IERC20[2] memory tokens = [IERC20(address(token0)), IERC20(address(token1))];
-        NodeFactory factory = NodeFactory(deployCode("NodeFactory.sol:NodeFactory"));
+        NodeFactory factory =
+            NodeFactory(deployCode("NodeFactory.sol:NodeFactory", abi.encode(IPoolManager(address(0x123)), tokens)));
+        poolId = factory.POOL_ID();
         controller = CapitalController(
             deployCode(
                 "CapitalController.sol:CapitalController",
-                abi.encode(ethRegistry, labels, factory, tokens, "project", bytes32(uint256(7)))
+                abi.encode(ethRegistry, labels, factory, tokens, "project", poolId)
             )
         );
         IRegistry projectRegistry = controller.PROJECT_REGISTRY();
@@ -147,6 +152,21 @@ contract CapitalControllerTest is Test {
         assertEq(token0.balanceOf(address(root.vault)), 500);
         assertEq(token0.balanceOf(address(child.vault)), 0);
         assertTrue(controller.getNode(childId).revoked);
+    }
+
+    function testSwapEnforcesCallerAndInheritedAmountLimit() public {
+        uint256 childId = _spawn(rootId, "trader", childAgent, _policy(FinanceRoles.SWAP, 3, 40), 40);
+        vm.prank(address(0xBAD));
+        vm.expectRevert(CapitalController.Unauthorized.selector);
+        controller.swap(childId, true, 1, 1, 1, block.timestamp);
+        vm.prank(childAgent);
+        vm.expectRevert(CapitalController.Unauthorized.selector);
+        controller.swap(childId, true, 41, 1, 1, block.timestamp);
+        vm.prank(owner);
+        controller.tightenPolicy(rootId, _policy(FinanceRoles.ALL, 3, 20));
+        vm.prank(childAgent);
+        vm.expectRevert(CapitalController.Unauthorized.selector);
+        controller.swap(childId, true, 21, 1, 1, block.timestamp);
     }
 
     function testParentCanReclaimAfterChildNameExpires() public {
@@ -296,6 +316,6 @@ contract CapitalControllerTest is Test {
         p.maxAmounts = [maxAmount, tokenMask & 2 == 0 ? 0 : maxAmount];
         p.expiry = uint64(block.timestamp + 30 days);
         p.tokenMask = tokenMask;
-        p.poolId = bytes32(uint256(7));
+        p.poolId = poolId;
     }
 }

@@ -5,6 +5,8 @@ import {Test} from "forge-std/Test.sol";
 import {ERC20} from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import {CapitalVault} from "../src/CapitalVault.sol";
 import {NodeFactory} from "../src/NodeFactory.sol";
+import {IPoolManager} from "@uniswap/v4-core/src/interfaces/IPoolManager.sol";
+import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
 contract DemoToken is ERC20 {
     constructor() ERC20("Demo", "DEMO") {}
@@ -16,9 +18,13 @@ contract DemoToken is ERC20 {
 
 contract CapitalVaultTest is Test {
     function testFactoryBindsVaultToCallerAndFundsStayInVault() public {
-        NodeFactory factory = new NodeFactory();
-        CapitalVault vault = factory.createVault();
         DemoToken token = new DemoToken();
+        DemoToken other = new DemoToken();
+        IERC20[2] memory tokens = address(token) < address(other)
+            ? [IERC20(address(token)), IERC20(address(other))]
+            : [IERC20(address(other)), IERC20(address(token))];
+        NodeFactory factory = new NodeFactory(IPoolManager(address(0x123)), tokens);
+        CapitalVault vault = factory.createVault();
         token.mint(address(vault), 100);
 
         assertEq(vault.CONTROLLER(), address(this));

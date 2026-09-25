@@ -74,6 +74,14 @@ contract CapitalController is ReentrancyGuard {
     event PolicyTightened(uint256 indexed rootId, uint256 indexed nodeId);
     event OperatorChanged(uint256 indexed rootId, address indexed operator, uint64 generation);
     event NodeRevoked(uint256 indexed rootId, uint256 indexed nodeId);
+    event SwapExecuted(
+        uint256 indexed rootId,
+        uint256 indexed nodeId,
+        address inputToken,
+        address outputToken,
+        uint256 amountIn,
+        uint256 amountOut
+    );
 
     IPermissionedRegistry public immutable ETH_REGISTRY;
     ManagedRegistry public immutable PROJECT_REGISTRY;
@@ -106,6 +114,8 @@ contract CapitalController is ReentrancyGuard {
             address(ethRegistry) == address(0) || address(labelStore) == address(0)
                 || address(nodeFactory) == address(0) || address(tokens[0]) == address(0)
                 || address(tokens[1]) == address(0) || tokens[0] == tokens[1] || bytes(projectLabel).length == 0
+                || nodeFactory.TOKEN0() != tokens[0] || nodeFactory.TOKEN1() != tokens[1]
+                || nodeFactory.POOL_ID() != poolId
         ) revert InvalidInput();
         IPermissionedRegistry.State memory state = ethRegistry.getState(uint256(keccak256(bytes(projectLabel))));
         if (state.status != IPermissionedRegistry.Status.REGISTERED) revert InvalidPath();
@@ -313,6 +323,34 @@ contract CapitalController is ReentrancyGuard {
             (role == FinanceRoles.SWAP || role == FinanceRoles.MANAGE_LP || role == FinanceRoles.COLLECT_FEES)
                 && effective.poolId == bytes32(0)
         ) revert Unauthorized();
+    }
+
+    function swap(
+        uint256 nodeId,
+        bool zeroForOne,
+        uint128 amountIn,
+        uint128 minOut,
+        uint160 sqrtPriceLimitX96,
+        uint256 deadline
+    ) external nonReentrant returns (uint256 actualIn, uint256 actualOut) {
+        Policy memory effective = _authorize(nodeId, FinanceRoles.SWAP, msg.sender);
+        uint8 tokenIndex = zeroForOne ? 0 : 1;
+        if (
+            effective.poolId != POOL_ID || effective.tokenMask & (1 << tokenIndex) == 0 || amountIn == 0
+                || amountIn > effective.maxAmounts[tokenIndex] || minOut == 0 || block.timestamp > deadline
+        ) {
+            revert Unauthorized();
+        }
+        Node storage node = _nodes[nodeId];
+        (actualIn, actualOut) = node.vault.swapExactInput(zeroForOne, amountIn, minOut, sqrtPriceLimitX96, deadline);
+        emit SwapExecuted(
+            node.rootId,
+            nodeId,
+            address(zeroForOne ? TOKEN0 : TOKEN1),
+            address(zeroForOne ? TOKEN1 : TOKEN0),
+            actualIn,
+            actualOut
+        );
     }
 
     function _allocate(Node storage parent, Node storage child, uint256[2] calldata amounts) private {
