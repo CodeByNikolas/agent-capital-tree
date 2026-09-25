@@ -5,6 +5,7 @@ import {
   createMultiBaasHistoryClient,
   MultiBaasRequestError,
   MultiBaasResponseError,
+  mergeActivityPages,
 } from '../dist/index.js';
 
 const controllerAddress = '0x1111111111111111111111111111111111111111';
@@ -226,4 +227,22 @@ test('upstream failures surface without an RPC or other-provider fallback', asyn
     '/api/v0/chains/ethereum/status',
     '/api/v0/queries',
   ].sort());
+});
+
+test('same-signature logs split by a page boundary are all retained and overlap is deduplicated', async () => {
+  const fetcher = async input => {
+    const url = new URL(String(input));
+    if (url.pathname.endsWith('/queries')) return jsonResponse(envelope({ rows: [queryRow('7', txA, rootFundedSignature)] }));
+    if (url.pathname.endsWith('/events')) return jsonResponse(envelope([rootFunded(2, tokenA, '42'), rootFunded(3, tokenB, '11')]));
+    if (url.pathname.includes('/contracts/')) return jsonResponse(indexingResponse());
+    return jsonResponse(chainResponse());
+  };
+  const api = client(fetcher, 1);
+  const first = await api.getCapitalActivity('7');
+  const second = await api.getCapitalActivity('7', first.nextCursor);
+  assert.deepEqual(first.items.map(item => item.provenance.logIndex), [2, 3]);
+  assert.deepEqual(mergeActivityPages([first, second]).map(item => item.provenance.logIndex), [2, 3]);
+  const reorg = { ...first, items: [] };
+  assert.deepEqual(mergeActivityPages([reorg]), []); // Refresh replaces the window, removing orphan logs.
+  assert.throws(() => mergeActivityPages([first, { ...second, rootId: '8' }]), /different/);
 });

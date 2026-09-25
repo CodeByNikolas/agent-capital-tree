@@ -286,18 +286,17 @@ function matchAndMapEvents(
   );
 
   const result: CapitalActivity[] = [];
+  const selectedSignatures = new Set(expected.keys());
   for (const candidate of candidates) {
     const candidateRoot = eventRootId(candidate.inputs, candidate.eventName);
     if (candidateRoot !== rootId) continue;
     const key = `${candidate.txHash.toLowerCase()}|${candidate.signature}`;
     const count = expected.get(key) ?? 0;
-    if (count === 0) {
-      if (!(INPUT_EVENTS as readonly string[]).includes(candidate.eventName)) {
-        throw new UnsupportedMultiBaasEventError(candidate.eventName);
-      }
-      continue;
-    }
-    expected.set(key, count - 1);
+    if (!selectedSignatures.has(key)) continue;
+    // A query page can split two identical event signatures in the same transaction.
+    // Include all its matching logs, even beyond the query row boundary. Adjacent
+    // pages intentionally overlap and consumers merge by the canonical event ID.
+    if (count > 0) expected.set(key, count - 1);
     result.push(mapActivity(candidate, rootId, controllerAddress));
   }
 
@@ -531,8 +530,9 @@ function parseUint(value: unknown, label: string): string {
   try {
     if (typeof value === 'number' && (!Number.isSafeInteger(value) || value < 0)) throw new Error();
     if (typeof value !== 'string' && typeof value !== 'bigint' && typeof value !== 'number') throw new Error();
+    if (typeof value === 'string' && !/^(0|[1-9]\d*)$/.test(value)) throw new Error();
     const parsed = BigInt(value);
-    if (parsed < 0n) throw new Error();
+    if (parsed < 0n || parsed >= (1n << 256n)) throw new Error();
     return parsed.toString(10);
   } catch {
     throw new MultiBaasResponseError('/multibaas', `${label} must be an unsigned integer`);
@@ -570,6 +570,19 @@ function compareActivity(a: CapitalActivity, b: CapitalActivity): number {
   return a.provenance.blockNumber - b.provenance.blockNumber
     || a.provenance.transactionIndex - b.provenance.transactionIndex
     || a.provenance.logIndex - b.provenance.logIndex;
+}
+
+/** Merge overlapping pages; a fresh poll must start a new window, not append to stale events. */
+export function mergeActivityPages(pages: readonly CapitalActivityPage[]): CapitalActivity[] {
+  const entries = new Map<string, CapitalActivity>();
+  const first = pages[0];
+  for (const page of pages) {
+    if (first && (page.rootId !== first.rootId || page.source.controllerAddress !== first.source.controllerAddress)) {
+      throw new Error('Cannot merge different capital trees');
+    }
+    for (const activity of page.items) entries.set(activity.id, activity);
+  }
+  return [...entries.values()].sort(compareActivity);
 }
 
 function sameParsedEvent(a: ParsedEvent, b: ParsedEvent): boolean {
