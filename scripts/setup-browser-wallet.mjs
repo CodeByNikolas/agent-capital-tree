@@ -6,8 +6,10 @@ import { Wallet } from 'ethers';
 
 // Local test wallet only. Never trace, screenshot, or print setup inputs.
 const root = join(homedir(), '.agent-capital-tree');
+const profileName = process.env.ACT_BROWSER_PROFILE ?? 'jury';
+if (!/^jury(?:-[a-z0-9]+)?$/.test(profileName)) throw new Error('Invalid test profile name');
 const extension = join(root, 'tools/metamask-13.49.0');
-const profile = join(root, 'browser/jury');
+const profile = join(root, 'browser', profileName);
 await mkdir(profile, { recursive: true, mode: 0o700 });
 const context = await chromium.launchPersistentContext(profile, {
   channel: 'chromium', headless: true,
@@ -69,7 +71,7 @@ try {
     await page.waitForTimeout(1500);
   }
   stage = 'wallet overview';
-  await page.getByTestId('account-menu-icon').waitFor({ timeout: 15000 });
+  await page.getByTestId('account-menu-icon').waitFor({ timeout: 60000 });
   console.log(JSON.stringify({ walletUiReady: true, extensionId: new URL(page.url()).host, expectedAddress: wallet.address }));
 } catch {
   console.error(`Wallet setup failed during ${stage}; sensitive details suppressed.`);
