@@ -45,6 +45,40 @@ test('spawn reconciles and starts once; conflicting retry and uncertain send fai
   } finally { await rm(directory, { recursive: true, force: true }); }
 });
 
+test('spawn retries failed launch and reconciles after journal loss without resubmitting', async () => {
+  const firstDirectory = await mkdtemp(join(tmpdir(), 'act-journal-'));
+  const secondDirectory = await mkdtemp(join(tmpdir(), 'act-journal-'));
+  try {
+    let receipt, submits = 0, launchAttempts = 0;
+    const started = new Set();
+    const chain = {
+      async reconcile() { return receipt; },
+      async submit() { submits++; receipt = { childId: 'child', txHash: 'tx', blockHash: 'block' }; },
+      async confirmed() { return true; }
+    };
+    const launch = async (_parent, childId) => {
+      launchAttempts++;
+      if (launchAttempts === 1) throw new Error('container unavailable');
+      started.add(childId); // trusted launcher is idempotent by child ID
+    };
+    const first = new SpawnCoordinator(chain, new FileSpawnJournal(firstDirectory), launch);
+    await assert.rejects(first.spawn(parent, request), /container unavailable/);
+    assert.equal(submits, 1);
+    assert.equal(started.size, 0);
+    await first.spawn(parent, request);
+    assert.equal(submits, 1);
+    assert.deepEqual([...started], ['child']);
+    // A replacement journal starts empty; on-chain reconciliation still prevents a new allocation.
+    const restarted = new SpawnCoordinator(chain, new FileSpawnJournal(secondDirectory), launch);
+    await restarted.spawn(parent, request);
+    assert.equal(submits, 1);
+    assert.deepEqual([...started], ['child']);
+  } finally {
+    await rm(firstDirectory, { recursive: true, force: true });
+    await rm(secondDirectory, { recursive: true, force: true });
+  }
+});
+
 test('Docker command has fixed isolation flags and rejects escaped mounts', async () => {
   const runtimeRoot = await mkdtemp(join(tmpdir(), 'act-mounts-'));
   const workerRoot = join(runtimeRoot, 'workers', 'w1');
