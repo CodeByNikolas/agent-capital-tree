@@ -4,6 +4,7 @@ import { homedir } from 'node:os';
 import { join } from 'node:path';
 import { Wallet } from 'ethers';
 import { createFreshOwnerProfile, recordFreshOwnerProfile } from './lib/fresh-owner-profile.mjs';
+import { openRecoveryPhraseImport } from './lib/browser-wallet-onboarding.mjs';
 
 // Local test wallet only. Never trace, screenshot, or print setup inputs.
 const root = join(homedir(), '.agent-capital-tree');
@@ -34,11 +35,9 @@ try {
     stage = 'unlock';
     await page.locator('input[type="password"]').fill(password);
     await page.getByTestId('unlock-submit').click();
-  } else if (await page.getByRole('button', { name: 'I have an existing wallet' }).isVisible()) {
+  } else if (await page.getByTestId('onboarding-import-wallet').isVisible()) {
     stage = 'existing wallet';
-    await page.getByRole('button', { name: 'I have an existing wallet' }).click();
-    await page.getByRole('button', { name: 'Import using Secret Recovery Phrase' }).click();
-    await page.locator('textarea').waitFor();
+    await openRecoveryPhraseImport(page);
     if (!wallet.mnemonic) throw new Error('Test wallet mnemonic unavailable');
     stage = 'recovery phrase';
     const words = wallet.mnemonic.phrase.split(' ');
