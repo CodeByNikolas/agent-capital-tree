@@ -1,0 +1,12 @@
+{
+  "chainId": 11155111,
+  "rootId": "5",
+  "owner": "0xbcea84ed1dafbb59aaf9797cb4170394db688d34",
+  "amountWei": "1000000000000000",
+  "transactionHash": "0x90dacae1a8093e5c919112ae273cab1864f79bac8a26a43d2dea2f8320e7cc8f",
+  "blockNumber": 11781995,
+  "blockHash": "0x8ee6d70bdec4a2c0f178ac2f0172827a42aa8e66402e6506b1483d18ba9393ac",
+  "ownerGasWei": "1509372197579535",
+  "purpose": "Gas headroom for real MetaMask final owner recovery",
+  "status": "confirmed"
+}
