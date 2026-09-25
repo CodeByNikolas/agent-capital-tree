@@ -1,0 +1,15 @@
+{
+  "base": "http://127.0.0.1:3040",
+  "checkedAt": "2026-09-25T19:56:34.533Z",
+  "checks": [
+    "root 1: HTTP 200",
+    "root 2: HTTP 200",
+    "root 99999: HTTP 404",
+    "root -1: HTTP 400",
+    "live default, root navigation, revoked tree count and disconnected faucet",
+    "desktop: no horizontal overflow",
+    "mobile: no horizontal overflow",
+    "explicit sample preview; no browser JavaScript errors"
+  ],
+  "walletTested": false
+}
