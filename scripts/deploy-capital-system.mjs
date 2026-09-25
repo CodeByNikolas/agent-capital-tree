@@ -1,7 +1,8 @@
-import { readFile, writeFile, mkdir, rename, lstat } from 'node:fs/promises';
+import { journaledTransaction } from './lib/sepolia-transactions.mjs';
+import { readFile, writeFile } from 'node:fs/promises';
 import { homedir } from 'node:os';
 import { join } from 'node:path';
-import { Contract, ContractFactory, JsonRpcProvider, Wallet, Transaction, id, keccak256, getCreateAddress, parseEther, AbiCoder, ZeroAddress } from 'ethers';
+import { Contract, ContractFactory, JsonRpcProvider, Wallet, id, keccak256, getCreateAddress, AbiCoder, ZeroAddress } from 'ethers';
 
 // Sepolia only. Signed transactions are journaled before broadcast so retries preserve nonce/value.
 const broadcast = process.argv.includes('--broadcast');
@@ -54,36 +55,7 @@ try {
     const keys = join(homedir(), '.agent-capital-tree/keys');
     const signer = (await Wallet.fromEncryptedJson(await readFile(join(keys, 'deployer.keystore.json'),'utf8'), await readFile(join(keys, 'deployer.password'),'utf8'))).connect(rpc);
     if (!same(signer.address, manifest.deployer)) throw new Error('Unexpected deployer');
-    await mkdir(privateDir, {recursive:true,mode:0o700});
-    const dir = await lstat(privateDir);
-    if (!dir.isDirectory() || dir.isSymbolicLink() || dir.uid !== process.getuid() || (dir.mode & 0o777) !== 0o700) throw new Error('Unsafe deployment journal directory');
-    async function send(name, request) {
-      const path = join(privateDir, name + '.json');
-      let signed;
-      try {
-        const info = await lstat(path);
-        if (!info.isFile() || info.isSymbolicLink() || info.uid !== process.getuid() || (info.mode & 0o777) !== 0o600) throw new Error('Unsafe transaction journal');
-        signed = JSON.parse(await readFile(path, 'utf8')).signed;
-      } catch (error) {
-        if (error.code !== 'ENOENT') throw error;
-        const gas = await rpc.estimateGas({...request, from:signer.address});
-        const fees = await rpc.getFeeData();
-        const gasLimit = gas * 12n / 10n;
-        if (!fees.maxFeePerGas || gasLimit * fees.maxFeePerGas > parseEther('0.015')) throw new Error('Deployment fee ceiling exceeded');
-        signed = await signer.signTransaction({...request, chainId:11155111, type:2, nonce:await rpc.getTransactionCount(signer.address,'pending'), gasLimit, maxFeePerGas:fees.maxFeePerGas, maxPriorityFeePerGas:fees.maxPriorityFeePerGas});
-        await writeFile(path + '.tmp', JSON.stringify({signed}), {mode:0o600,flag:'wx'});
-        await rename(path + '.tmp',path);
-      }
-      const transaction = Transaction.from(signed);
-      if (!same(transaction.from, signer.address) || transaction.chainId !== 11155111n || transaction.value !== 0n ||
-          transaction.data !== request.data || !same(transaction.to ?? ZeroAddress, request.to ?? ZeroAddress)) throw new Error('Journal differs from intended transaction');
-      const hash = transaction.hash;
-      if (!await rpc.getTransaction(hash)) await rpc.broadcastTransaction(signed);
-      console.log(JSON.stringify({action:name,transactionHash:hash}));
-      const receipt = await rpc.waitForTransaction(hash,2,180000);
-      if (!receipt || receipt.status !== 1) throw new Error('Transaction not confirmed');
-      return {receipt,transaction};
-    }
+    const send = (name, request) => journaledTransaction({rpc,signer,directory:privateDir,name,request});
     async function deploy(name,args) {
       const data = await artifact(name);
       const request = await new ContractFactory(data.abi,data.bytecode.object,signer).getDeployTransaction(...args);
