@@ -343,7 +343,8 @@ export function WalletControlsPanel({
       {!deployment.contractsConfigured && <p className="wallet-controls-pending">Wallet actions unlock when the manifest records the controller and both demo-token addresses as deployed.</p>}
       {deployment.contractsConfigured && !deployment.poolConfigured && <p className="wallet-controls-pending">Root creation, funding, operator binding, and capital controls are available. Swap and LP capabilities remain disabled until the pool is initialized and seeded.</p>}
       {!walletAddress && <p className="wallet-controls-pending">Connect an injected wallet on Sepolia. Owner and agent actions stay unavailable until the connected account matches on-chain authority.</p>}
-      {data.source === "direct-rpc" && walletAddress && !ownerConnected && !selectedAgentConnected && !selectedOwnerOrParentAgent && (
+      {walletAddress && !walletOnSepolia && <p className="wallet-controls-pending">Switch your wallet to Sepolia to enable wallet actions. The connected account is not checked for vault authority on another network.</p>}
+      {data.source === "direct-rpc" && walletAddress && walletOnSepolia && !ownerConnected && !selectedAgentConnected && !selectedOwnerOrParentAgent && (
         <p className="wallet-controls-pending">This account is neither the recorded root owner nor an authorized agent for the selected vault.</p>
       )}
 

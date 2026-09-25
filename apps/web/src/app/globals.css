@@ -277,6 +277,7 @@ button:focus-visible, a:focus-visible { outline: 2px solid var(--acid); outline-
 .permission-list { display: grid; grid-template-columns: 1fr 1fr; gap: 6px 8px; margin: 9px 0 12px; padding: 0; list-style: none; }
 .permission-list li { display: flex; align-items: center; gap: 5px; min-width: 0; color: #c0cbc1; font-size: 8px; }
 .permission-list li svg { flex: 0 0 auto; color: #a5c474; }
+.authorization-empty { margin: 9px 0 12px; color: #c0cbc1; font-size: 9px; line-height: 1.5; }
 .authorization-gap { margin: -3px 0 10px; padding: 8px; border: 1px solid #70533a; border-radius: 4px; background: #241f18; color: #e5c18b; font-size: 9px; line-height: 1.5; }
 .inherited-box { padding: 10px; border: 1px solid #334234; border-radius: 5px; background: linear-gradient(130deg, #1d271d, #19211d 65%); }
 .inherited-box-heading { display: flex; align-items: center; gap: 6px; color: #accb7a; }
@@ -463,7 +464,7 @@ button:focus-visible, a:focus-visible { outline: 2px solid var(--acid); outline-
   .primary-grid, .secondary-grid { grid-template-columns: minmax(0, 1fr); }
   .mandate-panel { display: grid; grid-template-columns: 1fr 1fr; column-gap: 18px; }
   .mandate-panel > .panel-heading { grid-column: 1 / -1; }
-  .mandate-panel > .selected-vault-summary, .mandate-panel > .address-pair, .mandate-panel > .mandate-divider, .mandate-panel > .policy-section-heading, .mandate-panel > .permission-list, .mandate-panel > .inherited-box, .mandate-panel > .mandate-footnote, .mandate-panel > .mandate-actions { grid-column: 1 / -1; }
+  .mandate-panel > .selected-vault-summary, .mandate-panel > .address-pair, .mandate-panel > .mandate-divider, .mandate-panel > .policy-section-heading, .mandate-panel > .permission-list, .mandate-panel > .authorization-empty, .mandate-panel > .inherited-box, .mandate-panel > .mandate-footnote, .mandate-panel > .mandate-actions { grid-column: 1 / -1; }
   .mandate-panel > .permission-list { grid-template-columns: repeat(3, 1fr); }
   .mandate-panel > .inherited-box { grid-column: 1 / -1; }
   .hero-emblem { margin-right: 35px; }

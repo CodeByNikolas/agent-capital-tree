@@ -595,13 +595,16 @@ function LiveReadNotice({
   onRetry: () => void;
 }) {
   const isStale = data.source === "direct-rpc" && error !== null;
+  const missingRoot = error === "No deployed root matches that ID.";
   return (
     <div className={`live-read-notice${error ? " live-read-notice-error" : loading ? " live-read-notice-loading" : ""}`} role={error ? "alert" : "status"} aria-live={error ? "assertive" : "polite"}>
       <span className="live-read-icon">{error ? <AlertCircle size={16} aria-hidden="true" /> : <CircleDashed size={16} aria-hidden="true" />}</span>
       <p>
-        <strong>{error ? "Sepolia read unavailable." : loading ? "Reading live root." : `Live root ${rootId}.`}</strong>{" "}
+        <strong>{missingRoot ? `Root ${rootId} was not found.` : error ? "Sepolia read unavailable." : loading ? "Reading live root." : `Live root ${rootId}.`}</strong>{" "}
         {error
-          ? `${error} ${isStale ? "The last live snapshot remains visible, but wallet actions are locked until it refreshes." : "The dashboard is showing clearly labeled preview records."}`
+          ? missingRoot
+            ? `Enter another Root ID above, or create a root in Wallet actions. ${isStale ? "The last live snapshot remains visible; wallet actions are locked." : "The sample records below are only a preview."}`
+            : `${error} ${isStale ? "The last live snapshot remains visible, but wallet actions are locked until it refreshes." : "The dashboard is showing clearly labeled preview records."}`
           : loading
             ? isStale
               ? "Refreshing balances, current EAC permissions, and LP state. The last snapshot remains visible and wallet actions are locked."
@@ -1015,7 +1018,9 @@ function MandatePanel({ data, node, canTighten, canRevoke, canRecover, onRequest
         <div><strong>Live authorized capabilities</strong><small>Current EAC roles at this vault</small></div>
         <span className="permission-count">{node.authorizedPermissions.length}</span>
       </div>
-      <PermissionList permissions={node.authorizedPermissions} />
+      {node.authorizedPermissions.length > 0
+        ? <PermissionList permissions={node.authorizedPermissions} />
+        : <p className="authorization-empty">No actions are currently authorized for this vault. Review its state and inherited limits before assigning work.</p>}
       {notCurrentlyAuthorized.length > 0 && <p className="authorization-gap">Policy lists {notCurrentlyAuthorized.map((permission) => permissionLabels[permission]).join(" · ")}, but current EAC state does not authorize those actions.</p>}
 
       <div className="inherited-box">
