@@ -1,0 +1,17 @@
+node_modules/
+.next/
+dist/
+coverage/
+.vercel/
+.env
+.env.*
+!.env.example
+contracts/out/
+contracts/cache/
+contracts/broadcast/
+test-results/
+playwright-report/
+*.keystore.json
+*.pem
+*.key
+.DS_Store
