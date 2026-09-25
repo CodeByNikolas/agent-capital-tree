@@ -1,6 +1,6 @@
 # Agent Capital Tree — Status
 
-Stand: 25. September 2026. Nach Kontextkomprimierung zusammen mit PLAN.md lesen.
+Stand: 26. September 2026 (Europe/Berlin). Nach Kontextkomprimierung zusammen mit PLAN.md lesen.
 
 ## Aktueller Stand
 
@@ -29,6 +29,10 @@ Owner: `0xbCea84Ed1DaFbb59AaF9797Cb4170394db688d34`. Operator: `0x4eC0dc927b085a
 Ein erster Root-Codex-Versuch wurde vor jedem Write durch MCP-Approval abgewiesen (`deployments/root-codex-attempt1.json`). Das isolierte Testprofil erlaubt danach gezielt `spawnChild`; Shell bleibt read-only. Synthetischer Modell-Probelauf und echter Finanzlauf bestanden. Frühere abgebrochene Browser-Schritte wurden onchain abgeglichen, bevor ausschließlich fehlende Schritte fortgesetzt wurden.
 
 ### Letzte Owner-Rückholung: sicher fortsetzen
+
+- Gasreserve der Owner-Wallet um0.001 ETH erhöht, kanonischer Nachweis `deployments/browser-owner-recovery-gas.json`. Kein neues Nutzer-Funding erforderlich für diesen Schritt.
+- Resume-Prüfer verifiziert Sibling-Receipt gegen historische Tokenbestände und stoppt bei Root-Events oder ausstehender Owner-Nonce. Altes Browserprofil zeigte keine bestätigbare Pending-UI; der Resume blieb vor jedem Write stehen. Ein neues, einmalig markiertes privates Profil ist als alternative saubere Wallet-Queue vorbereitet (`scripts/lib/fresh-owner-profile.mjs`).
+- Erstes frisches Profil `jury-e2e-resume-final1` erreichte keine Setup-Fertigmeldung und hat keinen Resume-Marker. Keine Signatur/Transaktion. Import-Selektor wird korrigiert: MetaMask nutzt dieselbe Test-ID für zwei unterschiedliche Buttontexte; nur einen Text zu prüfen überspringt eine gültige Importvariante. Für erneuten frischen Aufbau neuen Profilnamen verwenden.
 
 - `deployments/browser-owner-recovery.json` bewahrt den unvollständigen Lauf. Sibling8-Recovery ist bestätigt: `0x0646438838abf28f8a07fe939be12a35609926a5b106601b162c70d14ac105c2`, Block11781899.
 - Root5-Wallet-Bestätigung lief in einen Timeout ohne zurückgegebenen Hash. `approved:true` markierte den Versuch vor dem Klick, nicht nachgewiesenes Senden.
@@ -67,7 +71,7 @@ Pool `0x80e34634349a395620aa17ea88c88f61b1bc1631cbb5737b2a8445bba27b563d`, fee30
 1. Letzte Root5-Owner-Rückholung sicher abschließen, danach alle vier Vaults leer/widerrufen, keine LP, Live-UI-Reload und unveränderten Seed1 prüfen.
 2. MultiBaas: Instanz https://d7zveyyfkvdbxdbd7n3rk6o3ee.multibaas.com bekannt, lokale `~/.agent-capital-tree/multibaas.env` fehlt weiterhin. Nutzer ist um interaktives `bash scripts/configure-multibaas.sh` gebeten; keinen Key im Chat anfordern. Eingeschränkter Daten-Key sowie separate administrative ABI-/Adressverknüpfung und Historical-Indexing ab11781260 erforderlich.
 3. Danach serverseitige Vercel-Konfiguration (`MULTIBAAS_API_KEY`, `MULTIBAAS_CONTROLLER_LABEL`), echte Queries/Receipt-Abgleich, Historie in UI/MCP und tatsächliche Master-Modell-Entscheidung nach Historie prüfen. Adapter unterstützt13 Events; direkte RPC-Bestände ersetzen diesen Nachweis nicht.
-4. Aktuelle Commits pushen und CI prüfen. Zuletzt bestätigte komplette CI: `f4d119b`, https://github.com/CodeByNikolas/agent-capital-tree/actions/runs/36192065707.
+4. Aktuelle Commits pushen und CI prüfen. Zuletzt bestätigte komplette CI: `aa65930`, https://github.com/CodeByNikolas/agent-capital-tree/actions/runs/36194362601.
 5. Uniswap `FEEDBACK.md` existiert; Feedback-Formular und ETHGlobal-Abgabe wurden nicht gesendet. Fehlende Teamangaben/ausdrückliche Sendeanweisung nicht erfinden.
 
 ## Arbeitsgrenzen
