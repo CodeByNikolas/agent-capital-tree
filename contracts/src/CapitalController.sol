@@ -336,7 +336,7 @@ contract CapitalController is ReentrancyGuard {
         Policy memory effective = _authorize(nodeId, FinanceRoles.SWAP, msg.sender);
         uint8 tokenIndex = zeroForOne ? 0 : 1;
         if (
-            effective.poolId != POOL_ID || effective.tokenMask & (1 << tokenIndex) == 0 || amountIn == 0
+            effective.poolId != POOL_ID || effective.tokenMask != 3 || amountIn == 0
                 || amountIn > effective.maxAmounts[tokenIndex] || minOut == 0 || block.timestamp > deadline
         ) {
             revert Unauthorized();

@@ -12,6 +12,7 @@ import {ILabelStore} from "ens-v2/utils/interfaces/ILabelStore.sol";
 import {CapitalController} from "../src/CapitalController.sol";
 import {CapitalVault} from "../src/CapitalVault.sol";
 import {NodeFactory} from "../src/NodeFactory.sol";
+import {VaultFactory} from "../src/VaultFactory.sol";
 import {FinanceRoles} from "../src/ens/FinanceRoles.sol";
 import {IPoolManager} from "@uniswap/v4-core/src/interfaces/IPoolManager.sol";
 
@@ -64,8 +65,8 @@ contract CapitalControllerTest is Test {
         token1 = new TestToken("Demo B", "B");
         if (address(token0) > address(token1)) (token0, token1) = (token1, token0);
         IERC20[2] memory tokens = [IERC20(address(token0)), IERC20(address(token1))];
-        NodeFactory factory =
-            NodeFactory(deployCode("NodeFactory.sol:NodeFactory", abi.encode(IPoolManager(address(0x123)), tokens)));
+        VaultFactory vaultFactory = new VaultFactory(IPoolManager(address(0x123)), tokens);
+        NodeFactory factory = NodeFactory(deployCode("NodeFactory.sol:NodeFactory", abi.encode(vaultFactory)));
         poolId = factory.POOL_ID();
         controller = CapitalController(
             deployCode(
@@ -167,6 +168,17 @@ contract CapitalControllerTest is Test {
         vm.prank(childAgent);
         vm.expectRevert(CapitalController.Unauthorized.selector);
         controller.swap(childId, true, 21, 1, 1, block.timestamp);
+    }
+
+    function testSwapRequiresBothPoolTokensInPolicy() public {
+        uint256 onlyToken0 = _spawn(rootId, "only0", childAgent, _policy(FinanceRoles.SWAP, 1, 40), 40);
+        uint256 onlyToken1 = _spawn(rootId, "only1", grandchildAgent, _policy(FinanceRoles.SWAP, 2, 40), 1);
+        vm.prank(childAgent);
+        vm.expectRevert(CapitalController.Unauthorized.selector);
+        controller.swap(onlyToken0, true, 1, 1, 1, block.timestamp);
+        vm.prank(grandchildAgent);
+        vm.expectRevert(CapitalController.Unauthorized.selector);
+        controller.swap(onlyToken1, false, 1, 1, 1, block.timestamp);
     }
 
     function testParentCanReclaimAfterChildNameExpires() public {
@@ -313,7 +325,7 @@ contract CapitalControllerTest is Test {
         returns (CapitalController.Policy memory p)
     {
         p.capabilities = capabilities;
-        p.maxAmounts = [maxAmount, tokenMask & 2 == 0 ? 0 : maxAmount];
+        p.maxAmounts = [tokenMask & 1 == 0 ? 0 : maxAmount, tokenMask & 2 == 0 ? 0 : maxAmount];
         p.expiry = uint64(block.timestamp + 30 days);
         p.tokenMask = tokenMask;
         p.poolId = poolId;
