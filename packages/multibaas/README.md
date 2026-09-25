@@ -1,0 +1,11 @@
+# MultiBaas history adapter
+
+Server-only, read-only Sepolia activity client. Construct it with a restricted DApp User API key from the server's secret source, the registered controller address, and its MultiBaas contract label. The key is sent only as `Authorization: Bearer …`; it is never returned or included in errors.
+
+`getCapitalActivity(rootId, cursor)` posts a root-filtered Event Query to `/api/v0/queries`. The SDK's EventQuery rows do not include a log index, so each returned transaction hash is enriched through the read-only `/api/v0/events` endpoint. Results use `chainId:txHash:logIndex` identity and sort by block, transaction, then log index. Cursors are root-bound and use the Event Query's offset/limit. Indexing and chain status are fetched from MultiBaas on every page; any failed or malformed request fails the call. There is no RPC or synthetic-history fallback.
+
+The current map covers the eight capital-core events in the controller ABI: `NodeCreated`, `RootFunded`, `CapitalAllocated`, `CapitalReclaimed`, `EmergencyRecovered`, `PolicyTightened`, `OperatorChanged`, and `NodeRevoked`. Swap/LP activity stays unsupported until those events exist and their fields are explicitly mapped. Event presence means indexed by MultiBaas; this adapter does not establish transaction finality or independently reconcile reorgs.
+
+Before a live call, MultiBaas must have the controller ABI registered, the deployed controller linked under the configured label, event indexing enabled from the deployment block, and a restricted DApp User key with Event Query/read access. No live query was run for this package because that key is pending.
+
+Integration limits to resolve before production use: this first adapter pins the supplied deployment URL; its Event Query is root-filtered but does not yet constrain contract address; log enrichment groups query rows by transaction hash and event signature, so a page boundary splitting repeated same-signature logs in one transaction can remap a log; and it currently expects the transaction target as well as the event emitter to be the controller, which can reject smart-wallet submissions. These limits are documented for follow-up and were not exercised against the live instance.
