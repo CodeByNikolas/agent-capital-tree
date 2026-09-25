@@ -13,5 +13,12 @@
       "blockNumber": 11781638,
       "valueWei": "9000000000000000"
     }
-  ]
+  ],
+  "recycledPreviousOwnerGas": {
+    "from": "0x0B59E040F864AFd07Ed448F58199a296413333bf",
+    "to": "0x280Ca099242D7164cD001E4479D59f13CD0ea7c9",
+    "valueWei": "10000000000000000",
+    "transactionHash": "0x979aa609b65b2858c62474347a5aca1ecab5a3ea7ff21c7ec6345a3f63aff8e8",
+    "blockNumber": 11781661
+  }
 }
