@@ -15,5 +15,9 @@ args = [${JSON.stringify(bundlePath)}]
 tool_timeout_sec = 300
 required = true
 env_vars = ["ACT_RUNTIME_URL", "ACT_MCP_TOKEN"]
+enabled_tools = ["getTree", "getOperationStatus", "spawnChild"]
+[mcp_servers.capital_tree_root.tools.spawnChild]
+# Explicitly authorized Sepolia acceptance action. Other write tools are disabled.
+approval_mode = "approve"
 `;
 }

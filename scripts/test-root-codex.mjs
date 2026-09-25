@@ -90,7 +90,7 @@ try {
   const { stdout: tokenOutput } = await providerToken('/usr/local/bin/codexops-proxy-token', [], { encoding: 'utf8', maxBuffer: 4096 });
   const upstreamKey = tokenOutput.trim();
   if (!upstreamKey) throw new Error('HomeBox CLIProxyAPI token is unavailable');
-  const profileRoot = join(privateBase, 'root-codex-e2e', config.rootId);
+  const profileRoot = join(privateBase, 'root-codex-e2e', `${config.rootId}-${Date.now()}`);
   report = { chainId: 11155111, controller: config.controller, rootId: config.rootId,
     status: 'running', startedAt: new Date().toISOString(), operationKey, grandchildKey,
     rootModel, childModel, baselineBlock: before.source.blockNumber.toString(), transactions: {}, checks: {},
@@ -159,7 +159,8 @@ After confirmation write /workspace/completed.json with {"status":"child-complet
   const toolEvents = events.filter(event => event.item?.type === 'mcp_tool_call' && event.item.tool === 'spawnChild');
   const callIds = new Set(toolEvents.map(event => event.item.id));
   assert.equal(callIds.size, 1, 'Root Codex must request exactly one spawnChild MCP call');
-  assert.ok(toolEvents.some(event => event.type === 'item.completed'), 'Root spawnChild MCP call did not complete');
+  assert.ok(toolEvents.some(event => event.type === 'item.completed' && event.item.status === 'completed' && !event.item.error),
+    'Root spawnChild MCP call was rejected or failed; inspect transcript and reconcile before retry');
   assert.ok(events.some(event => event.type === 'turn.completed'), 'Root Codex turn did not complete');
   report.rootCli.spawnChildToolCallCount = callIds.size;
   report.rootCli.completed = true;

@@ -1,0 +1,36 @@
+{
+  "chainId": 11155111,
+  "controller": "0x55caFFf719B5FA70c0e8942eEe2C7EE6B8c7Db6b",
+  "rootId": "5",
+  "status": "blocked-at-mcp-approval",
+  "startedAt": "2026-09-25T21:03:49.633Z",
+  "operationKey": "0x76d5d5e91640eac02760f60dd98cb2739f93c0ba700ad3e1b1c4a734b61f6163",
+  "grandchildKey": "0x251176053b6e51c80c5f9942e66e07169f8a5985de712bc00be9cf2a67dec2e1",
+  "rootModel": "gpt-6-sol",
+  "childModel": "gpt-6-luna",
+  "baselineBlock": "11781764",
+  "transactions": {},
+  "checks": {},
+  "limitations": [
+    "Programmatic root Codex CLI and model workers; browser owner signing is a separate check.",
+    "No live MultiBaas or owner recovery in this run."
+  ],
+  "rootCli": {
+    "exitCode": 0,
+    "signal": null,
+    "transcriptPath": "/home/codexops/.agent-capital-tree/root-codex-e2e/5/codex.jsonl",
+    "stderrPath": "/home/codexops/.agent-capital-tree/root-codex-e2e/5/codex.stderr",
+    "transcriptSha256": "b6beb3f2bd9754271e2a21582cfcc7f1043c24f7d6099dd6803a1a0baed39fec",
+    "spawnChildToolCallCount": 1,
+    "completed": false
+  },
+  "reconciliation": {
+    "checkedAt": "2026-09-25T21:09:08.970Z",
+    "rootNodes": 1,
+    "operatorNonce": 0,
+    "noPendingTransactions": true,
+    "noCapitalAllocated": true,
+    "operatorGasWei": "32000000000000000"
+  },
+  "reason": "MCP tool call requires approval, but approval policy is never"
+}
