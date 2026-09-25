@@ -27,6 +27,15 @@ const expectedNft = 39811n;
 const expectedLiquidity = parseEther('5000');
 const gasGrantUnits = 1_000_000n;
 const totalGasUnitsCeiling = 22_000_000n;
+const inactiveSelector = id('Inactive()').slice(0, 10).toLowerCase();
+function hasInactiveRevert(value, seen = new Set()) {
+  if (typeof value === 'string') return value.slice(0, 10).toLowerCase() === inactiveSelector;
+  if (!value || typeof value !== 'object' || seen.has(value)) return false;
+  seen.add(value);
+  return ['data', 'error', 'info', 'cause'].some(key => hasInactiveRevert(value[key], seen));
+}
+assert.ok(hasInactiveRevert({ info: { error: { data: inactiveSelector } } }));
+assert.ok(!hasInactiveRevert({ code: 'NETWORK_ERROR' }));
 let stage = 'preflight';
 let report;
 
@@ -142,7 +151,7 @@ try {
   const bNode = await controller.getNode(b);
   assert.equal(await tokenA.balanceOf(bNode.vault), oneToken);
   await send('revoke-a', signer, await controlled.revokeSubtree.populateTransaction(a));
-  await assert.rejects(controller.checkAction(a, financeRoles.swap, child.a.address, 0, swapAmount));
+  await assert.rejects(controller.checkAction(a, financeRoles.swap, child.a.address, 0, swapAmount), hasInactiveRevert);
   await controller.checkAction(b, financeRoles.swap, child.b.address, 0, swapAmount);
   report.checks.afterRevoke = { aInactive: true, bAuthorized: true, blockNumber: await rpc.getBlockNumber() };
   await save();
