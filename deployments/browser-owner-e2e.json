@@ -1,0 +1,78 @@
+{
+  "owner": "0xbcea84ed1dafbb59aaf9797cb4170394db688d34",
+  "controller": "0x55caFFf719B5FA70c0e8942eEe2C7EE6B8c7Db6b",
+  "chainId": 11155111,
+  "label": "browser-jury",
+  "status": "owner-setup-passed",
+  "transactions": [
+    {
+      "phase": "claim",
+      "functionName": "mint",
+      "transactionHash": "0xbffbb9cb70beb8f020aa0d1a7228da72a70a4c5a46702e8dd678658b125f63c5",
+      "blockNumber": 11781691,
+      "blockHash": "0x5ec6ae1e71050109bf6bfef93e8704c198df9a8c0b959ffc1f5bed7d3a97e41f"
+    },
+    {
+      "phase": "claim",
+      "functionName": "mint",
+      "transactionHash": "0x52867d10a73289ee03b903c4f3864f62e6e4339960b9932facfde5c0916fa18b",
+      "blockNumber": 11781693,
+      "blockHash": "0x04dd49722fbb814719c89eaf96555819ea159a70aa16f82e363b5fe8fa1b081e"
+    },
+    {
+      "phase": "create",
+      "functionName": "createRoot",
+      "transactionHash": "0x832687592d2d0a3240b27982aa565aa3bc4bac4b34837fc7a78dbc655e523e63",
+      "blockNumber": 11781737,
+      "blockHash": "0xe63950033d205b058b8dc86bd905b4446189ca7d8e41e81feed046372dc13e2b"
+    },
+    {
+      "phase": "fund",
+      "functionName": "approve",
+      "transactionHash": "0x997da75fa464f86a0855b152000e76786181507b47f878e1541b5a075d3f68e0",
+      "blockNumber": 11781740,
+      "blockHash": "0xb9aca22d07d839e1a112bf8dba493ad7b757a1cedba5f731ffe98e9eb425c7b9"
+    },
+    {
+      "phase": "fund",
+      "functionName": "approve",
+      "transactionHash": "0xdf895726dbaf39cc468f6f29e814e32795ff2a7407ea820d0dc758a7c22ca02f",
+      "blockNumber": 11781742,
+      "blockHash": "0x86b2319a33ab9db5a11ae2ea8f056494625b42cff86d592de5706db26b8c7d00"
+    },
+    {
+      "phase": "fund",
+      "functionName": "fundRoot",
+      "transactionHash": "0xe45527c4f4114efc60353a30dd7bb9f6f3d7deb083c921f4ee5e6241ee7a8d78",
+      "blockNumber": 11781743,
+      "blockHash": "0x9499196712034e44cd99c34905fdb174437c3fce283ae66ff74f92597be75402"
+    },
+    {
+      "phase": "bind",
+      "functionName": "setRootOperator",
+      "transactionHash": "0x163a2cadd2f7cfb55744e372c63c8b55effb04106ffa3b26984d5668d854e953",
+      "blockNumber": 11781746,
+      "blockHash": "0x091e95036b7757fe6a8cff12570b2693a2d1f19a9b29c4c264a73f9d75ab01f1"
+    }
+  ],
+  "startedAt": "2026-09-25T20:48:04.180Z",
+  "startBlock": 11781688,
+  "claimed": true,
+  "failedPhase": "create",
+  "reconciliation": {
+    "checkedAt": "2026-09-25T20:55:41.610Z",
+    "throughBlock": 11781726,
+    "ownerNonce": 3,
+    "noPendingTransactions": true,
+    "noNodeCreatedEvents": true
+  },
+  "rootId": "5",
+  "funded": true,
+  "operator": "0x4eC0dc927b085a3e08a066C2D5782c5D103B46b4",
+  "operatorBound": true,
+  "finishedAt": "2026-09-25T21:00:08.377Z",
+  "limitations": [
+    "Agent execution and owner recovery are separate subsequent steps.",
+    "MultiBaas live indexing remains unconfigured."
+  ]
+}

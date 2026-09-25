@@ -7,7 +7,10 @@ import { spawn } from 'node:child_process';
 
 // Uses only the separately provisioned Sepolia jury wallet. No traces or screenshots.
 const root = join(homedir(), '.agent-capital-tree');
-const profileName = process.env.ACT_BROWSER_PROFILE ?? 'jury';
+const walletName = process.env.ACT_TEST_WALLET ?? 'jury';
+if (!['jury', 'jury-e2e'].includes(walletName)) throw new Error('Unknown isolated test wallet');
+const expectedAddress = `0x${JSON.parse(await readFile(join(root, `keys/${walletName}.keystore.json`), 'utf8')).address}`;
+const profileName = process.env.ACT_BROWSER_PROFILE ?? walletName;
 if (!/^jury(?:-[a-z0-9]+)?$/.test(profileName)) throw new Error('Invalid test profile name');
 const extension = join(root, 'tools/metamask-13.49.0');
 const appUrl = process.env.ACT_TEST_APP_URL ?? 'https://agent-capital-tree.vercel.app';
@@ -37,12 +40,12 @@ try {
   let wallet = context.pages().find(p => p.url().startsWith('chrome-extension://')) ?? await context.newPage();
   const origin = `chrome-extension://${new URL(worker.url()).host}`;
   await wallet.goto(`${origin}/home.html`);
-  await Promise.any(['unlock-submit', 'account-menu-icon'].map(id => wallet.getByTestId(id).waitFor({ timeout: 25000 })));
+  await Promise.any(['unlock-submit', 'account-menu-icon'].map(id => wallet.getByTestId(id).waitFor({ timeout: 60000 })));
   if (await wallet.getByTestId('unlock-submit').isVisible()) {
-    await wallet.locator('input[type="password"]').fill(await readFile(join(root, 'keys/jury.password'), 'utf8'));
+    await wallet.locator('input[type="password"]').fill(await readFile(join(root, `keys/${walletName}.password`), 'utf8'));
     await wallet.getByTestId('unlock-submit').click();
   }
-  await wallet.getByTestId('account-menu-icon').waitFor();
+  await wallet.getByTestId('account-menu-icon').waitFor({ timeout: 60000 });
   for (const stale of context.pages()) if (stale !== wallet) await stale.close();
   stage = 'public app';
   const app = await context.newPage();
@@ -56,6 +59,7 @@ try {
     // Extension pages may emit the page event before their URL is assigned, or
     // reuse an existing window. Locate the actual consent screen, not a stale tab.
     const consentDeadline = Date.now() + 60000;
+    const openConsentAt = Date.now() + 3000;
     let consent;
     while (!consent && Date.now() < consentDeadline) {
       for (const candidate of context.pages().filter(page => page.url().startsWith(origin))) {
@@ -63,6 +67,11 @@ try {
           consent = candidate;
           break;
         }
+      }
+      if (!consent && Date.now() >= openConsentAt) {
+        consent = await context.newPage();
+        await consent.goto(`${origin}/notification.html`, { waitUntil: 'domcontentloaded' });
+        await consent.getByRole('button', { name: /^(Connect|Connect anyway|Continue at your own risk)$/ }).first().waitFor({ timeout: 60000 });
       }
       if (!consent) await app.waitForTimeout(500);
     }
@@ -114,11 +123,17 @@ try {
   stage = 'network result';
   await app.getByLabel('Connected to Sepolia').waitFor({ timeout: 20000 });
   const address = await app.evaluate(async () => (await window.ethereum.request({ method: 'eth_accounts' }))[0]);
-  assert.equal(address.toLowerCase(), '0x0b59e040f864afd07ed448f58199a296413333bf');
+  assert.equal(address.toLowerCase(), expectedAddress.toLowerCase());
   assert.equal(await app.evaluate(() => window.ethereum.request({ method: 'eth_chainId' })), '0xaa36a7');
   const evidence = { checkedAt: new Date().toISOString(), deployedApp: app.url(), realMetaMask: true, address, chainId: 11155111, connected: true, transactionSigningTested: false };
-  await writeFile(new URL('../deployments/browser-wallet.json', import.meta.url), `${JSON.stringify(evidence, null, 2)}\n`);
+  await writeFile(new URL(`../deployments/browser-wallet${walletName === 'jury' ? '' : '-fresh'}.json`, import.meta.url), `${JSON.stringify(evidence, null, 2)}\n`);
   console.log(JSON.stringify(evidence));
+  if (process.argv.includes('--owner-setup')) {
+    if (walletName !== 'jury-e2e') throw new Error('Owner setup requires the independent fresh wallet');
+    stage = 'owner setup';
+    const { browserOwnerSetup } = await import('./lib/browser-owner-flow.mjs');
+    await browserOwnerSetup({ context, app, origin, address, privateBase: root });
+  }
 } catch (error) {
   if (error?.message === 'MetaMask safety warning: connection was not approved') console.error(error.message);
   // Report only fixed UI labels, never wallet page text, account names or inputs.
@@ -129,6 +144,7 @@ try {
       if (await page.getByRole('button', { name, exact: true }).first().isVisible().catch(() => false)) labels.push(name);
     }
     if (labels.length) dialogs.push(labels);
+    if (stage === 'unlock') console.error(JSON.stringify({ unlockVisible: await page.getByTestId('unlock-submit').isVisible(), accountMenuVisible: await page.getByTestId('account-menu-icon').isVisible() }));
   }
   console.error(JSON.stringify({ stage, visibleKnownDialogButtons: dialogs, timeout: error?.name === 'TimeoutError', missingNetworkConsent: error?.message === 'No network confirmation appeared' }));
   const app = context.pages().find(page => page.url().startsWith(appUrl));

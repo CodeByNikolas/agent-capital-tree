@@ -1,0 +1,9 @@
+{
+  "checkedAt": "2026-09-25T20:56:52.259Z",
+  "deployedApp": "https://agent-capital-tree.vercel.app/",
+  "realMetaMask": true,
+  "address": "0xbcea84ed1dafbb59aaf9797cb4170394db688d34",
+  "chainId": 11155111,
+  "connected": true,
+  "transactionSigningTested": false
+}
