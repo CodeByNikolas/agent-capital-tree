@@ -1,0 +1,8 @@
+{
+  "chainId": 11155111,
+  "network": "Ethereum Sepolia",
+  "status": "awaiting-contract-deployment",
+  "deployer": "0x280Ca099242D7164cD001E4479D59f13CD0ea7c9",
+  "testUser": "0x0B59E040F864AFd07Ed448F58199a296413333bf",
+  "contracts": {}
+}

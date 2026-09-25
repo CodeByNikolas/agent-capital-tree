@@ -6,7 +6,8 @@
   "scripts": {
     "build": "pnpm -r --if-present build",
     "typecheck": "pnpm -r --if-present typecheck",
-    "test": "pnpm -r --if-present test"
+    "test": "pnpm -r --if-present test",
+    "wallet:create": "node scripts/create-test-wallet.mjs"
   },
   "devDependencies": {
     "ethers": "6.17.0",
