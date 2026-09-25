@@ -22,3 +22,27 @@ jobs:
       - run: pnpm typecheck
       - run: pnpm test
       - run: pnpm build
+  contracts:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          submodules: true
+      - uses: pnpm/action-setup@f40ffcd9367d9f12939873eb1018b921a783ffaa
+        with:
+          version: 11.13.1
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile --ignore-scripts
+      - name: Install verified Foundry release
+        run: |
+          curl --fail --silent --show-error --location https://github.com/foundry-rs/foundry/releases/download/v1.8.3/foundry_v1.8.3_linux_amd64.tar.gz --output "$RUNNER_TEMP/foundry.tar.gz"
+          printf '7ca48e6ca3cac1bce1403ca67e5bc1dc3bc1fd818199c9957c7165079c228568  %s\n' "$RUNNER_TEMP/foundry.tar.gz" | sha256sum --check
+          tar -xzf "$RUNNER_TEMP/foundry.tar.gz" -C "$RUNNER_TEMP" forge
+          printf '%s\n' "$RUNNER_TEMP" >> "$GITHUB_PATH"
+      - run: forge fmt --check
+        working-directory: contracts
+      - run: forge test
+        working-directory: contracts
