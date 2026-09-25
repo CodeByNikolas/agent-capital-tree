@@ -30,5 +30,29 @@
     "resource": "61219160762701751655880936086050802702610137559867053405173631346774519054336",
     "expiry": "1821893556",
     "subregistry": "0x0000000000000000000000000000000000000000"
+  },
+  "tokens": [
+    {
+      "symbol": "ACT-A",
+      "name": "Agent Capital Tree Valueless Demo A",
+      "address": "0x4338d78B1c2425ab89976e026c2E56bCAf1D50df",
+      "decimals": 18,
+      "transactionHash": "0x3c221178eaffe3fc60859d1aa9b0ef7d2e1bb25630ab8a824ae6e7c8074e4c2c",
+      "status": "confirmed",
+      "blockNumber": 11780911
+    },
+    {
+      "symbol": "ACT-B",
+      "name": "Agent Capital Tree Valueless Demo B",
+      "address": "0xB09844F53E5ba103a1cF721626c759a394C7d423",
+      "decimals": 18,
+      "transactionHash": "0xc4501337068c3a9c505dd54294d2ebbfe4fe62fa75b6231874243d609abb0e2e",
+      "status": "confirmed",
+      "blockNumber": 11780914
+    }
+  ],
+  "testUserFunding": {
+    "hash": "0xa30a1b3360b37ea255e6b318d30c9c02196c207ae5a8b175b4430298ac24fd81",
+    "valueWei": "10000000000000000"
   }
 }
