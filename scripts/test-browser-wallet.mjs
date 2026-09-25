@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { chromium } from '@playwright/test';
-import { readFile } from 'node:fs/promises';
+import { readFile, writeFile } from 'node:fs/promises';
 import { homedir } from 'node:os';
 import { join } from 'node:path';
 import { spawn } from 'node:child_process';
@@ -74,14 +74,34 @@ try {
   }
   await app.locator('.wallet-address').waitFor({ timeout: 20000 });
   stage = 'Sepolia network';
+  await Promise.any([
+    app.getByRole('button', { name: 'Switch to Sepolia', exact: true }).waitFor(),
+    app.getByLabel('Connected to Sepolia').waitFor(),
+  ]);
   if (await app.getByRole('button', { name: 'Switch to Sepolia', exact: true }).isVisible()) {
     await app.getByRole('button', { name: 'Switch to Sepolia', exact: true }).click();
-    const networkDeadline = Date.now() + 60000;
+    stage = 'network consent';
+    const networkDeadline = Date.now() + 30000;
+    const openPendingAt = Date.now() + 3000;
+    let pendingOpened = false;
     let confirmed = false;
     while (!confirmed && Date.now() < networkDeadline) {
+      if (await app.getByLabel('Connected to Sepolia').isVisible()) {
+        confirmed = true;
+        break;
+      }
+      // Chromium under Xvfb can leave the approval queued without opening its
+      // extension window. Opening MetaMask's own notification UI preserves consent.
+      if (!pendingOpened && Date.now() >= openPendingAt) {
+        const pending = await context.newPage();
+        await pending.goto(`${origin}/notification.html`, { waitUntil: 'domcontentloaded' });
+        await pending.getByRole('button', { name: /^(Confirm|Switch network)$/ }).waitFor({ timeout: 60000 });
+        pendingOpened = true;
+      }
       for (const candidate of context.pages().filter(page => page.url().startsWith(origin))) {
         const confirm = candidate.getByRole('button', { name: /^(Confirm|Switch network)$/ });
         if (await confirm.isVisible().catch(() => false)) {
+          if (!await candidate.getByText('Sepolia', { exact: false }).count()) throw new Error('Unexpected network consent screen');
           await confirm.click();
           confirmed = true;
           break;
@@ -91,11 +111,14 @@ try {
     }
     if (!confirmed) throw new Error('No network confirmation appeared');
   }
+  stage = 'network result';
   await app.getByLabel('Connected to Sepolia').waitFor({ timeout: 20000 });
   const address = await app.evaluate(async () => (await window.ethereum.request({ method: 'eth_accounts' }))[0]);
   assert.equal(address.toLowerCase(), '0x0b59e040f864afd07ed448f58199a296413333bf');
   assert.equal(await app.evaluate(() => window.ethereum.request({ method: 'eth_chainId' })), '0xaa36a7');
-  console.log(JSON.stringify({ deployedApp: app.url(), realMetaMask: true, address, chainId: 11155111, connected: true }));
+  const evidence = { checkedAt: new Date().toISOString(), deployedApp: app.url(), realMetaMask: true, address, chainId: 11155111, connected: true, transactionSigningTested: false };
+  await writeFile(new URL('../deployments/browser-wallet.json', import.meta.url), `${JSON.stringify(evidence, null, 2)}\n`);
+  console.log(JSON.stringify(evidence));
 } catch (error) {
   if (error?.message === 'MetaMask safety warning: connection was not approved') console.error(error.message);
   // Report only fixed UI labels, never wallet page text, account names or inputs.
@@ -107,7 +130,18 @@ try {
     }
     if (labels.length) dialogs.push(labels);
   }
-  console.error(JSON.stringify({ stage, visibleKnownDialogButtons: dialogs }));
+  console.error(JSON.stringify({ stage, visibleKnownDialogButtons: dialogs, timeout: error?.name === 'TimeoutError', missingNetworkConsent: error?.message === 'No network confirmation appeared' }));
+  const app = context.pages().find(page => page.url().startsWith(appUrl));
+  if (app) {
+    const chainId = await app.evaluate(() => window.ethereum?.request({ method: 'eth_chainId' })).catch(() => null);
+    const message = await app.locator('.wallet-error').textContent({ timeout: 500 }).catch(() => '');
+    console.error(JSON.stringify({ chainId, switchPending: await app.getByRole('button', { name: 'Switching…', exact: true }).isVisible(), walletError: message ? {
+      unknownChain: /4902|unrecognized chain|not been added|not configured/i.test(message),
+      rejected: /4001|reject|denied/i.test(message),
+      pending: /32002|already pending/i.test(message),
+      rpcFailure: /rpc|fetch|network|timeout/i.test(message),
+    } : null }));
+  }
   console.error(`Browser wallet check failed during ${stage}; sensitive details suppressed.`);
   process.exitCode = 1;
 } finally {
