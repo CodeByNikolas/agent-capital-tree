@@ -5,7 +5,7 @@ import { setTimeout as delay } from 'node:timers/promises';
 import { mkdtemp, mkdir, readFile, rm, symlink, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { WorkerSessions, authorizedWorkerCall, SpawnCoordinator, FileSpawnJournal, workerDockerArgs, InferenceBroker } from '../dist/index.js';
+import { WorkerSessions, authorizedWorkerCall, SpawnCoordinator, FileSpawnJournal, workerDockerArgs, workerNetworkCreateArgs, InferenceBroker } from '../dist/index.js';
 
 const parent = { workerId: 'w1', rootId: 'root', nodeId: 'parent', authorityGeneration: '3' };
 const request = { operationKey: `0x${'a'.repeat(64)}`, task: 'study', model: 'gpt-6-sol', token: '0xasset', amount: '10', restrictions: { swap: false, assets: ['a'] } };
@@ -96,6 +96,8 @@ test('Docker command has fixed isolation flags and rejects escaped mounts', asyn
   assert.ok(args.includes('codex'));
   assert.ok(args.includes('--json'));
   assert.ok(args.includes('--skip-git-repo-check'));
+  assert.ok(args.includes('act-worker-w1'));
+  assert.deepEqual(workerNetworkCreateArgs('w1'), ['network', 'create', '--internal', '--driver', 'bridge', 'act-worker-w1']);
   assert.ok(args.includes(`--user=${files.uid}:${files.gid}`));
   assert.ok(!args.join(' ').includes('docker.sock'));
   assert.ok(args.filter(arg => arg.startsWith('type=bind')).every(arg => arg.includes(workerRoot)));

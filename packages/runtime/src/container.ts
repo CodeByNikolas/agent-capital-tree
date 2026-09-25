@@ -19,9 +19,19 @@ function inside(root: string, path: string): boolean {
   return isAbsolute(path) && resolve(path).startsWith(resolve(root) + sep);
 }
 
+export function workerNetworkName(workerId: string): string {
+  if (!/^[\w-]+$/.test(workerId)) throw new Error('invalid worker ID');
+  return `act-worker-${workerId}`;
+}
+
+/** Companion runs this once, then inspects Internal=true and attached peers before launch. */
+export function workerNetworkCreateArgs(workerId: string): string[] {
+  return ['network', 'create', '--internal', '--driver', 'bridge', workerNetworkName(workerId)];
+}
+
 /** Only the companion supplies WorkerFiles. Never merge model-supplied Docker args or env. */
 export async function workerDockerArgs(files: WorkerFiles): Promise<string[]> {
-  if (!/^[\w-]+$/.test(files.workerId)) throw new Error('invalid worker ID');
+  const network = workerNetworkName(files.workerId);
   if (!Number.isSafeInteger(files.uid) || files.uid < 1 || !Number.isSafeInteger(files.gid) || files.gid < 1) throw new Error('invalid worker user');
   const workerRoot = resolve(files.runtimeRoot, 'workers', files.workerId);
   if (!inside(workerRoot, files.workspace) || !inside(workerRoot, files.keyFile)) throw new Error('worker files outside private root');
@@ -40,7 +50,7 @@ export async function workerDockerArgs(files: WorkerFiles): Promise<string[]> {
   const provider = `model_provider="local_broker"`;
   const base = `model_providers.local_broker.base_url="${files.brokerUrl}"`;
   return [
-    'run', '--rm', '-i', '--read-only', '--network', 'act-workers', '--cap-drop=ALL', '--security-opt=no-new-privileges',
+    'run', '--rm', '-i', '--read-only', '--network', network, '--cap-drop=ALL', '--security-opt=no-new-privileges',
     '--pids-limit=128', '--memory=1g', '--cpus=1', `--user=${files.uid}:${files.gid}`,
     '--tmpfs=/tmp:rw,nosuid,nodev,size=64m,mode=1777',
     `--tmpfs=/home/worker:rw,nosuid,nodev,size=64m,uid=${files.uid},gid=${files.gid},mode=0700`,
