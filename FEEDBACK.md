@@ -22,7 +22,9 @@ Source: [CapitalController](contracts/src/CapitalController.sol), [CapitalVault]
 
 The staged Foundry suite passes all 25 tests, including 256 fuzz cases, a real local v4 mint–increase–collect–burn cycle and ENS-independent owner recovery. A disposable Sepolia fork at block 11781277 additionally passed runtime swap/LP actions against the deployed PoolManager, PositionManager and actual Permit2, followed by owner close and complete recovery.
 
-On public Sepolia, the system is deployed and the fixed pool is initialized and funded. [Transaction 0xa134…5cae](https://sepolia.etherscan.io/tx/0xa1346500298696129295da600e236d1d47acd649f65c2a6be30d9f7f04d55cae) opens vault-owned NFT 39811 with 5000e18 liquidity. Full independent browser/plugin acceptance is still being completed. No mainnet safety or audited-custody claim is made.
+On public Sepolia, the system is deployed and the fixed pool is initialized and funded. [Transaction 0xa134…5cae](https://sepolia.etherscan.io/tx/0xa1346500298696129295da600e236d1d47acd649f65c2a6be30d9f7f04d55cae) opens vault-owned NFT 39811 with 5000e18 liquidity.
+
+A separate real-model run created root 2, child 3 and grandchild 4 through the bundled MCP server and isolated workers. The child swapped, opened and increased NFT 39812, collected fees, and delegated a smaller swap-only mandate to the grandchild. After subtree revocation and runtime shutdown, the independent owner closed that LP and recovered every remaining token through the vault hierarchy. [The evidence report](deployments/runtime-e2e.json) records 23 canonical controller events and direct calls rejecting both revoked agents with `Inactive()`. This run used programmatic owner signing; full independent browser/plugin onboarding acceptance is still open. No mainnet safety or audited-custody claim is made.
 
 ## Submission
 
