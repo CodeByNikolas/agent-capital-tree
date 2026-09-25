@@ -1,10 +1,32 @@
 {
   "chainId": 11155111,
   "network": "Ethereum Sepolia",
-  "status": "awaiting-contract-deployment",
+  "status": "deployed",
   "deployer": "0x280Ca099242D7164cD001E4479D59f13CD0ea7c9",
   "testUser": "0x0B59E040F864AFd07Ed448F58199a296413333bf",
-  "contracts": {},
+  "contracts": {
+    "VaultFactory": {
+      "address": "0xf2cdbBd0BB2028cd70cC487F6b254c81BE7Db3e3",
+      "transactionHash": "0x5630107cd7c5d6dce4470342579456008d4ffdd6ad9ccc7edec9e16e3b112a07",
+      "blockNumber": 11781254,
+      "codeHash": "0xc16896382b6afa4b9a5db92cc7b03a626ccb2fc852531aa4e841aa39ea736227"
+    },
+    "NodeFactory": {
+      "address": "0xE5Fe64B72CDD7292BE64F9f87F096B4DAb777C7E",
+      "transactionHash": "0xfc1e68ec83eb3dfd83a61304aea8a108d5f151ad78e556b79d99ca8f14521f29",
+      "blockNumber": 11781257,
+      "codeHash": "0x381808f6347f3cda26273b81a7ef7932a9b8d0f808dc2256c369cbc57fc65870"
+    },
+    "CapitalController": {
+      "address": "0x55caFFf719B5FA70c0e8942eEe2C7EE6B8c7Db6b",
+      "transactionHash": "0xa88e1686aeac1b9455a65a4facd1a0390e82582a3d7f45f3984e78a3ec9c65b9",
+      "blockNumber": 11781260,
+      "codeHash": "0xd98a2506d08a6e1d763002a10af7443964aa4555bb91a02c9041989610e60915"
+    },
+    "ProjectRegistry": {
+      "address": "0x72D923aaBc7b1deD019A25577C46D6Fb1Ff67Fb3"
+    }
+  },
   "ensNamespace": {
     "name": "agentcapitaltree.eth",
     "registrar": "0xa4449a0dd2b83007553d9b1d28b583a46a805a30",
@@ -25,11 +47,15 @@
       "register": {
         "hash": "0xda1234a874a184d5458ddb78c4d9ba35c30c81a1354f948f599db0adadcff3b2",
         "block": 11780738
+      },
+      "attach": {
+        "hash": "0xebdf10d37a6c3bf14ccc98d653235815d58c80cdbcf3f456c17d65eec41461eb",
+        "block": 11781263
       }
     },
     "resource": "61219160762701751655880936086050802702610137559867053405173631346774519054336",
     "expiry": "1821893556",
-    "subregistry": "0x0000000000000000000000000000000000000000"
+    "subregistry": "0x72D923aaBc7b1deD019A25577C46D6Fb1Ff67Fb3"
   },
   "tokens": [
     {
@@ -54,5 +80,76 @@
   "testUserFunding": {
     "hash": "0xa30a1b3360b37ea255e6b318d30c9c02196c207ae5a8b175b4430298ac24fd81",
     "valueWei": "10000000000000000"
+  },
+  "uniswap": {
+    "poolManager": "0xE03A1074c86CFeDd5C142C4F04F1a1536e203543",
+    "positionManager": "0x429ba70129df741B2Ca2a85BC3A2a3328e5c09b4",
+    "permit2": "0x000000000022D473030F116dDEE9F6B43aC78BA3",
+    "poolId": "0x80e34634349a395620aa17ea88c88f61b1bc1631cbb5737b2a8445bba27b563d",
+    "fee": 3000,
+    "tickSpacing": 60,
+    "tickLower": -600,
+    "tickUpper": 600,
+    "codeHashes": {
+      "poolManager": "0x09930125a49f5b95caf8052991cc14d1240dca8b43f42b899115b86867e4bce1",
+      "positionManager": "0xcffd746f78c2b50aafd19076bbe9c48f14446e5248fc5d76b9b4896610e51aab",
+      "permit2": "0x96d9f5c3f0fb0423426b7f970186235b7347027f4e5c19c40c412b7d97fc3751"
+    },
+    "initialization": {
+      "transactionHash": "0x0fd68aa3b859d16968933af173ae534c8faf92a4be3aba0c250c50e822bee975",
+      "blockNumber": 11781269
+    },
+    "seeded": {
+      "transactionHash": "0xa1346500298696129295da600e236d1d47acd649f65c2a6be30d9f7f04d55cae",
+      "blockNumber": 11781289,
+      "rootId": "1",
+      "vault": "0xEeb934eCA3c68C2aC17DDb4412f8ce267a682E2F",
+      "tokenId": "39811",
+      "liquidity": "5000000000000000000000"
+    }
+  },
+  "bootstrap": {
+    "purpose": "Persistent demo pool liquidity; owner and operator are the deployment wallet.",
+    "policyExpiry": "1805916012",
+    "deadline": "1790371212",
+    "transactions": {
+      "initialize-pool": {
+        "transactionHash": "0x0fd68aa3b859d16968933af173ae534c8faf92a4be3aba0c250c50e822bee975",
+        "blockNumber": 11781269
+      },
+      "create-seed-root": {
+        "transactionHash": "0x80abeb107d37ae60fd03ef20383dd4de513551651807869fa3bae61b68290abf",
+        "blockNumber": 11781272
+      },
+      "authorize-seed-operator": {
+        "transactionHash": "0x6a1618cfaab3a74b8c4aac0d2ad289b50cb7bedb9e00c2dba06b9b51e060d0fa",
+        "blockNumber": 11781274
+      },
+      "claim-token-0": {
+        "transactionHash": "0x3346932141feaa3cb28b9e6d8ab59cbc7f144a217a2a323d2d9638b157d81e26",
+        "blockNumber": 11781276
+      },
+      "approve-token-0": {
+        "transactionHash": "0xe79dd6de36785b7ee02c1b5f9269d45133e2c4796920480ba2899707370bee24",
+        "blockNumber": 11781278
+      },
+      "claim-token-1": {
+        "transactionHash": "0x6ec57fd745124d200955c5a41f0195461430a2ea2e35db42541822ee89c72b8c",
+        "blockNumber": 11781281
+      },
+      "approve-token-1": {
+        "transactionHash": "0x405380300b5ee6079dc76e9d0bbdc847a441876f2403ad6e45436e665f8c2c21",
+        "blockNumber": 11781283
+      },
+      "fund-seed-root": {
+        "transactionHash": "0x3261b00244d3880bb7acf3ba9df499485b5921be51cdf04c1772fd1af2559fdc",
+        "blockNumber": 11781286
+      },
+      "open-seed-position": {
+        "transactionHash": "0xa1346500298696129295da600e236d1d47acd649f65c2a6be30d9f7f04d55cae",
+        "blockNumber": 11781289
+      }
+    },
+    "rootId": "1"
   }
 }
