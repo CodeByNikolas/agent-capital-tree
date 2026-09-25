@@ -19,9 +19,10 @@ jobs:
           node-version: 22
           cache: pnpm
       - run: pnpm install --frozen-lockfile --ignore-scripts
+      # Workspace packages export generated dist files; build dependencies before checking consumers.
+      - run: pnpm build
       - run: pnpm typecheck
       - run: pnpm test
-      - run: pnpm build
   contracts:
     runs-on: ubuntu-latest
     steps:
