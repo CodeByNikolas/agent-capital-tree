@@ -20,7 +20,7 @@ export async function journaledTransaction({ rpc, signer, directory, name, reque
     const gas = await rpc.estimateGas({ ...request, from: signer.address });
     const fees = await rpc.getFeeData();
     const gasLimit = gas * 12n / 10n;
-    if (!fees.maxFeePerGas || gasLimit * fees.maxFeePerGas > parseEther('0.015')) throw new Error('Transaction fee ceiling exceeded');
+    if (!fees.maxFeePerGas || gasLimit * fees.maxFeePerGas > parseEther('0.025')) throw new Error('Transaction fee ceiling exceeded');
     if (BigInt(request.value ?? 0) > parseEther('0.01')) throw new Error('Transaction value ceiling exceeded');
     signed = await signer.signTransaction({ ...request, chainId: 11155111, type: 2, nonce: await rpc.getTransactionCount(signer.address, 'pending'), gasLimit, maxFeePerGas: fees.maxFeePerGas, maxPriorityFeePerGas: fees.maxPriorityFeePerGas });
     await writeFile(path + '.tmp', JSON.stringify({ signed }), { mode: 0o600, flag: 'wx' });
