@@ -41,6 +41,24 @@ try {
     await page.screenshot({ path: new URL(`live-${name}.png`, output).pathname, fullPage: true });
     checks.push(`${name}: no horizontal overflow`);
   }
+  const root5Response = await page.request.get(`${base}/api/tree?root=5`);
+  assert.equal(root5Response.status(), 200);
+  const root5 = await root5Response.json();
+  assert.equal(root5.nodes.length, 4);
+  await page.goto(`${base}/?root=5`);
+  await expect(page.getByText('Live root 5.', { exact: true })).toBeVisible({ timeout: 60000 });
+  const expectedNames = ['5', '6', '7', '8'].map(id => {
+    const node = root5.nodes.find(node => node.id === id);
+    assert(node, `root 5 node ${id}`);
+    return node.ensName;
+  });
+  assert.deepEqual(await page.locator('.tree-canvas-mobile .tree-node-ens').allTextContents(), expectedNames);
+  for (const [name, width, height] of [['desktop', 1440, 1100], ['mobile', 390, 844]]) {
+    await page.setViewportSize({ width, height });
+    assert(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth), `root 5 ${name} overflow`);
+    await page.screenshot({ path: new URL(`root5-current-${name}.png`, output).pathname, fullPage: true });
+  }
+  checks.push('live root 5: mobile descendants stay with their parent; desktop/mobile without overflow');
   await page.goto(`${base}/?preview=1`);
   await expect(page.getByText('Preview workspace.', { exact: true })).toBeVisible();
   await expect(page.getByRole('link', { name: 'Open live root', exact: true })).toBeVisible();
