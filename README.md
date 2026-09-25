@@ -26,7 +26,7 @@ pnpm typecheck
 pnpm test
 ```
 
-Run `bash contracts/scripts/test-contracts.sh` with Foundry 1.8.3 on PATH for the staged Solidity build and 25 contract tests. `node scripts/test-sepolia-fork.mjs` checks actual Sepolia protocol code on a disposable local fork; it sends no transactions to public Sepolia. Both require the initialized Git submodules and built workspace packages. See [PLAN.md](PLAN.md) for the specification and [STATUS.md](STATUS.md) for actual progress and unresolved gates.
+Run `bash contracts/scripts/test-contracts.sh` with Foundry 1.8.3 on PATH for the staged Solidity build and 25 contract tests. `node scripts/test-sepolia-fork.mjs` checks actual Sepolia protocol code on a disposable local fork; it sends no transactions to public Sepolia. Both require the initialized Git submodules and built workspace packages. See [PLAN.md](PLAN.md) for the specification and [STATUS.md](STATUS.md) for actual progress and unresolved gates. [ACCEPTANCE.md](ACCEPTANCE.md) maps every planned requirement to its evidence and remaining limitations.
 
 The [runtime guide](packages/runtime/README.md) covers isolated Docker workers, local operator setup, gas grants and CLIProxyAPI. The [plugin guide](packages/plugin/README.md) covers the local Codex integration. Wallet ownership and agent execution are separate: the website does not need model credentials.
 

@@ -22,7 +22,7 @@ Stand: 26. September 2026 (Europe/Berlin). Nach Kontextkomprimierung zusammen mi
 | Root holt Child6-Kapital zurück und weist Sibling8 weitere0.5 ACT-A zu | Bestanden; **programmatischer Root-Signer**, keine MultiBaas-informierte Modellentscheidung; Follow-up-Bericht |
 | Owner-Rückholung Sibling8→Root5→Owner | Bestanden; `deployments/browser-owner-recovery.json`, endgültiger Chain-Zustand in `deployments/browser-final-state.json` |
 | Wallet-Ablehnung, falsches Netzwerk, gesperrter veralteter UI-Zustand | `deployments/browser-negative-cases.json`; echte MetaMask-Ablehnung/Mainnet→Sepolia. Tree-API-Ausfall lokal injiziert, kein öffentlicher RPC-Ausfall |
-| Veröffentlichte Oberfläche | `artifacts/ui/smoke-report.json`; Desktop1440/Mobil390 ohne horizontalen Overflow/JS-Fehler, echte Roots1/2/5, ungültige/fehlende IDs, explizite Sample-Preview |
+| Veröffentlichte Oberfläche | `artifacts/ui/smoke-report.json`; Desktop1440/Mobil390 ohne horizontalen Overflow/JS-Fehler, echte Roots1/2/5, ungültige/fehlende IDs, explizite Sample-Preview; Tab/Enter-Knotenauswahl mit sichtbarem Fokus auf beiden Viewports |
 
 Owner: `0xbCea84Ed1DaFbb59AaF9797Cb4170394db688d34`. Operator: `0x4eC0dc927b085a3e08a066C2D5782c5D103B46b4`. Root5-Vault: `0xa48287E44fBc59C6CE76E00B5302329DF85ddA95`.
 
@@ -47,6 +47,12 @@ Ein erster Root-Codex-Versuch wurde vor jedem Write durch MCP-Approval abgewiese
 - Unabhängiger früherer Sepolia-Lauf Root2→Child3→Grandchild4 einschließlich vollständiger Rückholung: `deployments/runtime-e2e.json`. Root2 nicht wieder als Runtime starten.
 - Nicht verbrauchtes Child6/Grandchild7-Gas ist kontrolliert zurückgeführt (`deployments/browser-recycled-gas.json`). Root5-Operator erhielt insgesamt0.032 Test-ETH aus vorhandenen/recycelten Mitteln (`deployments/browser-runtime-funding.json`). Vor weiterem Funding live prüfen; abgeschlossene Runner besitzen Einmal-Latches.
 
+## Ergänzende Abnahmen
+
+- Frische native Marketplace-Installation unter Codex0.154.0 über `plugin add`, registrierter MCP-Server und echter Sepolia-Read aus installiertem Cache-Bundle bestanden: `deployments/plugin-install-e2e.json`. Test nutzt eine lokale authentifizierte Read-only-Bridge, keinen Operator-Companion und keine Modellinferenz. Native Plugin-Writes bleiben ungeprüft; dessen Timeout bleibt60 Sekunden. Für lange Finanzaktionen gilt der dokumentierte direkte MCP-Pfad mit explizitem Timeout.
+- Historische direkte `eth_call`-Negativtests am kanonischen Block11781852 bestanden: Betragsüberschreitung, drittes nicht unterstütztes Asset, Rechteausweitung und falscher Signer; inklusive erfolgreicher Autoritätskontrollen. `deployments/sepolia-negative-calls.json`. Keine Transaktionen oder State-Overrides; kein Nachweis geminter fehlgeschlagener Transaktionen.
+- Konsolidierte Zuordnung aller Plananforderungen, Nachweise und Grenzen: [ACCEPTANCE.md](ACCEPTANCE.md).
+
 ## Kanonisches Sepolia-Deployment
 
 Manifest: `deployments/sepolia.json`, Controller-Deploymentblock11781260.
@@ -68,7 +74,7 @@ Pool `0x80e34634349a395620aa17ea88c88f61b1bc1631cbb5737b2a8445bba27b563d`, fee30
 
 1. MultiBaas: Instanz https://d7zveyyfkvdbxdbd7n3rk6o3ee.multibaas.com bekannt, lokale `~/.agent-capital-tree/multibaas.env` fehlt weiterhin. Nutzer ist um interaktives `bash scripts/configure-multibaas.sh` gebeten; keinen Key im Chat anfordern. Eingeschränkter Daten-Key sowie separate administrative ABI-/Adressverknüpfung und Historical-Indexing ab11781260 erforderlich.
 2. Danach serverseitige Vercel-Konfiguration (`MULTIBAAS_API_KEY`, `MULTIBAAS_CONTROLLER_LABEL`), echte Queries/Receipt-Abgleich, Historie in UI/MCP und tatsächliche Master-Modell-Entscheidung nach Historie prüfen. Adapter unterstützt13 Events; direkte RPC-Bestände ersetzen diesen Nachweis nicht.
-3. Aktuelle Commits pushen und CI prüfen. Zuletzt bestätigte komplette CI: `3f5b29e`, https://github.com/CodeByNikolas/agent-capital-tree/actions/runs/36195345833.
+3. Aktuelle Commits pushen und CI prüfen. Zuletzt bestätigte komplette CI: `3474eed`, https://github.com/CodeByNikolas/agent-capital-tree/actions/runs/36196054191.
 4. Uniswap `FEEDBACK.md` existiert; Feedback-Formular und ETHGlobal-Abgabe wurden nicht gesendet. Fehlende Teamangaben/ausdrückliche Sendeanweisung nicht erfinden.
 
 ## Arbeitsgrenzen
