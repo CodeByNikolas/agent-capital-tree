@@ -26,7 +26,8 @@ export class InferenceBroker {
     const deny = (status: number) => { res.writeHead(status); res.end(); };
     if (req.method !== 'POST' || req.url !== '/v1/responses') return deny(404);
     const token = /^Bearer ([A-Za-z0-9_-]{43})$/.exec(req.headers.authorization ?? '')?.[1];
-    const grant = token && this.#grants.get(createHash('sha256').update(token).digest('hex'));
+    const tokenHash = token && createHash('sha256').update(token).digest('hex');
+    const grant = tokenHash && this.#grants.get(tokenHash);
     if (!grant || grant.expiresAt <= Date.now() || grant.remaining <= 0) return deny(401);
     // Reserve before any await, preventing concurrent calls from exceeding the grant.
     grant.remaining--;
@@ -38,11 +39,18 @@ export class InferenceBroker {
         if (size > this.config.maxBodyBytes) return deny(413);
         chunks.push(chunk as Buffer);
       }
-      const body = JSON.parse(Buffer.concat(chunks).toString('utf8')) as Record<string, unknown>;
+      if (this.#grants.get(tokenHash) !== grant || grant.expiresAt <= Date.now()) return deny(401);
+      let body: Record<string, unknown>;
+      try {
+        const parsed: unknown = JSON.parse(Buffer.concat(chunks).toString('utf8'));
+        if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) return deny(400);
+        body = parsed as Record<string, unknown>;
+      } catch { return deny(400); }
       if (body.model !== grant.model) return deny(403);
       const upstream = await fetch(`${this.config.upstream}/responses`, {
         method: 'POST', headers: { authorization: `Bearer ${this.config.upstreamKey}`, 'content-type': 'application/json' },
-        body: JSON.stringify(body), signal: AbortSignal.timeout(Math.min(300_000, Math.max(1, grant.expiresAt - Date.now())))
+        body: JSON.stringify(body), redirect: 'error',
+        signal: AbortSignal.timeout(Math.min(300_000, Math.max(1, grant.expiresAt - Date.now())))
       });
       res.writeHead(upstream.status, { 'content-type': upstream.headers.get('content-type') ?? 'application/json' });
       if (upstream.body) for await (const chunk of upstream.body) res.write(chunk);

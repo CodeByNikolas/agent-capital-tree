@@ -1,6 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { createServer } from 'node:http';
+import { createServer, request as httpRequest } from 'node:http';
+import { setTimeout as delay } from 'node:timers/promises';
 import { mkdtemp, mkdir, readFile, rm, symlink, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
@@ -97,4 +98,44 @@ test('broker forwards only allowed model and path with host-only upstream key an
     const second = broker.issue('fixed-model', 10000, 1);
     assert.equal((await fetch(endpoint, { method: 'POST', headers: { authorization: `Bearer ${second}` }, body: JSON.stringify({ model: 'wrong' }) })).status, 403);
   } finally { server.close(); upstream.close(); }
+});
+
+test('broker rejects malformed, oversized and revoked slow requests before upstream', async () => {
+  let forwarded = 0;
+  const upstream = createServer((_req, res) => { forwarded++; res.end('{}'); });
+  await new Promise(resolve => upstream.listen(0, '127.0.0.1', resolve));
+  const broker = new InferenceBroker({ upstream: `http://127.0.0.1:${upstream.address().port}/v1`, upstreamKey: 'synthetic-secret', maxBodyBytes: 40 });
+  const server = broker.server();
+  await new Promise(resolve => server.listen(0, '127.0.0.1', resolve));
+  const url = `http://127.0.0.1:${server.address().port}/v1/responses`;
+  try {
+    const post = (token, body) => fetch(url, { method: 'POST', headers: { authorization: `Bearer ${token}` }, body });
+    assert.equal((await post(broker.issue('fixed-model', 10000, 1), '{')).status, 400);
+    assert.equal((await post(broker.issue('fixed-model', 10000, 1), 'x'.repeat(41))).status, 413);
+    const token = broker.issue('fixed-model', 10000, 1);
+    const response = new Promise((resolve, reject) => {
+      const req = httpRequest(url, { method: 'POST', headers: { authorization: `Bearer ${token}` } }, res => { res.resume(); res.on('end', () => resolve(res.statusCode)); });
+      req.on('error', reject);
+      req.write('{"model":');
+      void delay(20).then(() => { broker.revoke(token); req.end('"fixed-model"}'); });
+    });
+    assert.equal(await response, 401);
+    assert.equal(forwarded, 0);
+  } finally { server.close(); upstream.close(); }
+});
+
+test('broker does not follow upstream redirects with its credential', async () => {
+  let redirected = 0;
+  const target = createServer((_req, res) => { redirected++; res.end(); });
+  await new Promise(resolve => target.listen(0, '127.0.0.1', resolve));
+  const upstream = createServer((_req, res) => { res.writeHead(302, { location: `http://127.0.0.1:${target.address().port}/stolen` }); res.end(); });
+  await new Promise(resolve => upstream.listen(0, '127.0.0.1', resolve));
+  const broker = new InferenceBroker({ upstream: `http://127.0.0.1:${upstream.address().port}/v1`, upstreamKey: 'synthetic-secret', maxBodyBytes: 1024 });
+  const server = broker.server();
+  await new Promise(resolve => server.listen(0, '127.0.0.1', resolve));
+  try {
+    const response = await fetch(`http://127.0.0.1:${server.address().port}/v1/responses`, { method: 'POST', headers: { authorization: `Bearer ${broker.issue('fixed-model', 10000, 1)}` }, body: JSON.stringify({ model: 'fixed-model' }) });
+    assert.equal(response.status, 502);
+    assert.equal(redirected, 0);
+  } finally { server.close(); upstream.close(); target.close(); }
 });
