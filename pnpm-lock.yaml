@@ -75,6 +75,10 @@ importers:
         version: 5.9.3
 
   packages/runtime:
+    dependencies:
+      '@agent-capital-tree/plugin':
+        specifier: workspace:*
+        version: link:../plugin
     devDependencies:
       '@types/node':
         specifier: 22.15.30
