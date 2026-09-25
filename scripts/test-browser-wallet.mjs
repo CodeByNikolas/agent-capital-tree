@@ -29,6 +29,8 @@ const context = await chromium.launchPersistentContext(join(root, 'browser', pro
   env: { ...process.env, DISPLAY: display },
   args: [`--disable-extensions-except=${extension}`, `--load-extension=${extension}`],
 });
+context.setDefaultTimeout(30000);
+context.setDefaultNavigationTimeout(30000);
 let stage = 'unlock';
 try {
   const worker = context.serviceWorkers()[0] ?? await context.waitForEvent('serviceworker');
@@ -74,6 +76,16 @@ try {
   console.log(JSON.stringify({ deployedApp: app.url(), realMetaMask: true, address, chainId: 11155111, connected: true }));
 } catch (error) {
   if (error?.message === 'MetaMask safety warning: connection was not approved') console.error(error.message);
+  // Report only fixed UI labels, never wallet page text, account names or inputs.
+  const dialogs = [];
+  for (const page of context.pages().filter(page => page.url().startsWith('chrome-extension://'))) {
+    const labels = [];
+    for (const name of ['Connect', 'Connect anyway', 'Continue at your own risk', 'Next', 'Confirm', 'Cancel', 'Got it', 'Approve']) {
+      if (await page.getByRole('button', { name, exact: true }).first().isVisible().catch(() => false)) labels.push(name);
+    }
+    if (labels.length) dialogs.push(labels);
+  }
+  console.error(JSON.stringify({ stage, visibleKnownDialogButtons: dialogs }));
   console.error(`Browser wallet check failed during ${stage}; sensitive details suppressed.`);
   process.exitCode = 1;
 } finally {
