@@ -1,6 +1,6 @@
 # Agent Capital Tree — verbindlicher Implementierungsplan
 
-Stand: 25. September 2026. Produktentscheidungen sind festgelegt; technische Freigaben und Implementierung stehen aus. Dieser Plan ersetzt frühere Brainstorming-Varianten. Nach Kontextkomprimierung zuerst diesen Plan und STATUS.md lesen.
+Stand: 25. September 2026. Produktentscheidungen sind festgelegt; Implementierung läuft, der tatsächliche Abnahmestand steht in STATUS.md. Dieser Plan ersetzt frühere Brainstorming-Varianten. Nach Kontextkomprimierung zuerst diesen Plan und STATUS.md lesen.
 
 ## 1. Produkt, Umfang und Partner
 
@@ -87,6 +87,8 @@ Der Controller gibt kanonische Events zu Node-Erstellung, Allokation, Rückholun
 ### Runtime, Schlüssel und Codex-Plugin
 
 Ein lokaler Companion orchestriert Docker-Worker. Der Mensch autorisiert dessen Root-Operator-Adresse per Wallet-Transaktion. Jeder Worker erhält einen eigenen Schlüssel über einen privaten kurzlebigen Mount sowie eine authentifizierte Verbindung zu seinem MCP-Kontext. Schlüssel erscheinen nicht in Prompts, Tool-Ergebnissen, Logs, Git oder Vercel. Verschlüsselte Schlüssel liegen außerhalb des Projekts; der Nutzer entsperrt sie lokal.
+
+Worker laufen mit Docker `--network none`. Eine Bridge im Container erreicht ausschließlich den workergebundenen Unix-Socket; der Host-Gateway setzt den tatsächlichen MCP-/Inferenzkontext ein. Loopback im Container ist kein Zugriff auf Host-Loopback. Ausgehender allgemeiner Netzwerkzugriff ist gesperrt. Jeder Worker hat eigenen Workspace, Schlüssel und Socket; pro Worker begrenzte Credentials bleiben beim Companion.
 
 Container erhalten weder Host-Home noch vollständiges Codex-Profil/Auth-Verzeichnis, Eltern-/Geschwisterschlüssel oder Docker-Socket. Der Host/Companion ist vertrauenswürdig; Container sind keine Schutzgarantie gegen einen kompromittierten Host. Die Onchain-Vaults begrenzen einen kompromittierten Worker auch bei direktem RPC-Zugriff.
 
