@@ -42,8 +42,12 @@ export interface VaultNode {
   depth: number;
   state: VaultState;
   runtime: "unknown" | "connected" | "not-connected";
+  /** Spendable token balance, distinct from allocated capital and LP exposure. */
   freeCapital: readonly TokenAmount[];
-  totalBalance: readonly TokenAmount[];
+  /** Current token balances held by this vault. */
+  tokenHoldings: readonly TokenAmount[];
+  /** Gross capital assigned directly by the parent; empty for the owner root. */
+  capitalReceivedFromParent: readonly TokenAmount[];
   localPolicy: Policy;
   inheritedConstraints: readonly PolicyConstraint[];
   effectivePolicy: Policy;
@@ -91,4 +95,14 @@ export interface DashboardData {
   nodes: readonly VaultNode[];
   activity: readonly CapitalActivity[];
   positions: readonly LiquidityPosition[];
+}
+
+/** Optional transaction adapters; absent handlers keep the matching control disabled. */
+export interface DashboardActions {
+  spawnChild?: (parentId: string) => void | Promise<void>;
+  tightenPolicy?: (nodeId: string) => void | Promise<void>;
+  revokeSubtree?: (nodeId: string) => void | Promise<void>;
+  collectFees?: (positionId: string) => void | Promise<void>;
+  closePosition?: (positionId: string) => void | Promise<void>;
+  ownerEmergencyRecover?: (nodeId: string) => void | Promise<void>;
 }
