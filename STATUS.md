@@ -27,13 +27,13 @@ Stand: 25. September 2026. Nach Komprimierung zusammen mit PLAN.md lesen.
 3. Frontend mit frontend-design und impeccable geprüft und veröffentlicht. Root1/2 echt, fehlender Root404, ungültiger Root400, MultiBaas ohne Key ausdrücklich unavailable. Desktop1440/Mobil390 ohne JS-Fehler oder horizontalen Overflow; Root2 zeigt drei Vaults und null aktive. Faucet ohne Wallet gesperrt; tatsächliche Faucet-/Owner-Signaturen im veröffentlichten Browser weiter offen.
 4. Öffentliche Sepolia-Receipts und Sponsor-Dokumentation aktualisiert. GitHub CI für266ad2f vollständig erfolgreich (Contracts, ABI, Transaction-Journal, Workspace-Build, Typecheck und Tests). Root-Codex-Onboarding korrigiert: explizite MCP-Registrierung des Plugin-Bundles mit tool_timeout_sec=300, in frischem CLI0.154.0-Profil per mcp get geprüft. Marketplace-Manifest allein setzt keinen verlängerten Timeout; vollständiger frischer Finanzlauf damit weiterhin separat offen.
 5. MultiBaas-Key/administrative ABI- und Adressregistrierung fehlen; Live-Konfiguration durchführen, sobald verfügbar.
-6. MetaMask markiert beide bisherigen Vercel-URLs als unsicher. Kein „Connect anyway“ angeklickt. Ursache nicht bewiesen; eigene Domain beim Nutzer angefragt. Wallet-Verbindung, Signaturen und veröffentlichter Wallet-E2E bleiben ungeprüft.
+6. Frühere MetaMask-Läufe zeigten Sicherheitswarnungen auf Vercel; kein „Connect anyway“ angeklickt. Beim erneuten Test des veröffentlichten Live-Dashboards wurde diese Warnung nicht reproduziert: Die Verbindung erreichte den Netzwerkwechsel. Der Test fand zunächst falsche Erweiterungsfenster; Consent-/Netzwerk-Erkennung und Zeitlimits wurden korrigiert. Der letzte Lauf scheiterte weiter beim Sepolia-Netzwerkwechsel (keine sichtbaren bekannten Dialogbuttons). Vollständige Verbindung auf verifizierter Chain, Wallet-Signaturen und veröffentlichter Wallet-E2E bleiben offen; keine Aussage, dass eine eigene Domain diesen aktuellen Fehler löst.
 7. Gesamtabnahme aus PLAN.md inklusive echter Plugin-Childs, Swap/LP, Widerruf, Sibling-Isolation und Owner-Rückholung bleibt offen.
 
 ## Externe Voraussetzungen
 
 - MultiBaas-Instanz: https://d7zveyyfkvdbxdbd7n3rk6o3ee.multibaas.com. Eingeschränkter Daten-Key fehlt weiterhin; lokal scripts/configure-multibaas.sh ausführen, keinen Key in den Chat. ABI-/Adressregistrierung benötigt zusätzlich administrative Einrichtung.
-- Eigene Domain bzw. Klärung der MetaMask-Warnung offen. Kein Sicherheits-Bypass als bestandener Test.
+- MetaMask-Netzwerkwechsel und früher beobachtete Warnung noch nicht abschließend geklärt. Kein Sicherheits-Bypass als bestandener Test.
 - Jury betreibt eigene Runtime und eigenen CLIProxyAPI-Modellzugang. Website/Wallet-Verwaltung benötigt keine Inferenz-Credentials.
 - Deployment-Wallet hatte vor finalem Contract-Deployment 0.08825 Sepolia ETH. Weitere Runtime-Gasgrants anhand Live-Gebühren/Restbestand dimensionieren; nicht ungeprüft behaupten, dass sämtliches E2E-Funding reicht.
 

@@ -48,26 +48,48 @@ try {
   const app = await context.newPage();
   await app.goto(appUrl);
   await app.bringToFront();
-  const popup = context.waitForEvent('page', { predicate: page => page.url().startsWith(origin), timeout: 30000 }).catch(() => undefined);
-  await app.getByRole('button', { name: 'Connect wallet', exact: true }).click();
-  stage = 'approve connection';
-  const opened = await popup;
-  if (opened) { wallet = opened; await wallet.waitForLoadState('domcontentloaded'); }
-  await wallet.waitForTimeout(2500);
-  wallet = context.pages().find(p => p.url().includes('notification.html')) ?? wallet;
-
-  await wallet.getByRole('button', {name:/^(Connect|Connect anyway|Continue at your own risk)$/}).first().waitFor({timeout:60000});
-  const connect = wallet.getByRole('button', { name: 'Connect', exact: true });
-  if (await wallet.getByRole('button', {name: 'Connect anyway', exact: true}).isVisible() || await wallet.getByRole('button', {name: 'Continue at your own risk', exact: true}).count()) throw new Error('MetaMask safety warning: connection was not approved');
-  if (await connect.isVisible()) await connect.click();
+  await app.waitForFunction(() => Boolean(window.ethereum));
+  const existingAccounts = await app.evaluate(() => window.ethereum.request({ method: 'eth_accounts' }));
+  if (existingAccounts.length === 0) {
+    await app.getByRole('button', { name: 'Connect wallet', exact: true }).click();
+    stage = 'approve connection';
+    // Extension pages may emit the page event before their URL is assigned, or
+    // reuse an existing window. Locate the actual consent screen, not a stale tab.
+    const consentDeadline = Date.now() + 60000;
+    let consent;
+    while (!consent && Date.now() < consentDeadline) {
+      for (const candidate of context.pages().filter(page => page.url().startsWith(origin))) {
+        if (await candidate.getByRole('button', { name: /^(Connect|Connect anyway|Continue at your own risk)$/ }).first().isVisible().catch(() => false)) {
+          consent = candidate;
+          break;
+        }
+      }
+      if (!consent) await app.waitForTimeout(500);
+    }
+    if (!consent) throw new Error('No wallet consent screen appeared');
+    wallet = consent;
+    const connect = wallet.getByRole('button', { name: 'Connect', exact: true });
+    if (await wallet.getByRole('button', {name: 'Connect anyway', exact: true}).isVisible() || await wallet.getByRole('button', {name: 'Continue at your own risk', exact: true}).count()) throw new Error('MetaMask safety warning: connection was not approved');
+    if (await connect.isVisible()) await connect.click();
+  }
   await app.locator('.wallet-address').waitFor({ timeout: 20000 });
   stage = 'Sepolia network';
   if (await app.getByRole('button', { name: 'Switch to Sepolia', exact: true }).isVisible()) {
     await app.getByRole('button', { name: 'Switch to Sepolia', exact: true }).click();
-    await wallet.waitForTimeout(1500);
-    wallet = context.pages().find(p => p.url().includes('notification.html')) ?? wallet;
-    const confirm = wallet.getByRole('button', { name: /^(Confirm|Switch network)$/ });
-    if (await confirm.isVisible()) await confirm.click();
+    const networkDeadline = Date.now() + 60000;
+    let confirmed = false;
+    while (!confirmed && Date.now() < networkDeadline) {
+      for (const candidate of context.pages().filter(page => page.url().startsWith(origin))) {
+        const confirm = candidate.getByRole('button', { name: /^(Confirm|Switch network)$/ });
+        if (await confirm.isVisible().catch(() => false)) {
+          await confirm.click();
+          confirmed = true;
+          break;
+        }
+      }
+      if (!confirmed) await app.waitForTimeout(500);
+    }
+    if (!confirmed) throw new Error('No network confirmation appeared');
   }
   await app.getByLabel('Connected to Sepolia').waitFor({ timeout: 20000 });
   const address = await app.evaluate(async () => (await window.ethereum.request({ method: 'eth_accounts' }))[0]);
