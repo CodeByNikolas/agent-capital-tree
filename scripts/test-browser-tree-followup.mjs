@@ -133,7 +133,8 @@ try {
       childId: childId.toString(), grandchildId: grandchildId.toString(), siblingId: null,
       status: 'running', stage, startedAt: new Date().toISOString(), siblingKey,
       transactions: {}, checks: {},
-      limitations: ['Child LP remains open; browser owner must close it and recover the grandchild before phase two.'] };
+      limitations: ['Child LP remains open; browser owner must close it and recover the grandchild before phase two.',
+        'Phase-two parent reclaim and reallocation use journaled programmatic root-operator transactions; this does not test a MultiBaas-informed Master model decision.'] };
     await writeFile(reportPath, JSON.stringify(report, null, 2) + '\n', { flag: 'wx' });
     const save = () => writeFile(reportPath, JSON.stringify(report, null, 2) + '\n');
     const rootContext = { workerId: '', rootId: config.rootId, nodeId: config.rootId,
@@ -194,6 +195,22 @@ try {
     report.checks.restart = { originalChildId: repeated.childId, noNewNodeGasOrRootNonce: true,
       blockNumber: afterRepeat.source.blockNumber.toString() };
     await save();
+    stage = 'branch-revoke';
+    const { receipt } = await journaledTransaction({ rpc, signer: rootWallet,
+      directory: join(privateBase, 'browser-tree-followup-transactions', config.rootId),
+      name: 'revoke-child', request: revokeRequest });
+    report.transactions.revokeChild = await verifiedReceipt(receipt.hash);
+    await save();
+    await assert.rejects(controller.checkAction(childId, financeRoles.swap, child.agent, 0, swapAmount), hasInactiveRevert);
+    await assert.rejects(controller.checkAction(grandchildId, financeRoles.swap, grandchild.agent, 0, swapAmount), hasInactiveRevert);
+    const revoked = await sdk.getTree(rootId);
+    assert.equal(revoked.nodes.length, 3);
+    assert.equal(revoked.nodes.find(node => node.id === childId).authorizedCapabilities, 0n);
+    assert.equal(revoked.nodes.find(node => node.id === grandchildId).authorizedCapabilities, 0n);
+    await companion.monitor();
+    report.checks.branchIsolation = { childInactive: true, grandchildInactive: true,
+      blockNumber: revoked.source.blockNumber.toString() };
+    await save();
     stage = 'sibling-spawn';
     const spawned = await call('spawnChild', siblingArgs);
     assert.equal(spawned.dispatchStatus, 'started');
@@ -242,26 +259,13 @@ try {
     const swapEvents = parsed.filter(entry => entry.event.name === 'SwapExecuted' && entry.event.args.nodeId === sibling.id &&
       entry.event.args.amountIn === swapAmount && entry.event.args.amountOut >= minSwapOutput);
     assert.equal(swapEvents.length, 1);
+    assert.ok(swapEvents[0].log.blockNumber > report.transactions.revokeChild.blockNumber,
+      'Sibling swap must follow the branch revoke');
     report.transactions.siblingSwap = await verifiedReceipt(swapEvents[0].log.transactionHash);
     report.checks.siblingSwap = { tokenA: sibling.balances[0].toString(), tokenB: sibling.balances[1].toString() };
+    report.checks.branchIsolation.siblingActiveAfterRevoke = true;
     await save();
-    stage = 'branch-revoke';
-    const { receipt } = await journaledTransaction({ rpc, signer: rootWallet,
-      directory: join(privateBase, 'browser-tree-followup-transactions', config.rootId),
-      name: 'revoke-child', request: revokeRequest });
-    report.transactions.revokeChild = await verifiedReceipt(receipt.hash);
-    await save();
-    await assert.rejects(controller.checkAction(childId, financeRoles.swap, child.agent, 0, swapAmount), hasInactiveRevert);
-    await assert.rejects(controller.checkAction(grandchildId, financeRoles.swap, grandchild.agent, 0, swapAmount), hasInactiveRevert);
-    await controller.checkAction(sibling.id, financeRoles.swap, sibling.agent, 0, swapAmount);
-    const revoked = await sdk.getTree(rootId);
-    assert.equal(revoked.nodes.length, 4);
-    assert.equal(revoked.nodes.find(node => node.id === childId).authorizedCapabilities, 0n);
-    assert.equal(revoked.nodes.find(node => node.id === grandchildId).authorizedCapabilities, 0n);
-    report.checks.branchIsolation = { childInactive: true, grandchildInactive: true, siblingActive: true,
-      blockNumber: revoked.source.blockNumber.toString() };
     stage = 'companion-stop';
-    await companion.monitor();
     await companion.close();
     companion = undefined;
     report.status = 'awaiting-owner-close';
