@@ -7,6 +7,9 @@ import {CapitalVault} from "../src/CapitalVault.sol";
 import {NodeFactory} from "../src/NodeFactory.sol";
 import {VaultFactory} from "../src/VaultFactory.sol";
 import {IPoolManager} from "@uniswap/v4-core/src/interfaces/IPoolManager.sol";
+import {IPositionManager} from "@uniswap/v4-periphery/src/interfaces/IPositionManager.sol";
+import {IAllowanceTransfer} from "permit2/src/interfaces/IAllowanceTransfer.sol";
+import {PositionManagerConfig, DummyPoolManager, DummyPermit2} from "./utils/PositionManagerConfig.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
 contract DemoToken is ERC20 {
@@ -24,7 +27,10 @@ contract CapitalVaultTest is Test {
         IERC20[2] memory tokens = address(token) < address(other)
             ? [IERC20(address(token)), IERC20(address(other))]
             : [IERC20(address(other)), IERC20(address(token))];
-        NodeFactory factory = new NodeFactory(new VaultFactory(IPoolManager(address(0x123)), tokens));
+        IPoolManager manager = IPoolManager(address(new DummyPoolManager()));
+        IAllowanceTransfer permit2 = IAllowanceTransfer(address(new DummyPermit2()));
+        IPositionManager posm = IPositionManager(address(new PositionManagerConfig(manager, permit2)));
+        NodeFactory factory = new NodeFactory(new VaultFactory(manager, posm, permit2, tokens));
         CapitalVault vault = factory.createVault();
         token.mint(address(vault), 100);
 
@@ -37,5 +43,20 @@ contract CapitalVaultTest is Test {
         vault.transferToken(token, address(0xB0B), 40);
         assertEq(token.balanceOf(address(vault)), 60);
         assertEq(token.balanceOf(address(0xB0B)), 40);
+    }
+
+    function testFactoryRejectsMismatchedPositionManager() public {
+        DemoToken token = new DemoToken();
+        DemoToken other = new DemoToken();
+        IERC20[2] memory tokens = address(token) < address(other)
+            ? [IERC20(address(token)), IERC20(address(other))]
+            : [IERC20(address(other)), IERC20(address(token))];
+        IPoolManager manager = IPoolManager(address(new DummyPoolManager()));
+        IAllowanceTransfer permit2 = IAllowanceTransfer(address(new DummyPermit2()));
+        IPositionManager wrong = IPositionManager(
+            address(new PositionManagerConfig(IPoolManager(address(new DummyPoolManager())), permit2))
+        );
+        vm.expectRevert(VaultFactory.InvalidPool.selector);
+        new VaultFactory(manager, wrong, permit2, tokens);
     }
 }

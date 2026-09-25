@@ -82,6 +82,33 @@ contract CapitalController is ReentrancyGuard {
         uint256 amountIn,
         uint256 amountOut
     );
+    event PositionOpened(
+        uint256 indexed rootId,
+        uint256 indexed nodeId,
+        uint256 indexed tokenId,
+        uint128 liquidity,
+        uint256 amount0,
+        uint256 amount1
+    );
+    event PositionIncreased(
+        uint256 indexed rootId,
+        uint256 indexed nodeId,
+        uint256 indexed tokenId,
+        uint128 liquidity,
+        uint256 amount0,
+        uint256 amount1
+    );
+    event FeesCollected(
+        uint256 indexed rootId, uint256 indexed nodeId, uint256 indexed tokenId, uint256 amount0, uint256 amount1
+    );
+    event PositionClosed(
+        uint256 indexed rootId,
+        uint256 indexed nodeId,
+        uint256 indexed tokenId,
+        uint128 liquidity,
+        uint256 amount0,
+        uint256 amount1
+    );
 
     IPermissionedRegistry public immutable ETH_REGISTRY;
     ManagedRegistry public immutable PROJECT_REGISTRY;
@@ -280,6 +307,7 @@ contract CapitalController is ReentrancyGuard {
         Node storage child = _node(childId);
         if (child.parentId != parentId) revert InvalidInput();
         _authorize(parentId, FinanceRoles.RECLAIM, msg.sender);
+        if (child.vault.positionTokenId() != 0) revert InvalidInput();
         if (!child.revoked) {
             child.revoked = true;
             _revokeLocalRolesIfActive(child);
@@ -292,6 +320,7 @@ contract CapitalController is ReentrancyGuard {
     function ownerEmergencyRecover(uint256 nodeId) external nonReentrant {
         Node storage node = _node(nodeId);
         if (msg.sender != rootOwner[node.rootId]) revert Unauthorized();
+        if (node.vault.positionTokenId() != 0) revert InvalidInput();
         if (!node.revoked) {
             node.revoked = true;
             emit NodeRevoked(node.rootId, nodeId);
@@ -323,6 +352,9 @@ contract CapitalController is ReentrancyGuard {
             (role == FinanceRoles.SWAP || role == FinanceRoles.MANAGE_LP || role == FinanceRoles.COLLECT_FEES)
                 && effective.poolId == bytes32(0)
         ) revert Unauthorized();
+        if ((role == FinanceRoles.SWAP || role == FinanceRoles.MANAGE_LP) && effective.tokenMask != 3) {
+            revert Unauthorized();
+        }
     }
 
     function swap(
@@ -351,6 +383,88 @@ contract CapitalController is ReentrancyGuard {
             actualIn,
             actualOut
         );
+    }
+
+    function openPosition(uint256 nodeId, uint128 liquidity, uint128[2] calldata maxAmounts, uint256 deadline)
+        external
+        nonReentrant
+        returns (uint256 tokenId)
+    {
+        Policy memory effective = _authorize(nodeId, FinanceRoles.MANAGE_LP, msg.sender);
+        _checkLpFunding(effective, maxAmounts, deadline);
+        Node storage node = _nodes[nodeId];
+        uint256[2] memory spent;
+        (tokenId, spent) = node.vault.openPosition(liquidity, maxAmounts, deadline);
+        emit PositionOpened(node.rootId, nodeId, tokenId, liquidity, spent[0], spent[1]);
+    }
+
+    function increasePosition(uint256 nodeId, uint128 liquidity, uint128[2] calldata maxAmounts, uint256 deadline)
+        external
+        nonReentrant
+    {
+        Policy memory effective = _authorize(nodeId, FinanceRoles.MANAGE_LP, msg.sender);
+        _checkLpFunding(effective, maxAmounts, deadline);
+        Node storage node = _nodes[nodeId];
+        uint256[2] memory spent = node.vault.increasePosition(liquidity, maxAmounts, deadline);
+        emit PositionIncreased(node.rootId, nodeId, node.vault.positionTokenId(), liquidity, spent[0], spent[1]);
+    }
+
+    function collectFees(uint256 nodeId, uint128[2] calldata minAmounts, uint256 deadline) external nonReentrant {
+        Policy memory effective = _authorize(nodeId, FinanceRoles.COLLECT_FEES, msg.sender);
+        if (effective.poolId != POOL_ID) revert Unauthorized();
+        Node storage node = _nodes[nodeId];
+        uint256 tokenId = node.vault.positionTokenId();
+        uint256[2] memory received = node.vault.collectFees(minAmounts, deadline);
+        emit FeesCollected(node.rootId, nodeId, tokenId, received[0], received[1]);
+    }
+
+    function closePosition(uint256 nodeId, uint128[2] calldata minAmounts, uint256 deadline) external nonReentrant {
+        _authorize(nodeId, FinanceRoles.EXIT_LP, msg.sender);
+        _closePosition(_nodes[nodeId], minAmounts, deadline);
+    }
+
+    /// @notice Parent may close a child's fixed position even if its name or mandate has expired.
+    function parentClosePosition(uint256 parentId, uint256 childId, uint128[2] calldata minAmounts, uint256 deadline)
+        external
+        nonReentrant
+    {
+        Node storage child = _node(childId);
+        if (child.parentId != parentId) revert InvalidInput();
+        _authorize(parentId, FinanceRoles.RECLAIM, msg.sender);
+        if (!child.revoked) {
+            child.revoked = true;
+            _revokeLocalRolesIfActive(child);
+            emit NodeRevoked(child.rootId, childId);
+        }
+        _closePosition(child, minAmounts, deadline);
+    }
+
+    /// @notice Owner exit stays available when ENS, the indexer, or the operator is unavailable.
+    function ownerEmergencyClosePosition(uint256 nodeId, uint128[2] calldata minAmounts, uint256 deadline)
+        external
+        nonReentrant
+    {
+        Node storage node = _node(nodeId);
+        if (msg.sender != rootOwner[node.rootId]) revert Unauthorized();
+        if (!node.revoked) {
+            node.revoked = true;
+            emit NodeRevoked(node.rootId, nodeId);
+        }
+        _closePosition(node, minAmounts, deadline);
+    }
+
+    function _closePosition(Node storage node, uint128[2] calldata minAmounts, uint256 deadline) private {
+        uint128 liquidity = node.vault.positionLiquidity();
+        (uint256 tokenId, uint256[2] memory received) = node.vault.closePosition(minAmounts, deadline);
+        emit PositionClosed(node.rootId, node.id, tokenId, liquidity, received[0], received[1]);
+    }
+
+    function _checkLpFunding(Policy memory effective, uint128[2] calldata maxAmounts, uint256 deadline) private view {
+        if (
+            effective.poolId != POOL_ID || effective.tokenMask != 3 || block.timestamp > deadline
+                || (maxAmounts[0] == 0 && maxAmounts[1] == 0) || maxAmounts[0] > effective.maxAmounts[0]
+                || maxAmounts[1] > effective.maxAmounts[1]
+        ) revert Unauthorized();
     }
 
     function _allocate(Node storage parent, Node storage child, uint256[2] calldata amounts) private {

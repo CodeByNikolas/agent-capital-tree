@@ -10,6 +10,8 @@ import {PoolModifyLiquidityTest} from "@uniswap/v4-core/src/test/PoolModifyLiqui
 import {ModifyLiquidityParams} from "@uniswap/v4-core/src/types/PoolOperation.sol";
 import {TickMath} from "@uniswap/v4-core/src/libraries/TickMath.sol";
 import {CapitalVault} from "../src/CapitalVault.sol";
+import {IPositionManager} from "@uniswap/v4-periphery/src/interfaces/IPositionManager.sol";
+import {IAllowanceTransfer} from "permit2/src/interfaces/IAllowanceTransfer.sol";
 import {FixedPool} from "../src/uniswap/FixedPool.sol";
 
 contract SwapToken is ERC20 {
@@ -43,7 +45,12 @@ contract CapitalSwapTest is Test {
             ""
         );
         vault = new CapitalVault(
-            address(this), IPoolManager(address(manager)), IERC20(address(token0)), IERC20(address(token1))
+            address(this),
+            IPoolManager(address(manager)),
+            IPositionManager(address(0x124)),
+            IAllowanceTransfer(address(0x125)),
+            IERC20(address(token0)),
+            IERC20(address(token1))
         );
         token0.mint(address(vault), 100 ether);
     }

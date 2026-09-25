@@ -15,6 +15,9 @@ import {NodeFactory} from "../src/NodeFactory.sol";
 import {VaultFactory} from "../src/VaultFactory.sol";
 import {FinanceRoles} from "../src/ens/FinanceRoles.sol";
 import {IPoolManager} from "@uniswap/v4-core/src/interfaces/IPoolManager.sol";
+import {IPositionManager} from "@uniswap/v4-periphery/src/interfaces/IPositionManager.sol";
+import {IAllowanceTransfer} from "permit2/src/interfaces/IAllowanceTransfer.sol";
+import {PositionManagerConfig, DummyPoolManager, DummyPermit2} from "./utils/PositionManagerConfig.sol";
 
 contract TestLabelStore is ILabelStore {
     function setLabel(string calldata) external {}
@@ -65,7 +68,10 @@ contract CapitalControllerTest is Test {
         token1 = new TestToken("Demo B", "B");
         if (address(token0) > address(token1)) (token0, token1) = (token1, token0);
         IERC20[2] memory tokens = [IERC20(address(token0)), IERC20(address(token1))];
-        VaultFactory vaultFactory = new VaultFactory(IPoolManager(address(0x123)), tokens);
+        IPoolManager manager = IPoolManager(address(new DummyPoolManager()));
+        IAllowanceTransfer permit2 = IAllowanceTransfer(address(new DummyPermit2()));
+        IPositionManager posm = IPositionManager(address(new PositionManagerConfig(manager, permit2)));
+        VaultFactory vaultFactory = new VaultFactory(manager, posm, permit2, tokens);
         NodeFactory factory = NodeFactory(deployCode("NodeFactory.sol:NodeFactory", abi.encode(vaultFactory)));
         poolId = factory.POOL_ID();
         controller = CapitalController(
@@ -173,12 +179,28 @@ contract CapitalControllerTest is Test {
     function testSwapRequiresBothPoolTokensInPolicy() public {
         uint256 onlyToken0 = _spawn(rootId, "only0", childAgent, _policy(FinanceRoles.SWAP, 1, 40), 40);
         uint256 onlyToken1 = _spawn(rootId, "only1", grandchildAgent, _policy(FinanceRoles.SWAP, 2, 40), 1);
+        vm.expectRevert(CapitalController.Unauthorized.selector);
+        controller.checkAction(onlyToken0, FinanceRoles.SWAP, childAgent, 0, 1);
+        vm.expectRevert(CapitalController.Unauthorized.selector);
+        controller.checkAction(onlyToken1, FinanceRoles.SWAP, grandchildAgent, 1, 1);
         vm.prank(childAgent);
         vm.expectRevert(CapitalController.Unauthorized.selector);
         controller.swap(onlyToken0, true, 1, 1, 1, block.timestamp);
         vm.prank(grandchildAgent);
         vm.expectRevert(CapitalController.Unauthorized.selector);
         controller.swap(onlyToken1, false, 1, 1, 1, block.timestamp);
+    }
+
+    function testCollectFeesStopsWhenPoolPolicyIsRemoved() public {
+        CapitalController.Policy memory tightened = _policy(FinanceRoles.ALL, 3, 100);
+        tightened.poolId = bytes32(0);
+        vm.prank(owner);
+        controller.tightenPolicy(rootId, tightened);
+        vm.expectRevert(CapitalController.Unauthorized.selector);
+        controller.checkAction(rootId, FinanceRoles.COLLECT_FEES, rootAgent, 2, 0);
+        vm.prank(rootAgent);
+        vm.expectRevert(CapitalController.Unauthorized.selector);
+        controller.collectFees(rootId, [uint128(0), uint128(0)], block.timestamp);
     }
 
     function testParentCanReclaimAfterChildNameExpires() public {
@@ -248,7 +270,7 @@ contract CapitalControllerTest is Test {
 
     function testTighteningRemovesEacRoleWithoutChangingSibling() public {
         uint256 childId = _spawn(rootId, "child", childAgent, _policy(FinanceRoles.ALL, 1, 50), 40);
-        uint256 siblingId = _spawn(rootId, "sibling", address(0xA07), _policy(FinanceRoles.ALL, 1, 50), 40);
+        uint256 siblingId = _spawn(rootId, "sibling", address(0xA07), _policy(FinanceRoles.ALL, 3, 50), 40);
         CapitalController.Node memory child = controller.getNode(childId);
         CapitalController.Node memory sibling = controller.getNode(siblingId);
         assertTrue(child.registry.hasRoles(child.resource, FinanceRoles.SWAP, childAgent));
