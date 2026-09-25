@@ -211,13 +211,18 @@ After confirmation write /workspace/completed.json with {"status":"child-complet
   assert.ok(matching('CapitalAllocated', child.id).some(entry => entry.event.args.amount === parseEther('10')));
   assert.ok(matching('CapitalAllocated', grandchild.id).some(entry => entry.event.args.amount === parseEther('1')));
   assert.ok(matching('SwapExecuted', child.id).some(entry => entry.event.args.amountIn === parseEther('2') &&
-    entry.event.args.amountOut >= parseEther('1.5')));
+    entry.event.args.inputToken.toLowerCase() === tokenA.toLowerCase() && entry.event.args.amountOut >= parseEther('1.5')));
+  const feeGeneratingSwap = matching('SwapExecuted', child.id).find(entry =>
+    entry.event.args.inputToken.toLowerCase() === tokenB.toLowerCase() &&
+    entry.event.args.amountIn === parseEther('0.1') && entry.event.args.amountOut >= parseEther('0.08'));
+  assert(feeGeneratingSwap, 'Expected the exact controlled reverse swap');
   assert.ok(matching('SwapExecuted', grandchild.id).some(entry => entry.event.args.amountIn === parseEther('0.1') &&
     entry.event.args.amountOut >= parseEther('0.08')));
   assert.ok(matching('PositionOpened', child.id).some(entry => entry.event.args.liquidity === parseEther('30')));
   assert.ok(matching('PositionIncreased', child.id).some(entry => entry.event.args.liquidity === parseEther('10')));
   const collectedFees = matching('FeesCollected', child.id);
-  assert.ok(collectedFees.some(entry => entry.event.args.amount0 > 0n || entry.event.args.amount1 > 0n),
+  assert.ok(collectedFees.some(entry => entry.log.blockNumber >= feeGeneratingSwap.log.blockNumber &&
+    (entry.event.args.amount0 > 0n || entry.event.args.amount1 > 0n)),
     'The controlled swap must produce nonzero collected LP fees');
   const relevant = entries.filter(entry => [child.id, grandchild.id].some(nodeId =>
     entry.event.args.nodeId === nodeId || entry.event.args.childId === nodeId));
