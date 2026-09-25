@@ -45,7 +45,8 @@ jobs:
           printf '%s\n' "$RUNNER_TEMP" >> "$GITHUB_PATH"
       - run: forge fmt --check
         working-directory: contracts
-      - run: forge test
-        working-directory: contracts
+      - run: bash contracts/scripts/test-contracts.sh
+      - name: Verify generated contract ABI
+        run: node scripts/generate-abi.mjs && git diff --exit-code -- packages/sdk/src/abi.ts
       - name: Verify transaction retry journal on disposable Anvil
         run: ACT_ANVIL_BIN="$RUNNER_TEMP/anvil" node scripts/test-transaction-journal.mjs
