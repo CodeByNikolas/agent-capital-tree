@@ -37,6 +37,8 @@ try{
       const {receipt}=await journaledTransaction({rpc,signer,directory:join(privateBase,'runtime-setup-transactions'),name,request});
       state.transactions[name]={transactionHash:receipt.hash,blockNumber:receipt.blockNumber};await save();return receipt;
     }
+    // The root creation reserves ~6.5M gas; 0.01 ETH cannot cover the current max-fee reservation.
+    await send('jury-gas-top-up',deployer,{to:owner.address,value:parseEther('0.01')});
     const capabilities=[40n,44n,48n,52n,56n,60n,64n].reduce((a,b)=>a|(1n<<b),0n);
     const policy={capabilities,maxAmounts:[parseEther('100'),parseEther('100')],expiry:BigInt(state.expiry),tokenMask:3,poolId:deployment.uniswap.poolId};
     const created=await send('create-runtime-root',owner,await controller.createRoot.populateTransaction('runtime-demo',policy));
