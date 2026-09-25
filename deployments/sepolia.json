@@ -4,5 +4,24 @@
   "status": "awaiting-contract-deployment",
   "deployer": "0x280Ca099242D7164cD001E4479D59f13CD0ea7c9",
   "testUser": "0x0B59E040F864AFd07Ed448F58199a296413333bf",
-  "contracts": {}
+  "contracts": {},
+  "ensNamespace": {
+    "name": "agentcapitaltree.eth",
+    "registrar": "0xa4449a0dd2b83007553d9b1d28b583a46a805a30",
+    "registry": "0x67b728a792e789a8978b30cf1b3b641f19354b43",
+    "transactions": {
+      "commit": {
+        "hash": "0x5d7b938e129d5ad11987be125e26e964fca0f8babf231c767850c28f4182396d",
+        "block": 11780726
+      },
+      "mint": {
+        "hash": "0x71b8021d5630965425a5dac406093841bf6f0b92a8d86f6a404a2bf2f7a54f0d",
+        "block": 11780727
+      },
+      "approve": {
+        "hash": "0x30f4e525b12a6dd76000c9a2799bdebf492f9f636cabb28f54e55a769a6daf7e",
+        "block": 11780728
+      }
+    }
+  }
 }
