@@ -1,6 +1,12 @@
-import { createPublicClient, erc20Abi, getContract, http, type Address, type PublicClient, type HttpTransport, type GetContractReturnType, type ContractFunctionReturnType, type Hex } from 'viem';
+import { BaseError, ContractFunctionRevertedError, parseAbi, createPublicClient, erc20Abi, getContract, http, type Address, type PublicClient, type HttpTransport, type GetContractReturnType, type ContractFunctionReturnType, type Hex } from 'viem';
 import { sepolia } from 'viem/chains';
 import { capitalControllerAbi } from './abi.js';
+import { financeRoles } from './policy.js';
+
+export const capitalVaultReadAbi = parseAbi([
+  'function positionTokenId() view returns (uint256)',
+  'function positionLiquidity() view returns (uint128)',
+]);
 export { capitalControllerAbi } from './abi.js';
 export * from './policy.js';
 
@@ -12,7 +18,7 @@ type EffectivePolicy = ContractFunctionReturnType<typeof capitalControllerAbi, '
 export type CapitalTree = {
   rootId: bigint; owner: Address; operator: Address; generation: bigint;
   tokens: readonly [Address, Address];
-  nodes: Array<Node & { effectivePolicy: EffectivePolicy; balances: [bigint, bigint]; ensName: string }>;
+  nodes: Array<Node & { effectivePolicy: EffectivePolicy; balances: [bigint, bigint]; ensName: string; position: { tokenId: bigint; liquidity: bigint }; authorizedCapabilities: bigint }>;
   totalBalances: [bigint, bigint];
   source: { kind: 'rpc'; chainId: number; blockNumber: bigint; blockHash: Hex; timestamp: bigint; observedAt: string };
 };
@@ -22,7 +28,7 @@ export type CapitalClient = {
 
 /** A chain-pinned read client. Wallets/signers stay with the caller. */
 export function capitalClient(rpcUrl: string, controllerAddress: Address): CapitalClient {
-  const rpc: PublicClient<HttpTransport, typeof sepolia> = createPublicClient({ chain: sepolia, transport: http(rpcUrl, { timeout: 15000 }) });
+  const rpc: PublicClient<HttpTransport, typeof sepolia> = createPublicClient({ chain: sepolia, transport: http(rpcUrl, { timeout: 15000, batch: { batchSize: 50, wait: 10 } }) });
   const controller: GetContractReturnType<typeof capitalControllerAbi, typeof rpc> = getContract({ address: controllerAddress, abi: capitalControllerAbi, client: rpc });
 
   async function verifyDeployment() {
@@ -48,7 +54,22 @@ export function capitalClient(rpcUrl: string, controllerAddress: Address): Capit
         controller.read.getEffectivePolicy([id], at),
         ...tokens.map(address => rpc.readContract({ address, abi: erc20Abi, functionName: 'balanceOf', args: [node.vault], ...at })),
       ]);
-      return { ...node, effectivePolicy, balances: balances as [bigint, bigint] };
+      const [tokenId, liquidity, permissions] = await Promise.all([
+        rpc.readContract({ address: node.vault, abi: capitalVaultReadAbi, functionName: 'positionTokenId', ...at }),
+        rpc.readContract({ address: node.vault, abi: capitalVaultReadAbi, functionName: 'positionLiquidity', ...at }),
+        Promise.all(Object.values(financeRoles).map(async role => {
+          if (!(effectivePolicy.capabilities & role)) return 0n;
+          try {
+            await controller.read.checkAction([id, role, node.agent, 2, 0n], at);
+            return role;
+          } catch (error) {
+            if (error instanceof BaseError && error.walk(cause => cause instanceof ContractFunctionRevertedError) instanceof ContractFunctionRevertedError) return 0n;
+            throw error; // An unavailable RPC is not evidence that authority was revoked.
+          }
+        })),
+      ]);
+      return { ...node, effectivePolicy, balances: balances as [bigint, bigint], position: { tokenId, liquidity },
+        authorizedCapabilities: permissions.reduce((mask, role) => mask | role, 0n) };
     }));
     const byId = new Map(nodes.map(node => [node.id, node]));
     const named = nodes.map(node => {
