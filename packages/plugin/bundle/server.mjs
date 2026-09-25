@@ -36528,9 +36528,10 @@ var RuntimeClient = class {
       response = await this.request(new URL(`/v1/tools/${name}`, url2), {
         method: "POST",
         headers: { authorization: `Bearer ${this.bearer}`, "content-type": "application/json" },
+        // Spawn includes two confirmed transactions (allocation and bounded gas) before dispatch.
         body: JSON.stringify(args),
         redirect: "error",
-        signal: AbortSignal.timeout(3e4)
+        signal: AbortSignal.timeout(toolSpecs[name].readOnly ? 3e4 : 3e5)
       });
     } catch {
       throw new RuntimeError("Local runtime is unavailable. No operation was confirmed. Reconcile status before retrying a write.");

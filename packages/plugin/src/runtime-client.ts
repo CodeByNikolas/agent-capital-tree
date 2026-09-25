@@ -21,7 +21,8 @@ export class RuntimeClient {
       response = await this.request(new URL(`/v1/tools/${name}`, url), {
         method: 'POST',
         headers: { authorization: `Bearer ${this.bearer}`, 'content-type': 'application/json' },
-        body: JSON.stringify(args), redirect: 'error', signal: AbortSignal.timeout(30_000)
+        // Spawn includes two confirmed transactions (allocation and bounded gas) before dispatch.
+        body: JSON.stringify(args), redirect: 'error', signal: AbortSignal.timeout(toolSpecs[name].readOnly ? 30_000 : 300_000)
       });
     } catch { throw new RuntimeError('Local runtime is unavailable. No operation was confirmed. Reconcile status before retrying a write.'); }
     if (!response.ok) throw new RuntimeError(`Local runtime rejected ${name} (HTTP ${response.status}). No success was reported; reconcile status before retrying a write.`);
