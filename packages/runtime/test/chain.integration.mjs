@@ -1,15 +1,15 @@
 import assert from 'node:assert/strict';
 import { spawn } from 'node:child_process';
 import { createServer } from 'node:net';
-import { mkdtemp, readFile, rm } from 'node:fs/promises';
+import { mkdtemp, readFile, readdir, rm } from 'node:fs/promises';
 import { homedir, tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { setTimeout as delay } from 'node:timers/promises';
-import { createPublicClient, createWalletClient, http, keccak256, stringToHex, zeroAddress, toHex } from 'viem';
+import { createPublicClient, createWalletClient, http, keccak256, parseEther, stringToHex, zeroAddress, toHex } from 'viem';
 import { mnemonicToAccount, privateKeyToAccount } from 'viem/accounts';
 import { sepolia } from 'viem/chains';
 import { capitalClient, financeRoles } from '@agent-capital-tree/sdk';
-import { chainHandlers, OnchainSpawnChain, ChildGasFunding, childKeyId } from '../dist/index.js';
+import { chainHandlers, OnchainSpawnChain, ChildGasFunding, RuntimeCompanion, childKeyId, prepareRootOperator } from '../dist/index.js';
 
 // Disposable local chain only. Anvil's well-known test mnemonic is never used on Sepolia.
 const reserve = createServer();
@@ -151,6 +151,84 @@ try {
       console.log(JSON.stringify({ rootSpawnGas: rootSpawnGas.toString(), childSpawnGas: childSpawnGas.toString(),
         childGasRemaining: (await rpc.getBalance({ address: childAgent.address })).toString() }));
     } finally { await rm(intents, { recursive: true, force: true }); }
+    const runtimeRoot = await mkdtemp(join(tmpdir(), 'act-companion-restart-'));
+    try {
+      const rootAddress = await prepareRootOperator(runtimeRoot, '1', controller.address);
+      await write(controller, 'setRootOperator', [1n, rootAddress, policy]);
+      await rpc.waitForTransactionReceipt({ hash: await wallets[0].sendTransaction({ to: rootAddress, value: parseEther('0.05') }) });
+      const generation = (await sdk.controller.read.rootGeneration([1n])).toString();
+      const parent = { workerId: 'root', rootId: '1', nodeId: '1', authorityGeneration: generation };
+      const operationKey = toHex(4n, { size: 32 });
+      const request = { operationKey, task: 'synthetic dispatch only', model: 'gpt-6-luna', asset: token0.address,
+        amount: '5', restrictions: { maxPerAction: { [token0.address]: '20', [token1.address]: '20' } } };
+      const grant = parseEther('0.0001');
+      const runtimeConfig = { runtimeRoot, rootId: '1', rpcUrl, controller: controller.address,
+        upstream: 'http://127.0.0.1:1/v1', upstreamKey: 'synthetic-host-only',
+        imageId: `sha256:${'a'.repeat(64)}`, models: ['gpt-6-luna'], workerUid: process.getuid(),
+        workerGid: process.getgid(), childGasWei: grant, writesEnabled: true };
+      let dispatches = 0;
+      const start = async () => {
+        const companion = new RuntimeCompanion(runtimeConfig);
+        companion.launcher.ensureAvailable = async () => {};
+        companion.launcher.launch = async () => { dispatches++; };
+        companion.launcher.stop = async () => {};
+        companion.launcher.close = async () => {};
+        return { companion, ready: await companion.start() };
+      };
+      const tool = async (ready, name, args) => {
+        const response = await fetch(`${ready.toolsOrigin}/v1/tools/${name}`, {
+          method: 'POST', headers: { authorization: `Bearer ${await readFile(ready.rootTokenFile, 'utf8')}` },
+          body: JSON.stringify(args)
+        });
+        return { status: response.status, body: await response.json() };
+      };
+      let running = await start();
+      let first;
+      try {
+        first = await tool(running.ready, 'spawnChild', request);
+        assert.equal(first.status, 200);
+        assert.equal(first.body.dispatchStatus, 'started');
+        assert.equal(dispatches, 1);
+      } finally { await running.companion.close(); }
+      const childAccount = await running.companion.keys.account(childKeyId(parent, operationKey, controller.address));
+      const fundedBalance = await rpc.getBalance({ address: childAccount.address });
+      const rootNonce = await rpc.getTransactionCount({ address: rootAddress });
+      const allocatedTree = await sdk.getTree(1n);
+      const allocatedBalance = allocatedTree.nodes.find(node => node.id.toString() === first.body.childId).balances[0];
+      assert.equal(fundedBalance, grant);
+      assert.equal(allocatedBalance, 5n);
+      assert.equal((await readdir(join(runtimeRoot, 'gas'))).filter(name => name.endsWith('.json')).length, 1);
+      running = await start();
+      try {
+        const repeated = await tool(running.ready, 'spawnChild', request);
+        assert.equal(repeated.status, 200);
+        assert.equal(repeated.body.childId, first.body.childId);
+        assert.equal(repeated.body.dispatchStatus, 'started');
+        assert.equal((await tool(running.ready, 'getOperationStatus', { operationKey })).body.dispatchStatus, 'started');
+      } finally { await running.companion.close(); }
+      assert.equal(dispatches, 1);
+      assert.equal(await rpc.getTransactionCount({ address: rootAddress }), rootNonce);
+      assert.equal(await rpc.getBalance({ address: childAccount.address }), fundedBalance);
+      assert.equal((await sdk.getTree(1n)).nodes.length, allocatedTree.nodes.length);
+      await rm(join(runtimeRoot, 'spawn-journal'), { recursive: true, force: true }); // Disposable loss-of-journal case.
+      running = await start();
+      try {
+        const uncertain = await tool(running.ready, 'spawnChild', request);
+        assert.equal(uncertain.status, 200);
+        assert.equal(uncertain.body.childId, first.body.childId);
+        assert.equal(uncertain.body.dispatchStatus, 'allocation_confirmed_dispatch_unknown');
+        assert.equal((await tool(running.ready, 'getOperationStatus', { operationKey })).body.dispatchStatus,
+          'allocation_confirmed_dispatch_unknown');
+        assert.equal((await tool(running.ready, 'spawnChild', request)).status, 409);
+      } finally { await running.companion.close(); }
+      assert.equal(dispatches, 1);
+      assert.equal(await rpc.getTransactionCount({ address: rootAddress }), rootNonce);
+      assert.equal(await rpc.getBalance({ address: childAccount.address }), fundedBalance);
+      assert.equal((await readdir(join(runtimeRoot, 'gas'))).filter(name => name.endsWith('.json')).length, 1);
+      assert.equal((await sdk.getTree(1n)).nodes.length, allocatedTree.nodes.length);
+      console.log(JSON.stringify({ companionRestart: true, allocations: 1, gasFundings: 1, dispatches,
+        lostJournal: 'allocation_confirmed_dispatch_unknown' }));
+    } finally { await rm(runtimeRoot, { recursive: true, force: true }); }
   } finally { clearInterval(mine); }
   console.log(JSON.stringify({ localChain: true, sdkTree: true, realEnsContracts: true, runtimeSignerBoundary: true, capitalConserved: true }));
 } finally { anvil.kill(); }
