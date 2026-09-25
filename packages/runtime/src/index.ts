@@ -7,3 +7,4 @@ export * from './server.js';
 export * from './chain.js';
 export * from './gateway.js';
 export * from './launcher.js';
+export * from './keys.js';

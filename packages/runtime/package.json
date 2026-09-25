@@ -12,6 +12,7 @@
   "dependencies": {
     "@agent-capital-tree/plugin": "workspace:*",
     "@agent-capital-tree/sdk": "workspace:*",
+    "ethers": "6.17.0",
     "viem": "2.56.9"
   },
   "devDependencies": { "@types/node": "22.15.30", "typescript": "5.9.3" }

@@ -91,6 +91,9 @@ importers:
       '@agent-capital-tree/sdk':
         specifier: workspace:*
         version: link:../sdk
+      ethers:
+        specifier: 6.17.0
+        version: 6.17.0
       viem:
         specifier: 2.56.9
         version: 2.56.9(typescript@5.9.3)(zod@4.6.5)
