@@ -49,10 +49,10 @@ test('Docker command has fixed isolation flags and rejects escaped mounts', asyn
   const workerRoot = join(runtimeRoot, 'workers', 'w1');
   const workspace = join(workerRoot, 'work');
   const keyFile = join(workerRoot, 'key');
-  await mkdir(workerRoot, { recursive: true });
-  await mkdir(workspace);
+  await mkdir(workerRoot, { recursive: true, mode: 0o700 });
+  await mkdir(workspace, { mode: 0o700 });
   await writeFile(keyFile, 'synthetic-only', { mode: 0o600 });
-  const files = { workerId: 'w1', runtimeRoot, workspace, keyFile, image: `worker@sha256:${'a'.repeat(64)}`, model: 'gpt-6-sol', brokerUrl: 'http://broker:7000/v1', brokerToken: 'limited', mcpToken: 'local' };
+  const files = { workerId: 'w1', uid: process.getuid(), gid: process.getgid(), runtimeRoot, workspace, keyFile, image: `worker@sha256:${'a'.repeat(64)}`, model: 'gpt-6-sol', brokerUrl: 'http://broker:7000/v1', brokerToken: 'limited', mcpToken: 'local' };
   try {
   const args = await workerDockerArgs(files);
   assert.deepEqual(args.slice(0, 4), ['run', '--rm', '-i', '--read-only']);
@@ -60,6 +60,8 @@ test('Docker command has fixed isolation flags and rejects escaped mounts', asyn
   assert.ok(args.includes('--security-opt=no-new-privileges'));
   assert.ok(args.includes('codex'));
   assert.ok(args.includes('--json'));
+  assert.ok(args.includes('--skip-git-repo-check'));
+  assert.ok(args.includes(`--user=${files.uid}:${files.gid}`));
   assert.ok(!args.join(' ').includes('docker.sock'));
   assert.ok(args.filter(arg => arg.startsWith('type=bind')).every(arg => arg.includes(workerRoot)));
   await assert.rejects(workerDockerArgs({ ...files, workspace: '/home/owner' }), /outside private root/);
@@ -67,6 +69,7 @@ test('Docker command has fixed isolation flags and rejects escaped mounts', asyn
   await mkdir(sibling);
   await writeFile(join(sibling, 'key'), 'sibling-synthetic');
   await assert.rejects(workerDockerArgs({ ...files, keyFile: join(sibling, 'key') }), /outside private root/);
+  await assert.rejects(workerDockerArgs({ ...files, uid: files.uid + 1 }), /permissions do not match/);
   const escaped = join(workerRoot, 'escaped');
   await symlink(tmpdir(), escaped);
   await assert.rejects(workerDockerArgs({ ...files, workspace: escaped }), /invalid worker mounts/);
