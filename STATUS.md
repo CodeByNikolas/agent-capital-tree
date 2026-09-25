@@ -5,7 +5,7 @@ Stand: 25. September 2026. Nach Komprimierung zusammen mit PLAN.md lesen.
 ## Nachgewiesen
 
 - Öffentliches Repository: https://github.com/CodeByNikolas/agent-capital-tree. Änderungen werden nach Review/Tests getrennt committet.
-- Öffentliches Preview: https://agent-capital-tree.vercel.app. Noch ältere Preview ohne aktivierte Finanzfunktionen; Live-Dashboard in Arbeit.
+- Öffentliches Live-Dashboard: https://agent-capital-tree.vercel.app. Vercel-Deployment dpl_4jFc9XSiY4gF1k79A3vDVnVr1oXL aus Commit266ad2f; Produktionsbuild erfolgreich. Standardmäßig Seed-Root1, Root-ID-Navigation, echter RPC-Zustand, explizite Sample-Preview und Wallet-Verwaltungsoberfläche. Veröffentlichte API-/Desktop-/Mobiltests bestanden; artifacts/ui enthält Screenshots und Report. Das ist noch kein Wallet-Signaturtest.
 - ENSv2 agentcapitaltree.eth auf Sepolia registriert; Owner/Ressource geprüft und ProjectRegistry 0x72D923aaBc7b1deD019A25577C46D6Fb1Ff67Fb3 angebunden. Receipts: deployments/sepolia.json.
 - Demo-Assets ACT-A 0x4338d78B1c2425ab89976e026c2E56bCAf1D50df und ACT-B 0xB09844F53E5ba103a1cF721626c759a394C7d423 deployed und Bytecode geprüft. Beide wertlos, einmaliger Faucet je Adresse.
 - Deployment-Wallet 0x280Ca099242D7164cD001E4479D59f13CD0ea7c9 finanziert; unabhängige Jury-Wallet 0x0B59E040F864AFd07Ed448F58199a296413333bf mit 0.01 Sepolia ETH finanziert. Verschlüsselte Schlüssel außerhalb Git.
@@ -24,8 +24,8 @@ Stand: 25. September 2026. Nach Komprimierung zusammen mit PLAN.md lesen.
 
 1. CI verwendet den erfolgreich geprüften gestuften Contract-Build und prüft die generierte ABI. Breite kalte solc-js-Kompilation vermeiden; contracts/scripts/test-contracts.sh verwenden.
 2. Live-Runtime-Test bestanden, aber unabhängiger kompletter Wallet-/Plugin-Installationspfad sowie öffentlicher Sibling-/Neustart-Nachweis bleiben getrennte Abnahmepunkte. Getestetes Worker-Image: sha256:9753cecb887342e353ee6bc757a751ff4a5a06e33c719476f1cf41c435da5cf6; Codex0.154.0, Binary-SHA256 9b7c1c7abdc26fc3c4f47c77656a8e9121def5483dbae830ef1ee561758448a9.
-3. Frontend-Live-Integration d15ab96 übernommen, Workspace-Produktionsbuild bestanden. Lokale API-Smoketests: Root1/2 echt, fehlender Root404, ungültiger Root400, MultiBaas ohne Key ausdrücklich unavailable. Desktop-Browser ohne Seitenfehler/Overflow. Frontend-Agent ergänzt Faucet sowie Root-Navigation/korrekte Vault-Anzahl separat, mit frontend-design und impeccable. Danach Vercel-Deployment und Browser-Abnahme.
-4. Öffentliche Sepolia-Receipts und Sponsor-Dokumentation aktualisiert. GitHub CI für ee5208f erfolgreich; nach Frontend-Abschluss erneut prüfen.
+3. Frontend mit frontend-design und impeccable geprüft und veröffentlicht. Root1/2 echt, fehlender Root404, ungültiger Root400, MultiBaas ohne Key ausdrücklich unavailable. Desktop1440/Mobil390 ohne JS-Fehler oder horizontalen Overflow; Root2 zeigt drei Vaults und null aktive. Faucet ohne Wallet gesperrt; tatsächliche Faucet-/Owner-Signaturen im veröffentlichten Browser weiter offen.
+4. Öffentliche Sepolia-Receipts und Sponsor-Dokumentation aktualisiert. GitHub CI für266ad2f vollständig erfolgreich (Contracts, ABI, Transaction-Journal, Workspace-Build, Typecheck und Tests). Root-Codex-Onboarding korrigiert: explizite MCP-Registrierung des Plugin-Bundles mit tool_timeout_sec=300, in frischem CLI0.154.0-Profil per mcp get geprüft. Marketplace-Manifest allein setzt keinen verlängerten Timeout; vollständiger frischer Finanzlauf damit weiterhin separat offen.
 5. MultiBaas-Key/administrative ABI- und Adressregistrierung fehlen; Live-Konfiguration durchführen, sobald verfügbar.
 6. MetaMask markiert beide bisherigen Vercel-URLs als unsicher. Kein „Connect anyway“ angeklickt. Ursache nicht bewiesen; eigene Domain beim Nutzer angefragt. Wallet-Verbindung, Signaturen und veröffentlichter Wallet-E2E bleiben ungeprüft.
 7. Gesamtabnahme aus PLAN.md inklusive echter Plugin-Childs, Swap/LP, Widerruf, Sibling-Isolation und Owner-Rückholung bleibt offen.

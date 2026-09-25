@@ -1,6 +1,6 @@
 {
-  "base": "http://127.0.0.1:3040",
-  "checkedAt": "2026-09-25T19:56:34.533Z",
+  "base": "https://agent-capital-tree.vercel.app",
+  "checkedAt": "2026-09-25T19:58:08.740Z",
   "checks": [
     "root 1: HTTP 200",
     "root 2: HTTP 200",
