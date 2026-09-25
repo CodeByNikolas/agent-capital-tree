@@ -541,8 +541,42 @@ function PreviewNotice({ data, deployment }: { data: DashboardData; deployment: 
   return (
     <div className="preview-notice" role="note">
       <span className="notice-symbol"><CircleDashed size={16} aria-hidden="true" /></span>
-      <p><strong>Preview workspace.</strong> Balances, ENS labels, policies, LP positions and activity below are illustrative sample records. {deployment.contractsConfigured ? "Preview records cannot be used for wallet actions; add a root ID to load live chain state." : "Controller deployment is still pending."}</p>
+      <p><strong>Preview workspace.</strong> Balances, ENS labels, policies, LP positions and activity below are illustrative sample records. {deployment.contractsConfigured ? "Preview records cannot be used for wallet actions; use the Root ID control below to load live chain state." : "Controller deployment is still pending."}</p>
       <a href="#setup">Why preview data? <ArrowRight size={13} aria-hidden="true" /></a>
+    </div>
+  );
+}
+
+function RootAccessBar({ rootId, defaultRootId }: { rootId: string | null; defaultRootId: string | null }) {
+  const alternateHref = rootId
+    ? "/?preview=1"
+    : defaultRootId
+      ? `/?root=${encodeURIComponent(defaultRootId)}`
+      : null;
+  return (
+    <div className="root-access-bar" aria-label="Root navigation">
+      <form action="/" method="get" className="root-access-form">
+        <label htmlFor="root-id">Root ID</label>
+        <input
+          id="root-id"
+          name="root"
+          type="text"
+          inputMode="numeric"
+          pattern="[1-9][0-9]*"
+          maxLength={78}
+          defaultValue={rootId ?? ""}
+          placeholder={defaultRootId ?? "e.g. 1"}
+          aria-label="Root ID to load"
+          autoComplete="off"
+          required
+        />
+        <button className="button button-secondary button-small" type="submit">Load root</button>
+      </form>
+      {alternateHref && (
+        <a className="root-preview-link" href={alternateHref}>
+          {rootId ? "Preview sample" : "Open live root"}
+        </a>
+      )}
     </div>
   );
 }
@@ -633,6 +667,7 @@ function MetricCard({
 
 function SummaryMetrics({ data }: { data: DashboardData }) {
   const activeVaults = data.nodes.filter((node) => node.state === "active").length;
+  const totalVaults = data.nodes.length;
   const assets = uniqueAssets(data.nodes.flatMap((node) => node.tokenHoldings));
   const allHoldings = data.nodes.flatMap((node) => node.tokenHoldings);
   const primaryAsset = assets[0] ? sumAsset(allHoldings, assets[0]) : { rawAmount: "0", decimals: 0, symbol: "" };
@@ -651,9 +686,9 @@ function SummaryMetrics({ data }: { data: DashboardData }) {
       />
       <MetricCard
         label="Vaults in tree"
-        value={String(activeVaults).padStart(2, "0")}
+        value={String(totalVaults).padStart(2, "0")}
         unit=" / 32"
-        detail="MVP root limit"
+        detail={`${activeVaults} active · MVP root limit`}
         icon={<GitBranch size={17} aria-hidden="true" />}
         source={data.source}
       />
@@ -1384,6 +1419,7 @@ export function Dashboard({ data: initialData, deployment, rootQuery }: Dashboar
         <Topbar mobileOpen={mobileOpen} onMenuToggle={() => setMobileOpen((open) => !open)} source={data.source} wallet={wallet} />
         <div className="dashboard-content">
           <PreviewNotice data={data} deployment={deployment} />
+          <RootAccessBar rootId={rootQuery} defaultRootId={deployment.defaultRootId} />
           {rootQuery && <LiveReadNotice rootId={rootQuery} data={data} loading={currentReadState.status === "loading"} error={liveError} onRetry={() => setTreeRetry((value) => value + 1)} />}
           <OverviewHeader activeVaults={activeVaults} positions={data.positions.length} source={data.source} />
           <SummaryMetrics data={data} />

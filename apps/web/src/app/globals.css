@@ -137,6 +137,14 @@ button:focus-visible, a:focus-visible { outline: 2px solid var(--acid); outline-
 .preview-notice p strong { color: #d9e9c1; font-weight: 700; }
 .preview-notice > a { display: flex; align-items: center; gap: 5px; flex: 0 0 auto; color: var(--acid); font-size: 9px; font-weight: 650; }
 .preview-notice > a:hover { color: #e1f6a7; }
+.root-access-bar { display: flex; align-items: center; justify-content: space-between; gap: 12px; min-height: 43px; margin: 0 0 8px; padding: 5px 10px; border: 1px solid #29352d; border-radius: 5px; background: #131916; }
+.root-access-form { display: flex; align-items: center; gap: 8px; }
+.root-access-form label { color: #b4c0b5; font-family: var(--mono); font-size: 8px; }
+.root-access-form input { width: 108px; height: 29px; padding: 0 8px; border: 1px solid #39473d; border-radius: 4px; outline: none; background: #111713; color: #e3ebe2; font: 9px var(--mono); }
+.root-access-form input::placeholder { color: #7d8b80; }
+.root-access-form input:focus-visible { border-color: #93b25c; outline: 2px solid rgb(197 238 105 / 25%); outline-offset: 1px; }
+.root-preview-link { color: #b8d58c; font-size: 9px; font-weight: 650; white-space: nowrap; }
+.root-preview-link:hover { color: #e1f6a7; }
 .live-read-notice { display: grid; grid-template-columns: 22px minmax(0, 1fr) auto; align-items: center; gap: 10px; min-height: 46px; margin-top: 8px; padding: 8px 11px; border: 1px solid #38463d; border-radius: 5px; background: #17201b; color: #c1cdc2; }
 .live-read-notice-loading { border-color: #64543a; background: #211f18; }
 .live-read-notice-error { border-color: #70413a; background: #241c1a; color: #e1b7b0; }
@@ -488,6 +496,11 @@ button:focus-visible, a:focus-visible { outline: 2px solid var(--acid); outline-
   .notice-symbol { width: 22px; height: 22px; }
   .preview-notice p { font-size: 9px; }
   .preview-notice > a { display: none; }
+  .root-access-bar { gap: 6px; padding: 5px 7px; }
+  .root-access-form { flex: 1; min-width: 0; gap: 5px; }
+  .root-access-form input { width: 0; min-width: 0; max-width: 112px; flex: 1; }
+  .root-access-form .button { min-height: 29px; padding: 0 7px; font-size: 8px; }
+  .root-preview-link { font-size: 8px; }
   .live-read-notice { grid-template-columns: 22px minmax(0, 1fr); gap: 8px; }
   .live-read-notice .button { grid-column: 2; justify-self: start; }
   .overview-heading { min-height: 172px; padding: 24px 0 19px; }
