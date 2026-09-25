@@ -1,0 +1,69 @@
+{
+  "chainId": 11155111,
+  "controller": "0x55caFFf719B5FA70c0e8942eEe2C7EE6B8c7Db6b",
+  "rootId": "5",
+  "checkedAt": "2026-09-25T22:12:48.318Z",
+  "blockNumber": 11782087,
+  "nodes": [
+    {
+      "id": "5",
+      "revoked": true,
+      "balances": [
+        "0",
+        "0"
+      ],
+      "position": {
+        "tokenId": "0",
+        "liquidity": "0"
+      }
+    },
+    {
+      "id": "6",
+      "revoked": true,
+      "balances": [
+        "0",
+        "0"
+      ],
+      "position": {
+        "tokenId": "0",
+        "liquidity": "0"
+      }
+    },
+    {
+      "id": "7",
+      "revoked": true,
+      "balances": [
+        "0",
+        "0"
+      ],
+      "position": {
+        "tokenId": "0",
+        "liquidity": "0"
+      }
+    },
+    {
+      "id": "8",
+      "revoked": true,
+      "balances": [
+        "0",
+        "0"
+      ],
+      "position": {
+        "tokenId": "0",
+        "liquidity": "0"
+      }
+    }
+  ],
+  "seed": {
+    "rootId": "1",
+    "tokenId": "39811",
+    "liquidity": "5000000000000000000000"
+  },
+  "checks": {
+    "allFourVaultsRevokedAndEmpty": true,
+    "noOpenRoot5Positions": true,
+    "seedPositionAndLiquidityPreserved": true,
+    "canonicalRecoveryReceipts": true
+  },
+  "status": "passed"
+}
