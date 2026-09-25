@@ -1,0 +1,59 @@
+{
+  "chainId": 11155111,
+  "controller": "0x55caFFf719B5FA70c0e8942eEe2C7EE6B8c7Db6b",
+  "owner": "0x0B59E040F864AFd07Ed448F58199a296413333bf",
+  "expiry": "1790969280",
+  "transactions": {
+    "jury-gas-top-up": {
+      "transactionHash": "0x488134dbc11939b10b1eb1ff16d6498f0308af45f84c6513303193daf3ad8380",
+      "blockNumber": 11781313
+    },
+    "create-runtime-root": {
+      "transactionHash": "0xf227540e4432d5142eed14b61c8673d70ad0fc6300be84fa6b7d13ef0814b3dc",
+      "blockNumber": 11781315
+    },
+    "bind-runtime-operator": {
+      "transactionHash": "0x6ff068fe7e25556369939262af26b12f764e4de162fbfa965cea231fe5bd7c81",
+      "blockNumber": 11781318
+    },
+    "claim-demo-token-0": {
+      "transactionHash": "0xfa21a9ecf91e520401012903b1b4dcdcced73deedfad0992e6f30f1e76b0324d",
+      "blockNumber": 11781320
+    },
+    "approve-demo-token-0": {
+      "transactionHash": "0x23e0dbdf69e69980af461c5d059e11c433161a2bcf81fdf27a2d4e8379f2f924",
+      "blockNumber": 11781322
+    },
+    "claim-demo-token-1": {
+      "transactionHash": "0xfa923ba979d55684a4c5f8594698ea2ad71d6365ff1a33c9c6c90c9bb50f3e92",
+      "blockNumber": 11781324
+    },
+    "approve-demo-token-1": {
+      "transactionHash": "0x3d79c36205f4a6f5657ecdad184a48814af775680c00eeaf35a7d60180d56458",
+      "blockNumber": 11781326
+    },
+    "fund-runtime-root": {
+      "transactionHash": "0xe6f837ac4611bc768648ed2e96c3a1fb7ad88c06ec97487252b3d4717c3c6183",
+      "blockNumber": 11781328
+    },
+    "operator-gas-0": {
+      "transactionHash": "0x68412f8abb6260371c81349270f73b97fbd32f13384de61d0ad8e967ec153e02",
+      "blockNumber": 11781330
+    },
+    "operator-gas-1": {
+      "transactionHash": "0xfdd83fa0da133151d317ed4a66d352583ab83cd90451747634721812cd66abd0",
+      "blockNumber": 11781332
+    },
+    "operator-gas-2": {
+      "transactionHash": "0xc82e987c544265afa9bf92a8b8c60a1c7d060d9bfd2733cfa4aeddf9ada95cb2",
+      "blockNumber": 11781334
+    },
+    "operator-gas-3": {
+      "transactionHash": "0x1e4ce4af18b530f33c4b92bef29f8d2b5b09e28e23dc4e0032d56807d9325963",
+      "blockNumber": 11781336
+    }
+  },
+  "status": "ready",
+  "rootId": "2",
+  "operator": "0x338b24A1dEA2F3D8C875F41Cf61EAA24035629b7"
+}
