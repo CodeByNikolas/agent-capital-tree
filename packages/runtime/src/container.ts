@@ -2,6 +2,7 @@ import { lstat, realpath } from 'node:fs/promises';
 import { isAbsolute, resolve, sep } from 'node:path';
 
 export type WorkerFiles = Readonly<{
+  workerId: string;
   workspace: string;
   keyFile: string;
   runtimeRoot: string;
@@ -18,9 +19,11 @@ function inside(root: string, path: string): boolean {
 
 /** Only the companion supplies WorkerFiles. Never merge model-supplied Docker args or env. */
 export async function workerDockerArgs(files: WorkerFiles): Promise<string[]> {
-  if (!inside(files.runtimeRoot, files.workspace) || !inside(files.runtimeRoot, files.keyFile)) throw new Error('worker files outside runtime root');
+  if (!/^[\w-]+$/.test(files.workerId)) throw new Error('invalid worker ID');
+  const workerRoot = resolve(files.runtimeRoot, 'workers', files.workerId);
+  if (!inside(workerRoot, files.workspace) || !inside(workerRoot, files.keyFile)) throw new Error('worker files outside private root');
   const [root, workspace, key, workspaceInfo, keyInfo] = await Promise.all([
-    realpath(files.runtimeRoot), realpath(files.workspace), realpath(files.keyFile), lstat(files.workspace), lstat(files.keyFile)
+    realpath(workerRoot), realpath(files.workspace), realpath(files.keyFile), lstat(files.workspace), lstat(files.keyFile)
   ]);
   if (!inside(root, workspace) || !inside(root, key) || !workspaceInfo.isDirectory() || !keyInfo.isFile() ||
     workspaceInfo.isSymbolicLink() || keyInfo.isSymbolicLink()) throw new Error('invalid worker mounts');
@@ -32,9 +35,11 @@ export async function workerDockerArgs(files: WorkerFiles): Promise<string[]> {
   const base = `model_providers.local_broker.base_url="${files.brokerUrl}"`;
   return [
     'run', '--rm', '-i', '--read-only', '--network', 'act-workers', '--cap-drop=ALL', '--security-opt=no-new-privileges',
-    '--pids-limit=128', '--memory=1g', '--cpus=1', '--user=10001:10001', '--tmpfs=/tmp:rw,nosuid,nodev,size=64m',
+    '--pids-limit=128', '--memory=1g', '--cpus=1', '--user=10001:10001',
+    '--tmpfs=/tmp:rw,nosuid,nodev,size=64m', '--tmpfs=/home/worker:rw,nosuid,nodev,size=64m',
     '--mount', `type=bind,src=${workspace},dst=/workspace`,
     '--mount', `type=bind,src=${key},dst=/run/worker/key,readonly`,
+    '--env', 'HOME=/home/worker', '--env', 'CODEX_HOME=/home/worker/.codex',
     '--env', `ACT_INFERENCE_TOKEN=${files.brokerToken}`, '--env', `ACT_MCP_TOKEN=${files.mcpToken}`,
     files.image, 'codex', 'exec', '--json', '--ephemeral', '--ignore-user-config', '--sandbox', 'workspace-write',
     '-C', '/workspace', '-m', files.model, '-c', provider, '-c', base,
