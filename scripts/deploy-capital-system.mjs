@@ -80,7 +80,8 @@ try {
       const current = await registry.getSubregistry('agentcapitaltree');
       if (!same(current,projectRegistry)) {
         if (!same(current,ZeroAddress)) throw new Error('Namespace already linked to another registry');
-        await send('attach-namespace',await registry.setSubregistry.populateTransaction(state.resource,projectRegistry));
+        const {receipt}=await send('attach-namespace',await registry.setSubregistry.populateTransaction(state.resource,projectRegistry));
+        manifest.ensNamespace.transactions.attach={hash:receipt.hash,block:receipt.blockNumber};
       }
       if (!same(await registry.getSubregistry('agentcapitaltree'),projectRegistry)) throw new Error('Namespace attachment failed');
       manifest.ensNamespace.subregistry = projectRegistry;
