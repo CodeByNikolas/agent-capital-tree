@@ -1,0 +1,11 @@
+{
+  "owner": "0xbCea84Ed1DaFbb59AaF9797Cb4170394db688d34",
+  "profile": "jury-e2e-resume-final2",
+  "extension": "MetaMask 13.49.0",
+  "newDirectoryCreatedBy": "setup-browser-wallet.mjs --fresh-owner-resume-profile",
+  "onboardingRestartRequired": true,
+  "readyVerifiedBy": "setup-browser-wallet.mjs (walletUiReady=true)",
+  "applicationRequestsBeforeMarker": 0,
+  "transactionRequestsBeforeMarker": 0,
+  "checkedAt": "2026-09-25T22:09:06.417Z"
+}
