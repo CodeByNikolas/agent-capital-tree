@@ -58,7 +58,6 @@
   "startedAt": "2026-09-25T20:48:04.180Z",
   "startBlock": 11781688,
   "claimed": true,
-  "failedPhase": "create",
   "reconciliation": {
     "checkedAt": "2026-09-25T20:55:41.610Z",
     "throughBlock": 11781726,
@@ -74,5 +73,6 @@
   "limitations": [
     "Agent execution and owner recovery are separate subsequent steps.",
     "MultiBaas live indexing remains unconfigured."
-  ]
+  ],
+  "reconciledFailurePhase": "create"
 }

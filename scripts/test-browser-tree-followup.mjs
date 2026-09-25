@@ -359,6 +359,9 @@ try {
     await companion.close();
     companion = undefined;
     report.status = 'passed';
+    report.stage = stage;
+    report.limitations = ['Final browser owner recovery is a separate subsequent phase.',
+      'Parent reclaim and reallocation used journaled programmatic root-operator transactions; no MultiBaas-informed Master model decision was tested.'];
     report.finishedAt = new Date().toISOString();
     await save();
     console.log(JSON.stringify({ status: report.status, rootId: report.rootId, childId: report.childId,

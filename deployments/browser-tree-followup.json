@@ -6,7 +6,7 @@
   "grandchildId": "7",
   "siblingId": "8",
   "status": "passed",
-  "stage": "owner-close-verified",
+  "stage": "companion-stop",
   "startedAt": "2026-09-25T21:21:03.511Z",
   "siblingKey": "0x517ec27ca2b4e1bee914b59b213560b6551e5b3d561b6b735fdcd37c0f532fce",
   "transactions": {
@@ -85,8 +85,8 @@
     }
   },
   "limitations": [
-    "Child LP remains open; browser owner must close it and recover the grandchild before phase two.",
-    "Phase-two parent reclaim and reallocation use journaled programmatic root-operator transactions; this does not test a MultiBaas-informed Master model decision."
+    "Final browser owner recovery is a separate subsequent phase.",
+    "Parent reclaim and reallocation used journaled programmatic root-operator transactions; no MultiBaas-informed Master model decision was tested."
   ],
   "reservedWei": "16351374045653760",
   "finishedAt": "2026-09-25T21:29:03.874Z"

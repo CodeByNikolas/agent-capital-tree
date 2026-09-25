@@ -172,6 +172,10 @@ export async function browserOwnerSetup({ context, app, origin, address, private
       transaction.blockHash = receipt.blockHash;
     }
     report.status = 'owner-setup-passed';
+    if (report.failedPhase) report.reconciledFailurePhase = report.failedPhase;
+    delete report.failedPhase;
+    delete report.failedStep;
+    delete report.diagnostics;
     report.finishedAt = new Date().toISOString();
     report.limitations = ['Agent execution and owner recovery are separate subsequent steps.', 'MultiBaas live indexing remains unconfigured.'];
     await save();
