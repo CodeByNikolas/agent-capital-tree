@@ -1,0 +1,13 @@
+[profile.default]
+src = "src"
+test = "test"
+libs = ["lib"]
+solc = "scripts/solc-wrapper.mjs"
+evm_version = "cancun"
+optimizer = true
+optimizer_runs = 200
+remappings = [
+  "ens-v2/=lib/ens-contracts-v2/contracts/src/",
+  "@openzeppelin/contracts/=lib/openzeppelin-contracts/contracts/",
+  "forge-std/=lib/forge-std/src/"
+]
