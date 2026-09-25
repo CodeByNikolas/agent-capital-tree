@@ -3,7 +3,8 @@ import { spawn } from 'node:child_process';
 import { mkdir, writeFile } from 'node:fs/promises';
 
 const model = process.argv[2];
-if (!/^[\w.-]+$/.test(model ?? '')) throw new Error('invalid model');
+const reasoningEffort = model === 'gpt-6-luna' ? 'max' : model === 'gpt-6-sol' ? 'medium' : undefined;
+if (!reasoningEffort) throw new Error('unsupported worker model');
 const socketPath = '/run/worker/gateway.sock';
 const proxy = createServer((incoming, outgoing) => {
   if (incoming.method !== 'POST' || !(/^\/v1\/responses$|^\/v1\/tools\/[A-Za-z]+$/.test(incoming.url ?? ''))) {
@@ -20,6 +21,7 @@ await new Promise((ok, fail) => { proxy.once('error', fail); proxy.listen(8787, 
 const codexHome = '/home/worker/.codex';
 await mkdir(codexHome, { recursive: true, mode: 0o700 });
 await writeFile(`${codexHome}/config.toml`, `model = "${model}"
+model_reasoning_effort = "${reasoningEffort}"
 model_provider = "act_broker"
 approval_policy = "never"
 sandbox_mode = "danger-full-access"
