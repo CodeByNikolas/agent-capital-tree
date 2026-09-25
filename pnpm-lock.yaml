@@ -92,6 +92,9 @@ importers:
 
   packages/runtime:
     dependencies:
+      '@agent-capital-tree/multibaas':
+        specifier: workspace:*
+        version: link:../multibaas
       '@agent-capital-tree/plugin':
         specifier: workspace:*
         version: link:../plugin

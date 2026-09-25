@@ -11,6 +11,7 @@
     "test:workers": "node test/worker.integration.mjs && node test/model.integration.mjs"
   },
   "dependencies": {
+    "@agent-capital-tree/multibaas": "workspace:*",
     "@agent-capital-tree/plugin": "workspace:*",
     "@agent-capital-tree/sdk": "workspace:*",
     "ethers": "6.17.0",

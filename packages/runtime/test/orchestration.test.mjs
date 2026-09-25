@@ -103,3 +103,30 @@ test('companion refuses transaction tools while Sepolia writes are disabled', as
     await rm(directory, { recursive: true, force: true });
   }
 });
+
+test('activity is unavailable without configuration and cannot read another root', async () => {
+  const directory = await mkdtemp(join(tmpdir(), 'act-activity-'));
+  const base = { runtimeRoot: directory, rootId: '1', rpcUrl: 'http://127.0.0.1:1',
+    controller: controllerA, upstream: 'http://127.0.0.1:1/v1', upstreamKey: 'synthetic-host-only',
+    imageId: `sha256:${'a'.repeat(64)}`, models: ['gpt-6-luna'], workerUid: process.getuid(),
+    workerGid: process.getgid(), childGasWei: 0n, writesEnabled: false };
+  const request = async (companion, rootId) => {
+    const token = companion.sessions.issue(scope, Date.now() + 10000);
+    const response = await fetch(`http://127.0.0.1:${companion.tools.address().port}/v1/tools/getCapitalActivity`, {
+      method: 'POST', headers: { authorization: `Bearer ${token}` }, body: JSON.stringify({ rootId })
+    });
+    return response.status;
+  };
+  try {
+    const unavailable = new RuntimeCompanion(base);
+    await new Promise(resolve => unavailable.tools.listen(0, '127.0.0.1', resolve));
+    try { assert.equal(await request(unavailable, '1'), 501); }
+    finally { await new Promise(resolve => unavailable.tools.close(resolve)); }
+    const configured = new RuntimeCompanion({ ...base, multibaas: {
+      deploymentUrl: 'https://example.multibaas.com/', controllerLabel: 'controller', apiKey: 'synthetic'
+    } });
+    await new Promise(resolve => configured.tools.listen(0, '127.0.0.1', resolve));
+    try { assert.equal(await request(configured, '2'), 409); }
+    finally { await new Promise(resolve => configured.tools.close(resolve)); }
+  } finally { await rm(directory, { recursive: true, force: true }); }
+});

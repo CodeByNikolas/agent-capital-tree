@@ -3,6 +3,7 @@ import { mkdir, lstat, readFile, readdir, rename, rm, writeFile } from 'node:fs/
 import { isAbsolute, join, resolve } from 'node:path';
 import type { Address } from 'viem';
 import { financeRoles } from '@agent-capital-tree/sdk';
+import { createMultiBaasHistoryClient } from '@agent-capital-tree/multibaas';
 import { toolSpecs, type ToolName } from '@agent-capital-tree/plugin/tools';
 import { WorkerKeyStore } from './keys.js';
 import { WorkerSessions, type WorkerContext } from './context.js';
@@ -98,6 +99,7 @@ export type CompanionConfig = Readonly<{
   childGasWei: bigint;
   writesEnabled: boolean;
   monitorIntervalMs?: number;
+  multibaas?: { deploymentUrl: string; controllerLabel: string; apiKey: string };
 }>;
 
 type Grant = { context: WorkerContext; brokerToken: string; mcpToken: string; keyFile: string };
@@ -166,6 +168,14 @@ export class RuntimeCompanion {
         dispatchStatus: operation.nodeId === 0n ? 'not_allocated' : record?.started && record.childId === operation.nodeId.toString()
           ? 'started' : 'allocation_confirmed_dispatch_unknown' };
     };
+    if (config.multibaas) {
+      const history = createMultiBaasHistoryClient({ ...config.multibaas, controllerAddress: config.controller,
+        rpcUrl: config.rpcUrl });
+      wrapped.getCapitalActivity = async (context, args) => {
+        if (String(args.rootId) !== context.rootId) throw new Error('activity root is outside worker scope');
+        return history.getCapitalActivity(context.rootId, args.cursor as string | undefined);
+      };
+    }
     this.tools = companionServer(this.sessions, wrapped);
     this.brokerServer = this.broker.server();
     this.journal = new FileSpawnJournal(join(config.runtimeRoot, 'spawn-journal'));

@@ -29,11 +29,16 @@ if (command === 'prepare-root') {
     upstreamKey = result.stdout.trim();
   }
   if (!upstreamKey) throw new Error('CLIProxyAPI token is unavailable');
+  const multibaas = config.multibaas && {
+    deploymentUrl: config.multibaas.deploymentUrl,
+    controllerLabel: config.multibaas.controllerLabel,
+    apiKey: (await privateFile(config.multibaas.apiKeyFile)).trim()
+  };
   const companion = new RuntimeCompanion({ runtimeRoot: config.runtimeRoot, rootId: config.rootId,
     rpcUrl: config.rpcUrl, controller: config.controller, upstream: config.upstream,
     upstreamKey, imageId: config.imageId, models: config.models,
     workerUid: process.getuid(), workerGid: process.getgid(),
-    childGasWei: BigInt(config.childGasWei ?? '0'), writesEnabled: flag === '--enable-sepolia-writes' });
+    childGasWei: BigInt(config.childGasWei ?? '0'), writesEnabled: flag === '--enable-sepolia-writes', multibaas });
   const ready = await companion.start();
   process.stdout.write(`Companion listening at ${ready.toolsOrigin}; root token file: ${ready.rootTokenFile}; Sepolia writes ${flag ? 'enabled' : 'disabled'}\n`);
   const shutdown = () => { void companion.close().then(() => process.exit(0)); };
