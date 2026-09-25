@@ -9,6 +9,7 @@ export type WorkerLaunch = Readonly<{
   task: string;
   maxLifetimeMs: number;
   revoke: () => void;
+  onExit?: (status: { workerId: string; code: number | null; signal: NodeJS.Signals | null }) => void;
 }>;
 
 type Active = { stop: () => Promise<void>; done: Promise<void> };
@@ -16,9 +17,19 @@ type Active = { stop: () => Promise<void>; done: Promise<void> };
 /** Companion owns preparation of decrypted key, child context and scoped grants. */
 export class DockerWorkerLauncher {
   #active = new Map<string, Active>();
+  #starting = new Map<string, Promise<void>>();
   constructor(private readonly docker = 'docker') {}
 
-  async launch(spec: WorkerLaunch): Promise<void> {
+  launch(spec: WorkerLaunch): Promise<void> {
+    const id = spec.files.workerId;
+    const existing = this.#starting.get(id);
+    if (existing) return existing;
+    const work = this.#launch(spec).finally(() => this.#starting.delete(id));
+    this.#starting.set(id, work);
+    return work;
+  }
+
+  async #launch(spec: WorkerLaunch): Promise<void> {
     const id = spec.files.workerId;
     if (this.#active.has(id)) return;
     if (!spec.task || Buffer.byteLength(spec.task) > 65_536) throw new Error('invalid worker task');
@@ -47,8 +58,8 @@ export class DockerWorkerLauncher {
       child = spawn(this.docker, args, { stdio: ['pipe', 'ignore', 'ignore'] });
       child.stdin?.end(spec.task);
       const done = new Promise<void>(resolve => {
-        child!.once('exit', () => resolve());
-        child!.once('error', () => resolve());
+        child!.once('exit', (code, signal) => { spec.onExit?.({ workerId: id, code, signal }); resolve(); });
+        child!.once('error', () => { spec.onExit?.({ workerId: id, code: null, signal: null }); resolve(); });
       }).then(stop);
       this.#active.set(id, { stop, done });
       timer = setTimeout(() => { void stop(); }, spec.maxLifetimeMs);
@@ -63,6 +74,8 @@ export class DockerWorkerLauncher {
   }
 
   async stop(workerId: string): Promise<void> {
+    const pending = this.#starting.get(workerId);
+    if (pending) await pending.catch(() => {});
     const active = this.#active.get(workerId);
     if (active) await active.stop();
     else await this.#docker(['stop', '--time', '5', workerContainerName(workerId)], true);

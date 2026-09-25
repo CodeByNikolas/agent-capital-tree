@@ -2,7 +2,8 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { createServer, request as httpRequest } from 'node:http';
 import { setTimeout as delay } from 'node:timers/promises';
-import { mkdtemp, mkdir, readFile, rm, symlink, writeFile } from 'node:fs/promises';
+import { mkdtemp, mkdir, readFile, rm, stat, symlink, writeFile } from 'node:fs/promises';
+import { spawn } from 'node:child_process';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { WorkerSessions, authorizedWorkerCall, SpawnCoordinator, FileSpawnJournal, workerDockerArgs, startWorkerGateway, InferenceBroker } from '../dist/index.js';
@@ -91,7 +92,9 @@ test('Docker command mounts only private worker files and has no network', async
   const target = createServer((_req, res) => res.end('{}'));
   await new Promise(resolve => target.listen(0, '127.0.0.1', resolve));
   const origin = `http://127.0.0.1:${target.address().port}`;
+  await assert.rejects(startWorkerGateway({ socket: gatewaySocket, workerRoot, uid: process.getuid(), brokerOrigin: 'http://user:pass@127.0.0.1:1', brokerToken: 'scoped', companionOrigin: origin, mcpToken: 'scoped' }), /loopback HTTP origin/);
   const gateway = await startWorkerGateway({ socket: gatewaySocket, workerRoot, uid: process.getuid(), brokerOrigin: origin, brokerToken: 'scoped', companionOrigin: origin, mcpToken: 'scoped' });
+  await assert.rejects(startWorkerGateway({ socket: gatewaySocket, workerRoot, uid: process.getuid(), brokerOrigin: origin, brokerToken: 'scoped', companionOrigin: origin, mcpToken: 'scoped' }), /already active/);
   const files = { workerId: 'w1', uid: process.getuid(), gid: process.getgid(), runtimeRoot, workspace, keyFile, gatewaySocket, imageId: `sha256:${'a'.repeat(64)}`, model: 'gpt-6-sol' };
   try {
     const args = await workerDockerArgs(files);
@@ -113,6 +116,27 @@ test('Docker command mounts only private worker files and has no network', async
     await symlink(tmpdir(), escaped);
     await assert.rejects(workerDockerArgs({ ...files, workspace: escaped }), /invalid worker mounts/);
   } finally { await gateway.close(); target.close(); await rm(runtimeRoot, { recursive: true, force: true }); }
+});
+
+test('gateway recovers a dead owner socket but refuses an active one', async () => {
+  const runtimeRoot = await mkdtemp(join(tmpdir(), 'act-stale-'));
+  const workerRoot = join(runtimeRoot, 'workers', 'stale');
+  const socket = join(workerRoot, 'gateway.sock');
+  await mkdir(workerRoot, { recursive: true, mode: 0o700 });
+  const child = spawn(process.execPath, ['-e', `require('net').createServer().listen(process.argv[1], () => require('fs').chmodSync(process.argv[1], 0o600))`, socket], { stdio: 'ignore' });
+  try {
+    for (let i = 0; i < 50; i++) {
+      try { if ((await stat(socket)).mode & 0o600) break; } catch {}
+      await delay(20);
+    }
+    assert.ok((await stat(socket)).isSocket());
+    child.kill('SIGKILL');
+    await new Promise(resolve => child.once('exit', resolve));
+    const config = { socket, workerRoot, uid: process.getuid(), brokerOrigin: 'http://127.0.0.1:1', brokerToken: 'broker', companionOrigin: 'http://127.0.0.1:1', mcpToken: 'mcp' };
+    const gateway = await startWorkerGateway(config);
+    try { await assert.rejects(startWorkerGateway(config), /already active/); }
+    finally { await gateway.close(); }
+  } finally { child.kill('SIGKILL'); await rm(runtimeRoot, { recursive: true, force: true }); }
 });
 
 test('broker forwards only allowed model and path with host-only upstream key and call limit', async () => {

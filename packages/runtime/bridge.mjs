@@ -31,6 +31,9 @@ wire_api = "responses"
 [ mcp_servers.act ]
 command = "node"
 args = ["/opt/act/plugin-server.mjs"]
+[ mcp_servers.act.env ]
+ACT_RUNTIME_URL = "http://127.0.0.1:8787"
+ACT_MCP_TOKEN = "worker-local"
 `, { mode: 0o600 });
 const codex = spawn('/opt/act/codex', ['exec', '--json', '--ephemeral', '-C', '/workspace', '--skip-git-repo-check', '-m', model, '-'], {
   stdio: 'inherit', env: process.env

@@ -1,6 +1,7 @@
 import { createServer, type IncomingMessage, type ServerResponse } from 'node:http';
 import { chmod, lstat, realpath, rm, stat } from 'node:fs/promises';
 import { dirname, resolve, sep } from 'node:path';
+import { createConnection } from 'node:net';
 
 export type GatewayConfig = Readonly<{
   socket: string;
@@ -21,13 +22,28 @@ export async function startWorkerGateway(config: GatewayConfig) {
   if (rootInfo.uid !== config.uid || (rootInfo.mode & 0o777) !== 0o700) throw new Error('invalid gateway directory');
   for (const value of [config.brokerOrigin, config.companionOrigin]) {
     const url = new URL(value);
-    if (url.protocol !== 'http:' || !['127.0.0.1', 'localhost', '[::1]'].includes(url.hostname) || url.pathname !== '/' || url.search || url.hash) {
+    if (url.protocol !== 'http:' || !['127.0.0.1', 'localhost', '[::1]'].includes(url.hostname) || url.username || url.password || url.pathname !== '/' || url.search || url.hash) {
       throw new Error('gateway target must be a loopback HTTP origin');
     }
   }
   if (!config.brokerToken || !config.mcpToken) throw new Error('missing scoped gateway credentials');
-  try { await lstat(socket); throw new Error('gateway socket already exists'); }
-  catch (error) { if ((error as NodeJS.ErrnoException).code !== 'ENOENT') throw error; }
+  try {
+    const existing = await lstat(socket);
+    if (!existing.isSocket() || existing.uid !== config.uid || (existing.mode & 0o777) !== 0o600) throw new Error('invalid existing gateway socket');
+    const stale = await new Promise<boolean>((resolve, reject) => {
+      const client = createConnection(socket);
+      client.setTimeout(500);
+      client.once('connect', () => { client.destroy(); resolve(false); });
+      client.once('error', error => {
+        client.destroy();
+        if ((error as NodeJS.ErrnoException).code === 'ECONNREFUSED') resolve(true);
+        else reject(error);
+      });
+      client.once('timeout', () => { client.destroy(); resolve(false); });
+    });
+    if (!stale) throw new Error('gateway socket already active');
+    await rm(socket);
+  } catch (error) { if ((error as NodeJS.ErrnoException).code !== 'ENOENT') throw error; }
   const server = createServer({ requestTimeout: 30_000, headersTimeout: 10_000 }, (req, res) => { void forward(req, res, config); });
   try {
     await new Promise<void>((ok, fail) => { server.once('error', fail); server.listen(socket, ok); });
