@@ -1,3 +1,6 @@
+import { createPublicClient, decodeEventLog, http, type Hex, type TransactionReceipt } from 'viem';
+import { capitalControllerAbi } from '@agent-capital-tree/sdk';
+
 const CHAIN_ID = 11155111;
 const DEFAULT_PAGE_SIZE = 25;
 const MAX_PAGE_SIZE = 50;
@@ -53,7 +56,7 @@ export interface ActivityProvenance {
   blockHash: string;
   source: 'multibaas';
   indexed: true;
-  finality: 'not_verified';
+  finality: 'not_verified' | 'pending' | 'confirmed' | 'finalized';
 }
 
 interface ActivityBase {
@@ -88,6 +91,7 @@ export interface CapitalActivityPage {
     indexGapBlocks: number;
     updatedAt: string;
   };
+  verification?: { source: 'rpc'; checkedAtBlock: string; finalizedBlock: string; orphanedItems: number };
   source: {
     provider: 'multibaas';
     chainId: typeof CHAIN_ID;
@@ -107,6 +111,8 @@ export interface MultiBaasHistoryConfig {
   controllerLabel: string;
   /** Server-side tuning only. Each call is capped at 50 query rows. */
   pageSize?: number;
+  /** Verify indexer results against canonical Sepolia receipts; never used to replace indexer history. */
+  rpcUrl?: string;
   /** Injectable solely to support deterministic tests. */
   fetcher?: typeof fetch;
 }
@@ -160,6 +166,7 @@ export function createMultiBaasHistoryClient(config: MultiBaasHistoryConfig) {
       deployment.username || deployment.password || deployment.port || deployment.search || deployment.hash || deployment.pathname !== '/') {
     throw new Error('Expected an HTTPS MultiBaas deployment origin');
   }
+  const rpc = config.rpcUrl ? createPublicClient({ transport: http(config.rpcUrl, { timeout: REQUEST_TIMEOUT_MS }) }) : undefined;
   const apiBase = `${deployment.origin}/api/v0`;
   const apiKey = config.apiKey.trim();
   const controllerAddress = normalizeAddress(config.controllerAddress, 'controllerAddress');
@@ -206,7 +213,7 @@ export function createMultiBaasHistoryClient(config: MultiBaasHistoryConfig) {
     const items = matchAndMapEvents(eventPages.flat(), rowCounts, rootId, controllerAddress);
     const hasMore = rows.length === pageSize;
 
-    return {
+    const page: CapitalActivityPage = {
       rootId,
       items: items.sort(compareActivity),
       nextCursor: hasMore ? encodeCursor(rootId, offset + rows.length) : null,
@@ -220,6 +227,7 @@ export function createMultiBaasHistoryClient(config: MultiBaasHistoryConfig) {
         activityCoverage: 'capital_core_events_only',
       },
     };
+    return rpc ? reconcileCapitalActivity(page, rpc) : page;
   }
 
   return { getCapitalActivity };
@@ -594,4 +602,58 @@ function sameParsedEvent(a: ParsedEvent, b: ParsedEvent): boolean {
     && a.blockHash.toLowerCase() === b.blockHash.toLowerCase()
     && JSON.stringify([...a.inputs.entries()].sort(([left], [right]) => left.localeCompare(right)))
       === JSON.stringify([...b.inputs.entries()].sort(([left], [right]) => left.localeCompare(right)));
+}
+
+/** An indexer supplies history; canonical receipts validate its claims, never fill missing history. */
+export async function reconcileCapitalActivity(page: CapitalActivityPage, rpc: {
+  getChainId(): Promise<number>;
+  getBlock(args: { blockTag: 'latest' | 'finalized' } | { blockNumber: bigint }): Promise<{ number: bigint | null; hash: Hex | null }>;
+  getTransactionReceipt(args: { hash: Hex }): Promise<TransactionReceipt>;
+}): Promise<CapitalActivityPage> {
+  if (await rpc.getChainId() !== CHAIN_ID) throw new Error('Activity verification requires Sepolia');
+  const [head, finalized] = await Promise.all([rpc.getBlock({ blockTag: 'latest' }), rpc.getBlock({ blockTag: 'finalized' })]);
+  if (head.number === null || finalized.number === null || finalized.number > head.number) throw new Error('Invalid verification blocks');
+  const transactions = new Map<string, TransactionReceipt | null>();
+  for (const item of page.items) {
+    const hash = item.provenance.transactionHash;
+    if (transactions.has(hash)) continue;
+    try { transactions.set(hash, await rpc.getTransactionReceipt({ hash: hash as Hex })); }
+    catch (error) {
+      // Only a missing receipt is a reorg/pending candidate. Network failures remain errors.
+      if ((error as Error).name !== 'TransactionReceiptNotFoundError') throw new Error('Unable to verify indexed activity');
+      transactions.set(hash, null);
+    }
+  }
+  const blocks = new Map<bigint, Hex | null>();
+  const items: CapitalActivity[] = [];
+  for (const item of page.items) {
+    const receipt = transactions.get(item.provenance.transactionHash);
+    if (!receipt) continue;
+    if (!blocks.has(receipt.blockNumber)) blocks.set(receipt.blockNumber, (await rpc.getBlock({ blockNumber: receipt.blockNumber })).hash);
+    if (receipt.blockHash.toLowerCase() !== blocks.get(receipt.blockNumber)?.toLowerCase() ||
+        receipt.blockHash.toLowerCase() !== item.provenance.blockHash ||
+        receipt.blockNumber !== BigInt(item.provenance.blockNumber)) continue;
+    if (receipt.status !== 'success' || receipt.transactionHash.toLowerCase() !== item.provenance.transactionHash ||
+        receipt.transactionIndex !== item.provenance.transactionIndex) throw new Error('Indexer receipt identity mismatch');
+    const log = receipt.logs.find(log => log.logIndex === item.provenance.logIndex);
+    if (!log || log.address.toLowerCase() !== page.source.controllerAddress.toLowerCase()) throw new Error('Indexed event missing from canonical receipt');
+    const decoded = decodeEventLog({ abi: capitalControllerAbi, topics: log.topics, data: log.data, strict: true });
+    const parsed: ParsedEvent = {
+      eventName: decoded.eventName, signature: '', inputs: new Map(Object.entries(decoded.args)),
+      txHash: receipt.transactionHash, logIndex: item.provenance.logIndex,
+      blockNumber: item.provenance.blockNumber, transactionIndex: receipt.transactionIndex,
+      blockHash: receipt.blockHash, eventContractAddress: log.address.toLowerCase(),
+    };
+    if (eventRootId(parsed.inputs, decoded.eventName) !== page.rootId) throw new Error('Indexed root differs from canonical receipt');
+    const actual = mapActivity(parsed, page.rootId, page.source.controllerAddress.toLowerCase());
+    // Compare all financial fields, not just the presence of a transaction hash.
+    const { provenance: _indexed, ...claim } = item;
+    const { provenance: _chain, ...truth } = actual;
+    if (JSON.stringify(claim) !== JSON.stringify(truth)) throw new Error('Indexed values differ from canonical receipt');
+    const finality = receipt.blockNumber <= finalized.number ? 'finalized' : head.number - receipt.blockNumber >= 1n ? 'confirmed' : 'pending';
+    items.push({ ...item, provenance: { ...item.provenance, finality } });
+  }
+  return { ...page, items, verification: {
+    source: 'rpc', checkedAtBlock: head.number.toString(), finalizedBlock: finalized.number.toString(), orphanedItems: page.items.length - items.length,
+  } };
 }

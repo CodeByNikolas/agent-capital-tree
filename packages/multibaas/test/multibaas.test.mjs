@@ -1,3 +1,5 @@
+import { encodeEventTopics, encodeAbiParameters } from 'viem';
+import { capitalControllerAbi } from '@agent-capital-tree/sdk';
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import {
@@ -6,6 +8,7 @@ import {
   MultiBaasRequestError,
   MultiBaasResponseError,
   mergeActivityPages,
+  reconcileCapitalActivity,
 } from '../dist/index.js';
 
 const controllerAddress = '0x1111111111111111111111111111111111111111';
@@ -245,4 +248,44 @@ test('same-signature logs split by a page boundary are all retained and overlap 
   const reorg = { ...first, items: [] };
   assert.deepEqual(mergeActivityPages([reorg]), []); // Refresh replaces the window, removing orphan logs.
   assert.throws(() => mergeActivityPages([first, { ...second, rootId: '8' }]), /different/);
+});
+
+
+test('canonical receipts verify amounts/finality and remove orphaned indexer entries', async () => {
+  const fetcher = async input => {
+    const url = new URL(String(input));
+    if (url.pathname.endsWith('/queries')) return jsonResponse(envelope({ rows: [queryRow('7', txA, rootFundedSignature)] }));
+    if (url.pathname.endsWith('/events')) return jsonResponse(envelope([rootFunded(2, tokenA, '42')]));
+    return jsonResponse(url.pathname.includes('/contracts/') ? indexingResponse() : chainResponse());
+  };
+  const page = await client(fetcher).getCapitalActivity('7');
+  const topics = encodeEventTopics({ abi: capitalControllerAbi, eventName: 'RootFunded', args: { rootId: 7n, token: tokenA } });
+  const receipt = {
+    transactionHash: txA, transactionIndex: 0, blockHash, blockNumber: 200n, status: 'success',
+    logs: [{ address: controllerAddress, logIndex: 2, topics, data: encodeAbiParameters([{ type: 'uint256' }], [42n]) }],
+  };
+  let canonical = blockHash;
+  let finalizedNumber = 190n;
+  const rpc = {
+    getChainId: async () => 11155111,
+    getBlock: async args => ({ number: args.blockTag === 'latest' ? 201n : args.blockTag === 'finalized' ? finalizedNumber : args.blockNumber, hash: canonical }),
+    getTransactionReceipt: async () => receipt,
+  };
+  let checked = await reconcileCapitalActivity(page, rpc);
+  assert.equal(checked.items[0].provenance.finality, 'confirmed');
+  assert.equal(checked.source.provider, 'multibaas');
+  finalizedNumber = 200n;
+  checked = await reconcileCapitalActivity(page, rpc);
+  assert.equal(checked.items[0].provenance.finality, 'finalized');
+  const forged = structuredClone(page);
+  forged.items[0].amount = '42000';
+  await assert.rejects(reconcileCapitalActivity(forged, rpc), /values differ/);
+  canonical = '0x' + 'd'.repeat(64);
+  checked = await reconcileCapitalActivity(page, rpc);
+  assert.equal(checked.items.length, 0);
+  assert.equal(checked.verification.orphanedItems, 1);
+  await assert.rejects(reconcileCapitalActivity(page, { ...rpc, getChainId: async () => 1 }), /Sepolia/);
+  await assert.rejects(reconcileCapitalActivity(page, { ...rpc, getTransactionReceipt: async () => { throw new Error('network unavailable'); } }), /Unable to verify/);
+  checked = await reconcileCapitalActivity(page, { ...rpc, getTransactionReceipt: async () => { const e = new Error(); e.name = 'TransactionReceiptNotFoundError'; throw e; } });
+  assert.equal(checked.items.length, 0);
 });

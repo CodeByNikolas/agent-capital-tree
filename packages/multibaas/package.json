@@ -3,7 +3,12 @@
   "version": "0.1.0",
   "private": true,
   "type": "module",
-  "exports": { ".": { "types": "./dist/index.d.ts", "default": "./dist/index.js" } },
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
   "description": "Server-only read adapter for MultiBaas indexed capital activity",
   "scripts": {
     "build": "tsc -p tsconfig.json",
@@ -13,5 +18,9 @@
   "devDependencies": {
     "@types/node": "22.15.30",
     "typescript": "5.9.3"
+  },
+  "dependencies": {
+    "@agent-capital-tree/sdk": "workspace:*",
+    "viem": "2.56.9"
   }
 }
