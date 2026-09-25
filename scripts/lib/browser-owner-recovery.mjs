@@ -49,7 +49,7 @@ export async function verifyPartialOwnerRecovery({ rpc, sdk, abi, report, setup,
 }
 
 // Real owner UI + MetaMask. Inspect exact unsigned calldata before normal wallet consent.
-export async function browserOwnerRecovery({ context, app, origin, address, closeOnly, resume, privateBase, appUrl }) {
+export async function browserOwnerRecovery({ context, app, origin, address, closeOnly, resume, freshOwnerResume, privateBase, appUrl }) {
   const read = async path => JSON.parse(await readFile(new URL(`../../${path}`, import.meta.url)));
   const setup = await read('deployments/browser-owner-e2e.json');
   const models = await read('deployments/root-codex-e2e.json');
@@ -101,19 +101,21 @@ export async function browserOwnerRecovery({ context, app, origin, address, clos
     if (resume) {
       step = 'reconcile-resume';
       await verifyPartialOwnerRecovery({ rpc, sdk, abi, report, setup, followup, address });
-      // A click timeout can leave an unsigned MetaMask request queued. Cancel only
-      // the visibly identified controller request; never confirm a stale request.
-      let popup = context.pages().find(page => page.url().startsWith(`${origin}/notification.html`));
-      if (!popup) { popup = await context.newPage(); await popup.goto(`${origin}/notification.html`); }
-      const confirm = popup.getByRole('button', { name: 'Confirm', exact: true });
-      await confirm.waitFor({ timeout: 15000 });
-      assert(await popup.getByRole('button', { name: 'Cancel', exact: true }).isVisible(), 'Stale request has no normal Cancel control');
-      const visibleText = (await popup.locator('body').innerText()).toLowerCase();
-      assert(visibleText.includes(setup.controller.toLowerCase()) && visibleText.includes('sepolia'),
-        'Stale wallet request is not clearly identified as the Sepolia controller; inspect it manually');
-      await popup.getByRole('button', { name: 'Cancel', exact: true }).click();
-      await expect.poll(() => popup.isClosed() ? false : confirm.isVisible().catch(() => false), { timeout: 30000 }).toBe(false);
-      await app.bringToFront();
+      if (!freshOwnerResume) {
+        // The original profile may retain an unsigned MetaMask request. Cancel
+        // only a visibly identified controller request; never confirm it.
+        let popup = context.pages().find(page => page.url().startsWith(`${origin}/notification.html`));
+        if (!popup) { popup = await context.newPage(); await popup.goto(`${origin}/notification.html`); }
+        const confirm = popup.getByRole('button', { name: 'Confirm', exact: true });
+        await confirm.waitFor({ timeout: 15000 });
+        assert(await popup.getByRole('button', { name: 'Cancel', exact: true }).isVisible(), 'Stale request has no normal Cancel control');
+        const visibleText = (await popup.locator('body').innerText()).toLowerCase();
+        assert(visibleText.includes(setup.controller.toLowerCase()) && visibleText.includes('sepolia'),
+          'Stale wallet request is not clearly identified as the Sepolia controller; inspect it manually');
+        await popup.getByRole('button', { name: 'Cancel', exact: true }).click();
+        await expect.poll(() => popup.isClosed() ? false : confirm.isVisible().catch(() => false), { timeout: 30000 }).toBe(false);
+        await app.bringToFront();
+      }
       await verifyPartialOwnerRecovery({ rpc, sdk, abi, report, setup, followup, address });
       report.status = 'running'; report.resumedAt = new Date().toISOString();
     }
@@ -240,6 +242,11 @@ export async function browserOwnerRecovery({ context, app, origin, address, clos
     const final = await sdk.getTree(BigInt(setup.rootId));
     if (!closeOnly) assert(final.nodes.every(node => node.revoked && node.position.tokenId === 0n && node.balances.every(value => value === 0n)));
     await loadRoot();
+    if (resume) {
+      report.reconciledFailure = { failedStep: report.failedStep, diagnostics: report.diagnostics };
+      delete report.failedStep;
+      delete report.diagnostics;
+    }
     report.status = 'passed';
     report.finishedAt = new Date().toISOString();
     report.checks = { noRunningWorkers: true, companionExcludedByLock: true, realMetaMaskSignatures: true, allVaultsEmpty: !closeOnly, canonicalReceipts: true };

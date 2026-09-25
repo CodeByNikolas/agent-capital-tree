@@ -3,16 +3,19 @@ import { readFile, mkdir } from 'node:fs/promises';
 import { homedir } from 'node:os';
 import { join } from 'node:path';
 import { Wallet } from 'ethers';
+import { createFreshOwnerProfile, recordFreshOwnerProfile } from './lib/fresh-owner-profile.mjs';
 
 // Local test wallet only. Never trace, screenshot, or print setup inputs.
 const root = join(homedir(), '.agent-capital-tree');
 const walletName = process.env.ACT_TEST_WALLET ?? 'jury';
 if (!['jury', 'jury-e2e'].includes(walletName)) throw new Error('Unknown isolated test wallet');
 const profileName = process.env.ACT_BROWSER_PROFILE ?? walletName;
-if (!/^jury(?:-[a-z0-9]+)?$/.test(profileName)) throw new Error('Invalid test profile name');
+if (!/^jury(?:-[a-z0-9]+)*$/.test(profileName)) throw new Error('Invalid test profile name');
+const freshOwnerResume = process.argv.includes('--fresh-owner-resume-profile');
+if (freshOwnerResume && walletName !== 'jury-e2e') throw new Error('Fresh owner resume requires the designated jury-e2e wallet');
 const extension = join(root, 'tools/metamask-13.49.0');
-const profile = join(root, 'browser', profileName);
-await mkdir(profile, { recursive: true, mode: 0o700 });
+const profile = freshOwnerResume ? await createFreshOwnerProfile(root, profileName) : join(root, 'browser', profileName);
+if (!freshOwnerResume) await mkdir(profile, { recursive: true, mode: 0o700 });
 const context = await chromium.launchPersistentContext(profile, {
   channel: 'chromium', headless: true,
   args: [`--disable-extensions-except=${extension}`, `--load-extension=${extension}`],
@@ -72,6 +75,7 @@ try {
   }
   stage = 'wallet overview';
   await page.getByTestId('account-menu-icon').waitFor({ timeout: 60000 });
+  if (freshOwnerResume) await recordFreshOwnerProfile(root, profileName, wallet.address, new URL(page.url()).host);
   console.log(JSON.stringify({ walletUiReady: true, extensionId: new URL(page.url()).host, expectedAddress: wallet.address }));
 } catch {
   console.error(`Wallet setup failed during ${stage}; sensitive details suppressed.`);

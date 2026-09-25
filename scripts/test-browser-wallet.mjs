@@ -3,16 +3,25 @@ import { chromium } from '@playwright/test';
 import { readFile, writeFile } from 'node:fs/promises';
 import { homedir } from 'node:os';
 import { join } from 'node:path';
-import { spawn } from 'node:child_process';
+import { execFile, spawn } from 'node:child_process';
+import { promisify } from 'node:util';
+import { consumeFreshOwnerProfile } from './lib/fresh-owner-profile.mjs';
 
 // Uses only the separately provisioned Sepolia jury wallet. No traces or screenshots.
 const root = join(homedir(), '.agent-capital-tree');
 const walletName = process.env.ACT_TEST_WALLET ?? 'jury';
 if (!['jury', 'jury-e2e'].includes(walletName)) throw new Error('Unknown isolated test wallet');
 const resumeOwnerRecovery = process.argv.includes('--resume-owner-recovery');
+const freshOwnerResume = process.argv.includes('--resume-fresh-owner-profile');
+if (freshOwnerResume && !resumeOwnerRecovery) throw new Error('Fresh profile requires --resume-owner-recovery');
 const expectedAddress = `0x${JSON.parse(await readFile(join(root, `keys/${walletName}.keystore.json`), 'utf8')).address}`;
 const profileName = process.env.ACT_BROWSER_PROFILE ?? walletName;
-if (!/^jury(?:-[a-z0-9]+)?$/.test(profileName)) throw new Error('Invalid test profile name');
+if (!/^jury(?:-[a-z0-9]+)*$/.test(profileName)) throw new Error('Invalid test profile name');
+if (freshOwnerResume) {
+  const { stdout } = await promisify(execFile)('ps', ['-eo', 'args=']);
+  assert(!stdout.split('\n').some(line => line.split(/\s+/).includes(`--user-data-dir=${join(root, 'browser', 'jury-e2e')}`)),
+    'Stop the original jury-e2e browser before fresh-profile resume');
+}
 const extension = join(root, 'tools/metamask-13.49.0');
 const appUrl = process.env.ACT_TEST_APP_URL ?? 'https://agent-capital-tree.vercel.app';
 if (!['https://agent-capital-tree.vercel.app', 'https://agent-capital-tree-qeypjqseu-tumblockchains-projects.vercel.app'].includes(appUrl)) throw new Error('Unknown test deployment');
@@ -141,9 +150,10 @@ try {
     if (walletName !== 'jury-e2e') throw new Error('Owner recovery requires the independent fresh wallet');
     const resume = resumeOwnerRecovery;
     if (resume && (process.argv.includes('--owner-close') || process.argv.includes('--owner-recovery'))) throw new Error('Use only one owner recovery mode');
+    if (freshOwnerResume) await consumeFreshOwnerProfile(root, profileName, address, new URL(worker.url()).host);
     stage = 'owner recovery';
     const { browserOwnerRecovery } = await import('./lib/browser-owner-recovery.mjs');
-    await browserOwnerRecovery({ context, app, origin, address, privateBase: root, appUrl, closeOnly: process.argv.includes('--owner-close'), resume });
+    await browserOwnerRecovery({ context, app, origin, address, privateBase: root, appUrl, closeOnly: process.argv.includes('--owner-close'), resume, freshOwnerResume });
   }
   if (process.argv.includes('--negative-cases')) {
     if (walletName !== 'jury-e2e') throw new Error('Negative cases require the independent fresh wallet');
