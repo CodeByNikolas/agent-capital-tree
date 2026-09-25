@@ -6,8 +6,8 @@ Stand: 26. September 2026 (Europe/Berlin). Nach Kontextkomprimierung zusammen mi
 
 - Public Repository: https://github.com/CodeByNikolas/agent-capital-tree.
 - Live-Dashboard: https://agent-capital-tree.vercel.app. Aktuelles Deployment `dpl_6j4wuuYQLmaBXY9Xxi4iMA1ustB7`, https://agent-capital-tree-eojrpsb9x-tumblockchains-projects.vercel.app. Frontend aus `3ffc06f`, mit frontend-design/impeccable geprüft. Exakte Beträge bleiben zugänglich; kompakte Übersicht und mobile Reihenfolge Root→Child→Grandchild→Sibling. Build, Typecheck, fokussierte Tests und veröffentlichter Desktop-/Mobil-/API-Smoke bestanden.
-- ENSv2/Uniswap und der echte Browser→Codex→Child→Grandchild-Ablauf sind nachgewiesen. Vollständige Gesamtabnahme bleibt wegen Live-MultiBaas/Master-Historie und der unten beschriebenen letzten Owner-Rückholung offen.
-- Root1 ist der finanzierte Seed und bleibt unberührt. Root2 ist widerrufen und leer. Root5 ist der neue Browser-/Modell-Testbaum, siehe aktuellen Recovery-Stand unten. Abgeschlossene Finanzrunner niemals blind wiederholen.
+- ENSv2/Uniswap und der echte Browser→Codex→Child→Grandchild-Ablauf sind nachgewiesen. Vollständige Gesamtabnahme bleibt wegen Live-MultiBaas/Master-Historie offen. Die letzte echte Browser-Owner-Rückholung ist bestanden.
+- Root1 ist der finanzierte Seed und bleibt unberührt. Root2 ist widerrufen und leer. Root5 ist der vollständig widerrufene und geleerte Browser-/Modell-Testbaum; nicht erneut als Runtime starten. Abgeschlossene Finanzrunner niemals blind wiederholen.
 
 ## Browser und echte Modelle: Root5
 
@@ -20,7 +20,7 @@ Stand: 26. September 2026 (Europe/Berlin). Nach Kontextkomprimierung zusammen mi
 | Bestehendes Geschwister8 handelt nach Widerruf von Child6 | Echter Luna-Swap nach Revoke-Block; Child6/Grandchild7 direkt mit `Inactive()` abgewiesen; Follow-up-Bericht |
 | Owner schließt LP39834 und holt Grandchild7→Child6 zurück | Echte veröffentlichte App/MetaMask, feste nichtnull Mindestbeträge, kanonische Events; `deployments/browser-owner-close.json` |
 | Root holt Child6-Kapital zurück und weist Sibling8 weitere0.5 ACT-A zu | Bestanden; **programmatischer Root-Signer**, keine MultiBaas-informierte Modellentscheidung; Follow-up-Bericht |
-| Owner-Rückholung Sibling8→Root5→Owner | Sibling8 bestätigt; letzter Root5-Schritt noch offen, siehe unten |
+| Owner-Rückholung Sibling8→Root5→Owner | Bestanden; `deployments/browser-owner-recovery.json`, endgültiger Chain-Zustand in `deployments/browser-final-state.json` |
 | Wallet-Ablehnung, falsches Netzwerk, gesperrter veralteter UI-Zustand | `deployments/browser-negative-cases.json`; echte MetaMask-Ablehnung/Mainnet→Sepolia. Tree-API-Ausfall lokal injiziert, kein öffentlicher RPC-Ausfall |
 | Veröffentlichte Oberfläche | `artifacts/ui/smoke-report.json`; Desktop1440/Mobil390 ohne horizontalen Overflow/JS-Fehler, echte Roots1/2/5, ungültige/fehlende IDs, explizite Sample-Preview |
 
@@ -28,16 +28,14 @@ Owner: `0xbCea84Ed1DaFbb59AaF9797Cb4170394db688d34`. Operator: `0x4eC0dc927b085a
 
 Ein erster Root-Codex-Versuch wurde vor jedem Write durch MCP-Approval abgewiesen (`deployments/root-codex-attempt1.json`). Das isolierte Testprofil erlaubt danach gezielt `spawnChild`; Shell bleibt read-only. Synthetischer Modell-Probelauf und echter Finanzlauf bestanden. Frühere abgebrochene Browser-Schritte wurden onchain abgeglichen, bevor ausschließlich fehlende Schritte fortgesetzt wurden.
 
-### Letzte Owner-Rückholung: sicher fortsetzen
+### Letzte Owner-Rückholung: abgeschlossen
 
-- Gasreserve der Owner-Wallet um0.001 ETH erhöht, kanonischer Nachweis `deployments/browser-owner-recovery-gas.json`. Kein neues Nutzer-Funding erforderlich für diesen Schritt.
-- Resume-Prüfer verifiziert Sibling-Receipt gegen historische Tokenbestände und stoppt bei Root-Events oder ausstehender Owner-Nonce. Altes Browserprofil zeigte keine bestätigbare Pending-UI; der Resume blieb vor jedem Write stehen. Ein neues, einmalig markiertes privates Profil ist als alternative saubere Wallet-Queue vorbereitet (`scripts/lib/fresh-owner-profile.mjs`).
-- Erstes frisches Profil `jury-e2e-resume-final1` erreichte keine Setup-Fertigmeldung und hat keinen Resume-Marker. Keine Signatur/Transaktion. Import-Selektor wird korrigiert: MetaMask nutzt dieselbe Test-ID für zwei unterschiedliche Buttontexte; nur einen Text zu prüfen überspringt eine gültige Importvariante. Für erneuten frischen Aufbau neuen Profilnamen verwenden.
-
-- `deployments/browser-owner-recovery.json` bewahrt den unvollständigen Lauf. Sibling8-Recovery ist bestätigt: `0x0646438838abf28f8a07fe939be12a35609926a5b106601b162c70d14ac105c2`, Block11781899.
-- Root5-Wallet-Bestätigung lief in einen Timeout ohne zurückgegebenen Hash. `approved:true` markierte den Versuch vor dem Klick, nicht nachgewiesenes Senden.
-- Read-only-Abgleich bei Block11781924: kein Root5-`EmergencyRecovered`, Owner latest/pending Nonce11/11, Root5 noch aktiv mit97900655828859033155 ACT-A-Raweinheiten und102089825985637651960 ACT-B-Raweinheiten. Nodes6/7/8 widerrufen, leer und ohne LP. Seed1 NFT39811/Liquidity5000e18 unverändert.
-- Vor Fortsetzung erneut kanonische Events, Pending-Nonce und Wallet-Dialog abgleichen. Nur fehlenden Root5-Schritt fortsetzen; Sibling8 nicht erneut ausführen. Vorhandenen Report nicht löschen. Companion und Worker müssen gestoppt bleiben; exklusiver `companion.lock` während Recovery.
+- Sibling8→Root5: `0x0646438838abf28f8a07fe939be12a35609926a5b106601b162c70d14ac105c2`, Block11781899. Root5→Owner: `0x2d4a57a8cfd6967e8ced4a7d177f63cfa55b3315766c6d741bfd3e2c5ee4808c`. Beide echten MetaMask-Signaturen sind kanonisch bestätigt; Empfänger und exakte Beträge gegen Controller-Events geprüft.
+- Alle vier Root5-Vaults sind widerrufen, beide Tokenbestände jeweils0 und keine LP offen. Seed1-NFT39811/Liquidity5000e18 erhalten. Wiederholter unabhängiger Read-only-Abgleich: `deployments/browser-final-state.json`.
+- Der ursprüngliche Root5-Bestätigungsversuch lief ohne Hash in einen Timeout. Vor der Fortsetzung wurden erfolgreiche Sibling-Recovery, historische Tokenbestände, fehlende Root-Events und Owner-Pending-Nonce abgeglichen. Kein bereits erfolgreicher Schritt wurde erneut ausgeführt. Der Bericht archiviert die ursprüngliche Diagnose unter `reconciledFailure`.
+- Originalprofil zeigte keine eindeutig prüfbare Pending-UI. Deshalb neue isolierte Profilanlage mit derselben Testwallet und einmaligem Marker; kein Ignorieren einer Wallet-Warnung. Der Import benötigte einen Browserneustart, danach wurde die fertige Kontoansicht verifiziert. Tatsächlicher Ablauf: `deployments/browser-recovery-profile.json`. Die Setup-Automation ist damit noch kein fehlerfreier Ein-Aufruf-Onboarding-Nachweis.
+- Gasreserve aus vorhandenen Testmitteln um0.001 ETH erhöht: `deployments/browser-owner-recovery-gas.json`. Kein zusätzliches Nutzer-Funding für diesen Abschluss. Companion und Worker während Recovery gestoppt; exklusiver Lock verhinderte einen Runtime-Neustart.
+- Erfolgreiche Finanzrunner nicht wiederholen. Für spätere neue Master-Modell-Tests einen frischen Root anlegen und Gas vorher prüfen. `test-owner-recovery-resume-readonly.mjs` prüft ausdrücklich den früheren unvollständigen Zwischenstand und ist nach abgeschlossenem Recovery nicht mehr ausführbar.
 
 ## Contracts, SDK und Isolation
 
@@ -68,11 +66,10 @@ Pool `0x80e34634349a395620aa17ea88c88f61b1bc1631cbb5737b2a8445bba27b563d`, fee30
 
 ## Tatsächlich offene Arbeit
 
-1. Letzte Root5-Owner-Rückholung sicher abschließen, danach alle vier Vaults leer/widerrufen, keine LP, Live-UI-Reload und unveränderten Seed1 prüfen.
-2. MultiBaas: Instanz https://d7zveyyfkvdbxdbd7n3rk6o3ee.multibaas.com bekannt, lokale `~/.agent-capital-tree/multibaas.env` fehlt weiterhin. Nutzer ist um interaktives `bash scripts/configure-multibaas.sh` gebeten; keinen Key im Chat anfordern. Eingeschränkter Daten-Key sowie separate administrative ABI-/Adressverknüpfung und Historical-Indexing ab11781260 erforderlich.
-3. Danach serverseitige Vercel-Konfiguration (`MULTIBAAS_API_KEY`, `MULTIBAAS_CONTROLLER_LABEL`), echte Queries/Receipt-Abgleich, Historie in UI/MCP und tatsächliche Master-Modell-Entscheidung nach Historie prüfen. Adapter unterstützt13 Events; direkte RPC-Bestände ersetzen diesen Nachweis nicht.
-4. Aktuelle Commits pushen und CI prüfen. Zuletzt bestätigte komplette CI: `aa65930`, https://github.com/CodeByNikolas/agent-capital-tree/actions/runs/36194362601.
-5. Uniswap `FEEDBACK.md` existiert; Feedback-Formular und ETHGlobal-Abgabe wurden nicht gesendet. Fehlende Teamangaben/ausdrückliche Sendeanweisung nicht erfinden.
+1. MultiBaas: Instanz https://d7zveyyfkvdbxdbd7n3rk6o3ee.multibaas.com bekannt, lokale `~/.agent-capital-tree/multibaas.env` fehlt weiterhin. Nutzer ist um interaktives `bash scripts/configure-multibaas.sh` gebeten; keinen Key im Chat anfordern. Eingeschränkter Daten-Key sowie separate administrative ABI-/Adressverknüpfung und Historical-Indexing ab11781260 erforderlich.
+2. Danach serverseitige Vercel-Konfiguration (`MULTIBAAS_API_KEY`, `MULTIBAAS_CONTROLLER_LABEL`), echte Queries/Receipt-Abgleich, Historie in UI/MCP und tatsächliche Master-Modell-Entscheidung nach Historie prüfen. Adapter unterstützt13 Events; direkte RPC-Bestände ersetzen diesen Nachweis nicht.
+3. Aktuelle Commits pushen und CI prüfen. Zuletzt bestätigte komplette CI: `3f5b29e`, https://github.com/CodeByNikolas/agent-capital-tree/actions/runs/36195345833.
+4. Uniswap `FEEDBACK.md` existiert; Feedback-Formular und ETHGlobal-Abgabe wurden nicht gesendet. Fehlende Teamangaben/ausdrückliche Sendeanweisung nicht erfinden.
 
 ## Arbeitsgrenzen
 
