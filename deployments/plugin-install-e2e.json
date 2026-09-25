@@ -1,0 +1,21 @@
+{
+  "status": "passed",
+  "testedAt": "2026-09-26",
+  "sourceCommit": "9f9b484",
+  "runner": "scripts/test-plugin-install.mjs",
+  "pluginId": "agent-capital-tree@agent-capital-tree",
+  "cliVersion": "codex-cli 0.154.0",
+  "mcpServer": "capital-tree",
+  "rootId": "5",
+  "nodeCount": 4,
+  "chainId": 11155111,
+  "blockNumber": "11782164",
+  "toolTimeoutSec": null,
+  "writes": "disabled",
+  "scope": "Fresh temporary Codex profile, local marketplace installation, installed cached MCP bundle, handshake and real Sepolia getTree through a local authenticated read-only bridge.",
+  "limitations": [
+    "No operator companion or model was started by this test.",
+    "Marketplace-installed financial writes were not tested. The null timeout retains the CLI default of 60 seconds; use documented direct MCP registration for longer writes.",
+    "Same-host installation does not establish independent external-user setup."
+  ]
+}
