@@ -257,6 +257,52 @@ export const capitalControllerAbi = [
   },
   {
     "type": "function",
+    "name": "closePosition",
+    "inputs": [
+      {
+        "name": "nodeId",
+        "type": "uint256",
+        "internalType": "uint256"
+      },
+      {
+        "name": "minAmounts",
+        "type": "uint128[2]",
+        "internalType": "uint128[2]"
+      },
+      {
+        "name": "deadline",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "outputs": [],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
+    "name": "collectFees",
+    "inputs": [
+      {
+        "name": "nodeId",
+        "type": "uint256",
+        "internalType": "uint256"
+      },
+      {
+        "name": "minAmounts",
+        "type": "uint128[2]",
+        "internalType": "uint128[2]"
+      },
+      {
+        "name": "deadline",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "outputs": [],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
     "name": "createRoot",
     "inputs": [
       {
@@ -550,6 +596,34 @@ export const capitalControllerAbi = [
   },
   {
     "type": "function",
+    "name": "increasePosition",
+    "inputs": [
+      {
+        "name": "nodeId",
+        "type": "uint256",
+        "internalType": "uint256"
+      },
+      {
+        "name": "liquidity",
+        "type": "uint128",
+        "internalType": "uint128"
+      },
+      {
+        "name": "maxAmounts",
+        "type": "uint128[2]",
+        "internalType": "uint128[2]"
+      },
+      {
+        "name": "deadline",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "outputs": [],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
     "name": "namespaceLabel",
     "inputs": [],
     "outputs": [
@@ -576,10 +650,95 @@ export const capitalControllerAbi = [
   },
   {
     "type": "function",
+    "name": "openPosition",
+    "inputs": [
+      {
+        "name": "nodeId",
+        "type": "uint256",
+        "internalType": "uint256"
+      },
+      {
+        "name": "liquidity",
+        "type": "uint128",
+        "internalType": "uint128"
+      },
+      {
+        "name": "maxAmounts",
+        "type": "uint128[2]",
+        "internalType": "uint128[2]"
+      },
+      {
+        "name": "deadline",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "tokenId",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
+    "name": "ownerEmergencyClosePosition",
+    "inputs": [
+      {
+        "name": "nodeId",
+        "type": "uint256",
+        "internalType": "uint256"
+      },
+      {
+        "name": "minAmounts",
+        "type": "uint128[2]",
+        "internalType": "uint128[2]"
+      },
+      {
+        "name": "deadline",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "outputs": [],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
     "name": "ownerEmergencyRecover",
     "inputs": [
       {
         "name": "nodeId",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "outputs": [],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
+    "name": "parentClosePosition",
+    "inputs": [
+      {
+        "name": "parentId",
+        "type": "uint256",
+        "internalType": "uint256"
+      },
+      {
+        "name": "childId",
+        "type": "uint256",
+        "internalType": "uint256"
+      },
+      {
+        "name": "minAmounts",
+        "type": "uint128[2]",
+        "internalType": "uint128[2]"
+      },
+      {
+        "name": "deadline",
         "type": "uint256",
         "internalType": "uint256"
       }
@@ -817,6 +976,55 @@ export const capitalControllerAbi = [
   },
   {
     "type": "function",
+    "name": "swap",
+    "inputs": [
+      {
+        "name": "nodeId",
+        "type": "uint256",
+        "internalType": "uint256"
+      },
+      {
+        "name": "zeroForOne",
+        "type": "bool",
+        "internalType": "bool"
+      },
+      {
+        "name": "amountIn",
+        "type": "uint128",
+        "internalType": "uint128"
+      },
+      {
+        "name": "minOut",
+        "type": "uint128",
+        "internalType": "uint128"
+      },
+      {
+        "name": "sqrtPriceLimitX96",
+        "type": "uint160",
+        "internalType": "uint160"
+      },
+      {
+        "name": "deadline",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "actualIn",
+        "type": "uint256",
+        "internalType": "uint256"
+      },
+      {
+        "name": "actualOut",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
     "name": "tightenPolicy",
     "inputs": [
       {
@@ -973,6 +1181,43 @@ export const capitalControllerAbi = [
   },
   {
     "type": "event",
+    "name": "FeesCollected",
+    "inputs": [
+      {
+        "name": "rootId",
+        "type": "uint256",
+        "indexed": true,
+        "internalType": "uint256"
+      },
+      {
+        "name": "nodeId",
+        "type": "uint256",
+        "indexed": true,
+        "internalType": "uint256"
+      },
+      {
+        "name": "tokenId",
+        "type": "uint256",
+        "indexed": true,
+        "internalType": "uint256"
+      },
+      {
+        "name": "amount0",
+        "type": "uint256",
+        "indexed": false,
+        "internalType": "uint256"
+      },
+      {
+        "name": "amount1",
+        "type": "uint256",
+        "indexed": false,
+        "internalType": "uint256"
+      }
+    ],
+    "anonymous": false
+  },
+  {
+    "type": "event",
     "name": "NodeCreated",
     "inputs": [
       {
@@ -1073,6 +1318,135 @@ export const capitalControllerAbi = [
   },
   {
     "type": "event",
+    "name": "PositionClosed",
+    "inputs": [
+      {
+        "name": "rootId",
+        "type": "uint256",
+        "indexed": true,
+        "internalType": "uint256"
+      },
+      {
+        "name": "nodeId",
+        "type": "uint256",
+        "indexed": true,
+        "internalType": "uint256"
+      },
+      {
+        "name": "tokenId",
+        "type": "uint256",
+        "indexed": true,
+        "internalType": "uint256"
+      },
+      {
+        "name": "liquidity",
+        "type": "uint128",
+        "indexed": false,
+        "internalType": "uint128"
+      },
+      {
+        "name": "amount0",
+        "type": "uint256",
+        "indexed": false,
+        "internalType": "uint256"
+      },
+      {
+        "name": "amount1",
+        "type": "uint256",
+        "indexed": false,
+        "internalType": "uint256"
+      }
+    ],
+    "anonymous": false
+  },
+  {
+    "type": "event",
+    "name": "PositionIncreased",
+    "inputs": [
+      {
+        "name": "rootId",
+        "type": "uint256",
+        "indexed": true,
+        "internalType": "uint256"
+      },
+      {
+        "name": "nodeId",
+        "type": "uint256",
+        "indexed": true,
+        "internalType": "uint256"
+      },
+      {
+        "name": "tokenId",
+        "type": "uint256",
+        "indexed": true,
+        "internalType": "uint256"
+      },
+      {
+        "name": "liquidity",
+        "type": "uint128",
+        "indexed": false,
+        "internalType": "uint128"
+      },
+      {
+        "name": "amount0",
+        "type": "uint256",
+        "indexed": false,
+        "internalType": "uint256"
+      },
+      {
+        "name": "amount1",
+        "type": "uint256",
+        "indexed": false,
+        "internalType": "uint256"
+      }
+    ],
+    "anonymous": false
+  },
+  {
+    "type": "event",
+    "name": "PositionOpened",
+    "inputs": [
+      {
+        "name": "rootId",
+        "type": "uint256",
+        "indexed": true,
+        "internalType": "uint256"
+      },
+      {
+        "name": "nodeId",
+        "type": "uint256",
+        "indexed": true,
+        "internalType": "uint256"
+      },
+      {
+        "name": "tokenId",
+        "type": "uint256",
+        "indexed": true,
+        "internalType": "uint256"
+      },
+      {
+        "name": "liquidity",
+        "type": "uint128",
+        "indexed": false,
+        "internalType": "uint128"
+      },
+      {
+        "name": "amount0",
+        "type": "uint256",
+        "indexed": false,
+        "internalType": "uint256"
+      },
+      {
+        "name": "amount1",
+        "type": "uint256",
+        "indexed": false,
+        "internalType": "uint256"
+      }
+    ],
+    "anonymous": false
+  },
+  {
+    "type": "event",
     "name": "RootFunded",
     "inputs": [
       {
@@ -1089,6 +1463,49 @@ export const capitalControllerAbi = [
       },
       {
         "name": "amount",
+        "type": "uint256",
+        "indexed": false,
+        "internalType": "uint256"
+      }
+    ],
+    "anonymous": false
+  },
+  {
+    "type": "event",
+    "name": "SwapExecuted",
+    "inputs": [
+      {
+        "name": "rootId",
+        "type": "uint256",
+        "indexed": true,
+        "internalType": "uint256"
+      },
+      {
+        "name": "nodeId",
+        "type": "uint256",
+        "indexed": true,
+        "internalType": "uint256"
+      },
+      {
+        "name": "inputToken",
+        "type": "address",
+        "indexed": false,
+        "internalType": "address"
+      },
+      {
+        "name": "outputToken",
+        "type": "address",
+        "indexed": false,
+        "internalType": "address"
+      },
+      {
+        "name": "amountIn",
+        "type": "uint256",
+        "indexed": false,
+        "internalType": "uint256"
+      },
+      {
+        "name": "amountOut",
         "type": "uint256",
         "indexed": false,
         "internalType": "uint256"
