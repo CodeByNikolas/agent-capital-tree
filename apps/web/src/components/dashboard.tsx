@@ -55,6 +55,7 @@ import type {
 } from "@/lib/dashboard-types";
 import type { PublicDeployment } from "@/lib/deployment";
 import { formatAmount, formatCompactAmount } from "@/lib/format-display-amount";
+import { mobileTreeOrder } from "@/lib/mobile-tree-order";
 
 type InjectedProvider = Parameters<typeof custom>[0] & {
   on?: (event: string, listener: (...args: unknown[]) => void) => void;
@@ -847,7 +848,7 @@ function layoutTree(nodes: readonly VaultNode[]) {
 
 function CapitalTree({ data, selectedId, onSelect, canSpawnVault, onRequestSpawn }: { data: DashboardData; selectedId: string; onSelect: (id: string) => void; canSpawnVault: boolean; onRequestSpawn: () => void }) {
   const tree = layoutTree(data.nodes);
-  const nodes = tree.nodes.map((item) => item.node);
+  const mobileNodes = mobileTreeOrder(tree.nodes.map((item) => item.node));
 
   return (
     <section className="panel tree-panel" id="capital-tree" aria-labelledby="tree-title">
@@ -894,7 +895,7 @@ function CapitalTree({ data, selectedId, onSelect, canSpawnVault, onRequestSpawn
       </div>
 
       <div className="tree-canvas-mobile" role="group" aria-label={data.source === "preview" ? "Preview capital tree" : "Capital tree"}>
-        {tree.nodes.map(({ node }) => {
+        {mobileNodes.map((node) => {
           const parent = node.parentId ? nodeById(data, node.parentId) : undefined;
           return (
             <div className={`mobile-tree-row mobile-tree-depth-${node.depth}`} role="none" key={node.id}>
