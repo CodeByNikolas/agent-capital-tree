@@ -5,8 +5,8 @@
   "childId": "6",
   "grandchildId": "7",
   "siblingId": "8",
-  "status": "awaiting-owner-close",
-  "stage": "companion-stop",
+  "status": "passed",
+  "stage": "owner-close-verified",
   "startedAt": "2026-09-25T21:21:03.511Z",
   "siblingKey": "0x517ec27ca2b4e1bee914b59b213560b6551e5b3d561b6b735fdcd37c0f532fce",
   "transactions": {
@@ -37,6 +37,20 @@
       "blockHash": "0xb157578fade6fc26ecf1fc82ef44ebe260e93051d8c1111eaa90e32ac2b1800c",
       "gasUsed": "275407",
       "status": "confirmed"
+    },
+    "reclaimChild": {
+      "transactionHash": "0xb8966e9bfdf69645cd45775bff91d03f7958e42db8e382383273df02317859b9",
+      "blockNumber": 11781882,
+      "blockHash": "0x3be19f75cd5dbf01c2a863a9ec027aadcf6458dac0b35b277d8b64565da16ed5",
+      "gasUsed": "173473",
+      "status": "confirmed"
+    },
+    "allocateSibling": {
+      "transactionHash": "0xf4623c6b3d7c042271278525ad662bb3601509ccda46b94bd63a93d49808513a",
+      "blockNumber": 11781884,
+      "blockHash": "0x971aa67dbb193ecf591177ddd0bb34e8a9016f0882618e310ac3e0e9153cd9f7",
+      "gasUsed": "202361",
+      "status": "confirmed"
     }
   },
   "checks": {
@@ -57,11 +71,23 @@
     "siblingSwap": {
       "tokenA": "900000000000000000",
       "tokenB": "99535252678901692"
+    },
+    "reclaim": {
+      "childA": "8000655828859033155",
+      "childB": "1990290732958750268",
+      "rootA": "97000655828859033155"
+    },
+    "reallocation": {
+      "amountA": "500000000000000000",
+      "siblingA": "1400000000000000000",
+      "rootA": "96500655828859033155",
+      "blockNumber": "11781885"
     }
   },
   "limitations": [
     "Child LP remains open; browser owner must close it and recover the grandchild before phase two.",
     "Phase-two parent reclaim and reallocation use journaled programmatic root-operator transactions; this does not test a MultiBaas-informed Master model decision."
   ],
-  "reservedWei": "16351374045653760"
+  "reservedWei": "16351374045653760",
+  "finishedAt": "2026-09-25T21:29:03.874Z"
 }
