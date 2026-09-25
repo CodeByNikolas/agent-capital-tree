@@ -28,6 +28,8 @@ pnpm build
 
 Packages, contract instructions, tested deployment addresses and installation steps are added as each feature is implemented. See [PLAN.md](PLAN.md) for the complete specification and [STATUS.md](STATUS.md) for actual progress and unresolved gates.
 
+For a private MultiBaas data key, run `bash scripts/configure-multibaas.sh` in your own interactive terminal. It stores a restricted DApp User key outside the repository with owner-only permissions. Never paste the key into chat. Contract registration requires separate administrative setup; the data key does not grant it.
+
 ## Testnet funding
 
 Network: **Ethereum Sepolia**, chain ID **11155111**.
