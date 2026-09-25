@@ -71,7 +71,7 @@ test('spawn refuses ambiguous dispatch after launch failure or journal loss', as
     assert.equal(launchAttempts, 1);
     // A replacement journal finds the allocation but cannot prove whether its one-shot task ran.
     const restarted = new SpawnCoordinator(chain, new FileSpawnJournal(secondDirectory), launch);
-    await restarted.spawn(parent, request);
+    assert.equal((await restarted.spawn(parent, request)).dispatchStatus, 'allocation_confirmed_dispatch_unknown');
     assert.equal(submits, 1);
     assert.equal(launchAttempts, 1);
     await assert.rejects(restarted.spawn(parent, request), /dispatch outcome is uncertain/);

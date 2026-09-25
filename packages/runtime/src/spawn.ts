@@ -9,7 +9,7 @@ export type SpawnRequest = Readonly<{
   amount: string;
   restrictions: unknown;
 }>;
-export type SpawnReceipt = Readonly<{ childId: string; txHash?: string; blockHash: string; blockNumber?: string }>;
+export type SpawnReceipt = Readonly<{ childId: string; txHash?: string; blockHash: string; blockNumber?: string; dispatchStatus?: 'started' | 'allocation_confirmed_dispatch_unknown' }>;
 export type SpawnRecord = Readonly<{ scope: string; requestHash: string; childId?: string; dispatchAttempted?: boolean; started?: boolean }>;
 
 /** SDK adapter must enforce current parent mandate and contract parameter hashing. */
@@ -70,10 +70,10 @@ export class SpawnCoordinator {
       receipt = await this.chain.reconcile(parent, request);
     }
     if (!receipt || !(await this.chain.confirmed(receipt))) throw new Error('spawn transaction not confirmed');
-    if (previous?.started && previous.childId === receipt.childId) return receipt;
+    if (previous?.started && previous.childId === receipt.childId) return { ...receipt, dispatchStatus: 'started' };
     if (!previous && existedBeforeSubmit) {
       await this.journal.put({ scope, requestHash, childId: receipt.childId, dispatchAttempted: true });
-      return receipt; // Lost journal: allocation is real, task dispatch history is unknown.
+      return { ...receipt, dispatchStatus: 'allocation_confirmed_dispatch_unknown' }; // Lost journal: task history is unknown.
     }
     if (previous?.dispatchAttempted) throw new Error('worker dispatch outcome is uncertain; task will not be repeated');
     await this.prepare?.(parent, receipt.childId, request);
@@ -81,6 +81,6 @@ export class SpawnCoordinator {
     await this.journal.put({ scope, requestHash, childId: receipt.childId, dispatchAttempted: true });
     await this.launch(parent, receipt.childId, request);
     await this.journal.put({ scope, requestHash, childId: receipt.childId, dispatchAttempted: true, started: true });
-    return receipt;
+    return { ...receipt, dispatchStatus: 'started' };
   }
 }

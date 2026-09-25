@@ -13,7 +13,7 @@ import { OnchainSpawnChain, childKeyId } from './spawn-chain.js';
 import { SpawnCoordinator, type SpawnRequest } from './spawn.js';
 import { FileSpawnJournal } from './journal.js';
 import { DockerWorkerLauncher } from './launcher.js';
-import { ChildGasFunding } from './gas.js';
+import { ChildGasFunding, childGasGrant, MAX_CHILD_GAS_WEI } from './gas.js';
 
 type Identity = { context: WorkerContext; keyId: string };
 
@@ -112,6 +112,7 @@ export class RuntimeCompanion {
   readonly gas: ChildGasFunding;
   readonly chain: OnchainSpawnChain;
   readonly coordinator: SpawnCoordinator;
+  readonly journal: FileSpawnJournal;
   readonly tools;
   readonly brokerServer;
   #grants = new Map<string, Grant>();
@@ -129,7 +130,7 @@ export class RuntimeCompanion {
       !config.models.every(model => /^[\w.-]+$/.test(model)) ||
       !Number.isSafeInteger(config.workerUid) || config.workerUid < 1 ||
       !Number.isSafeInteger(config.workerGid) || config.workerGid < 1 ||
-      config.childGasWei < 0n || config.childGasWei > 200_000_000_000_000n) throw new Error('invalid companion configuration');
+      config.childGasWei < 0n || config.childGasWei > MAX_CHILD_GAS_WEI) throw new Error('invalid companion configuration');
     this.keys = new WorkerKeyStore(join(config.runtimeRoot, 'keys'));
     this.identities = new WorkerIdentities(join(config.runtimeRoot, 'identities'));
     this.broker = new InferenceBroker({ upstream: config.upstream, upstreamKey: config.upstreamKey, maxBodyBytes: 1_000_000 });
@@ -159,11 +160,16 @@ export class RuntimeCompanion {
         BigInt(context.rootId), BigInt(context.nodeId), BigInt(context.authorityGeneration),
         String(args.operationKey) as `0x${string}`
       ]);
-      return { childId: operation.nodeId.toString(), recordedOnchain: operation.nodeId !== 0n };
+      const scope = `${context.rootId}:${context.nodeId}:${context.authorityGeneration}:${String(args.operationKey).toLowerCase()}`;
+      const record = await this.journal.get(scope);
+      return { childId: operation.nodeId.toString(), recordedOnchain: operation.nodeId !== 0n,
+        dispatchStatus: operation.nodeId === 0n ? 'not_allocated' : record?.started && record.childId === operation.nodeId.toString()
+          ? 'started' : 'allocation_confirmed_dispatch_unknown' };
     };
     this.tools = companionServer(this.sessions, wrapped);
     this.brokerServer = this.broker.server();
-    this.coordinator = new SpawnCoordinator(this.chain, new FileSpawnJournal(join(config.runtimeRoot, 'spawn-journal')),
+    this.journal = new FileSpawnJournal(join(config.runtimeRoot, 'spawn-journal'));
+    this.coordinator = new SpawnCoordinator(this.chain, this.journal,
       (parent, childId, request) => this.launchChild(parent, childId, request),
       (parent, childId, request) => this.prepareChild(parent, childId, request));
   }
@@ -230,7 +236,9 @@ export class RuntimeCompanion {
     try {
     await this.launcher.ensureAvailable();
     await this.stopOrphans();
-    await this.gas.recoverPending(); // No signer writes start while a previous gas nonce is unresolved.
+    if (this.config.writesEnabled) {
+      await this.gas.recoverPending(); // No signer writes start while a previous gas nonce is unresolved.
+    }
     await Promise.all([
       new Promise<void>((ok, fail) => { this.tools.once('error', fail); this.tools.listen(0, '127.0.0.1', ok); }),
       new Promise<void>((ok, fail) => { this.brokerServer.once('error', fail); this.brokerServer.listen(0, '127.0.0.1', ok); })
@@ -313,9 +321,11 @@ export class RuntimeCompanion {
     const child = await this.keys.account(keyId); // No replacement key after a confirmed allocation.
     await this.identities.bind(context, keyId);
     if (!(await this.currentAuthority(context, child.address))) throw new Error('child authority is inactive');
-    if (this.config.childGasWei > 0n) {
+    const parentNode = await this.chain.client.controller.read.getNode([BigInt(parent.nodeId)]);
+    const grant = childGasGrant(this.config.childGasWei, parentNode.depth);
+    if (grant > 0n) {
       const parentAccount = await this.keys.account(await this.identities.keyId(parent));
-      await this.serialize(parentAccount.address, () => this.gas.fund(keyId, parentAccount, child.address, this.config.childGasWei));
+      await this.serialize(parentAccount.address, () => this.gas.fund(keyId, parentAccount, child.address, grant));
     }
   }
 
