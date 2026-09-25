@@ -2,7 +2,7 @@
 
 Scoped capital and permissions for agent teams: ENSv2-authorized vaults, bounded Uniswap v4 strategies, and a shared activity view powered by Curvegrid MultiBaas.
 
-**Development status:** implementation in progress on Ethereum Sepolia. A [public preview](https://agent-capital-tree.vercel.app) is deployed. The ENS namespace and demo tokens are on Sepolia; the final controller and live integrations are still in progress. This repository does not currently provide an audited custody product. Demo assets have no monetary value.
+**Development status:** the ENSv2 namespace, capital controller, demo tokens and funded Uniswap v4 pool are deployed on Ethereum Sepolia. The [public dashboard](https://agent-capital-tree.vercel.app) is being updated to use them. Live MultiBaas access and full published-wallet/plugin acceptance remain in progress. This is an unaudited hackathon implementation; demo assets have no monetary value.
 
 ## What we are building
 
@@ -26,7 +26,9 @@ pnpm typecheck
 pnpm test
 ```
 
-Packages, contract instructions, tested deployment addresses and installation steps are added as each feature is implemented. See [PLAN.md](PLAN.md) for the complete specification and [STATUS.md](STATUS.md) for actual progress and unresolved gates.
+Run `bash contracts/scripts/test-contracts.sh` with Foundry 1.8.3 on PATH for the staged Solidity build and 25 contract tests. `node scripts/test-sepolia-fork.mjs` checks actual Sepolia protocol code on a disposable local fork; it sends no transactions to public Sepolia. Both require the initialized Git submodules and built workspace packages. See [PLAN.md](PLAN.md) for the specification and [STATUS.md](STATUS.md) for actual progress and unresolved gates.
+
+The [runtime guide](packages/runtime/README.md) covers isolated Docker workers, local operator setup, gas grants and CLIProxyAPI. The [plugin guide](packages/plugin/README.md) covers the local Codex integration. Wallet ownership and agent execution are separate: the website does not need model credentials.
 
 For a private MultiBaas data key, run `bash scripts/configure-multibaas.sh` in your own interactive terminal. It stores a restricted DApp User key outside the repository with owner-only permissions. Never paste the key into chat. Contract registration requires separate administrative setup; the data key does not grant it.
 
@@ -37,6 +39,8 @@ Network: **Ethereum Sepolia**, chain ID **11155111**.
 Deployment funding address: `0x280Ca099242D7164cD001E4479D59f13CD0ea7c9`.
 
 Only public addresses are stored in [deployments/sepolia.json](deployments/sepolia.json). The local wallet utility creates encrypted keystores outside the repository. Never add private keys, seed phrases, passwords, or provider credentials to this project.
+
+The [Sepolia controller](https://sepolia.etherscan.io/address/0x55caFFf719B5FA70c0e8942eEe2C7EE6B8c7Db6b) is attached beneath `agentcapitaltree.eth`. Root `1` provides persistent demo-pool liquidity. Its [opening transaction](https://sepolia.etherscan.io/tx/0xa1346500298696129295da600e236d1d47acd649f65c2a6be30d9f7f04d55cae) created vault-owned v4 NFT `39811`; it is not the user's own vault.
 
 ## Sponsor integration evidence
 
