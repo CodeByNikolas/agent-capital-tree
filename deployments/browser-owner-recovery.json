@@ -1,0 +1,22 @@
+{
+  "rootId": "5",
+  "owner": "0xbcea84ed1dafbb59aaf9797cb4170394db688d34",
+  "status": "incomplete",
+  "transactions": [
+    {
+      "step": "recover-8",
+      "transactionHash": "0x0646438838abf28f8a07fe939be12a35609926a5b106601b162c70d14ac105c2",
+      "blockNumber": 11781899,
+      "blockHash": "0xbf8b7422c123fbe64fa141082a036b819d3ba54ce3ec6afc4705c5a29cbaa83a"
+    }
+  ],
+  "startedAt": "2026-09-25T21:31:07.660Z",
+  "failedStep": "recover-5",
+  "diagnostics": {
+    "submitted": true,
+    "approved": true,
+    "returnedHash": null,
+    "timeout": true,
+    "assertion": false
+  }
+}
