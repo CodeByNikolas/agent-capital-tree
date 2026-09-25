@@ -1,0 +1,15 @@
+contracts/lib/
+contracts/out/
+contracts/cache/
+contracts/broadcast/
+node_modules/
+**/node_modules/
+**/.next/
+**/dist/
+.env*
+**/.env*
+*.keystore.json
+*.key
+*.pem
+test-results/
+playwright-report/
