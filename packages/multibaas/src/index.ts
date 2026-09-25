@@ -1,4 +1,3 @@
-const API_BASE = 'https://d7zveyyfkvdbxdbd7n3rk6o3ee.multibaas.com/api/v0';
 const CHAIN_ID = 11155111;
 const DEFAULT_PAGE_SIZE = 25;
 const MAX_PAGE_SIZE = 50;
@@ -29,12 +28,7 @@ export type MultiBaasEventQuery = {
       inputIndex?: number;
       alias: string;
     }>;
-    filter: {
-      fieldType: 'input';
-      inputIndex: 0;
-      operator: 'equal';
-      value: string;
-    };
+    filter: { rule: 'and'; children: Array<{ fieldType: 'input' | 'contract_address'; inputIndex?: 0; operator: 'equal'; value: string }> };
   }>;
   orderBy: 'block_number';
   order: 'ASC';
@@ -104,6 +98,8 @@ export interface CapitalActivityPage {
 }
 
 export interface MultiBaasHistoryConfig {
+  /** The user's own MultiBaas deployment origin; credentials never follow redirects. */
+  deploymentUrl: string;
   /** Inject from a server-only secret source; never expose this value to clients. */
   apiKey: string;
   controllerAddress: string;
@@ -136,7 +132,7 @@ export class UnsupportedMultiBaasEventError extends Error {
   }
 }
 
-export function buildCapitalActivityQuery(rootId: string): MultiBaasEventQuery {
+export function buildCapitalActivityQuery(rootId: string, controllerAddress: string): MultiBaasEventQuery {
   const canonicalRootId = parseUint(rootId, 'rootId');
   return {
     events: INPUT_EVENTS.map((eventName) => ({
@@ -147,7 +143,10 @@ export function buildCapitalActivityQuery(rootId: string): MultiBaasEventQuery {
         { type: 'event_signature', alias: 'eventSignature' },
         { type: 'block_number', alias: 'blockNumber' },
       ],
-      filter: { fieldType: 'input', inputIndex: 0, operator: 'equal', value: canonicalRootId },
+      filter: { rule: 'and', children: [
+        { fieldType: 'input', inputIndex: 0, operator: 'equal', value: canonicalRootId },
+        { fieldType: 'contract_address', operator: 'equal', value: normalizeAddress(controllerAddress, 'controllerAddress') },
+      ] },
     })),
     orderBy: 'block_number',
     order: 'ASC',
@@ -156,6 +155,12 @@ export function buildCapitalActivityQuery(rootId: string): MultiBaasEventQuery {
 
 export function createMultiBaasHistoryClient(config: MultiBaasHistoryConfig) {
   if ('window' in globalThis) throw new Error('MultiBaas history client can only be created in a server runtime');
+  const deployment = new URL(config.deploymentUrl);
+  if (deployment.protocol !== 'https:' || !/^[a-z0-9-]+\.multibaas\.com$/.test(deployment.hostname) ||
+      deployment.username || deployment.password || deployment.port || deployment.search || deployment.hash || deployment.pathname !== '/') {
+    throw new Error('Expected an HTTPS MultiBaas deployment origin');
+  }
+  const apiBase = `${deployment.origin}/api/v0`;
   const apiKey = config.apiKey.trim();
   const controllerAddress = normalizeAddress(config.controllerAddress, 'controllerAddress');
   const controllerLabel = config.controllerLabel.trim();
@@ -173,21 +178,21 @@ export function createMultiBaasHistoryClient(config: MultiBaasHistoryConfig) {
     const rootId = parseUint(rootIdInput, 'rootId');
     const offset = decodeCursor(cursor, rootId);
     const endpoint = '/queries';
-    const queryUrl = new URL(`${API_BASE}${endpoint}`);
+    const queryUrl = new URL(`${apiBase}${endpoint}`);
     queryUrl.searchParams.set('offset', String(offset));
     queryUrl.searchParams.set('limit', String(pageSize));
 
-    const query = buildCapitalActivityQuery(rootId);
+    const query = buildCapitalActivityQuery(rootId, controllerAddress);
     const [queryBody, indexingBody, chainBody] = await Promise.all([
       requestJson(queryUrl, 'POST', endpoint, apiKey, fetcher, query),
       requestJson(
-        new URL(`${API_BASE}/chains/ethereum/addresses/${encodeURIComponent(controllerAddress)}/contracts/${encodeURIComponent(controllerLabel)}/status`),
+        new URL(`${apiBase}/chains/ethereum/addresses/${encodeURIComponent(controllerAddress)}/contracts/${encodeURIComponent(controllerLabel)}/status`),
         'GET',
         '/event-indexing-status',
         apiKey,
         fetcher,
       ),
-      requestJson(new URL(`${API_BASE}/chains/ethereum/status`), 'GET', '/chain-status', apiKey, fetcher),
+      requestJson(new URL(`${apiBase}/chains/ethereum/status`), 'GET', '/chain-status', apiKey, fetcher),
     ]);
 
     const rows = readQueryRows(queryBody, endpoint);
@@ -196,7 +201,7 @@ export function createMultiBaasHistoryClient(config: MultiBaasHistoryConfig) {
     const indexing = readIndexingStatus(indexingBody, chainStatus.blockNumber);
     const transactions = [...new Set([...rowCounts.keys()].map((key) => key.slice(0, key.indexOf('|'))))];
     const eventPages = await Promise.all(
-      transactions.map((txHash) => readTransactionEvents(txHash, controllerAddress, apiKey, fetcher)),
+      transactions.map((txHash) => readTransactionEvents(apiBase, txHash, controllerAddress, apiKey, fetcher)),
     );
     const items = matchAndMapEvents(eventPages.flat(), rowCounts, rootId, controllerAddress);
     const hasMore = rows.length === pageSize;
@@ -237,12 +242,13 @@ function countQueryRows(rows: unknown[], rootId: string): Map<string, number> {
 }
 
 async function readTransactionEvents(
+  apiBase: string,
   txHash: string,
   controllerAddress: string,
   apiKey: string,
   fetcher: typeof fetch,
 ): Promise<unknown[]> {
-  const url = new URL(`${API_BASE}/events`);
+  const url = new URL(`${apiBase}/events`);
   url.searchParams.set('tx_hash', txHash);
   url.searchParams.set('contract_address', controllerAddress);
   url.searchParams.set('limit', String(MAX_TX_EVENTS));
@@ -264,8 +270,8 @@ function matchAndMapEvents(
   const byIdentity = new Map<string, ParsedEvent>();
   for (const raw of rawEvents) {
     const event = parseRawEvent(raw);
-    if (event.eventContractAddress !== controllerAddress || event.transactionContractAddress !== controllerAddress) {
-      throw new MultiBaasResponseError('/events', 'event or transaction came from an unexpected contract address');
+    if (event.eventContractAddress !== controllerAddress) {
+      throw new MultiBaasResponseError('/events', 'event came from an unexpected contract address');
     }
     const identity = `${event.txHash.toLowerCase()}:${event.logIndex}`;
     const existing = byIdentity.get(identity);
@@ -311,7 +317,6 @@ interface ParsedEvent {
   transactionIndex: number;
   blockHash: string;
   eventContractAddress: string;
-  transactionContractAddress: string;
 }
 
 function parseRawEvent(value: unknown): ParsedEvent {
@@ -319,7 +324,6 @@ function parseRawEvent(value: unknown): ParsedEvent {
   const event = requireRecord(eventRecord.event, '/events', 'event details');
   const tx = requireRecord(eventRecord.transaction, '/events', 'transaction');
   const eventContract = requireRecord(event.contract, '/events', 'event contract');
-  const txContract = requireRecord(tx.contract, '/events', 'transaction contract');
   if (!Array.isArray(event.inputs)) throw new MultiBaasResponseError('/events', 'event inputs must be an array');
   const inputs = new Map<string, unknown>();
   for (const inputValue of event.inputs) {
@@ -338,13 +342,12 @@ function parseRawEvent(value: unknown): ParsedEvent {
     transactionIndex: requireSafeInteger(tx.txIndexInBlock, 'transaction index'),
     blockHash: requireHash(tx.blockHash, 32, 'block hash'),
     eventContractAddress: normalizeAddress(eventContract.address, 'event contract address'),
-    transactionContractAddress: normalizeAddress(txContract.address, 'transaction contract address'),
   };
 }
 
 function mapActivity(event: ParsedEvent, rootId: string, controllerAddress: string): CapitalActivity {
-  if (event.eventContractAddress !== controllerAddress || event.transactionContractAddress !== controllerAddress) {
-    throw new MultiBaasResponseError('/events', 'event or transaction came from an unexpected contract address');
+  if (event.eventContractAddress !== controllerAddress) {
+    throw new MultiBaasResponseError('/events', 'event came from an unexpected contract address');
   }
   const common: ActivityBase = {
     id: `${CHAIN_ID}:${event.txHash.toLowerCase()}:${event.logIndex}`,
@@ -484,6 +487,7 @@ async function requestJson(
       },
       ...(body === undefined ? {} : { body: JSON.stringify(body) }),
       signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS),
+      redirect: 'error',
     });
   } catch {
     throw new MultiBaasRequestError(endpoint);

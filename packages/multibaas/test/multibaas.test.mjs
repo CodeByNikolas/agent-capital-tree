@@ -32,7 +32,8 @@ const event = ({ name, signature, inputs, logIndex, txHash, txIndexInBlock = 0, 
     txIndexInBlock,
     blockHash,
     blockNumber,
-    contract: { address: controllerAddress, addressAlias: '', name: 'CapitalController', label: 'capital-controller' },
+    // A smart wallet may call the controller internally; only the log emitter is authoritative.
+    contract: { address: tokenA, addressAlias: '', name: 'SmartWallet', label: 'smart-wallet' },
     method: { name: 'test', signature: 'test()' },
   },
 });
@@ -74,6 +75,7 @@ function jsonResponse(body, status = 200) {
 
 function client(fetcher, pageSize = 2) {
   return createMultiBaasHistoryClient({
+    deploymentUrl: 'https://d7zveyyfkvdbxdbd7n3rk6o3ee.multibaas.com',
     apiKey: 'test-server-key',
     controllerAddress,
     controllerLabel: 'capital-controller',
@@ -82,8 +84,14 @@ function client(fetcher, pageSize = 2) {
   });
 }
 
+test('credentials can only target an explicit MultiBaas HTTPS origin', () => {
+  for (const deploymentUrl of ['http://demo.multibaas.com', 'https://evil.example', 'https://demo.multibaas.com.evil.example', 'https://user:password@demo.multibaas.com', 'https://demo.multibaas.com/path']) {
+    assert.throws(() => createMultiBaasHistoryClient({ deploymentUrl, apiKey: 'test', controllerAddress, controllerLabel: 'capital' }));
+  }
+});
+
 test('builds a root-filtered Event Query from the canonical event names', () => {
-  const query = buildCapitalActivityQuery('7');
+  const query = buildCapitalActivityQuery('7', controllerAddress);
   assert.deepEqual(query.events.map(({ eventName }) => eventName), [
     'NodeCreated',
     'RootFunded',
@@ -95,7 +103,7 @@ test('builds a root-filtered Event Query from the canonical event names', () => 
     'NodeRevoked',
   ]);
   assert.ok(query.events.every(({ filter }) =>
-    filter.fieldType === 'input' && filter.inputIndex === 0 && filter.operator === 'equal' && filter.value === '7'));
+    filter.rule === 'and' && filter.children[0].value === '7' && filter.children[1].fieldType === 'contract_address' && filter.children[1].value === controllerAddress));
   assert.equal(query.orderBy, 'block_number');
   assert.equal(query.order, 'ASC');
 });
@@ -107,12 +115,13 @@ test('queries one bounded page, filters to its root, enriches log indexes, sorts
     requests.push({ url, init });
     assert.equal(url.origin, 'https://d7zveyyfkvdbxdbd7n3rk6o3ee.multibaas.com');
     assert.equal(init.headers.Authorization, 'Bearer test-server-key');
+    assert.equal(init.redirect, 'error');
     if (url.pathname.endsWith('/queries')) {
       assert.equal(init.method, 'POST');
       assert.equal(url.searchParams.get('limit'), '2');
       assert.equal(url.searchParams.get('offset'), '0');
       const query = JSON.parse(init.body);
-      assert.ok(query.events.every(({ filter }) => filter.value === '7'));
+      assert.ok(query.events.every(({ filter }) => filter.children[0].value === '7'));
       return jsonResponse(envelope({
         rows: [
           queryRow('7', txA, rootFundedSignature),
