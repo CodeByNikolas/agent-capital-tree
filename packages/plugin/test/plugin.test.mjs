@@ -80,3 +80,11 @@ test('bundled stdio MCP server works from a copied plugin without node_modules',
     await rm(folder, { recursive: true, force: true });
   }
 });
+
+
+test('LP tools request exact liquidity and explicit maximum inputs', () => {
+  const request = { nodeId: '2', liquidity: '500', maxAmount0: '100', maxAmount1: '100', deadline: 1800000000 };
+  assert.deepEqual(toolSpecs.openPosition.schema.parse(request), request);
+  assert.throws(() => toolSpecs.openPosition.schema.parse({ ...request, liquidity: undefined, minLiquidity: '500' }));
+  assert.throws(() => toolSpecs.increasePosition.schema.parse({ ...request, liquidity: '1.5' }));
+});

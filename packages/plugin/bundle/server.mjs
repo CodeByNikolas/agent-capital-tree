@@ -36494,9 +36494,9 @@ var toolSpecs = {
   allocateCapital: { description: "Allocate additional free parent capital to an existing child.", schema: external_exports.object({ childId: id, asset: address, amount }).strict(), readOnly: false },
   tightenPolicy: { description: "Tighten a node mandate without expanding rights.", schema: external_exports.object({ nodeId: id, restrictions }).strict(), readOnly: false },
   swap: { description: "Request a bounded exact-input swap from a node vault.", schema: external_exports.object({ nodeId: id, tokenIn: address, amountIn: amount, minAmountOut: amount, deadline }).strict(), readOnly: false },
-  openPosition: { description: "Open the configured Uniswap position within mandate limits.", schema: external_exports.object({ nodeId: id, maxAmount0: amount, maxAmount1: amount, minLiquidity: amount, deadline }).strict(), readOnly: false },
-  increasePosition: { description: "Increase the configured position within mandate limits.", schema: external_exports.object({ nodeId: id, maxAmount0: amount, maxAmount1: amount, minLiquidity: amount, deadline }).strict(), readOnly: false },
-  collectFees: { description: "Collect earned fees to the bound vault.", schema: external_exports.object({ nodeId: id, deadline }).strict(), readOnly: false },
+  openPosition: { description: "Open the fixed Uniswap position with exact liquidity and bounded token inputs.", schema: external_exports.object({ nodeId: id, maxAmount0: amount, maxAmount1: amount, liquidity: amount, deadline }).strict(), readOnly: false },
+  increasePosition: { description: "Add exact liquidity to the fixed Uniswap position with bounded token inputs.", schema: external_exports.object({ nodeId: id, maxAmount0: amount, maxAmount1: amount, liquidity: amount, deadline }).strict(), readOnly: false },
+  collectFees: { description: "Collect earned fees to the bound vault.", schema: external_exports.object({ nodeId: id, minAmount0Out: amount.optional(), minAmount1Out: amount.optional(), deadline }).strict(), readOnly: false },
   closePosition: { description: "Close the existing position to the bound vault.", schema: external_exports.object({ nodeId: id, minAmount0Out: amount, minAmount1Out: amount, deadline }).strict(), readOnly: false },
   revokeSubtree: { description: "Permanently revoke a node and its descendants.", schema: external_exports.object({ nodeId: id }).strict(), readOnly: false },
   reclaimAssets: { description: "Start or resume authorized parent recovery to bound vaults.", schema: external_exports.object({ nodeId: id }).strict(), readOnly: false }
