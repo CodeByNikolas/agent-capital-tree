@@ -6,7 +6,9 @@ import { Wallet } from 'ethers';
 
 // Local test wallet only. Never trace, screenshot, or print setup inputs.
 const root = join(homedir(), '.agent-capital-tree');
-const profileName = process.env.ACT_BROWSER_PROFILE ?? 'jury';
+const walletName = process.env.ACT_TEST_WALLET ?? 'jury';
+if (!['jury', 'jury-e2e'].includes(walletName)) throw new Error('Unknown isolated test wallet');
+const profileName = process.env.ACT_BROWSER_PROFILE ?? walletName;
 if (!/^jury(?:-[a-z0-9]+)?$/.test(profileName)) throw new Error('Invalid test profile name');
 const extension = join(root, 'tools/metamask-13.49.0');
 const profile = join(root, 'browser', profileName);
@@ -20,8 +22,8 @@ try {
   const worker = context.serviceWorkers()[0] ?? await context.waitForEvent('serviceworker');
   const page = await context.newPage();
   await page.goto(`chrome-extension://${new URL(worker.url()).host}/home.html`);
-  const password = await readFile(join(root, 'keys/jury.password'), 'utf8');
-  const wallet = await Wallet.fromEncryptedJson(await readFile(join(root, 'keys/jury.keystore.json'), 'utf8'), password);
+  const password = await readFile(join(root, `keys/${walletName}.password`), 'utf8');
+  const wallet = await Wallet.fromEncryptedJson(await readFile(join(root, `keys/${walletName}.keystore.json`), 'utf8'), password);
   await Promise.any(['unlock-submit', 'onboarding-import-wallet', 'passkey-maybe-later-button', 'account-menu-icon', 'metametrics-i-agree', 'onboarding-complete-done'].map(id => page.getByTestId(id).waitFor({ timeout: 25000 })));
   if (await page.getByTestId('unlock-submit').isVisible()) {
     stage = 'unlock';
@@ -53,22 +55,20 @@ try {
     await page.getByTestId('create-password-submit').click();
   }
   stage = 'post-import';
-  await page.waitForTimeout(2000);
-  if (await page.getByTestId('passkey-maybe-later-button').isVisible()) {
-    await page.getByTestId('passkey-maybe-later-button').click();
-    await page.waitForTimeout(1000);
-  }
-  if (await page.getByTestId('metametrics-i-agree').isVisible()) {
-    const ids = ['metametrics-checkbox', 'metametrics-data-collection-checkbox'];
-    for (let i = 0; i < ids.length; i++) {
-      if (await page.locator('input[type="checkbox"]').nth(i).isChecked()) await page.getByTestId(ids[i]).click();
+  const readyDeadline = Date.now() + 90000;
+  while (!await page.getByTestId('account-menu-icon').isVisible() && Date.now() < readyDeadline) {
+    if (await page.getByTestId('passkey-maybe-later-button').isVisible()) {
+      await page.getByTestId('passkey-maybe-later-button').click();
     }
-    await page.getByTestId('metametrics-i-agree').click();
-    await page.waitForTimeout(2000);
-  }
-  if (await page.getByTestId('onboarding-complete-done').isVisible()) {
-    await page.getByTestId('onboarding-complete-done').click();
-    await page.waitForTimeout(1500);
+    if (await page.getByTestId('metametrics-i-agree').isVisible()) {
+      const ids = ['metametrics-checkbox', 'metametrics-data-collection-checkbox'];
+      for (let i = 0; i < ids.length; i++) {
+        if (await page.locator('input[type="checkbox"]').nth(i).isChecked()) await page.getByTestId(ids[i]).click();
+      }
+      await page.getByTestId('metametrics-i-agree').click();
+    }
+    if (await page.getByTestId('onboarding-complete-done').isVisible()) await page.getByTestId('onboarding-complete-done').click();
+    await page.waitForTimeout(500);
   }
   stage = 'wallet overview';
   await page.getByTestId('account-menu-icon').waitFor({ timeout: 60000 });
