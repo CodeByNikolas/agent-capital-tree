@@ -1,0 +1,91 @@
+{
+  "chainId": 11155111,
+  "controller": "0x55caFFf719B5FA70c0e8942eEe2C7EE6B8c7Db6b",
+  "rootId": "5",
+  "status": "passed",
+  "startedAt": "2026-09-25T21:10:13.340Z",
+  "operationKey": "0x76d5d5e91640eac02760f60dd98cb2739f93c0ba700ad3e1b1c4a734b61f6163",
+  "grandchildKey": "0x251176053b6e51c80c5f9942e66e07169f8a5985de712bc00be9cf2a67dec2e1",
+  "rootModel": "gpt-6-sol",
+  "childModel": "gpt-6-luna",
+  "baselineBlock": "11781796",
+  "transactions": {
+    "0x88f2d0555b6399a40051af1338e0b223e73c54870e1c2c5c3e75cf033d222435": {
+      "blockNumber": 11781801,
+      "blockHash": "0xeaa924cf043e3ef60b2d8dffc6a003116b1f0308f5664b4a775a6d0abcdfd5f2",
+      "gasUsed": "5560093",
+      "status": "confirmed"
+    },
+    "0x4b8876db0ff25f9597913fe8d42b74f974a262a784bd7f827a20400c477588ff": {
+      "blockNumber": 11781807,
+      "blockHash": "0x468067ba83f39d52b5df433e822c38eae192494973911ce98e50bb6f0c9edd48",
+      "gasUsed": "275407",
+      "status": "confirmed"
+    },
+    "0x6c837c7bd49aef8f36f2bf918bb13e3d3eb9bc0d3c4879a9661c5921ce3a37ee": {
+      "blockNumber": 11781810,
+      "blockHash": "0x46796e9980db1ece043a49a5dddd3e2a41706fedb2143a63ee1d50a9e8ab51f5",
+      "gasUsed": "531138",
+      "status": "confirmed"
+    },
+    "0x407bd976a2658d97121f04248b3f31aeb01bc0fdaeb22b9ad0486b20aacf460d": {
+      "blockNumber": 11781812,
+      "blockHash": "0x4fa89c15e58370783a4c05d57471134aaf1eb81c985041883004759ae376062a",
+      "gasUsed": "369209",
+      "status": "confirmed"
+    },
+    "0x3973f3ee0f0ab6a476d62ce4fce62a2d212dcaa2b1ccfc8f2dec7fec395cab26": {
+      "blockNumber": 11781814,
+      "blockHash": "0x88ec17046da2b943221773816d125fa909022b7b82c99e7a9d716da063c67196",
+      "gasUsed": "275577",
+      "status": "confirmed"
+    },
+    "0xe106b41783405975e420920f5e6c053634c8f6cdb83b76c932c131105ad310e0": {
+      "blockNumber": 11781817,
+      "blockHash": "0xd91a37cf6c0fb942075dedab2011ab1a1c801411210e2526d7032be60bebabee",
+      "gasUsed": "288780",
+      "status": "confirmed"
+    },
+    "0x8ce6d842ac2cf09e886193581b8afc2374dac24000aa3f6d97a8a118dfdb7f8e": {
+      "blockNumber": 11781820,
+      "blockHash": "0x8bf4862dfe91859069c2d340a02d5ad6fec6beafd02aaafb2916aac6f1843325",
+      "gasUsed": "5613713",
+      "status": "confirmed"
+    },
+    "0x4709506f2a17f847adc2c0179c2b3acb519e8a10fcf7e9840a9399ca00aed05e": {
+      "blockNumber": 11781825,
+      "blockHash": "0xc2a5b15acf65956394086aacd03adb1a4dac404b0dda87e0da6c80db97f627f3",
+      "gasUsed": "329063",
+      "status": "confirmed"
+    }
+  },
+  "checks": {
+    "rootMcpDispatchStarted": true,
+    "modelMarkers": [
+      "child-complete",
+      "grandchild-complete"
+    ],
+    "nonzeroCollectedFees": true,
+    "childLiquidity": "40000000000000000000",
+    "grandchildTokenB": "99539187502791312",
+    "canonicalReceiptCount": 8,
+    "checkedAtBlock": 11781827
+  },
+  "limitations": [
+    "Programmatic root Codex CLI and model workers; browser owner signing is a separate check.",
+    "No live MultiBaas or owner recovery in this run."
+  ],
+  "rootCli": {
+    "exitCode": 0,
+    "signal": null,
+    "transcriptPath": "/home/codexops/.agent-capital-tree/root-codex-e2e/5-1790370613340/codex.jsonl",
+    "stderrPath": "/home/codexops/.agent-capital-tree/root-codex-e2e/5-1790370613340/codex.stderr",
+    "transcriptSha256": "85064c285ed4543c555733fc90f5a454b2f39767b6eef8556d0593ea3088ad5b",
+    "spawnChildToolCallCount": 1,
+    "completed": true
+  },
+  "childId": "6",
+  "grandchildId": "7",
+  "positionTokenId": "39834",
+  "finishedAt": "2026-09-25T21:17:07.070Z"
+}

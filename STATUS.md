@@ -2,6 +2,20 @@
 
 Stand: 25. September 2026. Nach Komprimierung zusammen mit PLAN.md lesen.
 
+## Aktueller Abnahmestand (21:17 UTC)
+
+- Frontend mit frontend-design und impeccable erneut durch Subagent geprüft, Hauptagent-Review übernommen. Fehlende Root-IDs, leere EAC-Rechte und falsches Wallet-Netzwerk sind verständlicher. Live: `dpl_EqpyfwVoiSQyzfkyUZpYaPgkV3uz`, https://agent-capital-tree-pg757pomi-tumblockchains-projects.vercel.app; Alias bleibt https://agent-capital-tree.vercel.app. Build/Typecheck sowie veröffentlichter Desktop-/Mobil-Smoke bestanden.
+- Echte frische MetaMask-Wallet `0xbCea84Ed1DaFbb59AaF9797Cb4170394db688d34` hat Root5 erstellt, beide Tokens geclaimt, je100 ACT-A/ACT-B finanziert und Operator `0x4eC0dc927b085a3e08a066C2D5782c5D103B46b4` gebunden. Sieben bestätigte Signaturen in `deployments/browser-owner-e2e.json`. Der frühere Create-Abbruch wurde vor Fortsetzung onchain abgeglichen; keine Doppelallokation.
+- Frisches Root-Codex-Profil Sol Medium → MCP → Child6 Luna Max → Grandchild7 Luna Max vollständig bestanden. Echte Swaps, LP39834 mit40e18 Liquidity, kontrollierter Swap während offener LP und nichtnull Gebührenabholung; acht kanonische Receipts in `deployments/root-codex-e2e.json`. Companion anschließend geschlossen. Root5 ist noch aktiv und enthält Assets/LP; Owner-Recovery steht noch aus.
+- Erster Root-Codex-Versuch wurde vor der Allokation durch MCP-Approval-Policy abgewiesen. `deployments/root-codex-attempt1.json` belegt Nonce0, keinen Child und unveränderte100/100 Tokens. Das neue Testprofil erlaubt gezielt nur `spawnChild` plus Tree/Status-Reads; Shell bleibt read-only. Echter synthetischer Modell-Probelauf mit dieser einzelnen expliziten Freigabe bestanden. MCP-Annotations bleiben wahrheitsgemäß schreibend/destruktiv.
+- Neues geprüftes Worker-Image `sha256:e18863655ebc0b6daf3b4ebb87851d1ffc8504db7c497bc0252fa9d07ca874b0` setzt Luna Max / Sol Medium. Zwei-Worker-Isolation, echtes synthetisches Modell/MCP sowie16 Runtime-Tests bestanden. Codex0.154.0 bleibt gepinnt.
+- Browser-Negativfälle bestanden: echte MetaMask-Ablehnung ohne Owner-Nonceänderung, echter Mainnet→Sepolia-Wechsel mit gesperrten Finanzaktionen auf falschem Netzwerk, simulierte Tree-API/RPC-Störung mit gesperrtem veraltetem Managementzustand und Wiederherstellung. `deployments/browser-negative-cases.json`; RPC-Störung wurde lokal injiziert, kein öffentlicher Dienst gestört.
+- Root-Operator erhielt0.032 Test-ETH aus vorhandenen/recycelten Testmitteln. `scripts/recycle-browser-worker-gas.mjs` ist zum Rückführen unbenutzten Gases abgeschlossener Child-Jobs vorbereitet (noch nicht ausgeführt). Keine neue Nutzer-Funding-Anfrage nötig, solange dieses Gas reicht.
+- Nächste Schritte: reviewed `scripts/test-browser-tree-followup.mjs --execute` (Neustart/gleicher Spawn, existierender Sibling handelt nach Child-Revoke), Browser `--owner-close` (Child-LP schließen, Grandchild→Child), Follow-up `--after-owner-close` (programmatische Root-Rückholung/Reallokation), Browser `--owner-recovery` (Sibling→Root→Owner). Beide Browser-Recovery-Phasen sind vorbereitet/reviewed, noch nicht ausgeführt. Jeder Runner stoppt bei unklarem Status und verlangt Reconciliation.
+- Live-MultiBaas-Key/ABI-Adress-Link fehlen weiterhin. Programmatische Reallokation ersetzt keinen späteren MultiBaas-informierten Master-Modell-Nachweis. Gesamtabnahme bleibt offen.
+
+Die folgenden Abschnitte dokumentieren zusätzlich frühere Nachweise; bei zeitabhängigen Angaben gilt der aktuelle Abnahmestand oben.
+
 ## Nachgewiesen
 
 - Öffentliches Repository: https://github.com/CodeByNikolas/agent-capital-tree. Änderungen werden nach Review/Tests getrennt committet.
