@@ -5,7 +5,7 @@ import { setTimeout as delay } from 'node:timers/promises';
 import { mkdtemp, mkdir, readFile, rm, symlink, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { WorkerSessions, authorizedWorkerCall, SpawnCoordinator, FileSpawnJournal, workerDockerArgs, workerNetworkCreateArgs, InferenceBroker } from '../dist/index.js';
+import { WorkerSessions, authorizedWorkerCall, SpawnCoordinator, FileSpawnJournal, workerDockerArgs, startWorkerGateway, InferenceBroker } from '../dist/index.js';
 
 const parent = { workerId: 'w1', rootId: 'root', nodeId: 'parent', authorityGeneration: '3' };
 const request = { operationKey: `0x${'a'.repeat(64)}`, task: 'study', model: 'gpt-6-sol', token: '0xasset', amount: '10', restrictions: { swap: false, assets: ['a'] } };
@@ -79,38 +79,40 @@ test('spawn retries failed launch and reconciles after journal loss without resu
   }
 });
 
-test('Docker command has fixed isolation flags and rejects escaped mounts', async () => {
+test('Docker command mounts only private worker files and has no network', async () => {
   const runtimeRoot = await mkdtemp(join(tmpdir(), 'act-mounts-'));
   const workerRoot = join(runtimeRoot, 'workers', 'w1');
   const workspace = join(workerRoot, 'work');
   const keyFile = join(workerRoot, 'key');
+  const gatewaySocket = join(workerRoot, 'gateway.sock');
   await mkdir(workerRoot, { recursive: true, mode: 0o700 });
   await mkdir(workspace, { mode: 0o700 });
   await writeFile(keyFile, 'synthetic-only', { mode: 0o600 });
-  const files = { workerId: 'w1', uid: process.getuid(), gid: process.getgid(), runtimeRoot, workspace, keyFile, image: `worker@sha256:${'a'.repeat(64)}`, model: 'gpt-6-sol', brokerUrl: 'http://broker:7000/v1', brokerToken: 'limited', mcpToken: 'local' };
+  const target = createServer((_req, res) => res.end('{}'));
+  await new Promise(resolve => target.listen(0, '127.0.0.1', resolve));
+  const origin = `http://127.0.0.1:${target.address().port}`;
+  const gateway = await startWorkerGateway({ socket: gatewaySocket, workerRoot, uid: process.getuid(), brokerOrigin: origin, brokerToken: 'scoped', companionOrigin: origin, mcpToken: 'scoped' });
+  const files = { workerId: 'w1', uid: process.getuid(), gid: process.getgid(), runtimeRoot, workspace, keyFile, gatewaySocket, imageId: `sha256:${'a'.repeat(64)}`, model: 'gpt-6-sol' };
   try {
-  const args = await workerDockerArgs(files);
-  assert.deepEqual(args.slice(0, 4), ['run', '--rm', '-i', '--read-only']);
-  assert.ok(args.includes('--cap-drop=ALL'));
-  assert.ok(args.includes('--security-opt=no-new-privileges'));
-  assert.ok(args.includes('codex'));
-  assert.ok(args.includes('--json'));
-  assert.ok(args.includes('--skip-git-repo-check'));
-  assert.ok(args.includes('act-worker-w1'));
-  assert.deepEqual(workerNetworkCreateArgs('w1'), ['network', 'create', '--internal', '--driver', 'bridge', 'act-worker-w1']);
-  assert.ok(args.includes(`--user=${files.uid}:${files.gid}`));
-  assert.ok(!args.join(' ').includes('docker.sock'));
-  assert.ok(args.filter(arg => arg.startsWith('type=bind')).every(arg => arg.includes(workerRoot)));
-  await assert.rejects(workerDockerArgs({ ...files, workspace: '/home/owner' }), /outside private root/);
-  const sibling = join(runtimeRoot, 'workers', 'w2');
-  await mkdir(sibling);
-  await writeFile(join(sibling, 'key'), 'sibling-synthetic');
-  await assert.rejects(workerDockerArgs({ ...files, keyFile: join(sibling, 'key') }), /outside private root/);
-  await assert.rejects(workerDockerArgs({ ...files, uid: files.uid + 1 }), /permissions do not match/);
-  const escaped = join(workerRoot, 'escaped');
-  await symlink(tmpdir(), escaped);
-  await assert.rejects(workerDockerArgs({ ...files, workspace: escaped }), /invalid worker mounts/);
-  } finally { await rm(runtimeRoot, { recursive: true, force: true }); }
+    const args = await workerDockerArgs(files);
+    assert.ok(args.includes('none'));
+    assert.ok(args.includes('--cap-drop=ALL'));
+    assert.ok(args.includes('--security-opt=no-new-privileges'));
+    assert.ok(args.includes(`--user=${files.uid}:${files.gid}`));
+    assert.ok(!args.join(' ').includes('docker.sock'));
+    assert.ok(!args.join(' ').includes('scoped'));
+    assert.equal(args.filter(arg => arg.startsWith('type=bind')).length, 3);
+    assert.ok(args.filter(arg => arg.startsWith('type=bind')).every(arg => arg.includes(workerRoot)));
+    await assert.rejects(workerDockerArgs({ ...files, workspace: '/home/owner' }), /outside private root/);
+    const sibling = join(runtimeRoot, 'workers', 'w2');
+    await mkdir(sibling);
+    await writeFile(join(sibling, 'key'), 'sibling-synthetic');
+    await assert.rejects(workerDockerArgs({ ...files, keyFile: join(sibling, 'key') }), /outside private root/);
+    await assert.rejects(workerDockerArgs({ ...files, uid: files.uid + 1 }), /permissions do not match/);
+    const escaped = join(workerRoot, 'escaped');
+    await symlink(tmpdir(), escaped);
+    await assert.rejects(workerDockerArgs({ ...files, workspace: escaped }), /invalid worker mounts/);
+  } finally { await gateway.close(); target.close(); await rm(runtimeRoot, { recursive: true, force: true }); }
 });
 
 test('broker forwards only allowed model and path with host-only upstream key and call limit', async () => {
