@@ -79,6 +79,12 @@ importers:
       '@agent-capital-tree/plugin':
         specifier: workspace:*
         version: link:../plugin
+      '@agent-capital-tree/sdk':
+        specifier: workspace:*
+        version: link:../sdk
+      viem:
+        specifier: 2.56.9
+        version: 2.56.9(typescript@5.9.3)(zod@4.6.5)
     devDependencies:
       '@types/node':
         specifier: 22.15.30
