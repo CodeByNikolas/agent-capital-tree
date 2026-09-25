@@ -1,0 +1,28 @@
+{
+  "rootId": "5",
+  "owner": "0xbcea84ed1dafbb59aaf9797cb4170394db688d34",
+  "status": "passed",
+  "transactions": [
+    {
+      "step": "close-6",
+      "transactionHash": "0x7f44bafe9fc9131b04bc0a2235f4c4e5cd3119a9c128218bdcc23cef880f05cb",
+      "blockNumber": 11781874,
+      "blockHash": "0x8e99da0c42b7c0cdba84345a87b0edba32a5d0e3e210a7136a8d5a921008c0ef"
+    },
+    {
+      "step": "recover-7",
+      "transactionHash": "0x9ce3a542344bd8638e0b46c8db317b412eb5be5b117d1a32b703f2bc0970e205",
+      "blockNumber": 11781878,
+      "blockHash": "0xa75be5306a4845d7623d62af626719063378b00b6dfc5d30f86b5d76ccd38545"
+    }
+  ],
+  "startedAt": "2026-09-25T21:25:38.192Z",
+  "finishedAt": "2026-09-25T21:27:54.028Z",
+  "checks": {
+    "noRunningWorkers": true,
+    "companionExcludedByLock": true,
+    "realMetaMaskSignatures": true,
+    "allVaultsEmpty": false,
+    "canonicalReceipts": true
+  }
+}
