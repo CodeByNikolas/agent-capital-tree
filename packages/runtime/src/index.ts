@@ -9,3 +9,5 @@ export * from './gateway.js';
 export * from './launcher.js';
 export * from './keys.js';
 export * from './spawn-chain.js';
+export * from './gas.js';
+export * from './companion.js';

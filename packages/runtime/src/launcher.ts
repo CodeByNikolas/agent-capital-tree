@@ -37,7 +37,7 @@ export class DockerWorkerLauncher {
     const name = workerContainerName(id);
     // An orphan after companion restart cannot retain a live gateway; stop it before recreating the socket.
     if ((await this.#docker(['inspect', '-f', '{{.Id}}', name], true)).code === 0) {
-      await this.#docker(['stop', '--time', '5', name], true);
+      await this.#docker(['stop', '--time', '5', name]);
     }
     const gateway = await startWorkerGateway(spec.gateway);
     let stopped = false;
@@ -47,11 +47,13 @@ export class DockerWorkerLauncher {
       if (stopped) return;
       stopped = true;
       if (timer) clearTimeout(timer);
-      await this.#docker(['stop', '--time', '5', name], true);
-      child?.kill('SIGTERM');
-      await gateway.close();
-      spec.revoke();
-      this.#active.delete(id);
+      try { await this.#docker(['stop', '--time', '5', name], true); }
+      finally {
+        child?.kill('SIGTERM');
+        await gateway.close().catch(() => {});
+        spec.revoke();
+        this.#active.delete(id);
+      }
     };
     try {
       const args = await workerDockerArgs(spec.files);
@@ -73,12 +75,19 @@ export class DockerWorkerLauncher {
     } catch (error) { await stop(); throw error; }
   }
 
+  async ensureAvailable(): Promise<void> { await this.#docker(['info', '--format', '{{.ServerVersion}}']); }
+
   async stop(workerId: string): Promise<void> {
     const pending = this.#starting.get(workerId);
     if (pending) await pending.catch(() => {});
     const active = this.#active.get(workerId);
     if (active) await active.stop();
-    else await this.#docker(['stop', '--time', '5', workerContainerName(workerId)], true);
+    else {
+      const name = workerContainerName(workerId);
+      if ((await this.#docker(['inspect', '-f', '{{.Id}}', name], true)).code === 0) {
+        await this.#docker(['stop', '--time', '5', name]);
+      }
+    }
   }
 
   async close(): Promise<void> { await Promise.all([...this.#active.values()].map(active => active.stop())); }

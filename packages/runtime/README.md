@@ -15,3 +15,29 @@ node packages/runtime/build-worker-image.mjs /absolute/path/to/codex EXPECTED_SH
 ```
 
 The operator supplies an absolute Linux Codex 0.154.0 binary and its independently verified SHA-256. The helper checks the hash, version, executable format, and Docker daemon architecture, then emits the local immutable image ID. Set `ACT_WORKER_IMAGE_ID` to that ID and run `node packages/runtime/test/worker.integration.mjs` for two live containers using only synthetic keys. `node packages/runtime/test/model.integration.mjs` additionally uses the host-only CLIProxyAPI token helper in memory and checks a real model/MCP tool handshake. Both tests use ephemeral workers and synthetic task data. The base image is pinned by digest in `Dockerfile.worker`; the Codex binary is pinned by the supplied hash and version. Rebuild and record the new local image ID after changing the bridge or plugin bundle.
+
+## Local companion
+
+`node packages/runtime/cli.mjs prepare-root /absolute/private-config.json` creates an encrypted root operator key in the private runtime directory and prints **only its public address**. The human owner then binds that address to the chosen root with a wallet transaction. `prepare-root` does not require the operator to be bound yet. The companion uses one root/controller/chain domain per runtime directory; it refuses to reuse that directory for another controller.
+
+A private config file owned by the current user with mode `0600` has this shape:
+
+```json
+{
+  "runtimeRoot": "/absolute/private/act-runtime",
+  "rootId": "1",
+  "rpcUrl": "https://your-sepolia-rpc.example",
+  "controller": "0x0000000000000000000000000000000000000000",
+  "upstream": "http://your-cliproxyapi-host:8317/v1",
+  "providerTokenFile": "/absolute/private/cliproxyapi-token",
+  "imageId": "sha256:local-built-image-id",
+  "models": ["gpt-6-luna", "gpt-6-sol"],
+  "childGasWei": "0"
+}
+```
+
+`providerTokenFile` is optional on HomeBox, where the CLI reads the host-only `/usr/local/bin/codexops-proxy-token` helper into memory. The upstream must be CLIProxyAPI; the worker never receives this credential. Start with `node packages/runtime/cli.mjs start /absolute/private-config.json`. It binds the tool and inference servers to `127.0.0.1`, prints their local origin and the path of a private root MCP token file, and disables Sepolia writes by default. An explicit `--enable-sepolia-writes` flag is required for onchain worker actions; do not use it until deployment details and balances are verified. The root Codex profile uses the printed local origin and reads its bearer from that private file during trusted local setup; the CLI never prints the bearer.
+
+Each child task has one durable dispatch attempt. A retry after a crash can reconcile a confirmed allocation without duplicating capital, but it will not replay an ambiguous or completed model task. A lost dispatch journal likewise leaves the task unrerun; use a new operation and key for new work. The durable child key and intent hash are bound to Sepolia, controller, root, parent, generation and operation key. Onchain parameters and child address must match. If the original child policy has since changed and the original parameters cannot be reconstructed, reconciliation fails closed. The companion stops orphan containers and removes their disposable key files on restart, then polls active onchain authority; stale generations, revoked roles or invalid paths revoke the worker's MCP/inference grants and stop Docker. Only one companion process may own a runtime directory.
+
+`childGasWei` is zero by default. A nonzero grant is capped at `0.0002 ETH` per child, uses the parent operator's ETH, and is sent once after the child allocation is confirmed. The companion writes the exact signed raw transaction and hash to a private `0600` journal before broadcast; a retry may only rebroadcast that same transaction. The gas fee ceiling is 20 gwei. A missing or uncertain gas receipt prevents worker dispatch. There is no faucet or automatic refill. No live Sepolia spend was performed during runtime development; the Anvil integration uses only disposable accounts.
