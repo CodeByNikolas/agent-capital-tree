@@ -3,7 +3,6 @@ import { execFile } from 'node:child_process';
 import { promisify } from 'node:util';
 import { lstat, readFile } from 'node:fs/promises';
 import { isAbsolute } from 'node:path';
-import { RuntimeCompanion, prepareRootOperator } from './dist/index.js';
 
 const [command, configPath, flag] = process.argv.slice(2);
 if (process.platform === 'win32') {
@@ -12,6 +11,7 @@ if (process.platform === 'win32') {
 if (!['prepare-root', 'start'].includes(command) || !isAbsolute(configPath ?? '') || (flag && flag !== '--enable-sepolia-writes')) {
   throw new Error('usage: node packages/runtime/cli.mjs prepare-root|start /absolute/private-config.json [--enable-sepolia-writes]');
 }
+const { RuntimeCompanion, prepareRootOperator } = await import('./dist/index.js');
 const privateFile = async path => {
   if (!isAbsolute(path)) throw new Error('private file path must be absolute');
   const info = await lstat(path);
