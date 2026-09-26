@@ -17,6 +17,7 @@ import {
   type Hash,
 } from "viem";
 import { sepolia } from "viem/chains";
+import { purchaseOnce } from "./purchase-once";
 import { useRef, useState } from "react";
 import type { DashboardActions, DashboardData, Permission, Policy, PolicyDraft } from "@/lib/dashboard-types";
 import type { PublicDeployment } from "@/lib/deployment";
@@ -577,6 +578,10 @@ export function useWalletActions({
     },
 
     async payForService(nodeId, serviceId) {
+      const node = data.nodes.find(value => value.id === nodeId);
+      if (!node?.authorizedPermissions.includes("pay")) throw new Error("Cannot purchase: this node has no PAY role.");
+      const key = ["kanoki-receipt", sepolia.id, deployment.controllerAddress, node.vaultAddress, address, serviceId].join(":").toLowerCase();
+      const execute = async () => {
       if (busy.current) throw new Error("Another wallet action is still in progress.");
       busy.current = true;
       try {
@@ -656,6 +661,11 @@ export function useWalletActions({
       } finally {
         busy.current = false;
       }
+      };
+      const run = () => purchaseOnce(window.localStorage, key, execute);
+      const receipt = navigator.locks ? await navigator.locks.request(key, run) : await run();
+      return { ...receipt.result, alreadySettled: receipt.repeated };
+
     },
   };
 

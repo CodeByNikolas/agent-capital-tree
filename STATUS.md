@@ -2,6 +2,14 @@
 
 Stand: 26. September 2026. Zusammen mit PLAN.md nach Kontextkomprimierung lesen.
 
+## Kanoki — Veröffentlichung in geprüften Schritten
+
+- Neueste Gestaltungsvorgaben ersetzen Sidebar und systemabhängiges Theme: Header-Navigation, explizit dunkles/helles Theme, Fraunces/IBM Plex, unveränderte Kanoki-Tokens, dagre-Baum, alle vier Capabilities, getrennte sechsstellige USDC-/DEMO-USD-Bestände. Die gelieferten PNG-Logos aus `packages/export` werden unverändert verwendet; SVG-Dateien wurden nicht geliefert.
+- UI-Abnahme: Produktionsbuild und TypeScript grün. Chromium 1280×720 und 380×820, jeweils dunkel/hell: acht Text-/Flächenpaare ≥4,5:1, kein Seitenüberlauf, Tab→Enter→Escape mit wiederhergestelltem Fokus. Alle fünf Ansichten plus MCP-Guide ohne Browserfehler. Bericht `artifacts/ui/kanoki-ui-report.json`.
+- Revoke bestätigt den betroffenen Teilbaum und lässt Guthaben im Vault. Service-Belege bleiben bei Wiederholung erhalten; unklarer Zahlungsstatus sperrt eine weitere Zahlung. Tests `test-purchase-once` und `test-display-amount` grün. Der vorhandene Browser-Payment-Adapter zahlt aus der verbundenen Agent-Wallet; Vault-Payment läuft über MCP. Swap/Add-liquidity haben weiterhin keinen Browser-Adapter und sind sichtbar deaktiviert.
+- Keine Contract-, ABI-, Deployment-, Namespace- oder Env-Umbenennung. Keine Walletsignatur oder Finanztransaktion für dieses Redesign. Echter Wallet-/Plugin-Write-E2E bleibt offen.
+- Separater Release-Worktree `work/kanoki` schützt diese Arbeit vor parallelen Branchwechseln. Vorhandene fremde Runtime-Arbeit bleibt auf `wip/mcp-inflight` erhalten. Nächste Schritte: MCP-Grafiken, README-GIF, öffentliche Read-Prüfung.
+
 ## Aktiver Abschluss: Circle USDC und x402
 
 Nutzerentscheidung: Rapid Prototyping, keine Abwärtskompatibilität, kein Legacy-Selector. Neues Produkt verwendet ausschließlich `deployments/usdc-sepolia.json`, ENS-Namen/Contract-Adressen und `?vault=`. Alte `?root=`-Links sollen abgewiesen werden. Historische Onchain-Guthaben bleiben unberührt.

@@ -12,6 +12,7 @@
     "@agent-capital-tree/multibaas": "workspace:*",
     "@agent-capital-tree/sdk": "workspace:*",
     "@base-ui/react": "^1.8.0",
+    "@dagrejs/dagre": "3.1.1",
     "class-variance-authority": "^0.7.1",
     "cn": "^0.4.0",
     "lucide-react": "1.48.0",

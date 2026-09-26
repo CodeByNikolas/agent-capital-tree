@@ -103,6 +103,7 @@ export interface PolicyConstraint {
 }
 
 export interface VaultNode {
+  mandateStartsAt?: string;
   id: string;
   parentId: string | null;
   rootId: string;

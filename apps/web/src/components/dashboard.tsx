@@ -1,4 +1,5 @@
 "use client";
+import { ActivityRow, PositionCard } from "@/components/treasury-records";
 
 import {
   AlertCircle,
@@ -68,6 +69,8 @@ import type {
 } from "@/lib/dashboard-types";
 import type { PublicDeployment } from "@/lib/deployment";
 import { formatAmount, formatCompactAmount } from "@/lib/format-display-amount";
+import { ThemeControl, StatusPill, CapabilityPill, Brand, EmptyState } from "@/components/kanoki";
+import { layoutTree, relativeExpiry } from "@/lib/tree-layout";
 import { mobileTreeOrder } from "@/lib/mobile-tree-order";
 
 type InjectedProvider = Parameters<typeof custom>[0] & {
@@ -447,7 +450,7 @@ function WalletControl({ wallet }: { wallet: InjectedWalletState }) {
         ) : (
           <span className="network-button" aria-label="Connected to Sepolia">
             <span className="network-dot" />
-            Sepolia
+            sepolia
           </span>
         )}
         <span className="wallet-address" aria-label={`Connected wallet ${shortAddress(address)}`}>
@@ -461,9 +464,10 @@ function WalletControl({ wallet }: { wallet: InjectedWalletState }) {
 
   return (
     <div className="wallet-control">
+      <span className="network-button">sepolia</span>
       <button className="button button-primary button-connect" onClick={connect} disabled={pending} type="button">
         <WalletCards size={16} aria-hidden="true" />
-        {pending ? "Connecting…" : "Connect wallet"}
+        {pending ? "Connecting…" : "Connect"}
       </button>
       {error && <span className="wallet-error" role="status">{error}</span>}
     </div>
@@ -494,8 +498,7 @@ function AppSidebar({ view, vaultQuery, selectedId, rootLabel, runtimeLabel }: {
     <ShadcnSidebar collapsible="offcanvas" className="app-sidebar">
       <SidebarHeader className="app-sidebar-header">
         <Link href={routeHref("/", vaultQuery)} className="app-brand" onClick={() => setOpenMobile(false)} aria-label="Agent Capital Tree overview">
-          <span className="app-brand-mark" aria-hidden="true"><GitBranch size={22} /></span>
-          <span>agent capital <strong>tree</strong></span>
+          <span>Agent Capital Tree</span>
         </Link>
         <div className="app-workspace"><span className="app-workspace-symbol">{rootLabel.slice(0, 1).toUpperCase()}</span><span><small>Current root</small><strong>{rootLabel}</strong></span></div>
       </SidebarHeader>
@@ -519,13 +522,12 @@ function AppSidebar({ view, vaultQuery, selectedId, rootLabel, runtimeLabel }: {
   );
 }
 
-function Topbar({ view, source, wallet, vaultQuery, selectedId }: { view: DashboardProps["view"]; source: DataSource; wallet: InjectedWalletState; vaultQuery: string | null; selectedId: string }) {
-  return (
-    <header className="app-topbar">
-      <div className="app-topbar-title"><SidebarTrigger aria-label="Toggle navigation" /><span>{views.find((item) => item.id === view)?.title}</span><Badge variant="outline">Test USDC · Sepolia</Badge><Badge variant="outline">{view === "mcp" && !vaultQuery ? "No vault selected" : source === "preview" ? "Preview workspace" : source === "direct-rpc" ? "Direct RPC view" : "Local diagnostic"}</Badge></div>
-      <div className="app-topbar-actions"><Link className="app-manage-link app-topbar-guide" href={routeHref("/", vaultQuery)} onClick={() => { try { window.localStorage.removeItem("act.onboarding.dismissed"); } catch { /* storage unavailable */ } window.dispatchEvent(new Event(ONBOARDING_OPEN_EVENT)); }}>How it works</Link><Link className="app-manage-link" href={routeHref("/setup", vaultQuery, selectedId)}>Wallet actions</Link><WalletControl wallet={wallet} /></div>
-    </header>
-  );
+function Topbar({ wallet, view, vaultQuery, selectedId }: { view: DashboardProps["view"]; source: DataSource; wallet: InjectedWalletState; vaultQuery: string | null; selectedId: string }) {
+  return <header className="app-topbar">
+    <div className="app-topbar-title"><Link href="/" aria-label="Kanoki overview"><Brand /></Link></div>
+    <nav className="header-nav" aria-label="Main navigation">{(["overview", "tree", "applications", "activity", "setup"] as const).map(id => { const item = views.find(v => v.id === id)!; return <Link key={id} href={routeHref(item.path, vaultQuery, selectedId)} aria-current={view === id ? "page" : undefined}>{id === "tree" ? "Tree" : id === "setup" ? "Setup" : item.title}</Link>; })}</nav>
+    <div className="app-topbar-actions"><ThemeControl /><WalletControl wallet={wallet} /></div>
+  </header>;
 }
 
 function PreviewNotice({ data, deployment }: { data: DashboardData; deployment: PublicDeployment }) {
@@ -533,8 +535,8 @@ function PreviewNotice({ data, deployment }: { data: DashboardData; deployment: 
   return (
     <div className="preview-notice" role="note">
       <span className="notice-symbol"><CircleDashed size={16} aria-hidden="true" /></span>
-      <p><strong>Preview workspace.</strong> Balances, ENS labels, policies, LP positions and activity below are illustrative sample records. {deployment.contractsConfigured ? "Preview records cannot be used for wallet actions; use Open vault below to load live Sepolia state." : "The USDC controller deployment is still pending."}</p>
-      <Link href="/setup?preview=1">Why preview data? <ArrowRight size={13} aria-hidden="true" /></Link>
+      <p><strong>Illustrative preview.</strong> Example balances and capabilities. Transactions are disabled.</p>
+      
     </div>
   );
 }
@@ -725,159 +727,49 @@ function SummaryMetrics({ data }: { data: DashboardData }) {
   );
 }
 
-function TreeCard({
-  node,
-  selected,
-  onSelect,
-  parentLabel,
-}: {
-  node: VaultNode;
-  selected: boolean;
-  onSelect: (id: string) => void;
-  parentLabel?: string;
+function TreeCard({ node, selected, onSelect, parentLabel, now, owner }: {
+  node: VaultNode; selected: boolean; onSelect: (id: string) => void; parentLabel?: string; now: number; owner?: string | null;
 }) {
-  const firstAvailable = node.freeCapital[0];
-  const baseState = vaultStateLabels[node.state];
-  const stateLabel = node.source === "preview" ? `Example ${baseState.toLowerCase()}` : baseState;
-  const stateClass = node.state === "active" ? "node-state-active" : "node-state-inactive";
-
-  return (
-    <button
-      className={`tree-node${selected ? " tree-node-selected" : ""}`}
-      data-node-id={node.id}
-      type="button"
-      onClick={() => onSelect(node.id)}
-      aria-pressed={selected}
-      aria-description={parentLabel ? `Delegated by ${parentLabel}` : "Human owner root vault"}
-      aria-label={`${node.label}, ${node.ensName}, ${stateLabel}${firstAvailable ? `, exact free balance ${formatAmount(firstAvailable)} ${firstAvailable.symbol}` : ", no free balance"}`}
-    >
-      <div className="tree-node-head">
-        <span className={`node-avatar node-avatar-${node.depth}`}>
-          {node.depth === 0 ? <Fingerprint size={16} aria-hidden="true" /> : node.label.slice(0, 1)}
-        </span>
-        <span className={`node-state ${stateClass}`}><span />{stateLabel}</span>
-        <MoreHorizontal size={16} className="node-more" aria-hidden="true" />
-      </div>
-      <strong className="tree-node-name">{node.label}</strong>
-      <span className="tree-node-ens">{node.ensName}</span>
-      <div className="tree-node-foot">
-        <span title={firstAvailable ? `Exact free balance: ${formatAmount(firstAvailable)} ${firstAvailable.symbol}` : undefined}><span className="capital-dot" />{firstAvailable ? <>{formatCompactAmount(firstAvailable)} <i>{firstAvailable.symbol}</i></> : "No free balance"}</span>
-        <span className="node-depth">L{node.depth}</span>
-      </div>
-    </button>
-  );
-}
-
-interface PositionedTreeNode {
-  node: VaultNode;
-  left: number;
-  centerY: number;
-}
-
-interface TreeEdge {
-  id: string;
-  path: string;
-  junctionX: number;
-  sourceY: number;
-  targetY: number;
-}
-
-function layoutTree(nodes: readonly VaultNode[]) {
-  const maxNodes = 32;
-  const maxDepth = 2;
-  const cardWidth = 240;
-  const cardHeight = 150;
-  const columnStep = 304;
-  const leafPitch = 184;
-  const firstLeafCenter = 119;
-  const validNodes = nodes.filter((node) => node.depth <= maxDepth).slice(0, maxNodes);
-  const validIds = new Set(validNodes.map((node) => node.id));
-  const childrenById = new Map<string, VaultNode[]>();
-  for (const node of validNodes) {
-    if (node.parentId && validIds.has(node.parentId)) {
-      const siblings = childrenById.get(node.parentId) ?? [];
-      siblings.push(node);
-      childrenById.set(node.parentId, siblings);
-    }
-  }
-
-  const positions = new Map<string, number>();
-  let leafIndex = 0;
-  const visit = (node: VaultNode, path = new Set<string>()): number => {
-    if (path.has(node.id)) {
-      const centerY = firstLeafCenter + leafIndex * leafPitch;
-      leafIndex += 1;
-      positions.set(node.id, centerY);
-      return centerY;
-    }
-
-    const nextPath = new Set(path);
-    nextPath.add(node.id);
-    const children = childrenById.get(node.id) ?? [];
-    const childCenters = children.map((child) => visit(child, nextPath));
-    const centerY = childCenters.length > 0
-      ? childCenters.reduce((sum, center) => sum + center, 0) / childCenters.length
-      : firstLeafCenter + leafIndex++ * leafPitch;
-    positions.set(node.id, centerY);
-    return centerY;
-  };
-
-  const roots = validNodes.filter((node) => !node.parentId || !validIds.has(node.parentId));
-  for (const root of roots) visit(root);
-  for (const node of validNodes) {
-    if (!positions.has(node.id)) visit(node);
-  }
-
-  const positioned: PositionedTreeNode[] = validNodes.map((node) => ({
-    node,
-    left: 16 + node.depth * columnStep,
-    centerY: positions.get(node.id) ?? firstLeafCenter,
-  }));
-  const byId = new Map(positioned.map((item) => [item.node.id, item]));
-  const edges: TreeEdge[] = [];
-  for (const child of positioned) {
-    const parent = child.node.parentId ? byId.get(child.node.parentId) : undefined;
-    if (!parent) continue;
-    const fromX = parent.left + cardWidth;
-    const toX = child.left;
-    const junctionX = (fromX + toX) / 2;
-    edges.push({
-      id: `${parent.node.id}-${child.node.id}`,
-      path: `M ${fromX} ${parent.centerY} H ${junctionX} V ${child.centerY} H ${toX}`,
-      junctionX,
-      sourceY: parent.centerY,
-      targetY: child.centerY,
-    });
-  }
-
-  const levels = Math.max(1, ...positioned.map((item) => item.node.depth + 1));
-  const width = 16 + (levels - 1) * columnStep + cardWidth + 16;
-  positioned.sort((left, right) => left.node.depth - right.node.depth);
-  const height = Math.max(300, firstLeafCenter + (Math.max(1, leafIndex) - 1) * leafPitch + cardHeight / 2 + 36);
-  return {
-    nodes: positioned,
-    edges,
-    levels,
-    width,
-    height,
-    omittedCount: nodes.length - validNodes.length,
-  };
+  const balance = node.freeCapital.find(asset => asset.symbol.toUpperCase().includes("USDC"));
+  const demo = node.freeCapital.find(asset => asset.symbol === "DEMO-USD");
+  const expires = Date.parse(node.effectivePolicy.expiresAt);
+  const lifetime = node.mandateStartsAt ? expires - Date.parse(node.mandateStartsAt) : null;
+  const state = node.state === "active" && expires <= now ? "expired"
+    : node.state === "active" && lifetime && expires - now < lifetime * .1 ? "expiring" : node.state;
+  const remaining = balance ? formatAmount(balance) : "—";
+  return <button className={"tree-node" + (!node.parentId ? " tree-node-root" : "") + (selected ? " tree-node-selected" : "") + (state === "revoked" ? " tree-node-revoked" : "")}
+    data-node-id={node.id} type="button" onClick={() => onSelect(node.id)} aria-pressed={selected}
+    aria-description={parentLabel ? "Delegated by " + parentLabel : "Human root"}
+    aria-label={node.ensName.toLowerCase() + ", " + remaining + " USDC remaining, " + state}>
+    <span className="tree-node-head"><span className={"node-disc" + (!node.parentId ? " node-disc-human" : "")} aria-hidden="true" /><span className="tree-node-ens" title={node.ensName.toLowerCase()}>{node.ensName.toLowerCase()}</span></span>
+    {!node.parentId && <span className="node-owner" title={owner ?? undefined}>owner {owner ? shortAddress(owner) : "unavailable"}</span>}
+    <span className="tree-node-balances"><span className="tree-node-amount">{remaining} USDC</span>{demo && <span className="node-demo-amount">{formatAmount(demo)} DEMO-USD</span>}</span>
+    <CapabilityPill permissions={state === "active" || state === "expiring" ? node.authorizedPermissions : []} />
+    <span className="tree-node-meta"><time dateTime={node.effectivePolicy.expiresAt}>{relativeExpiry(node.effectivePolicy.expiresAt, now)}</time><StatusPill status={state} /></span>
+  </button>;
 }
 
 function CapitalTree({ data, selectedId, onSelect, canSpawnVault, onRequestSpawn }: { data: DashboardData; selectedId: string; onSelect: (id: string) => void; canSpawnVault: boolean; onRequestSpawn: () => void }) {
-  const tree = layoutTree(data.nodes);
+  const [spaces, setSpaces] = useState({ sibling: 16, level: 32, large: 48 });
+  const [now, setNow] = useState(Date.parse(data.snapshot?.observedAt ?? "2026-09-26T19:00:00Z"));
+  useEffect(() => {
+    const css = getComputedStyle(document.documentElement);
+    setSpaces({ sibling: parseFloat(css.getPropertyValue("--space-4")), level: parseFloat(css.getPropertyValue("--space-8")), large: parseFloat(css.getPropertyValue("--space-12")) });
+    setNow(Date.now());
+  }, [data]);
+  const tree = layoutTree(data.nodes, spaces);
   const mobileNodes = mobileTreeOrder(tree.nodes.map((item) => item.node));
 
   return (
     <section className="panel tree-panel" id="capital-tree" aria-labelledby="tree-title">
       <div className="panel-heading">
         <div>
-          <div className="panel-overline">CAPITAL HIERARCHY <PreviewFlag source={data.source} compact /></div>
-          <h2 id="tree-title">Your agent tree</h2>
+          
+          <h2 id="tree-title">Vault balances</h2>
         </div>
         <div className="panel-heading-actions">
           <button className="button button-secondary button-small" disabled={!canSpawnVault} onClick={onRequestSpawn} title={canSpawnVault ? "Create a child vault with a narrower policy and initial allocation" : "Connect the active agent assigned to this vault on Sepolia"}>
-            <Plus size={14} aria-hidden="true" /> Add a vault
+            <Plus size={14} aria-hidden="true" /> Delegate
           </button>
         </div>
       </div>
@@ -891,21 +783,12 @@ function CapitalTree({ data, selectedId, onSelect, canSpawnVault, onRequestSpawn
         >
           <svg className="tree-connectors" viewBox={`0 0 ${tree.width} ${tree.height}`} aria-hidden="true">
             {tree.edges.map((edge) => (
-              <g key={edge.id}>
-                <path d={edge.path} />
-                <circle cx={edge.junctionX} cy={edge.sourceY} r="2.1" />
-                <circle cx={edge.junctionX} cy={edge.targetY} r="2.1" />
-              </g>
+              <path key={edge.id} d={edge.path} className={edge.revoked ? "tree-edge-revoked" : undefined} />
             ))}
           </svg>
-          {tree.nodes.map(({ node, left, centerY }) => (
-            <div className="tree-position" role="none" key={node.id} style={{ left, top: centerY - 75 }}>
-              <TreeCard node={node} selected={node.id === selectedId} onSelect={onSelect} parentLabel={node.parentId ? nodeById(data, node.parentId)?.label : undefined} />
-            </div>
-          ))}
-          {Array.from({ length: tree.levels }, (_, depth) => (
-            <div className="tree-column-label" key={depth} style={{ left: 16 + depth * 304 }}>
-              {depth === 0 ? "OWNER · ROOT" : `LEVEL ${depth}`}
+          {tree.nodes.map(({ node, left, top }) => (
+            <div className="tree-position" role="none" key={node.id} style={{ left, top }}>
+              <TreeCard owner={data.rootOwner} now={now} node={node} selected={node.id === selectedId} onSelect={onSelect} parentLabel={node.parentId ? nodeById(data, node.parentId)?.label : undefined} />
             </div>
           ))}
         </div>
@@ -917,7 +800,7 @@ function CapitalTree({ data, selectedId, onSelect, canSpawnVault, onRequestSpawn
           return (
             <div className={`mobile-tree-row mobile-tree-depth-${node.depth}`} role="none" key={node.id}>
               {node.depth > 0 && <span className="mobile-tree-branch" aria-hidden="true" />}
-              <TreeCard node={node} selected={node.id === selectedId} onSelect={onSelect} parentLabel={parent?.label} />
+              <TreeCard owner={data.rootOwner} now={now} node={node} selected={node.id === selectedId} onSelect={onSelect} parentLabel={parent?.label} />
               <span className="mobile-tree-parent">{parent ? `Delegated by ${parent.label}` : "Human owner · Root vault"}</span>
             </div>
           );
@@ -926,10 +809,7 @@ function CapitalTree({ data, selectedId, onSelect, canSpawnVault, onRequestSpawn
 
       {tree.omittedCount > 0 && <p className="tree-limit-warning" role="status">{tree.omittedCount} node{tree.omittedCount === 1 ? "" : "s"} exceed the 32-node or three-level display limit.</p>}
 
-      <div className="tree-legend">
-        <span><span className="legend-line legend-line-active" />{data.source === "preview" ? "Example active authority path" : "Active authority path"}</span>
-        <span><span className="legend-node" /> Select a vault to inspect its mandate</span>
-      </div>
+      <p className="budget-note">USDC is capital. DEMO-USD is a valueless test asset. Limits apply per action.</p>
     </section>
   );
 }
@@ -1124,42 +1004,8 @@ function ActivityPanel({
           {(feed?.source === "unavailable" || loadMoreError) && <button className="button button-secondary button-small" type="button" disabled={loading} onClick={onRetry}>{loading ? "Checking…" : "Retry history"}</button>}
         </div>
       </div>
-      <Table className="activity-list" id="activity-list">
-        <TableHeader><TableRow><TableHead>Event</TableHead><TableHead>Vault and details</TableHead><TableHead>Amount and block</TableHead><TableHead>Source</TableHead></TableRow></TableHeader>
-        <TableBody>
-        {data.activity.map((activity, index) => {
-          const icon = activity.kind === "capital-assigned"
-            ? <ArrowDownLeft size={15} />
-            : activity.kind === "swap"
-              ? <ArrowLeftRight size={15} />
-              : activity.kind === "position-opened" || activity.kind === "position-increased" || activity.kind === "position-closed" || activity.kind === "node-created"
-                ? <Layers3 size={15} />
-                : activity.kind === "policy-tightened" || activity.kind === "subtree-revoked" || activity.kind === "operator-changed" || activity.kind === "owner-recovered"
-                  ? <ShieldCheck size={15} />
-                  : <Coins size={15} />;
-          return (
-            <TableRow className="activity-row" key={activity.id}>
-              <TableCell><span className={`activity-icon activity-icon-${index}`}>{icon}</span><span className="sr-only">{activityLabels[activity.kind]}</span></TableCell>
-              <TableCell><div className="activity-copy">
-                <strong>{activityLabels[activity.kind]} <span>· {activity.nodeLabel}</span></strong>
-                <small>{activity.description}</small>
-              </div></TableCell>
-              <TableCell><div className="activity-meta">
-                {activity.amount && <strong>{formatAmount(activity.amount)} <span>{activity.amount.symbol}</span></strong>}
-                <time dateTime={activity.timestamp}>{activity.timestamp ? `${new Date(activity.timestamp).toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit", timeZone: "UTC" })} UTC` : activity.blockNumber !== undefined ? `Block ${activity.blockNumber.toLocaleString()}` : ""}</time>
-                {activity.finality && <small className={`activity-finality activity-finality-${activity.finality}`}>{activity.finality.replaceAll("_", " ")}</small>}
-                {activity.transactionHash && activity.source === "multi-baas" && data.chainId === sepolia.id && (
-                  <a className="activity-transaction-link" href={`https://sepolia.etherscan.io/tx/${activity.transactionHash}`} target="_blank" rel="noreferrer">
-                    Receipt <ExternalLink size={9} aria-hidden="true" />
-                  </a>
-                )}
-              </div></TableCell>
-              <TableCell><Badge variant="outline">{activity.source === "preview" ? "Preview" : activity.source === "multi-baas" ? "Indexed" : "Local"}</Badge></TableCell>
-            </TableRow>
-          );
-        })}
-        </TableBody>
-      </Table>
+      <p className="index-status"><span className={"index-dot index-" + (page ? indexLag === 0 ? "synced" : "lagging" : "unreachable")} />{page ? "Indexed by MultiBaas · block " + page.indexing.latestIndexedBlock : data.activitySource === "preview" ? "Illustrative activity" : "MultiBaas unreachable"}<span className="small">{page ? indexLag === 0 ? "in sync" : "lagging" : ""}</span></p>
+      <Table className="activity-list"><TableHeader><TableRow><TableHead>Time</TableHead><TableHead>Event</TableHead><TableHead>Node</TableHead><TableHead>Amount</TableHead><TableHead>Transaction</TableHead></TableRow></TableHeader><TableBody>{data.activity.map(activity => <ActivityRow key={activity.id} activity={activity} event={activityLabels[activity.kind]} node={nodeById(data, activity.nodeId)} />)}</TableBody></Table>
       {data.activity.length === 0 && <p className="activity-empty">{loading ? "Loading activity history…" : data.activitySource === "preview" ? "Preview records are shown above when available." : feed?.source === "unavailable" ? "Indexed activity is unavailable for this root." : page ? "No indexed activity is available for this root within the covered block range." : "No activity records are available for this root yet."}</p>}
       {loadMoreError && feed?.source !== "unavailable" && <p className="activity-load-error" role="alert">{loadMoreError}</p>}
       {page?.hasMore && <button className="button button-secondary button-small activity-load-more" type="button" disabled={loadingMore} onClick={onLoadMore}>{loadingMore ? "Loading…" : "Load more activity"}</button>}
@@ -1168,38 +1014,12 @@ function ActivityPanel({
   );
 }
 
-function PositionsPanel({ data, actions, walletOnSepolia }: { data: DashboardData; actions?: DashboardActions; walletOnSepolia: boolean }) {
-  return (
-    <section className="panel positions-panel" id="positions" aria-labelledby="positions-title">
-      <div className="panel-heading">
-        <div>
-          <div className="panel-overline">LIQUIDITY BOOK <PreviewFlag source={data.source} compact /></div>
-          <h2 id="positions-title">LP positions</h2>
-        </div>
-      </div>
-      {data.positions.length > 0 ? data.positions.map((position) => (
-        <div className="position-record" key={position.id}>
-          <div className="position-pool-row">
-            <span className="token-pair-icon"><span>{position.token0?.symbol.slice(0, 1) ?? "?"}</span><span>{position.token1?.symbol.slice(0, 1) ?? "?"}</span></span>
-            <div><strong>{position.poolLabel}</strong><small>Vault-owned NFT · {position.source === "preview" ? "example " : ""}position {position.id}</small></div>
-            <span className={`position-open-pill position-state-${position.state}`}><span />{position.source === "preview" ? `Example ${position.state}` : position.state === "unknown" ? "Status unknown" : position.state}</span>
-          </div>
-      <div className="position-stats">
-            <div><span>Liquidity</span><strong>{position.liquidity}<small> units</small></strong></div>
-            <div><span>Position principal</span><strong>{position.token0 ? `${formatAmount(position.token0)} ${position.token0.symbol}` : "Not queried"}</strong><strong>{position.token1 ? `${formatAmount(position.token1)} ${position.token1.symbol}` : "Not queried"}</strong></div>
-            <div><span>Uncollected fees</span><strong>{position.fees0 ? `${formatAmount(position.fees0)} ${position.fees0.symbol}` : "Not queried"}</strong><strong>{position.fees1 ? `${formatAmount(position.fees1)} ${position.fees1.symbol}` : "Not queried"}</strong></div>
-          </div>
-          <div className="position-separation"><LockKeyhole size={13} aria-hidden="true" /><span>{position.source === "direct-rpc" ? "Position NFT and liquidity are read from Sepolia; principal and fees are not queried." : "Fee collection, routine exit, and owner recovery are separate permissions."}</span></div>
-          <div className="position-actions">
-            <button className="button button-secondary button-small" disabled={data.source === "preview" || !data.contractsConfigured || !walletOnSepolia || !actions?.collectFees} onClick={() => void actions?.collectFees?.(position.id)} title="Available after live Sepolia wallet and fee integration">Collect fees</button>
-            <button className="button button-secondary button-small" disabled={data.source === "preview" || !data.contractsConfigured || !walletOnSepolia || !actions?.closePosition} onClick={() => void actions?.closePosition?.(position.id)} title="Available after live Sepolia wallet and exit integration">Close position</button>
-          </div>
-        </div>
-      )) : (
-        <div className="empty-position"><Layers3 size={18} /><span>No position is present in this data source.</span></div>
-      )}
-    </section>
-  );
+function PositionsPanel({ data, actions, walletOnSepolia, walletAddress }: { data: DashboardData; actions?: DashboardActions; walletOnSepolia: boolean; walletAddress: string | null }) {
+  return <section className="panel positions-panel" id="positions"><div className="panel-heading"><h2>Uniswap v4 positions</h2></div>{data.positions.length ? data.positions.map(position => {
+    const node = nodeById(data, position.nodeId);
+    const authorized = Boolean(data.source === "direct-rpc" && data.contractsConfigured && walletOnSepolia && node?.agentAddress.toLowerCase() === walletAddress?.toLowerCase());
+    return <PositionCard key={position.id} position={position} node={node} actions={actions} authorized={authorized} />;
+  }) : <p>No position in this vault.</p>}</section>;
 }
 
 function ContractSetupPanel({ data, deployment, actions, wallet, liveStateReady, historyError }: { data: DashboardData; deployment: PublicDeployment; actions: DashboardActions; wallet: InjectedWalletState; liveStateReady: boolean; historyError: string | null }) {
@@ -1460,24 +1280,9 @@ export function Dashboard({ data: initialData, deployment, vaultQuery, nodeQuery
   if (onboarding) {
     return (
       <main className="onboarding-page">
-        <header className="app-topbar"><Link href="/" className="app-brand">agent capital tree</Link><WalletControl wallet={wallet} /></header>
+        <header className="app-topbar"><Link href="/" aria-label="Kanoki overview"><Brand /></Link><div className="app-topbar-actions"><ThemeControl /><WalletControl wallet={wallet} /></div></header>
         <div className="dashboard-content">
-          <div className="page-heading">
-            <span className="page-kicker">Your agent capital workspace</span>
-            <h1>Create your root vault.</h1>
-            <p>Create a Sepolia USDC vault for your agent team, or open an existing vault by its ENS name or contract address.</p>
-          </div>
-          <Card>
-            <CardHeader>
-              <CardTitle>Start with your own capital tree</CardTitle>
-              <CardDescription>Your wallet owns the main vault. Each agent receives only the capital and permissions you delegate.</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <Button onClick={() => setWalletActionMode("create-root")}>Launch a new root vault</Button>
-              <p>Connect a Sepolia wallet to create a vault. Get Test USDC from Circle’s faucet; DEMO-USD is a valueless quote token.</p>
-              <a className="button button-secondary button-small" href="https://faucet.circle.com/" target="_blank" rel="noreferrer">Get Test USDC <ArrowUpRight size={13} aria-hidden="true" /></a>
-            </CardContent>
-          </Card>
+          <EmptyState onCreate={() => setWalletActionMode("create-root")} />
           <RootAccessBar vault={null} path="/setup" walletAddress={wallet.address} />
           {walletActionMode === "create-root" && <WalletControlsPanel
             data={data}
@@ -1507,10 +1312,15 @@ export function Dashboard({ data: initialData, deployment, vaultQuery, nodeQuery
   return (
     <TooltipProvider delay={150}>
     <SidebarProvider>
-      <AppSidebar view={view} vaultQuery={vaultQuery} selectedId={selectedNode.id} rootLabel={vaultQuery ? rootNode?.label ?? "Treasury" : "No vault"} runtimeLabel={vaultQuery ? runtimeLabel : "No vault selected"} />
+      
       <SidebarInset className="main-shell">
         <Topbar view={view} source={data.source} wallet={wallet} vaultQuery={vaultQuery} selectedId={selectedNode.id} />
         <div className="dashboard-content">
+          {view === "overview" && <div className="page-heading"><span className="page-kicker">Agent Capital Tree</span><h1>Capital follows a mandate.</h1><p>See what each vault holds, which mandates are active, and where owner control stands.</p></div>}
+          {view === "tree" && <div className="page-heading"><span className="page-kicker">Authority & allocation</span><h1>Capital, branch by branch.</h1><p>Select a node to inspect its balance, capabilities and inherited limits.</p></div>}
+          {view === "activity" && <div className="page-heading"><span className="page-kicker">Indexed on-chain events</span><h1>Activity</h1><p>Capital movement, policy changes, and Uniswap actions for this root. Current balances and permissions come from direct RPC reads.</p></div>}
+          {view === "applications" && <div className="page-heading"><span className="page-kicker">Bounded applications</span><h1>Applications</h1><p>Agents can only act inside their mandate. Built-in actions today are bounded Uniswap v4 activity and x402 service payments settled in USDC.</p></div>}
+          {view === "setup" && <div className="page-heading"><span className="page-kicker">Wallet & integration</span><h1>Setup & control</h1><p>Connect the recorded owner or an authorized agent to manage the selected vault. Each available action is simulated before signing.</p></div>}
           <GuidedTour active={tour} step={step} />
           {!(view === "mcp" && !vaultQuery) && <PreviewNotice data={data} deployment={deployment} />}
           <RootAccessBar vault={vaultQuery} path={path} walletAddress={wallet.address} />
@@ -1528,21 +1338,21 @@ export function Dashboard({ data: initialData, deployment, vaultQuery, nodeQuery
             />
           )}
           {view === "overview" && <>
-            <div className="page-heading"><span className="page-kicker">Delegated capital · Sepolia</span><h1>Each AI agent gets its own wallet — and strict limits.</h1><p>See what each vault holds, which mandates are active, and where owner control stands.</p></div>
-            {!tour && <OnboardingHero />}
+            
+
             <SummaryMetrics data={data} />
             <div className="overview-lower">
-              <Card><CardHeader><CardTitle>Agent tree</CardTitle><CardDescription>Capital moves through bounded vaults, one delegation at a time.</CardDescription></CardHeader><CardContent><div className="overview-node-list">{mobileTreeOrder(data.nodes).slice(0, 5).map((node) => <div key={node.id}><span className="overview-node-indent" style={{ width: node.depth * 20 }} aria-hidden="true" /><GitBranch size={17} aria-hidden="true" /><strong>{node.label}</strong><Badge variant="outline">{node.source === "preview" ? "Example " : ""}{vaultStateLabels[node.state]}</Badge></div>)}</div><Button render={<Link href={routeHref("/tree", vaultQuery, selectedNode.id)} />} variant="outline">Explore agent tree <ArrowRight data-icon="inline-end" /></Button></CardContent></Card>
+              <Card><CardHeader><CardTitle>Agent tree</CardTitle><CardDescription>Capital moves through bounded vaults, one delegation at a time.</CardDescription></CardHeader><CardContent><div className="overview-node-list">{mobileTreeOrder(data.nodes).slice(0, 5).map((node) => <div key={node.id}><span className="overview-node-indent" style={{ width: "calc(var(--space-4) * " + node.depth + ")" }} aria-hidden="true" /><GitBranch size={17} aria-hidden="true" /><strong>{node.label}</strong><Badge variant="outline">{node.source === "preview" ? "Example " : ""}{vaultStateLabels[node.state]}</Badge></div>)}</div><Button render={<Link href={routeHref("/tree", vaultQuery, selectedNode.id)} />} variant="outline">Explore agent tree <ArrowRight data-icon="inline-end" /></Button></CardContent></Card>
               <Card><CardHeader><CardTitle>Owner control</CardTitle><CardDescription>Owner recovery is separate from ENS agent roles.</CardDescription></CardHeader><CardContent><p>{data.rootOwner ? `Recorded owner ${shortAddress(data.rootOwner)}` : "Connect a wallet and open a vault to review its recorded owner."}</p><p>Recovery may require a separate LP close, then one or more explicit transactions.</p><Button render={<Link href={routeHref("/setup", vaultQuery, selectedNode.id)} />} variant="outline">Review setup & control <ArrowRight data-icon="inline-end" /></Button></CardContent></Card>
             </div>
           </>}
           {view === "tree" && <>
-            <div className="page-heading"><span className="page-kicker">Authority & allocation</span><h1>Agent tree</h1><p>Select a vault to inspect current funds, EAC permissions, and the inherited limits that narrow its mandate.</p></div>
+            
             <CapitalTree data={data} selectedId={selectedNode.id} onSelect={(id) => { setSelectedId(id); setDetailOpen(true); }} canSpawnVault={canSpawnVault} onRequestSpawn={() => requestAction("spawn-child")} />
             <Sheet open={detailOpen} onOpenChange={(open) => { setDetailOpen(open); if (!open) requestAnimationFrame(() => document.querySelector<HTMLButtonElement>(`${window.matchMedia("(max-width: 720px)").matches ? ".tree-canvas-mobile" : ".tree-canvas-desktop"} .tree-node[data-node-id="${CSS.escape(selectedNode.id)}"]`)?.focus()); }}><SheetContent className="node-detail-sheet"><SheetHeader><SheetTitle>{selectedNode.ensName}</SheetTitle><SheetDescription>Current vault funds, authority, and limits. {sourceLabel(selectedNode.source)}.</SheetDescription></SheetHeader><div className="node-detail-scroll"><MandatePanel data={data} node={selectedNode} canTighten={canTighten} canRevoke={canRevoke} canRecover={canRecover} onRequestAction={requestAction} /></div></SheetContent></Sheet>
           </>}
           {view === "activity" && <>
-            <div className="page-heading"><span className="page-kicker">Indexed on-chain events</span><h1>Activity</h1><p>Capital movement, policy changes, and Uniswap actions for this root. Current balances and permissions come from direct RPC reads.</p></div>
+            
             <ActivityPanel
               data={dashboardData}
               feed={activityFeed}
@@ -1554,8 +1364,8 @@ export function Dashboard({ data: initialData, deployment, vaultQuery, nodeQuery
             />
           </>}
           {view === "applications" && <>
-            <div className="page-heading"><span className="page-kicker">Bounded applications</span><h1>Applications</h1><p>Agents can only act inside their mandate. Built-in actions today are bounded Uniswap v4 activity and x402 service payments settled in USDC.</p></div>
-            <PositionsPanel data={data} actions={actions} walletOnSepolia={walletOnSepolia} />
+            
+            <PositionsPanel data={data} actions={actions} walletOnSepolia={walletOnSepolia} walletAddress={wallet.address} />
             <X402Panel node={selectedNode} actions={actions} walletOnSepolia={walletOnSepolia} canPay={selectedAgentConnected} />
             <Card className="future-applications"><CardHeader><CardTitle>Future modules</CardTitle><CardDescription>Planned capabilities. Expand an item to see its scope; these modules cannot execute actions.</CardDescription></CardHeader><CardContent>
               <details className="future-module"><summary><span>Contract transactions</span><Badge variant="outline" className="future-module-badge">Future work</Badge></summary><p>Not implemented. Execute approved contract functions with recipient, token, and spending checks. A balance-delta check alone cannot prevent unsafe approvals or future liabilities.</p></details>
@@ -1564,7 +1374,7 @@ export function Dashboard({ data: initialData, deployment, vaultQuery, nodeQuery
           </>}
           {view === "mcp" && <McpPanel deployment={deployment} selectedNode={vaultQuery ? selectedNode : undefined} runtimeLabel={vaultQuery ? runtimeLabel : "No vault selected"} />}
           {view === "setup" && <>
-            <div className="page-heading"><span className="page-kicker">Wallet & integration</span><h1>Setup & control</h1><p>Connect the recorded owner or an authorized agent to manage the selected vault. Each available action is simulated before signing.</p></div>
+            
             <div className="setup-selected"><label htmlFor="setup-node">Selected vault</label><select id="setup-node" value={selectedNode.id} onChange={(event) => setSelectedId(event.target.value)}>{data.nodes.map((node) => <option key={node.id} value={node.id}>{node.ensName}</option>)}</select><span>{sourceLabel(data.source)}</span></div>
             <WalletControlsPanel
             data={data}

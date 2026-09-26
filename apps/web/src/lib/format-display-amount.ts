@@ -6,11 +6,12 @@ export function formatAmount(amount: TokenAmount): string {
   const whole = raw / scale;
   const fraction = (raw % scale).toString().padStart(amount.decimals, "0");
   const groupedWhole = whole.toLocaleString("en-US");
-  const visibleFraction = fraction.replace(/0+$/, "");
+  const visibleFraction = amount.decimals === 6 ? fraction : fraction.replace(/0+$/, "");
   return visibleFraction ? `${groupedWhole}.${visibleFraction}` : groupedWhole;
 }
 
 export function formatCompactAmount(amount: TokenAmount): string {
+  if (amount.decimals === 6) return formatAmount(amount);
   const raw = BigInt(amount.rawAmount);
   const scale = 10n ** BigInt(amount.decimals);
   const precision = raw >= scale ? 2 : 4;
