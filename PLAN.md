@@ -28,7 +28,7 @@ Autonomous workers require Docker, an explicitly configured inference path, a ta
 
 Vaults are non-upgradeable EIP-1167 clones with separate funds/state and a locked shared implementation. ENS registries are deployed individually. The current immutable pair is official Circle Sepolia Test-USDC and valueless DEMO-USD. PAY uses exact EIP-3009/ERC-1271 authorization and the HTTP402 protocol; a plain token transfer is not x402. Amount limits are per action, and vault balances bound total exposure. MultiBaas indexes controller events; payment receipts are verified separately from USDC events.
 
-Verify deployed contracts/registries and vault implementation associations on Etherscan. Keep keys, credentials and transaction journals outside Git. Fresh external-machine wallet onboarding, marketplace financial writes, native macOS signing, desktop/Claude Code and ChatGPT-login financial E2E remain acceptance gates. Use the current guide rather than historical recovery flags or retired roots.
+Verify deployed contracts/registries and vault implementation associations on Etherscan. Keep keys, credentials and transaction journals outside Git. Fresh external-machine wallet onboarding, marketplace financial writes, native macOS live wallet/financial E2E, desktop/Claude Code and ChatGPT-login financial E2E remain acceptance gates. Use the current guide rather than historical recovery flags or retired roots.
 
 ## 1. Product, scope, and partners
 

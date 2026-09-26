@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { mkdtemp, rm, mkdir } from 'node:fs/promises';
+import { realpath, mkdtemp, rm, mkdir } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { RuntimeCompanion, SpawnCoordinator, FileSpawnJournal, capitalReadiness, TEST_USDC, prepareRootOperator, NativeCodexLauncher, DockerWorkerLauncher } from '../dist/index.js';
@@ -11,7 +11,7 @@ const request = { operationKey: `0x${'a'.repeat(64)}`, name: 'hello-son', token:
   amount: '50000', restrictions: {}, task: '', model: '', execution: 'vault-only' };
 
 test('capital allocation is durable and never dispatches or funds a model worker', async () => {
-  const directory = await mkdtemp(join(tmpdir(), 'act-capital-test-'));
+  const directory = await mkdtemp(join(await realpath(tmpdir()), 'act-capital-test-'));
   let receipt, sends = 0;
   const chain = { reconcile: async () => receipt, submit: async () => { sends++; receipt = { childId: '4', blockHash: 'block' }; }, confirmed: async () => true };
   const forbidden = async () => { assert.fail('No Docker, provider grant or child gas'); };
@@ -31,7 +31,7 @@ test('capital allocation is durable and never dispatches or funds a model worker
 });
 
 test('capital companion has no Docker launcher, broker or provider configuration', async () => {
-  const directory = await mkdtemp(join(tmpdir(), 'act-capital-config-'));
+  const directory = await mkdtemp(join(await realpath(tmpdir()), 'act-capital-config-'));
   const companion = new RuntimeCompanion({ mode: 'capital', runtimeRoot: directory, rootId: '3', controller,
     rpcUrl: 'http://127.0.0.1:1', writesEnabled: true });
   assert.equal(companion.launcher, undefined);
@@ -79,8 +79,8 @@ test('one snapshot checklist lists ALL blockers and distinguishes ETH gas from U
   assert.throws(() => capitalReadiness(tree, controller, 1n, 100001n), /budget/);
 });
 
-test('Linux capital lifecycle opens only the scoped tool server, without Docker or inference', { skip: process.platform !== 'linux', timeout: 60_000 }, async () => {
-  const directory = await mkdtemp(join(tmpdir(), 'act-capital-lifecycle-'));
+test('Unix capital lifecycle opens only the scoped tool server, without Docker or inference', { skip: !['linux', 'darwin'].includes(process.platform), timeout: 60_000 }, async () => {
+  const directory = await mkdtemp(join(await realpath(tmpdir()), 'act-capital-lifecycle-'));
   let companion;
   try {
     const operator = await prepareRootOperator(directory, '3', controller);
@@ -110,7 +110,7 @@ test('Linux capital lifecycle opens only the scoped tool server, without Docker 
 
 
 test('merged companion keeps native workers as default and proxy inference explicit', async () => {
-  const directory = await mkdtemp(join(tmpdir(), 'act-worker-modes-'));
+  const directory = await mkdtemp(join(await realpath(tmpdir()), 'act-worker-modes-'));
   const common = { runtimeRoot: directory, rootId: '3', controller, rpcUrl: 'http://127.0.0.1:1',
     writesEnabled: true, imageId: `sha256:${'a'.repeat(64)}`, models: ['gpt-6-luna'],
     workerUid: 1000, workerGid: 1000, childGasWei: 0n };

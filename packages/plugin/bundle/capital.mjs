@@ -164,9 +164,9 @@ var init_usdc_sepolia = __esm({
       },
       vaultArchitecture: "eip1167",
       verification: {
-        checkedAt: "2026-09-26T22:15:19.099Z",
+        checkedAt: "2026-09-26T22:21:36.552Z",
         chainId: 11155111,
-        nodeCount: "3",
+        nodeCount: "6",
         records: [
           {
             address: "0xD1f801BeccF97efF6AAd63EE90688B660F30E522",
@@ -242,6 +242,45 @@ var init_usdc_sepolia = __esm({
             status: "proxy-verified",
             runtimeBytes: 45,
             explorer: "https://sepolia.etherscan.io/address/0xD98d7938D740F5115bb95151F7B0c2d929939BE8#code"
+          },
+          {
+            address: "0x849677A1c8C2D8B703db0b03438804a79117d410",
+            contract: "src/ens/ManagedRegistry.sol:ManagedRegistry",
+            status: "source-verified",
+            explorer: "https://sepolia.etherscan.io/address/0x849677A1c8C2D8B703db0b03438804a79117d410#code"
+          },
+          {
+            address: "0x698abA4a1BBA0CEA529C3289A1f95EC2920f2727",
+            implementation: "0xD1f801BeccF97efF6AAd63EE90688B660F30E522",
+            status: "proxy-verified",
+            runtimeBytes: 45,
+            explorer: "https://sepolia.etherscan.io/address/0x698abA4a1BBA0CEA529C3289A1f95EC2920f2727#code"
+          },
+          {
+            address: "0xfA9776dc6267DAb31a84F64e8C5388EC759d95Be",
+            contract: "src/ens/ManagedRegistry.sol:ManagedRegistry",
+            status: "source-verified",
+            explorer: "https://sepolia.etherscan.io/address/0xfA9776dc6267DAb31a84F64e8C5388EC759d95Be#code"
+          },
+          {
+            address: "0xA98A6f25682BdCb21E3f021795a73fBD7a15751e",
+            implementation: "0xD1f801BeccF97efF6AAd63EE90688B660F30E522",
+            status: "proxy-verified",
+            runtimeBytes: 45,
+            explorer: "https://sepolia.etherscan.io/address/0xA98A6f25682BdCb21E3f021795a73fBD7a15751e#code"
+          },
+          {
+            address: "0x764c6410C4C278651272884bED5ff3C997A9F2Dc",
+            contract: "src/ens/ManagedRegistry.sol:ManagedRegistry",
+            status: "source-verified",
+            explorer: "https://sepolia.etherscan.io/address/0x764c6410C4C278651272884bED5ff3C997A9F2Dc#code"
+          },
+          {
+            address: "0x77C1e3Ae32B29f7643cacC630c3211F5564a84Fa",
+            implementation: "0xD1f801BeccF97efF6AAd63EE90688B660F30E522",
+            status: "proxy-verified",
+            runtimeBytes: 45,
+            explorer: "https://sepolia.etherscan.io/address/0x77C1e3Ae32B29f7643cacC630c3211F5564a84Fa#code"
           }
         ]
       },
@@ -68296,7 +68335,7 @@ function safeCapitalError(error62) {
 }
 async function privatePath(path, mode, directory = false) {
   const info = await lstat9(path);
-  if (info.isSymbolicLink() || info.uid !== process.getuid() || (info.mode & 511) !== mode || (directory ? !info.isDirectory() : !info.isFile())) throw new SetupError("UNSAFE_PROFILE", "Private Linux profile permissions or ownership are invalid. No key was replaced.");
+  if (info.isSymbolicLink() || info.uid !== process.getuid() || (info.mode & 511) !== mode || (directory ? !info.isDirectory() : !info.isFile())) throw new SetupError("UNSAFE_PROFILE", "Private Unix profile permissions or ownership are invalid. No key was replaced.");
   return path;
 }
 var ZERO, SetupError, CapitalSession;
@@ -68349,7 +68388,7 @@ var init_capital_session = __esm({
           if (candidates.length > 1) throw new SetupError("AMBIGUOUS_PROFILE", "Multiple matching profiles. Select the existing profile with --runtime-root; no key was replaced.");
         }
         const path = this.explicitRoot ?? candidates[0] ?? join9(this.base, `capital-${this.controller.toLowerCase()}-${rootId}`);
-        if (!isAbsolute4(path) || !relative(this.repo, resolve6(path)).startsWith("..") || path.startsWith("/mnt/")) throw new SetupError("UNSAFE_PROFILE", "Use private Linux storage outside the repository and Windows mounts.");
+        if (!isAbsolute4(path) || !relative(this.repo, resolve6(path)).startsWith("..") || path.startsWith("/mnt/")) throw new SetupError("UNSAFE_PROFILE", "Use private Unix storage outside the repository and Windows mounts.");
         if (this.explicitRoot && !await this.matchingDomain(path, rootId)) {
           try {
             await access(join9(path, "domain.json"));
@@ -80854,7 +80893,7 @@ var query = args[1] && !args[1].startsWith("--") ? args[1] : void 0;
 var packageBase = new URL(import.meta.url.endsWith("/bundle/capital.mjs") ? "../" : "./", import.meta.url);
 var script = fileURLToPath(new URL("capital.mjs", packageBase));
 var repo = fileURLToPath(new URL("../..", packageBase));
-var usage = "node packages/runtime/capital.mjs prepare|check|settings|stdio [ENS-name|vault-address|root-id] [--runtime-root /private/linux/path] [--enable-sepolia-writes]";
+var usage = "node packages/runtime/capital.mjs prepare|check|settings|stdio [ENS-name|vault-address|root-id] [--runtime-root /absolute/private/path] [--enable-sepolia-writes]";
 if (!["prepare", "check", "settings", "stdio"].includes(command) || command === "prepare" && !query) throw new Error(usage);
 var explicitRoot;
 var writesEnabled = false;
@@ -80878,7 +80917,7 @@ try {
       process.exitCode = code2 ?? 1;
     });
   } else {
-    if (process.platform !== "linux") throw new Error("Capital signing currently requires Linux or WSL2; private Unix storage checks are not disabled.");
+    if (!["linux", "darwin"].includes(process.platform)) throw new Error("Capital signing requires macOS, Linux or WSL2; private Unix storage checks are not disabled.");
     const { RuntimeCompanion: RuntimeCompanion2 } = await Promise.resolve().then(() => (init_dist3(), dist_exports2));
     const { CapitalSession: CapitalSession2, SetupError: SetupError2, privatePath: privatePath2, safeCapitalError: safeCapitalError2 } = await Promise.resolve().then(() => (init_capital_session(), capital_session_exports));
     const { capitalClient: capitalClient2 } = await Promise.resolve().then(() => (init_dist(), dist_exports));
@@ -81046,9 +81085,9 @@ try {
     "Private profile domain does not match",
     "Unsafe private capital profile",
     "An operator is already bound",
-    "Capital signing currently requires"
+    "Capital signing requires"
   ];
-  process.stderr.write(`${safe.some((prefix) => String(error62.message).startsWith(prefix)) ? error62.message : "Capital setup unavailable. Check the root identifier, Sepolia RPC and private Linux profile. No success was confirmed."}
+  process.stderr.write(`${safe.some((prefix) => String(error62.message).startsWith(prefix)) ? error62.message : "Capital setup unavailable. Check the root identifier, Sepolia RPC and private Unix profile. No success was confirmed."}
 `);
   process.exitCode = 1;
 }

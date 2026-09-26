@@ -13,7 +13,7 @@ const query = args[1] && !args[1].startsWith('--') ? args[1] : undefined;
 const packageBase = new URL(import.meta.url.endsWith('/bundle/capital.mjs') ? '../' : './', import.meta.url);
 const script = fileURLToPath(new URL('capital.mjs', packageBase));
 const repo = fileURLToPath(new URL('../..', packageBase));
-const usage = 'node packages/runtime/capital.mjs prepare|check|settings|stdio [ENS-name|vault-address|root-id] [--runtime-root /private/linux/path] [--enable-sepolia-writes]';
+const usage = 'node packages/runtime/capital.mjs prepare|check|settings|stdio [ENS-name|vault-address|root-id] [--runtime-root /absolute/private/path] [--enable-sepolia-writes]';
 if (!['prepare', 'check', 'settings', 'stdio'].includes(command) || (command === 'prepare' && !query)) throw new Error(usage);
 let explicitRoot, writesEnabled = false;
 for (let i = query ? 2 : 1; i < args.length; i++) {
@@ -32,7 +32,7 @@ if (command === 'settings') {
   child.on('error', () => { process.stderr.write('WSL/Node unavailable. Install Node 22+ in your default WSL distribution. Docker is not needed.\n'); process.exitCode = 1; });
   child.on('exit', code => { process.exitCode = code ?? 1; });
 } else {
-  if (process.platform !== 'linux') throw new Error('Capital signing currently requires Linux or WSL2; private Unix storage checks are not disabled.');
+  if (!['linux', 'darwin'].includes(process.platform)) throw new Error('Capital signing requires macOS, Linux or WSL2; private Unix storage checks are not disabled.');
   const { RuntimeCompanion } = await import('./dist/index.js');
   const { CapitalSession, SetupError, privatePath, safeCapitalError } = await import('./capital-session.mjs');
   const { capitalClient } = await import('../sdk/dist/index.js');
@@ -147,7 +147,7 @@ if (command === 'settings') {
 } catch (error) {
   // RPC errors may embed provider URLs. Never print raw errors, stacks or credentials.
   const safe = ['Expected Ethereum Sepolia manifest', 'Multiple matching private profiles.', 'Use a private Linux directory',
-    'Private profile domain does not match', 'Unsafe private capital profile', 'An operator is already bound', 'Capital signing currently requires'];
-  process.stderr.write(`${safe.some(prefix => String(error.message).startsWith(prefix)) ? error.message : 'Capital setup unavailable. Check the root identifier, Sepolia RPC and private Linux profile. No success was confirmed.'}\n`);
+    'Private profile domain does not match', 'Unsafe private capital profile', 'An operator is already bound', 'Capital signing requires'];
+  process.stderr.write(`${safe.some(prefix => String(error.message).startsWith(prefix)) ? error.message : 'Capital setup unavailable. Check the root identifier, Sepolia RPC and private Unix profile. No success was confirmed.'}\n`);
   process.exitCode = 1;
 }

@@ -21,7 +21,7 @@ export function safeCapitalError(error) {
 export async function privatePath(path, mode, directory = false) {
   const info = await lstat(path);
   if (info.isSymbolicLink() || info.uid !== process.getuid() || (info.mode & 0o777) !== mode ||
-    (directory ? !info.isDirectory() : !info.isFile())) throw new SetupError('UNSAFE_PROFILE', 'Private Linux profile permissions or ownership are invalid. No key was replaced.');
+    (directory ? !info.isDirectory() : !info.isFile())) throw new SetupError('UNSAFE_PROFILE', 'Private Unix profile permissions or ownership are invalid. No key was replaced.');
   return path;
 }
 
@@ -51,7 +51,7 @@ export class CapitalSession {
       if (candidates.length > 1) throw new SetupError('AMBIGUOUS_PROFILE', 'Multiple matching profiles. Select the existing profile with --runtime-root; no key was replaced.');
     }
     const path = this.explicitRoot ?? candidates[0] ?? join(this.base, `capital-${this.controller.toLowerCase()}-${rootId}`);
-    if (!isAbsolute(path) || !relative(this.repo, resolve(path)).startsWith('..') || path.startsWith('/mnt/')) throw new SetupError('UNSAFE_PROFILE', 'Use private Linux storage outside the repository and Windows mounts.');
+    if (!isAbsolute(path) || !relative(this.repo, resolve(path)).startsWith('..') || path.startsWith('/mnt/')) throw new SetupError('UNSAFE_PROFILE', 'Use private Unix storage outside the repository and Windows mounts.');
     if (this.explicitRoot && !await this.matchingDomain(path, rootId)) {
       // A brand new explicit profile is allowed; an existing domain is never repurposed.
       try { await access(join(path, 'domain.json')); throw new SetupError('PROFILE_MISMATCH', 'Explicit profile belongs to another root. Preserve it and select the matching profile.'); }

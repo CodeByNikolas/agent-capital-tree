@@ -11,7 +11,7 @@ Production [kanoki-app.vercel.app](https://kanoki-app.vercel.app) is READY from 
 
 ### Remaining acceptance
 
-Fresh external-machine wallet onboarding, marketplace-installed financial writes, desktop/Claude Code financial flows, native macOS signing, ChatGPT-login financial E2E and an intentionally induced live MultiBaas outage remain open. Earlier native API-key worker evidence below belongs to a retired controller. It is not a new autonomous-worker test of Kanoki. The current existing-root demo does not close the fresh-user onboarding gate.
+Fresh external-machine wallet onboarding, marketplace-installed financial writes, desktop/Claude Code financial flows, native macOS live wallet/financial E2E, ChatGPT-login financial E2E and an intentionally induced live MultiBaas outage remain open. Earlier native API-key worker evidence below belongs to a retired controller. It is not a new autonomous-worker test of Kanoki. The current existing-root demo does not close the fresh-user onboarding gate.
 
 Team profiles are complete. The user reported submitting the Uniswap feedback form and that no URL field was requested. ETHGlobal entry and partner selection still need confirmation. See [release checklist](docs/release-checklist.md) and [handoff](HANDOFF.md).
 

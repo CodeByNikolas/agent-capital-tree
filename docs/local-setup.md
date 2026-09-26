@@ -2,7 +2,7 @@
 
 Updated 27 September 2026 for **kanoki.eth**, the current Circle USDC deployment on Ethereum Sepolia. Start with the one-time capital setup below; autonomous workers are a separate advanced mode. The [public demo](https://kanoki-app.vercel.app/tree?vault=capital.kanoki.eth) needs no installation or wallet and contains five real vaults, two LP positions and a payment receipt. See [current acceptance](../ACCEPTANCE.md) for the exact tested scope.
 
-Desktop-app environment inheritance and a native macOS runtime have not been independently verified. Independent setup on another person's machine is still an acceptance gate; follow the checks below and report where your environment differs.
+The standalone capital MCP supports native macOS signing. Desktop-app environment inheritance and the full autonomous Docker-worker stack on macOS have not been independently verified. Independent setup on another person's machine is still an acceptance gate; follow the checks below and report where your environment differs.
 
 On the retired pre-Kanoki deployment, a same-host acceptance run using the earlier CLIProxyAPI path completed browser setup, funded MCP spawn, x402 payment and Uniswap swap after the fixes recorded in [the acceptance report](../ACCEPTANCE.md). A subsequent native OpenAI API-key run with real `gpt-6-luna` / `high` responses passed funded MCP spawn, x402 payment and Uniswap swap; see [native evidence](../deployments/jury-openai-native.json). ChatGPT-login financial E2E remains unverified. Keep the owner wallet separate from the runtime operator; never import your owner key into the companion.
 
@@ -16,7 +16,7 @@ The capital MCP exposes 19 useful tools. Unconfigured history, purchases and aut
 
 ### Install once
 
-Supported signing hosts: Linux, or Windows with Node 22+ in the default WSL distribution. Native macOS/Windows signing and independent-laptop wallet E2E are not claimed. From the checkout (for a new clone, see [checkout commands](#fast-jury-check-read-only-mcp-on-windows-macos-or-linux)):
+Supported capital-signing hosts: native macOS and Linux with Node 22+, or Windows with Node 22+ in the default WSL distribution. Native Windows signing and independent-laptop wallet E2E are not claimed. From the checkout (for a new clone, see [checkout commands](#fast-jury-check-read-only-mcp-on-windows-macos-or-linux)):
 
 ```sh
 pnpm install --frozen-lockfile --ignore-scripts
@@ -28,6 +28,16 @@ pnpm mcp:capital settings --enable-sepolia-writes
 ```
 
 Register the printed command as `kanoki`, or install the bundled `kanoki@kanoki` plugin. Both start the same automatic capital flow. Do not register both in one profile. Existing chats need one reconnect after upgrading the MCP.
+
+On macOS or Linux, register from the checkout with absolute paths (this also handles Homebrew Node not being on a desktop app's PATH):
+
+```sh
+codex mcp add kanoki -- "$(command -v node)" "$PWD/packages/runtime/capital.mjs" stdio --enable-sepolia-writes
+```
+
+macOS signing runs locally through Node.js: no WSL, Docker, CLIProxyAPI or model API key is required by the capital MCP. The encrypted operator key stays under `~/.agent-capital-tree` with owner-only directory/file permissions (0700/0600); the owner wallet stays in your browser. The setup link opens with macOS `/usr/bin/open`. Custom signing-profile paths must be outside the checkout on private local storage, without symlinks; avoid macOS's `/tmp` and `/var` aliases. Reconnect the MCP after updating the bundle. This does not enable the separate autonomous Docker-worker stack on macOS.
+
+On Windows:
 
 ```powershell
 $actScript = (Resolve-Path -LiteralPath 'packages/runtime/capital.mjs').Path
@@ -130,7 +140,7 @@ This is a local Codex chat, not a normal chat at chatgpt.com. ChatGPT web does n
 
 ## Full agent actions: Linux companion only
 
-The remainder is the Linux/Codex CLI path. On Windows, use WSL2 with Linux-local paths and a working Docker integration; native PowerShell execution of `packages/runtime/cli.mjs` deliberately fails with a WSL2 message. Native macOS and cross-platform Docker-companion onboarding have not been independently verified. These instructions are not a claim that a fresh Judge laptop can already perform financial writes. Desktop-app environment inheritance is also unverified. The Docker worker uses a pinned Linux Codex binary. Keep the owner wallet separate from the runtime operator; never import your owner key into the companion.
+The remainder is the Linux/Codex CLI path. On Windows, use WSL2 with Linux-local paths and a working Docker integration; native PowerShell execution of `packages/runtime/cli.mjs` deliberately fails with a WSL2 message. The autonomous Docker-worker stack on macOS and cross-platform Docker-companion onboarding have not been independently verified. Use the standalone capital MCP above for native macOS signing. These instructions are not a claim that a fresh Judge laptop can already perform financial writes. Desktop-app environment inheritance is also unverified. The Docker worker uses a pinned Linux Codex binary. Keep the owner wallet separate from the runtime operator; never import your owner key into the companion.
 
 ## 1. Prepare the checkout and worker
 

@@ -1,6 +1,6 @@
 # Kanoki Codex plugin
 
-The default installed plugin starts the standalone Kanoki capital MCP with 19 tools. It needs no separate companion process, runtime URL, bearer token, root ID or manually prepared key. After installation, ask Kanoki to prepare your vault, confirm the guided wallet setup, and return to chat. The vault is remembered across restarts. Linux or Windows/WSL2 with Node 22+ is required for signing.
+The default installed plugin starts the standalone Kanoki capital MCP with 19 tools. It needs no separate companion process, runtime URL, bearer token, root ID or manually prepared key. After installation, ask Kanoki to prepare your vault, confirm the guided wallet setup, and return to chat. The vault is remembered across restarts. Native macOS, Linux and Windows/WSL2 with Node 22+ are supported for capital signing. The separate autonomous Docker-worker setup remains Linux/WSL2.
 
 Build SDK, MultiBaas, plugin and runtime in that order. The runtime build emits `bundle/capital.mjs` with embedded public deployment manifests. `capital.mjs` is the installed launcher. Keep its bundled visual assets. The older `bundle/server.mjs` remains the scoped worker bridge for explicitly configured autonomous workers; the advanced sections below describe that separate mode.
 

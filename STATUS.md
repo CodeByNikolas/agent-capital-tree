@@ -1,3 +1,9 @@
+## Native macOS capital signing — 27 September 2026
+
+- The standalone capital MCP now accepts macOS alongside Linux/WSL. Private owner/mode/symlink checks remain enforced; the separate autonomous Docker-worker stack is not included in this support claim. The existing system-browser adapter uses /usr/bin/open on macOS.
+- Reused the encrypted operator keystore and signing implementation. New tests exercise actual EIP-1559 transaction and USDC typed-data signatures, signer recovery after reload, and startup of the packaged capital MCP without provider credentials. Existing onboarding/recovery and private-permission tests now run on Darwin too, using canonical temporary paths to account for macOS filesystem aliases.
+- Local validation: 13 focused runtime tests and 22 plugin tests passed on Linux. A new Native signing CI workflow runs these checks on macOS Apple Silicon and Intel; native runner results will be recorded after publication. Fresh macOS browser-wallet/onchain financial E2E remains a separate open acceptance gate.
+
 ## MCP validation and concurrent onboarding review — 27 September
 
 ## Funding address, pending operator and quiet refresh — 27 September 2026
