@@ -1,6 +1,6 @@
 {
-  "base": "http://127.0.0.1:3096",
-  "checkedAt": "2026-09-26T20:24:26.487Z",
+  "base": "https://agent-capital-tree-silk.vercel.app",
+  "checkedAt": "2026-09-26T20:26:23.957Z",
   "checks": [
     "Capital guide and explicit no-background-worker distinction visible",
     "Public address and 0.05 USDC per-action limit prefilled; disconnected wallet cannot submit",
