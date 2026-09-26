@@ -18,7 +18,7 @@ Use Codex 0.154.0 and independently verify the binary SHA-256. Record the immuta
 
 ## 2. Create your root
 
-Open [Setup](https://agent-capital-tree.vercel.app/setup), connect your Sepolia wallet and create a new root. Get official Test-USDC from the [Circle faucet](https://faucet.circle.com/), then fund the vault with your owner wallet. DEMO-USD is a separate valueless pool quote; use the separate Get DEMO-USD button for its one-time faucet claim if you want to test liquidity positions. Use your own new root for agent tasks.
+Open [Setup](https://agent-capital-tree.vercel.app/setup), connect your Sepolia wallet and create a new root. Get official USDC from the [Circle faucet](https://faucet.circle.com/), then fund the vault with your owner wallet. DEMO-USD is a separate valueless pool quote; use the separate Get DEMO-USD button for its one-time faucet claim if you want to test liquidity positions. Use your own new root for agent tasks.
 
 The browser navigates by ENS name or vault contract address, but the local Companion configuration still needs the controller’s numeric `rootId`. After creating your root, copy its ENS name or vault address from the dashboard and open `https://agent-capital-tree.vercel.app/api/resolve-root?q=YOUR_ENS_NAME` (replace the name with yours, URL-encoded if necessary). The JSON response has both `rootId` and `vault`; copy **`rootId`** into the config below. This ID is an internal on-chain controller index, not another wallet or contract. Use the current controller address from `deployments/usdc-sepolia.json`.
 
@@ -31,7 +31,7 @@ Outside the checkout, create a private directory (mode 0700), a JSON config (060
   "runtimeRoot": "/absolute/private/runtime",
   "rootId": "YOUR_NEW_ROOT_ID",
   "rpcUrl": "https://your-sepolia-rpc.example",
-  "controller": "0x17a932987f3cAcFec067c4C1bbE6946963d87F13",
+  "controller": "0x7eDFa3D484d64b6bA3b5b2bcef51147E57133FFB",
   "upstream": "https://your-cliproxyapi.example/v1",
   "providerTokenFile": "/absolute/private/provider-token",
   "imageId": "sha256:YOUR_BUILT_IMAGE_ID",
@@ -44,7 +44,7 @@ Outside the checkout, create a private directory (mode 0700), a JSON config (060
 node packages/runtime/cli.mjs prepare-root /absolute/private/config.json
 ```
 
-This prints the **public operator address**, not its key. In your root's Setup page, use **Bind operator** to authorize that address and set its mandate. The owner wallet needs Sepolia ETH to create/fund roots and bind the operator. The **vault does not need ETH**: it holds Test-USDC and DEMO-USD, while the external signer pays transaction gas. Fund the operator address with Sepolia ETH for its own transactions; depositing Test-USDC into the vault does not pay gas. `childGasWei` is a separate optional ETH grant for each spawned child; zero gives no grant. Size it from current fees and the task, within the runtime cap described in the runtime guide. A read-only child task does not require child transaction gas; x402 settlement gas is normally paid by the service facilitator, while other child on-chain writes need child ETH.
+This prints the **public operator address**, not its key. In your root's Setup page, use **Bind operator** to authorize that address and set its mandate. The owner wallet needs Sepolia ETH to create/fund roots and bind the operator. The **vault does not need ETH**: it holds USDC and DEMO-USD, while the external signer pays transaction gas. Fund the operator address with Sepolia ETH for its own transactions; depositing USDC into the vault does not pay gas. `childGasWei` is a separate optional ETH grant for each spawned child; zero gives no grant. Size it from current fees and the task, within the runtime cap described in the runtime guide. A read-only child task does not require child transaction gas; x402 settlement gas is normally paid by the service facilitator, while other child on-chain writes need child ETH.
 
 ## 4. Start the companion
 
@@ -101,7 +101,7 @@ The companion starts a separate Docker Codex worker after confirmed allocation. 
 
 Independent external-user onboarding remains an acceptance gate. These instructions describe implemented components; they do not claim that every host or Codex desktop configuration has been tested.
 
-### Optional: official Test-USDC service purchases
+### Optional: official USDC service purchases
 
 The current USDC contract version has an explicit `pay` capability. Use the current controller and a fresh private runtime directory; a runtime directory is bound to one controller and root. The current public deployment status is recorded in `STATUS.md` and `deployments/usdc-sepolia.json`.
 
@@ -118,7 +118,7 @@ With a USDC-compatible controller and a PAY-authorized operator, add an operator
 }
 ```
 
-Replace the illustrative URL/address with a real service that supports x402 v2 `exact`, Ethereum Sepolia (`eip155:11155111`) and Circle USDC. `10000` raw units equals **0.01 Test-USDC**. HTTPS is required except for explicit loopback demo URLs. No URL, network or payee supplied by a model can override this configuration. The hosted x402.org facilitator currently does not advertise Ethereum Sepolia; compatible settlement infrastructure is required.
+Replace the illustrative URL/address with a real service that supports x402 v2 `exact`, Ethereum Sepolia (`eip155:11155111`) and Circle USDC. `10000` raw units equals **0.01 USDC**. HTTPS is required except for explicit loopback demo URLs. No URL, network or payee supplied by a model can override this configuration. The hosted x402.org facilitator currently does not advertise Ethereum Sepolia; compatible settlement infrastructure is required.
 
 The agent calls `getPaymentServices`, then `purchaseService` with the service ID, a maximum raw amount and a fresh 32-byte `operationKey`. On timeout it must reuse the same key and arguments. If an unused authorization expires, stop and reconcile the onchain nonce and merchant outcome with the operator; the prototype does not automatically replace or re-sign expired purchases. Do not delete the journal or generate a replacement key to bypass this condition. The companion persists the signed EIP-3009 authorization before sending it, checks current ENS authority, and independently verifies the settlement’s USDC Transfer and AuthorizationUsed events. The agent’s signature is wrapped for its vault’s ERC-1271 verifier; the agent pays from its vault, not from its operator EOA. Nonces bind the current authority generation. Revocation and policy restrictions apply when the authorization is settled.
 

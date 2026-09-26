@@ -2,9 +2,9 @@
 
 Give agents capital, delegate smaller amounts to sub-agents, and enforce narrower permissions down the tree.
 
-**ENSv2 Enhanced Access Control** supplies the roles. Separate vaults bound each agent’s available funds. **Uniswap v4** enables bounded swaps and liquidity positions; **x402** enables service purchases with official Circle **Test-USDC**. **Curvegrid MultiBaas** indexes the controller’s capital and strategy events.
+**ENSv2 Enhanced Access Control** supplies the roles. Separate vaults bound each agent’s available funds. **Uniswap v4** enables bounded swaps and liquidity positions; **x402** enables service purchases with official Circle **USDC**. **Curvegrid MultiBaas** indexes the controller’s capital and strategy events.
 
-[Dashboard](https://agent-capital-tree.vercel.app) · [Live USDC tree](https://agent-capital-tree.vercel.app/tree?vault=capital.agentcapitalusdc.eth) · [Local companion and MCP setup](docs/local-setup.md) · [Current status](STATUS.md) · [Jury walkthrough](docs/jury-demo.md)
+[Dashboard](https://agent-capital-tree.vercel.app) · [Live USDC tree](https://agent-capital-tree.vercel.app/tree?vault=capital.agentcapitalvault.eth) · [Local companion and MCP setup](docs/local-setup.md) · [Current status](STATUS.md) · [Jury walkthrough](docs/jury-demo.md)
 
 The prototype targets **Ethereum Sepolia, chain 11155111**. The current release switches directly to the USDC deployment: no legacy deployment selector, old-link support or migration layer. Public contract addresses and deployment progress are recorded in [usdc-sepolia.json](deployments/usdc-sepolia.json). This is an unaudited hackathon prototype using testnet assets.
 
@@ -20,13 +20,15 @@ Capital allocation is an actual transfer, not an overbookable allowance. Amount 
 
 Vaults are **non-upgradeable EIP-1167 proxies**: every root and child has a separate 45-byte contract, token balances and LP state, with one shared immutable implementation. VaultFactory deploys and initializes the controller binding in the same transaction; the implementation and initialized clones reject reinitialization. ENS registries are still deployed individually. Proxy deployment saves gas; calls incur a small delegation overhead. Existing full vaults cannot be converted in place.
 
+The public researcher spawn used **3,556,781 gas**, down from **5,914,316** for its full-vault predecessor (**39.86% less**), including the ENS registry and capital allocation. [Both receipts](deployments/usdc-proxy-gas.json) document the comparison.
+
 Native Codex subagents do not automatically become capital workers. Agents use our MCP `spawnChild` workflow; no automatic Codex hooks are enabled.
 
 ## Applications
 
 **Service purchases:** `getPaymentServices` lists explicitly configured services. `purchaseService` follows x402 v2’s HTTP402 flow. The agent signs an exact EIP-3009 authorization for its vault, recipient, amount, validity window and nonce. The vault’s ERC-1271 verifier checks the current ENS/PAY mandate at settlement. Nonces bind the authority generation, and retries retain the same authorization. The companion independently verifies Circle’s `Transfer` and `AuthorizationUsed` receipt events.
 
-The supported payment token is Circle Sepolia USDC at [`0x1c7D4B196Cb0C7B01d743Fbc6116a902379C7238`](https://sepolia.etherscan.io/token/0x1c7D4B196Cb0C7B01d743Fbc6116a902379C7238), with six decimals. `10000` raw units is **0.01 Test-USDC**. Obtain test tokens from [Circle’s faucet](https://faucet.circle.com/); the app cannot mint Circle USDC.
+The supported payment token is Circle Sepolia USDC at [`0x1c7D4B196Cb0C7B01d743Fbc6116a902379C7238`](https://sepolia.etherscan.io/token/0x1c7D4B196Cb0C7B01d743Fbc6116a902379C7238), with six decimals. `10000` raw units is **0.01 USDC**. Obtain test tokens from [Circle’s faucet](https://faucet.circle.com/); the app cannot mint Circle USDC.
 
 The x402 facilitator submits the signed authorization and pays settlement gas. USDC moves from the agent vault to the service provider. The agent can sign this payment without holding ETH; direct controller transactions such as delegation and swaps still require ETH in the transaction sender's wallet. The vault itself does not need ETH.
 
@@ -38,7 +40,7 @@ The x402 facilitator submits the signed authorization and pays settlement gas. U
 
 Six pages separate overview, agent tree, activity, Uniswap, payments and setup. A shadcn/ui sidebar, readable typography, mobile layouts and system light/dark themes keep navigation focused. Selecting a node opens its capital, ENS name and inherited permissions. A zero-USDC root links to Circle's faucet; funding still uses the owner wallet.
 
-Enter a vault contract address or a registered name under **`agentcapitalusdc.eth`** in **Open vault**. Internal numeric IDs are not accepted in this field. Without a selected vault, the app shows onboarding; illustrative data requires explicit preview mode. The preview root **Main agent** at `main.preview`, its addresses, and its small **USDC** sample balances are invented UI examples, not contracts or funds. Historical ACT-A/ACT-B vaults from an earlier controller still exist on Sepolia but are not supported by this USDC dashboard. An active mandate does not imply an agent process is running.
+Enter a vault contract address or a registered name under **`agentcapitalvault.eth`** in **Open vault**. Internal numeric IDs are not accepted in this field. Without a selected vault, the app shows onboarding; illustrative data requires explicit preview mode. The preview root **Main agent** at `main.preview`, its addresses, and its small **USDC** sample balances are invented UI examples, not contracts or funds. Historical ACT-A/ACT-B vaults from an earlier controller still exist on Sepolia but are not supported by this USDC dashboard. An active mandate does not imply an agent process is running.
 
 Current balances and permissions come directly from Sepolia. MultiBaas history covers controller-emitted capital/strategy events. The Payments page independently scans Circle USDC `AuthorizationUsed` events for this tree's vaults and verifies same-transaction transfers in successful receipts. It shows the scanned block range and explicitly flags truncated coverage. This proves token settlement, but chain receipts alone cannot prove x402 merchant intent or service delivery. Indexing delay and the actual controller-history coverage boundary remain visible.
 
@@ -69,10 +71,12 @@ node scripts/test-usdc-fork.mjs --payments
 
 The fork test uses the actual Circle proxy and deployed Uniswap contracts on a disposable local Sepolia fork. It checks delegation, signatures, inherited restrictions, revocation, x402 settlement, retry behavior, LP opening/closure and recovery. It does not send public transactions or override token balances. See [fork evidence](deployments/usdc-x402-fork.json) and [STATUS.md](STATUS.md) for the exact completed checks and current public acceptance.
 
-The controlled x402 seller is loopback-only, charges0.01USDC, and uses the test owner as recipient. It demonstrates the real protocol; it is not an independent commercial merchant. The companion’s service allowlist is a runtime restriction, not an onchain merchant allowlist. Service content remains untrusted.
+Deployment runners require an Etherscan key in `ETHERSCAN_API_KEY` or the private file `~/.agent-capital-tree/etherscan-api-key`. They finish with explorer verification. `node scripts/verify-deployment.mjs` verifies the current implementation, factories, controller, project/child registries, quote token and all existing vault-proxy associations, without wallet access or onchain writes. Run it after additional dashboard/MCP-created roots or children. It submits standard JSON from the compiled artifact's exact settings and hash-checked sources; the key is never included in that submission's source code. Verification results are recorded in the deployment manifest.
+
+The controlled x402 seller is loopback-only, charges 0.01 USDC, and uses the test owner as recipient. It demonstrates the real protocol; it is not an independent commercial merchant. The companion’s service allowlist is a runtime restriction, not an onchain merchant allowlist. Service content remains untrusted.
 
 Earlier browser-wallet and real-model evidence is retained in [ACCEPTANCE.md](ACCEPTANCE.md) as historical verification, not as a supported legacy product. Independent external-machine onboarding and native-marketplace financial writes remain unproven. The current USDC/x402 flow has its own evidence and should not be conflated with those earlier runs.
 
 [PLAN.md](PLAN.md) records product decisions. [STATUS.md](STATUS.md) tracks completed deployment/tests and remaining work. [Submission requirements](docs/ethglobal-requirements.md) and [AI-use provenance](docs/ai-use.md) are documented for the team. The Uniswap feedback form and ETHGlobal submission still require team details and an explicit submission instruction.
 
-Public Sepolia x402 proof: [`deployments/usdc-payment.json`](deployments/usdc-payment.json). A PAY-only researcher spent **0.01 official Test-USDC** from its vault; retry did not charge again. [Settlement transaction](https://sepolia.etherscan.io/tx/0xf91a8d6619bc3f36f33c4dad8855c777c8e96bbcd451d76eba31d131155e55eb). This was a controlled local seller, not an independent merchant or autonomous model run. Controller history is separately verified in [`deployments/usdc-multibaas.json`](deployments/usdc-multibaas.json).
+Public Sepolia x402 proof: [`deployments/usdc-payment.json`](deployments/usdc-payment.json). A PAY-only researcher spent **0.01 official USDC** from its vault; retry did not charge again. [Settlement transaction](https://sepolia.etherscan.io/tx/0xfb4b340038034b5ad44a347af7d2c45951ed04adccb77935149997724a0a7f13). This was a controlled local seller, not an independent merchant or autonomous model run. Controller history is separately verified in [`deployments/usdc-multibaas.json`](deployments/usdc-multibaas.json).

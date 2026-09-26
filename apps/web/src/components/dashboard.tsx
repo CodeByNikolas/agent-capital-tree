@@ -543,7 +543,7 @@ function PreviewNotice({ data, deployment }: { data: DashboardData; deployment: 
     <div className="preview-notice" role="note">
       <span className="notice-symbol"><CircleDashed size={16} aria-hidden="true" /></span>
       <p><strong>Fictional preview · no real tokens.</strong> The names, addresses and balances on this page are invented examples, not Sepolia vaults. {deployment.contractsConfigured ? "Open the live demo to see the official Circle Sepolia USDC balance." : "The USDC controller deployment is still pending."}</p>
-      {deployment.contractsConfigured && <Link href="/tree?vault=capital.agentcapitalusdc.eth">Open live demo <ArrowRight size={13} aria-hidden="true" /></Link>}
+      {deployment.contractsConfigured && <Link href={`/tree?vault=capital.${deployment.namespaceName}`}>Open live demo <ArrowRight size={13} aria-hidden="true" /></Link>}
     </div>
   );
 }

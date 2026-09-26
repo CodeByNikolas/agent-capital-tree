@@ -2,11 +2,17 @@
 
 As of 26 September 2026. Read this together with PLAN.md after context compaction.
 
-## Minimal vault proxy rollout
+## Minimal vault proxy release — current
 
 - VaultFactory now creates non-upgradeable EIP-1167 clones and initializes their controller in the same transaction. The shared implementation is locked. Each clone retains independent funds and LP state; ENS registry deployment is unchanged.
 - All 38 contract tests across eight suites passed, including clone initialization, isolated custody, swaps, LP lifecycle, ENS restrictions and owner recovery. The official Circle/x402 fork passed at block 11785735 with clone bytecode checks, payment-signature isolation, payment retry and recovery. See `deployments/usdc-x402-fork.json`.
-- The fork child spawn used 3,577,156 gas versus 5,934,691 in the previous full-vault fork report (about 40% less; different fork blocks). A separate Sepolia deployment under `agentcapitalvault.eth` is being staged before switching the current website. Existing public names and funds are preserved.
+- Current Sepolia controller: `0x7eDFa3D484d64b6bA3b5b2bcef51147E57133FFB`; namespace: `agentcapitalvault.eth`; root: `capital.agentcapitalvault.eth` / `0x4E2c19976f8ecf94f62587Ca3B5AB3457f8ee271`. The root holds LP NFT 39866. Existing public names and funds are preserved; old manifests and payment evidence are archived in `deployments/history/`.
+- The public child spawn used **3,556,781 gas**, versus **5,914,316** for the previous full-vault researcher: **39.86% less**. Both receipts are recorded in `deployments/usdc-proxy-gas.json`; this includes ENS registry deployment and capital allocation, not just the proxy.
+- Public x402 settlement passed with the child proxy: `0xfb4b340038034b5ad44a347af7d2c45951ed04adccb77935149997724a0a7f13`. The researcher retains 0.24 USDC after a 0.01 USDC purchase; retry did not pay again. `deployments/usdc-payment.json` records the exact proxy bytes, controller binding and failed reinitialization check.
+- Etherscan verified eight source contracts and both vault-to-implementation associations. All ten entries are in `deployments/usdc-sepolia.json`. Active deployment runners now require explorer verification; `scripts/verify-deployment.mjs` also scans additional dashboard/MCP-created nodes without wallet access. The API key stays outside the repository.
+- The UI uses the label **USDC** and identifies Sepolia; invented sample amounts retain an explicit preview banner. The frontend cutover is prepared; production publication and public browser checks are next.
+
+The sections below retain earlier deployment/UI evidence. The current addresses and acceptance above supersede their historical addresses and source revisions.
 
 ## Sidebar vault controls
 

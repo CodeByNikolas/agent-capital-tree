@@ -1,0 +1,177 @@
+{
+  "chainId": 11155111,
+  "network": "Ethereum Sepolia",
+  "status": "deployed",
+  "token": {
+    "address": "0x1c7D4B196Cb0C7B01d743Fbc6116a902379C7238",
+    "symbol": "USDC",
+    "decimals": 6,
+    "issuerAddressSource": "https://developers.circle.com/stablecoins/usdc-contract-addresses",
+    "testnetOnly": true
+  },
+  "funding": {
+    "owner": "0xbCea84Ed1DaFbb59AaF9797Cb4170394db688d34",
+    "verifiedAtBlock": 11784860,
+    "balanceRaw": "20000000",
+    "balanceUSDC": "20.0"
+  },
+  "limitations": [
+    "Testnet assets only; DEMO-USD is valueless and pool price is not a real USD valuation.",
+    "x402 service purchases require an explicitly configured Sepolia-capable seller and PAY mandate."
+  ],
+  "deployer": "0xbCea84Ed1DaFbb59AaF9797Cb4170394db688d34",
+  "tokens": [
+    {
+      "address": "0x1c7D4B196Cb0C7B01d743Fbc6116a902379C7238",
+      "symbol": "USDC",
+      "decimals": 6,
+      "issuerAddressSource": "https://developers.circle.com/stablecoins/usdc-contract-addresses",
+      "testnetOnly": true,
+      "status": "confirmed"
+    },
+    {
+      "address": "0x892e744064E80211d4a69A9cc0f98FE6815157Cf",
+      "symbol": "DEMO-USD",
+      "name": "Valueless Demo Quote",
+      "decimals": 6,
+      "status": "confirmed",
+      "testnetOnly": true,
+      "valueless": true,
+      "transactionHash": "0x8145768b6f02006613931f5ed81ebc1bc842b5d117a039882ce46af1291159f2",
+      "blockNumber": 11785024
+    }
+  ],
+  "contracts": {
+    "VaultFactory": {
+      "address": "0xC3AB17b344C167bD70623489BBb45FA549Afa1A1",
+      "transactionHash": "0xa88c61e97e101b33e8c7b9ca68a87e6da7b8e7d452353b044dc45a2566384b07",
+      "blockNumber": 11785104,
+      "codeHash": "0xff52eed77c33e67ffbe0d430e8d928efd2889a8cab740a56a4be5126615952c1"
+    },
+    "NodeFactory": {
+      "address": "0xB83c344E03918500c995FE8fF5e7685c55BcD24E",
+      "transactionHash": "0xd3b5308bcc541dd76f1b422265db852c8372e4ffe6bebe81d198b876afc1e6a4",
+      "blockNumber": 11785107,
+      "codeHash": "0xf5bc2e3aaa5caef8d18048e20931fcbe90128dc0bba2c102a4cc4cf1fee3af82"
+    },
+    "CapitalController": {
+      "address": "0x17a932987f3cAcFec067c4C1bbE6946963d87F13",
+      "transactionHash": "0x2463c59f6b4b1049c2220422c23f88a8db78c5994cf9d19a9a2da2c4669c32e5",
+      "blockNumber": 11785110,
+      "codeHash": "0xf6306bb5d4062322f0579f27e64750e875323e50e17e2a750f1d2920a41fef98"
+    },
+    "ProjectRegistry": {
+      "address": "0xE4E51fd9bEB12B77441740F4dfd1274829b5Ddf6"
+    }
+  },
+  "ensNamespace": {
+    "name": "agentcapitalusdc.eth",
+    "registry": "0x67b728a792e789a8978b30cf1b3b641f19354b43",
+    "registrar": "0xa4449a0dd2b83007553d9b1d28b583a46a805a30",
+    "transactions": {
+      "commit": {
+        "hash": "0x812f783a4bc201d8a856747a47ffd18f158d8b84b640fb2b23f2fcc5c69dc0a3",
+        "block": 11785011
+      },
+      "mint": {
+        "hash": "0x898ad5335ed79ac8a035279a2d309f284ceebe8003e7cf48a5ed1ab16b0e29e6",
+        "block": 11785013
+      },
+      "approve": {
+        "hash": "0xf0e6f7b735e3ea711903b2db39893637f4c95b842ae53360f6a93fb8a02482a7",
+        "block": 11785015
+      },
+      "register": {
+        "hash": "0x387d16b5cc11093c7a4ed5b3da69b3d43fe095e4e9c4c5dc6cdc97dde7794f88",
+        "block": 11785020
+      },
+      "attach": {
+        "hash": "0xaf172cc061344ea90c109b8c1cc5f33c5cced4fab90cecd09e0317422025fe0f",
+        "block": 11785113
+      }
+    },
+    "resource": "34706045413701427428164669263883747271233185103135947683781482824803209445376",
+    "expiry": "1821946980",
+    "subregistry": "0xE4E51fd9bEB12B77441740F4dfd1274829b5Ddf6"
+  },
+  "uniswap": {
+    "poolManager": "0xE03A1074c86CFeDd5C142C4F04F1a1536e203543",
+    "positionManager": "0x429ba70129df741B2Ca2a85BC3A2a3328e5c09b4",
+    "permit2": "0x000000000022D473030F116dDEE9F6B43aC78BA3",
+    "poolId": "0x93f85c1b3f22eb51728013413c04d3598bcae49836626358d766fc3db3b54c10",
+    "fee": 3000,
+    "tickSpacing": 60,
+    "tickLower": -600,
+    "tickUpper": 600,
+    "codeHashes": {
+      "poolManager": "0x09930125a49f5b95caf8052991cc14d1240dca8b43f42b899115b86867e4bce1",
+      "positionManager": "0xcffd746f78c2b50aafd19076bbe9c48f14446e5248fc5d76b9b4896610e51aab",
+      "permit2": "0x96d9f5c3f0fb0423426b7f970186235b7347027f4e5c19c40c412b7d97fc3751"
+    },
+    "initialization": {
+      "transactionHash": "0x4a9de834cc241ab6ba8eb45cd43be2e1068d31abf4044b2fce9406758002a4e6",
+      "blockNumber": 11785124
+    },
+    "seeded": {
+      "transactionHash": "0xd24940ab30aa7cef1e4a50e7355411710648afa3ad3706d92435fb5abdc3749b",
+      "blockNumber": 11785140,
+      "rootId": "1",
+      "vault": "0xAc5378EdA34f38A7fd34BB808B1b5492aF499bcf",
+      "tokenId": "39858",
+      "liquidity": "30000000"
+    }
+  },
+  "multibaas": {
+    "label": "capitalcontrollerusdc",
+    "indexingStartBlock": 11785117,
+    "status": {
+      "isProcessingPastLogs": false,
+      "latestBlockNumber": 11785117,
+      "latestBlockHash": "0x3dc6e377aefeb0837f7a7620021c18a6c274a0f272c7f6b62fd348ad82e6d1fd",
+      "startBlockNumber": 11785117,
+      "startBlockHash": "0x3dc6e377aefeb0837f7a7620021c18a6c274a0f272c7f6b62fd348ad82e6d1fd",
+      "updatedAt": "2026-09-26T08:42:32.297645Z"
+    },
+    "configuredAt": "2026-09-26T08:42:32.680Z"
+  },
+  "bootstrap": {
+    "purpose": "USDC capital demo with optional LP liquidity; owner and root operator are the test-owner wallet.",
+    "policyExpiry": "1805964204",
+    "deadline": "1790419404",
+    "transactions": {
+      "initialize-pool": {
+        "transactionHash": "0x4a9de834cc241ab6ba8eb45cd43be2e1068d31abf4044b2fce9406758002a4e6",
+        "blockNumber": 11785124
+      },
+      "create-seed-root": {
+        "transactionHash": "0xfa675de8ea9a6d31677344a07a2ebc77b33c70f136884887fafcc9ea528c3b9f",
+        "blockNumber": 11785127
+      },
+      "authorize-seed-operator": {
+        "transactionHash": "0xa11bca549dcc90c96f6ac40574f6cf33de749c1a2acb96fbdd21a2796b4250fb",
+        "blockNumber": 11785130
+      },
+      "approve-token-0": {
+        "transactionHash": "0xb357c1ea95b23a53e50c89d71c3cc97c0f9569dc020d066f067f70017e1e5cdc",
+        "blockNumber": 11785132
+      },
+      "claim-token-1": {
+        "transactionHash": "0xe8a27a453baa60e58758c3835c8a420cb4b9743a58736db5ce61769751674555",
+        "blockNumber": 11785134
+      },
+      "approve-token-1": {
+        "transactionHash": "0x63e9bfa47931fc7b6dbf0504280b4e8f9461f70e9d0acf6fdc23906770e2c904",
+        "blockNumber": 11785136
+      },
+      "fund-seed-root": {
+        "transactionHash": "0x73c6a02a039978d0d94e212269b5052023cccbf4fea813b716668eab3a90073b",
+        "blockNumber": 11785138
+      },
+      "open-seed-position": {
+        "transactionHash": "0xd24940ab30aa7cef1e4a50e7355411710648afa3ad3706d92435fb5abdc3749b",
+        "blockNumber": 11785140
+      }
+    },
+    "rootId": "1"
+  }
+}

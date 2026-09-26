@@ -62,7 +62,7 @@ export function getPublicDeployment(): PublicDeployment {
     chainId: manifest.chainId,
     network: manifest.network,
     status,
-    namespaceName: manifest.ensNamespace?.name ?? "agentcapitalusdc.eth",
+    namespaceName: manifest.ensNamespace?.name ?? "agentcapitalvault.eth",
     namespaceExpiry: manifest.ensNamespace?.expiry ?? null,
     controllerAddress,
     tokenAddresses,

@@ -20,6 +20,8 @@ Source: [CapitalController](contracts/src/CapitalController.sol), [CapitalVault]
 
 ## Validation status
 
+The current vaults are non-upgradeable EIP-1167 clones. All 38 contract tests pass, including swaps and the full LP lifecycle through proxy custody. The Circle Sepolia fork additionally verifies x402 signatures and owner recovery through clones. The public root owns LP NFT 39866. Full child-spawn gas decreased from 5,914,316 to 3,556,781 (39.86%); ENS registries remain separate full deployments. [Gas receipts](deployments/usdc-proxy-gas.json) and the current manifest provide the onchain evidence and Etherscan verification links.
+
 The new USDC/DEMO-USD version passed a local Sepolia fork with pool initialization, LP opening/closure, x402 payment and complete remaining-capital recovery. Closing the LP left1rawUSDC unit of rounding dust. [Current fork evidence](deployments/usdc-x402-fork.json) records exact outcomes; current public deployment status is in STATUS.md.
 
 The following reports document the earlier ACT-token implementation, not a compatibility mode in the current UI:

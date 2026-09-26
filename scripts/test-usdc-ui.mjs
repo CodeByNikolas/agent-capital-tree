@@ -1,8 +1,9 @@
 import assert from 'node:assert/strict';
-import { mkdir, writeFile } from 'node:fs/promises';
+import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import { chromium, expect } from '@playwright/test';
 const base = process.env.ACT_TEST_APP_URL ?? 'http://127.0.0.1:3040';
-const vault = 'capital.agentcapitalusdc.eth';
+const manifest = JSON.parse(await readFile(new URL('../deployments/usdc-sepolia.json', import.meta.url), 'utf8'));
+const vault = `capital.${manifest.ensNamespace.name}`;
 const output = new URL('../artifacts/ui/', import.meta.url);
 await mkdir(output, { recursive: true });
 const browser = await chromium.launch();
@@ -35,7 +36,12 @@ try {
     await page.setViewportSize({width,height:1000});
     for (const path of ['/', '/tree', '/activity', '/uniswap', '/payments', '/setup']) {
       await page.goto(`${base}${path}?vault=${vault}`);
+      if(width<600){
+        await expect(page.locator('[data-slot="sidebar"]')).toHaveCount(0);
+        await page.getByRole('button',{name:'Toggle navigation'}).click();
+      }
       await expect(page.getByText('Live vault.',{exact:true})).toBeVisible({timeout:60000});
+      if(width<600){await page.keyboard.press('Escape');await expect(page.getByRole('dialog')).toHaveCount(0);}
       assert(!/ACT-A|ACT-B|Live root \d/.test(await page.locator('body').innerText()), `${path} current asset/identity labels`);
       assert(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth), `${path} ${width}px overflow`);
       if(path==='/tree') {

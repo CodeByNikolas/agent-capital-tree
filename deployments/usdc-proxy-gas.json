@@ -1,0 +1,17 @@
+{
+  "checkedAt": "2026-09-26T11:05:26.397Z",
+  "chainId": 11155111,
+  "before": {
+    "transactionHash": "0x207416421a67e6281841cd46d753c46a3e2b987483c31ea3b050691391a8ef9d",
+    "gasUsed": "5914316",
+    "architecture": "full-vault"
+  },
+  "after": {
+    "transactionHash": "0xb823b32da133d099c8758ed9b358975a5ddd11a27c9c7e3f0bb7cc86c45492f9",
+    "gasUsed": "3556781",
+    "architecture": "eip1167"
+  },
+  "savedGas": "2357535",
+  "savedPercent": 39.86,
+  "scope": "Full public PAY-only researcher spawn, including ENS registry, policy, allocation and vault; different blocks and deployment addresses."
+}
