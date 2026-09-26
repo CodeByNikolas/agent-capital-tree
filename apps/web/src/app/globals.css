@@ -99,6 +99,37 @@ button:disabled { cursor: not-allowed; opacity: .55; }
 .network-dot-warning { background: var(--destructive); }
 .wallet-error { max-width: 260px; color: var(--destructive); font-size: 14px; }
 .dashboard-content { width: min(100%, 1420px); margin: 0 auto; padding: 30px clamp(20px, 4vw, 58px) 56px; }
+.zero-usdc-notice { display: flex; align-items: center; gap: 14px; margin: 16px 0; padding: 16px 18px; border: 1px solid var(--border); border-radius: 10px; background: var(--accent); font-size: 15px; }
+.zero-usdc-notice > svg { flex: 0 0 auto; color: var(--brand); }
+.zero-usdc-notice > span { flex: 1; }
+.zero-usdc-notice a { display: inline-flex; align-items: center; gap: 4px; color: var(--brand); font-weight: 800; white-space: nowrap; text-decoration: underline; text-underline-offset: 3px; }
+.module-summary { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; margin-bottom: 20px; }
+.module-summary > div { display: flex; flex-direction: column; gap: 5px; padding: 18px 20px; border: 1px solid var(--border); border-radius: 10px; background: var(--surface); }
+.module-summary strong { font-size: 16px; }
+.module-summary span, .module-footnote { color: var(--quiet); font-size: 14px; line-height: 1.65; }
+.module-footnote { max-width: 72ch; margin: 18px 0; }
+.payments-heading { display: flex; flex-direction: row; align-items: flex-start; justify-content: space-between; gap: 18px; }
+.payment-status { margin: 0 0 20px; padding: 13px 15px; border-radius: 8px; background: var(--soft); color: var(--quiet); font-size: 14px; line-height: 1.6; }
+.payment-status-error { border: 1px solid var(--destructive); color: var(--foreground); }
+.payment-table-scroll { overflow-x: auto; }
+.payment-table { min-width: 690px; }
+.payment-table th { font-size: 14px; }
+.payment-table td { font-size: 15px; vertical-align: middle; }
+.payment-table td:first-child { max-width: 280px; }
+.payment-table td:first-child strong { display: block; overflow-wrap: anywhere; }
+.payment-table td:first-child small { display: block; margin-top: 3px; color: var(--quiet); font-family: var(--font-mono); font-size: 13px; }
+.payment-address { display: inline-flex; align-items: center; gap: 4px; white-space: nowrap; font-family: var(--font-mono); }
+.payment-address button { display: inline-flex; align-items: center; justify-content: center; width: 26px; height: 26px; border: 0; border-radius: 5px; background: transparent; color: var(--brand); cursor: pointer; }
+.payment-address button:hover { background: var(--accent); }
+.payment-table .activity-transaction-link { display: inline-flex; align-items: center; gap: 5px; white-space: nowrap; }
+.payment-amount { white-space: nowrap; font-family: var(--font-mono); font-weight: 600; }
+.payment-amount span { color: var(--quiet); font-family: var(--font-sans); font-size: 13px; font-weight: 500; }
+@media (max-width: 720px) {
+  .zero-usdc-notice { align-items: flex-start; flex-wrap: wrap; }
+  .zero-usdc-notice a { margin-left: 34px; }
+  .module-summary { grid-template-columns: 1fr; }
+  .payments-heading { flex-wrap: wrap; }
+}
 .page-heading { max-width: 740px; margin: 40px 0 31px; }
 .page-kicker { display: block; margin-bottom: 9px; color: var(--brand); font-size: 14px; font-weight: 800; }
 .page-heading h1 { margin: 0; font-size: clamp(33px, 4vw, 53px); font-weight: 700; letter-spacing: -.035em; line-height: 1.12; text-wrap: balance; }

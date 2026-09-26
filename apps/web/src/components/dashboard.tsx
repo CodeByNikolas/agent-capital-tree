@@ -78,7 +78,26 @@ interface DashboardProps {
   vaultQuery: string | null;
   nodeQuery?: string | null;
   actionQuery?: WalletActionMode;
-  view: "overview" | "tree" | "activity" | "applications" | "setup";
+  view: "overview" | "tree" | "activity" | "uniswap" | "payments" | "setup";
+}
+
+interface PaymentRecord {
+  id: string;
+  nodeId: string;
+  nodeName: string;
+  from: string;
+  to: string;
+  amountRaw: string;
+  transactionHash: `0x${string}`;
+  blockNumber: number;
+}
+
+interface PaymentHistory {
+  source: "circle-usdc-receipts";
+  rootId: string;
+  payments: PaymentRecord[];
+  coverage: { fromBlock: number; toBlock: number; completeSinceDeployment: boolean };
+  note: string;
 }
 
 const permissionLabels: Record<Permission, string> = {
@@ -459,7 +478,8 @@ const views = [
   { id: "overview", title: "Overview", path: "/", icon: Layers3 },
   { id: "tree", title: "Agent tree", path: "/tree", icon: GitBranch },
   { id: "activity", title: "Activity", path: "/activity", icon: ActivityIcon },
-  { id: "applications", title: "Applications", path: "/applications", icon: Coins },
+  { id: "uniswap", title: "Uniswap", path: "/uniswap", icon: ArrowLeftRight },
+  { id: "payments", title: "Payments", path: "/payments", icon: Coins },
   { id: "setup", title: "Setup & control", path: "/setup", icon: ShieldCheck },
 ] as const;
 
@@ -1018,6 +1038,7 @@ function ActivityPanel({
   loadMoreError,
   onRetry,
   onLoadMore,
+  uniswapOnly = false,
 }: {
   data: DashboardData;
   feed: ActivityFeedResult | null;
@@ -1026,6 +1047,7 @@ function ActivityPanel({
   loadMoreError: string | null;
   onRetry: () => void;
   onLoadMore: () => void;
+  uniswapOnly?: boolean;
 }) {
   const page = feed?.source === "multi-baas" ? feed.page : null;
   const indexLag = page?.indexing.indexGapBlocks;
@@ -1046,8 +1068,8 @@ function ActivityPanel({
     <section className="panel activity-panel" id="activity" aria-labelledby="activity-title">
       <div className="panel-heading">
         <div>
-          <div className="panel-overline">CAPITAL & POLICY LOG <PreviewFlag source={activitySource} compact /></div>
-          <h2 id="activity-title">Recent activity</h2>
+          <div className="panel-overline">{uniswapOnly ? "UNISWAP ACTION LOG" : "CAPITAL & POLICY LOG"} <PreviewFlag source={activitySource} compact /></div>
+          <h2 id="activity-title">{uniswapOnly ? "Swap and LP history" : "Recent activity"}</h2>
         </div>
         <div className="activity-heading-actions">
           <span className="activity-count">{data.activity.length}{data.activitySource === "preview" ? " preview" : ""} records</span>
@@ -1110,12 +1132,12 @@ function PositionsPanel({ data, actions, walletOnSepolia }: { data: DashboardDat
       {data.positions.length > 0 ? data.positions.map((position) => (
         <div className="position-record" key={position.id}>
           <div className="position-pool-row">
-            <span className="token-pair-icon"><span>{position.token0?.symbol.slice(0, 1) ?? "?"}</span><span>{position.token1?.symbol.slice(0, 1) ?? "?"}</span></span>
+            <span className="token-pair-icon"><span>{position.token0?.symbol.slice(0, 1) ?? "U"}</span><span>{position.token1?.symbol.slice(0, 1) ?? "D"}</span></span>
             <div><strong>{position.poolLabel}</strong><small>Vault-owned NFT · {position.source === "preview" ? "example " : ""}position {position.id}</small></div>
             <span className={`position-open-pill position-state-${position.state}`}><span />{position.source === "preview" ? `Example ${position.state}` : position.state === "unknown" ? "Status unknown" : position.state}</span>
           </div>
       <div className="position-stats">
-            <div><span>Liquidity</span><strong>{position.liquidity}<small> units</small></strong></div>
+            <div><span>Liquidity</span><strong>{/^\d+$/.test(position.liquidity) ? BigInt(position.liquidity).toLocaleString("en-US") : position.liquidity}<small> units</small></strong></div>
             <div><span>Position principal</span><strong>{position.token0 ? `${formatAmount(position.token0)} ${position.token0.symbol}` : "Not queried"}</strong><strong>{position.token1 ? `${formatAmount(position.token1)} ${position.token1.symbol}` : "Not queried"}</strong></div>
             <div><span>Uncollected fees</span><strong>{position.fees0 ? `${formatAmount(position.fees0)} ${position.fees0.symbol}` : "Not queried"}</strong><strong>{position.fees1 ? `${formatAmount(position.fees1)} ${position.fees1.symbol}` : "Not queried"}</strong></div>
           </div>
@@ -1130,6 +1152,36 @@ function PositionsPanel({ data, actions, walletOnSepolia }: { data: DashboardDat
       )}
     </section>
   );
+}
+
+function PaymentsPanel({ history, loading, error, onRetry }: { history: PaymentHistory | null; loading: boolean; error: string | null; onRetry: () => void }) {
+  return <Card className="payments-panel">
+    <CardHeader className="payments-heading">
+      <div><CardTitle>Vault USDC settlements</CardTitle><CardDescription>On-chain EIP-3009 authorizations paired with Circle USDC transfers from this tree’s vaults.</CardDescription></div>
+      <Button variant="outline" size="sm" onClick={onRetry} disabled={loading}>{loading ? "Checking…" : "Refresh"}</Button>
+    </CardHeader>
+    <CardContent>
+      {error && <p className="payment-status payment-status-error" role="alert">{error}</p>}
+      {history && <p className="payment-status" role="status">Blocks {history.coverage.fromBlock.toLocaleString()}–{history.coverage.toBlock.toLocaleString()} · {history.coverage.completeSinceDeployment ? "Complete scan since this controller was deployed" : "Earlier blocks are outside this scan"}. {history.note}</p>}
+      <div className="payment-table-scroll"><Table className="payment-table">
+        <TableHeader><TableRow><TableHead>Agent vault</TableHead><TableHead>Amount</TableHead><TableHead>Recipient</TableHead><TableHead>Block</TableHead><TableHead>Evidence</TableHead></TableRow></TableHeader>
+        <TableBody>{history?.payments.map((payment) => <TableRow key={payment.id}>
+          <TableCell><strong>{payment.nodeName}</strong><small><CopyablePaymentAddress address={payment.from} label="vault address" /></small></TableCell>
+          <TableCell className="payment-amount">{formatRoundedAmount({ rawAmount: payment.amountRaw, decimals: 6, symbol: "USDC" })} <span>Test USDC</span></TableCell>
+          <TableCell><CopyablePaymentAddress address={payment.to} label="recipient address" /></TableCell>
+          <TableCell>{payment.blockNumber.toLocaleString()}</TableCell>
+          <TableCell><a className="activity-transaction-link" href={`https://sepolia.etherscan.io/tx/${payment.transactionHash}`} target="_blank" rel="noreferrer">Receipt <ExternalLink size={13} aria-hidden="true" /></a></TableCell>
+        </TableRow>)}</TableBody>
+      </Table></div>
+      {!error && !loading && history?.payments.length === 0 && <p className="activity-empty">No matching USDC settlements were found in the scanned blocks. A vault balance change alone is not a payment.</p>}
+      {loading && !history && <p className="activity-empty">Reading Circle USDC settlement receipts…</p>}
+    </CardContent>
+  </Card>;
+}
+
+function CopyablePaymentAddress({ address, label }: { address: string; label: string }) {
+  const [copied, setCopied] = useState(false);
+  return <span className="payment-address" title={address}><span>{shortAddress(address)}</span><button type="button" aria-label={`Copy ${label}`} title={`Copy full ${label}`} onClick={() => { void navigator.clipboard.writeText(address).then(() => setCopied(true)).catch(() => setCopied(false)); }}>{copied ? <Check size={13} /> : <Copy size={13} />}</button></span>;
 }
 
 function ContractSetupPanel({ data, deployment, actions, wallet, liveStateReady, historyError }: { data: DashboardData; deployment: PublicDeployment; actions: DashboardActions; wallet: InjectedWalletState; liveStateReady: boolean; historyError: string | null }) {
@@ -1185,8 +1237,10 @@ export function Dashboard({ data: initialData, deployment, vaultQuery, nodeQuery
   const [liveSnapshot, setLiveSnapshot] = useState<{ vaultKey: string; rootId: string; nodeId: string; data: DashboardData } | null>(null);
   const [readState, setReadState] = useState<{ vaultKey: string | null; rootId: string | null; status: "idle" | "loading" | "ready" | "error"; error: string | null }>({ vaultKey: null, rootId: null, status: "idle", error: null });
   const [activityState, setActivityState] = useState<{ rootId: string | null; feed: ActivityFeedResult | null; loading: boolean; loadingMore: boolean; loadMoreError: string | null }>({ rootId: null, feed: null, loading: false, loadingMore: false, loadMoreError: null });
+  const [paymentState, setPaymentState] = useState<{ rootId: string | null; history: PaymentHistory | null; loading: boolean; error: string | null }>({ rootId: null, history: null, loading: false, error: null });
   const [treeRetry, setTreeRetry] = useState(0);
   const [activityRetry, setActivityRetry] = useState(0);
+  const [paymentRetry, setPaymentRetry] = useState(0);
   const wallet = useInjectedWallet();
   const walletOnSepolia = wallet.address !== null && wallet.chainId === sepolia.id;
   const currentSnapshot = vaultKey && liveSnapshot?.vaultKey === vaultKey ? liveSnapshot : null;
@@ -1225,6 +1279,22 @@ export function Dashboard({ data: initialData, deployment, vaultQuery, nodeQuery
   const runtimeConnected = data.nodes.some((node) => node.runtime === "connected");
   const runtimeUnknown = data.nodes.some((node) => node.runtime === "unknown");
   const runtimeLabel = runtimeConnected ? "Runtime connected" : runtimeUnknown ? "Runtime status unknown" : "Runtime not linked";
+
+  useEffect(() => {
+    if (view !== "payments" || !rootQuery) return;
+    const controller = new AbortController();
+    setPaymentState({ rootId: rootQuery, history: null, loading: true, error: null });
+    void fetch(`/api/payments?root=${encodeURIComponent(rootQuery)}`, { signal: controller.signal })
+      .then(async (response) => {
+        const result = await response.json();
+        if (!response.ok) throw new Error(result.error ?? "Payment history is unavailable.");
+        if (result.rootId !== rootQuery || !Array.isArray(result.payments)) throw new Error("Payment history did not match this root.");
+        return result as PaymentHistory;
+      })
+      .then((history) => { if (!controller.signal.aborted) setPaymentState({ rootId: rootQuery, history, loading: false, error: null }); })
+      .catch((cause) => { if (!controller.signal.aborted) setPaymentState({ rootId: rootQuery, history: null, loading: false, error: cause instanceof Error ? cause.message : "Payment history is unavailable." }); });
+    return () => controller.abort();
+  }, [view, rootQuery, paymentRetry]);
 
   const refreshConfirmedState = useCallback(() => {
     setTreeRetry((value) => value + 1);
@@ -1440,6 +1510,7 @@ export function Dashboard({ data: initialData, deployment, vaultQuery, nodeQuery
           <PreviewNotice data={data} deployment={deployment} />
           <RootAccessBar vault={vaultQuery} path={path} />
           {vaultQuery && <LiveReadNotice rootId={currentSnapshot?.rootId ?? null} vaultQuery={vaultQuery} data={data} loading={currentReadState.status === "loading"} error={liveError} onRetry={() => setTreeRetry((value) => value + 1)} />}
+          {data.source === "direct-rpc" && rootNode?.tokenHoldings[0]?.symbol === "USDC" && BigInt(rootNode.tokenHoldings[0].rawAmount) === 0n && <div className="zero-usdc-notice" role="note"><Coins size={20} aria-hidden="true" /><span><strong>This root has no Test USDC.</strong> Request Sepolia USDC from Circle, then use Fund root in Setup &amp; control. The owner wallet also needs Sepolia ETH for gas; the vault itself does not.</span><a href="https://faucet.circle.com/" target="_blank" rel="noreferrer">Circle faucet <ArrowUpRight size={15} aria-hidden="true" /></a></div>}
           {view === "overview" && <>
             <div className="page-heading"><span className="page-kicker">Delegated capital · Sepolia</span><h1>Capital under clear authority.</h1><p>See what each vault holds, which mandates are active, and where owner control stands.</p></div>
             <SummaryMetrics data={data} />
@@ -1465,14 +1536,17 @@ export function Dashboard({ data: initialData, deployment, vaultQuery, nodeQuery
               onLoadMore={() => void loadEarlierActivity()}
             />
           </>}
-          {view === "applications" && <>
-            <div className="page-heading"><span className="page-kicker">Bounded applications</span><h1>Applications</h1><p>{deployment.poolConfigured ? "The seeded Uniswap v4 pool is available for optional, policy-bounded swaps and liquidity management." : "Uniswap swaps and liquidity management are unavailable for this deployment."}</p></div>
+          {view === "uniswap" && <>
+            <div className="page-heading"><span className="page-kicker">Bounded Uniswap v4 actions</span><h1>Uniswap</h1><p>{deployment.poolConfigured ? "Agents with the right mandate can swap within the fixed pool and manage vault-owned liquidity positions." : "Uniswap swaps and liquidity management are unavailable for this deployment."}</p></div>
+            <div className="module-summary"><div><strong>Swap</strong><span>Exact input · fixed Test USDC / DEMO-USD pool · minimum output and deadline</span></div><div><strong>Liquidity</strong><span>Open, increase, collect fees, or close with separate ENS rights</span></div></div>
             <PositionsPanel data={data} actions={actions} walletOnSepolia={walletOnSepolia} />
-            <Card className="future-applications"><CardHeader><CardTitle>Modules</CardTitle><CardDescription>Trading is available above. Companion agents can discover configured sellers and make bounded x402 purchases; contract transactions and currency valuation remain future work.</CardDescription></CardHeader><CardContent>
-              <details className="future-module"><summary><span>x402 service payments</span><Badge variant="outline" className="future-module-badge">Available through Companion</Badge></summary><p>With a seller configured, Companion agents can use <code>getPaymentServices</code> to discover it and <code>purchaseService</code> to request a bounded x402 payment using their USDC mandate. This dashboard does not initiate or settle purchases. Controller history omits direct Circle USDC Transfer events, so it does not show the full payment history.</p></details>
-              <details className="future-module"><summary><span>Contract transactions</span><Badge variant="outline" className="future-module-badge">Future work</Badge></summary><p>Not implemented. Execute approved contract functions with recipient, token, and spending checks. A balance-delta check alone cannot prevent unsafe approvals or future liabilities.</p></details>
-              <details className="future-module"><summary><span>Currency conversion & valuation</span><Badge variant="outline" className="future-module-badge">Future work</Badge></summary><p>Not implemented. Display supported assets in a chosen currency using verified price sources. Test USDC is Sepolia faucet funding; DEMO-USD is a valueless quote token. Neither provides a dollar valuation.</p></details>
-            </CardContent></Card>
+            <ActivityPanel data={{ ...dashboardData, activity: dashboardData.activity.filter((item) => ["swap", "position-opened", "position-increased", "position-closed", "fees-collected"].includes(item.kind)) }} feed={activityFeed} loading={activeActivityState.loading} loadingMore={activeActivityState.loadingMore} loadMoreError={activeActivityState.loadMoreError} onRetry={() => setActivityRetry((value) => value + 1)} onLoadMore={() => void loadEarlierActivity()} uniswapOnly />
+            <p className="module-footnote">The agent MCP provides swap and LP actions. This page shows positions and verified indexed actions; it does not submit swaps from the browser. DEMO-USD is a valueless test asset, so pool prices are not dollar valuations.</p>
+          </>}
+          {view === "payments" && <>
+            <div className="page-heading"><span className="page-kicker">Circle USDC · EIP-3009</span><h1>Payments</h1><p>See USDC settlements from the vaults in this tree. Agents buy configured x402 services through the local Companion; the dashboard does not initiate a purchase.</p></div>
+            {data.source === "preview" ? <Card><CardHeader><CardTitle>Open a live vault</CardTitle><CardDescription>Payment records are only displayed for a live Sepolia root.</CardDescription></CardHeader></Card> : <PaymentsPanel history={paymentState.rootId === rootQuery ? paymentState.history : null} loading={paymentState.rootId === rootQuery ? paymentState.loading : Boolean(rootQuery)} error={paymentState.rootId === rootQuery ? paymentState.error : null} onRetry={() => setPaymentRetry((value) => value + 1)} />}
+            <p className="module-footnote">These receipts prove token settlement, not the merchant’s service delivery. Generic contract transactions and currency valuation remain future work.</p>
           </>}
           {view === "setup" && <>
             <div className="page-heading"><span className="page-kicker">Wallet & integration</span><h1>Setup & control</h1><p>Connect the recorded owner or an authorized agent to manage the selected vault. Each available action is simulated before signing.</p></div>
