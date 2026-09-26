@@ -1,0 +1,180 @@
+{
+  "checkedAt": "2026-09-26T08:48:12.860Z",
+  "rootId": "1",
+  "items": [
+    {
+      "id": "11155111:0xfa675de8ea9a6d31677344a07a2ebc77b33c70f136884887fafcc9ea528c3b9f:136",
+      "rootId": "1",
+      "eventName": "NodeCreated",
+      "provenance": {
+        "chainId": 11155111,
+        "transactionHash": "0xfa675de8ea9a6d31677344a07a2ebc77b33c70f136884887fafcc9ea528c3b9f",
+        "logIndex": 136,
+        "blockNumber": 11785127,
+        "transactionIndex": 76,
+        "blockHash": "0x9d047f784888f992d76fb386daaa3a3022201c2ee0a8fa06277e913c6ef449dd",
+        "source": "multibaas",
+        "indexed": true,
+        "finality": "confirmed"
+      },
+      "kind": "node_created",
+      "nodeId": "1",
+      "parentId": "0",
+      "agent": "0x0000000000000000000000000000000000000000",
+      "vault": "0xac5378eda34f38a7fd34bb808b1b5492af499bcf"
+    },
+    {
+      "id": "11155111:0xa11bca549dcc90c96f6ac40574f6cf33de749c1a2acb96fbdd21a2796b4250fb:125",
+      "rootId": "1",
+      "eventName": "OperatorChanged",
+      "provenance": {
+        "chainId": 11155111,
+        "transactionHash": "0xa11bca549dcc90c96f6ac40574f6cf33de749c1a2acb96fbdd21a2796b4250fb",
+        "logIndex": 125,
+        "blockNumber": 11785130,
+        "transactionIndex": 96,
+        "blockHash": "0xba126b1a38dac7aaede30a337d8051df2c1bc7e5bdf223a9ee9353f4ca845e98",
+        "source": "multibaas",
+        "indexed": true,
+        "finality": "confirmed"
+      },
+      "kind": "operator_changed",
+      "operator": "0xbcea84ed1dafbb59aaf9797cb4170394db688d34",
+      "generation": "1"
+    },
+    {
+      "id": "11155111:0x73c6a02a039978d0d94e212269b5052023cccbf4fea813b716668eab3a90073b:117",
+      "rootId": "1",
+      "eventName": "RootFunded",
+      "provenance": {
+        "chainId": 11155111,
+        "transactionHash": "0x73c6a02a039978d0d94e212269b5052023cccbf4fea813b716668eab3a90073b",
+        "logIndex": 117,
+        "blockNumber": 11785138,
+        "transactionIndex": 98,
+        "blockHash": "0x9a7adfb63d462f2db2a8b76efdbc81bdcad5b6806128aee372adbaa4f36cc156",
+        "source": "multibaas",
+        "indexed": true,
+        "finality": "confirmed"
+      },
+      "kind": "root_funded",
+      "token": "0x1c7d4b196cb0c7b01d743fbc6116a902379c7238",
+      "amount": "2000000"
+    },
+    {
+      "id": "11155111:0x73c6a02a039978d0d94e212269b5052023cccbf4fea813b716668eab3a90073b:119",
+      "rootId": "1",
+      "eventName": "RootFunded",
+      "provenance": {
+        "chainId": 11155111,
+        "transactionHash": "0x73c6a02a039978d0d94e212269b5052023cccbf4fea813b716668eab3a90073b",
+        "logIndex": 119,
+        "blockNumber": 11785138,
+        "transactionIndex": 98,
+        "blockHash": "0x9a7adfb63d462f2db2a8b76efdbc81bdcad5b6806128aee372adbaa4f36cc156",
+        "source": "multibaas",
+        "indexed": true,
+        "finality": "confirmed"
+      },
+      "kind": "root_funded",
+      "token": "0x892e744064e80211d4a69a9cc0f98fe6815157cf",
+      "amount": "2000000"
+    },
+    {
+      "id": "11155111:0xd24940ab30aa7cef1e4a50e7355411710648afa3ad3706d92435fb5abdc3749b:138",
+      "rootId": "1",
+      "eventName": "PositionOpened",
+      "provenance": {
+        "chainId": 11155111,
+        "transactionHash": "0xd24940ab30aa7cef1e4a50e7355411710648afa3ad3706d92435fb5abdc3749b",
+        "logIndex": 138,
+        "blockNumber": 11785140,
+        "transactionIndex": 83,
+        "blockHash": "0x44e7ebf9e2c8cf0bdafb956280f70a9a9039020367a219ddbb93277d2f2e18cd",
+        "source": "multibaas",
+        "indexed": true,
+        "finality": "confirmed"
+      },
+      "kind": "position_opened",
+      "nodeId": "1",
+      "tokenId": "39858",
+      "liquidity": "30000000",
+      "amount0": "886591",
+      "amount1": "886591"
+    },
+    {
+      "id": "11155111:0x207416421a67e6281841cd46d753c46a3e2b987483c31ea3b050691391a8ef9d:156",
+      "rootId": "1",
+      "eventName": "NodeCreated",
+      "provenance": {
+        "chainId": 11155111,
+        "transactionHash": "0x207416421a67e6281841cd46d753c46a3e2b987483c31ea3b050691391a8ef9d",
+        "logIndex": 156,
+        "blockNumber": 11785143,
+        "transactionIndex": 119,
+        "blockHash": "0x8cf4c7e2568efc47f8d36171af5048b6f16ef89fad4004e93163d5c678db0edf",
+        "source": "multibaas",
+        "indexed": true,
+        "finality": "confirmed"
+      },
+      "kind": "node_created",
+      "nodeId": "2",
+      "parentId": "1",
+      "agent": "0x02d54468be013d6bb14e49b3696569dfc24768e2",
+      "vault": "0x71ad59ce3a7f50105ed400c8bd71180a2693920f"
+    },
+    {
+      "id": "11155111:0x207416421a67e6281841cd46d753c46a3e2b987483c31ea3b050691391a8ef9d:158",
+      "rootId": "1",
+      "eventName": "CapitalAllocated",
+      "provenance": {
+        "chainId": 11155111,
+        "transactionHash": "0x207416421a67e6281841cd46d753c46a3e2b987483c31ea3b050691391a8ef9d",
+        "logIndex": 158,
+        "blockNumber": 11785143,
+        "transactionIndex": 119,
+        "blockHash": "0x8cf4c7e2568efc47f8d36171af5048b6f16ef89fad4004e93163d5c678db0edf",
+        "source": "multibaas",
+        "indexed": true,
+        "finality": "confirmed"
+      },
+      "kind": "capital_allocated",
+      "parentId": "1",
+      "childId": "2",
+      "token": "0x1c7d4b196cb0c7b01d743fbc6116a902379c7238",
+      "amount": "250000"
+    }
+  ],
+  "nextCursor": null,
+  "hasMore": false,
+  "indexing": {
+    "state": "lagging",
+    "isProcessingPastLogs": false,
+    "latestIndexedBlock": 11785117,
+    "latestIndexedBlockHash": "0x3dc6e377aefeb0837f7a7620021c18a6c274a0f272c7f6b62fd348ad82e6d1fd",
+    "indexingStartBlock": 11785117,
+    "indexingStartBlockHash": "0x3dc6e377aefeb0837f7a7620021c18a6c274a0f272c7f6b62fd348ad82e6d1fd",
+    "chainHeadBlock": 11785145,
+    "indexGapBlocks": 28,
+    "updatedAt": "2026-09-26T08:42:32.297645Z"
+  },
+  "source": {
+    "provider": "multibaas",
+    "chainId": 11155111,
+    "controllerAddress": "0x17a932987f3cacfec067c4c1bbe6946963d87f13",
+    "ordering": "block_number_ascending_then_transaction_then_log",
+    "activityCoverage": "capital_and_strategy_events"
+  },
+  "verification": {
+    "source": "rpc",
+    "checks": [
+      "canonical_block",
+      "successful_receipt",
+      "event_identity",
+      "decoded_values"
+    ],
+    "checkedAtBlock": "11785145",
+    "finalizedBlock": "11785073",
+    "orphanedItems": 0
+  }
+}

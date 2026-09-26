@@ -31,6 +31,7 @@ const permissions: readonly Permission[] = [
   "manage-liquidity",
   "collect-fees",
   "exit-liquidity",
+  "pay",
   "restrict",
   "reclaim",
 ];
@@ -41,6 +42,7 @@ const permissionLabels: Record<Permission, string> = {
   "manage-liquidity": "Manage LP",
   "collect-fees": "Collect fees",
   "exit-liquidity": "Exit LP",
+  pay: "Companion x402 payment",
   restrict: "Tighten or revoke children",
   reclaim: "Reclaim child assets",
 };
@@ -78,15 +80,9 @@ function defaultDeadlineLocal(): string {
 function tokenLabels(data: DashboardData, deployment: PublicDeployment): readonly [string, string] {
   if (data.source === "direct-rpc") {
     const assets = data.nodes[0]?.tokenHoldings ?? [];
-    if (assets.length >= 2) return [assets[0].symbol, assets[1].symbol];
+    if (assets.length >= 2) return [assets[0].symbol === "USDC" ? "Test USDC" : assets[0].symbol, assets[1].symbol];
   }
-  if (deployment.tokenAddresses) {
-    return [
-      `Token 1 · ${shortAddress(deployment.tokenAddresses[0])}`,
-      `Token 2 · ${shortAddress(deployment.tokenAddresses[1])}`,
-    ];
-  }
-  return ["Token 1", "Token 2"];
+  return deployment.id === "usdc" ? ["Test USDC", "DEMO-USD"] : ["Token 1", "Token 2"];
 }
 
 function defaultAmounts(policy: Policy | null): readonly [string, string] {
@@ -203,7 +199,7 @@ function PolicyFields({
       <fieldset className="wallet-permission-fields" disabled={disabled}>
         <legend>Allowed capabilities <InfoHint term="mandate" /></legend>
         <div>
-          {permissions.map((permission) => {
+          {permissions.filter((permission) => permission !== "pay" || deployment.paymentsSupported).map((permission) => {
             const needsPool = ["swap", "manage-liquidity", "collect-fees", "exit-liquidity"].includes(permission);
             return (
               <label key={permission} title={needsPool && !canUsePoolCapabilities ? "No pool is configured in the deployment manifest." : undefined}>
@@ -273,7 +269,6 @@ export function WalletControlsPanel({
     ? parentAgentConnected
     : ownerConnected;
   const selectedAgentConnected = Boolean(liveStateReady && walletAddress && walletOnSepolia && selectedNode.agentAddress.toLowerCase() === walletAddress.toLowerCase());
-  const canClaimDemoTokens = deployment.contractsConfigured && walletOnSepolia && walletAddress !== null && Boolean(actions.claimDemoTokens);
   const canCreateRoot = deployment.contractsConfigured && walletOnSepolia && walletAddress !== null && Boolean(actions.createRoot);
   const canManageRoot = ownerConnected && Boolean(actions.fundRoot && actions.setRootOperator);
   const canSpawn = selectedNode.state === "active" && selectedNode.authorizedPermissions.includes("delegate") && data.source === "direct-rpc" && data.contractsConfigured && selectedAgentConnected && Boolean(actions.spawnChild);
@@ -330,9 +325,10 @@ export function WalletControlsPanel({
           {deployment.contractsConfigured ? deployment.poolConfigured ? "Sepolia pool ready" : "Contracts ready · pool pending" : "Contract deployment pending"}
         </span>
       </div>
-      <p className="wallet-controls-intro">Every action is simulated before your wallet is asked to sign. Each Sepolia wallet can claim both valueless demo tokens once.</p>
+      <p className="wallet-controls-intro">Every action is simulated before your wallet is asked to sign. Get Test USDC from Circle’s faucet; this dashboard never mints USDC. DEMO-USD is valueless.</p>
       <div className="wallet-action-shortcuts">
-        <button className="button button-secondary button-small" type="button" disabled={!canClaimDemoTokens || busy} onClick={() => void actions.claimDemoTokens?.().catch(() => undefined)}>Claim demo tokens</button>
+        <a className="button button-secondary button-small" href="https://faucet.circle.com/" target="_blank" rel="noreferrer">Get test USDC <ArrowUpRight size={13} aria-hidden="true" /></a>
+        {deployment.demoQuoteAddress && <button className="button button-secondary button-small" type="button" disabled={!walletAddress || !walletOnSepolia || busy || !actions.claimDemoQuote} onClick={() => void actions.claimDemoQuote?.().catch(() => undefined)}>Get DEMO-USD</button>}
         <button className="button button-secondary button-small" type="button" disabled={!canCreateRoot || busy} onClick={() => toggle("create-root")}>Create root</button>
         <button className="button button-secondary button-small" type="button" disabled={!canManageRoot || busy} onClick={() => toggle("fund-root")}>Fund root</button>
         <button className="button button-secondary button-small" type="button" disabled={!canManageRoot || busy} onClick={() => toggle("set-root-operator")}>Bind operator</button>
@@ -341,8 +337,8 @@ export function WalletControlsPanel({
         <button className="button button-danger button-small" type="button" disabled={!canRevoke || busy} onClick={() => toggle("revoke-subtree")}>Revoke subtree</button>
         <button className="button button-danger button-small" type="button" disabled={!canOpenRecovery || busy} onClick={() => toggle("owner-recovery")}>Owner recovery</button>
       </div>
-      {!deployment.contractsConfigured && <p className="wallet-controls-pending">Wallet actions unlock when the manifest records the controller and both demo-token addresses as deployed.</p>}
-      {deployment.contractsConfigured && !deployment.poolConfigured && <p className="wallet-controls-pending">Root creation, funding, operator binding, and capital controls are available. Swap and LP capabilities remain disabled until the pool is initialized and seeded.</p>}
+      {!deployment.contractsConfigured && <p className="wallet-controls-pending">Wallet actions unlock when the USDC controller and both configured tokens are deployed.</p>}
+      {deployment.contractsConfigured && !deployment.poolConfigured && <p className="wallet-controls-pending">Root creation, funding, operator binding, and capital controls are available. Swap and LP capabilities remain disabled until the USDC pool is initialized and seeded.</p>}
       {!walletAddress && <p className="wallet-controls-pending">Connect an injected wallet on Sepolia. Owner and agent actions stay unavailable until the connected account matches on-chain authority.</p>}
       {walletAddress && !walletOnSepolia && <p className="wallet-controls-pending">Switch your wallet to Sepolia to enable wallet actions. The connected account is not checked for vault authority on another network.</p>}
       {data.source === "direct-rpc" && walletAddress && walletOnSepolia && !ownerConnected && !selectedAgentConnected && !selectedOwnerOrParentAgent && (

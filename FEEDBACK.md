@@ -4,11 +4,11 @@ Implemented on Ethereum Sepolia with testnet and browser evidence. This records 
 
 ## Integration
 
-Agents receive separate ENSv2-authorized vaults. Each vault is restricted to the same two valueless demo assets and one fixed v4 pool. Its controller checks inherited policy and current authority before allowing a typed swap or LP action. The vault owns its PositionManager NFT and keeps all outputs; an agent cannot supply arbitrary router commands or redirect recipients.
+Agents receive separate ENSv2-authorized vaults. Each vault is restricted to official Circle Sepolia Test-USDC, a valueless six-decimal DEMO-USD quote, and one fixed v4 pool. Its controller checks inherited policy and current authority before allowing a typed swap or LP action. The vault owns its PositionManager NFT and keeps all outputs; an agent cannot supply arbitrary router commands or redirect recipients.
 
 The useful distinction is between permission to manage liquidity, permission to collect fees, and permission to close the position. Revoking management does not remove market exposure. A separate owner recovery path must work even if the ENS namespace or the agent runtime becomes unavailable.
 
-Source: [CapitalController](contracts/src/CapitalController.sol), [CapitalVault](contracts/src/CapitalVault.sol), [fixed pool parameters](contracts/src/uniswap/FixedPool.sol). Final deployment receipts and acceptance status are tracked in [deployments/sepolia.json](deployments/sepolia.json) and [STATUS.md](STATUS.md).
+Source: [CapitalController](contracts/src/CapitalController.sol), [CapitalVault](contracts/src/CapitalVault.sol), [fixed pool parameters](contracts/src/uniswap/FixedPool.sol). Final deployment receipts and acceptance status are tracked in [deployments/usdc-sepolia.json](deployments/usdc-sepolia.json) and [STATUS.md](STATUS.md).
 
 ## Findings so far
 
@@ -19,6 +19,10 @@ Source: [CapitalController](contracts/src/CapitalController.sol), [CapitalVault]
 - Deployments and source versions must be pinned together. The Sepolia PositionManager's PoolManager and Permit2 getters have been checked against the intended addresses. Our factory also rejects mismatched links.
 
 ## Validation status
+
+The new USDC/DEMO-USD version passed a local Sepolia fork with pool initialization, LP opening/closure, x402 payment and complete remaining-capital recovery. Closing the LP left1rawUSDC unit of rounding dust. [Current fork evidence](deployments/usdc-x402-fork.json) records exact outcomes; current public deployment status is in STATUS.md.
+
+The following reports document the earlier ACT-token implementation, not a compatibility mode in the current UI:
 
 The staged Foundry suite passes all 25 tests, including 256 fuzz cases, a real local v4 mint–increase–collect–burn cycle and ENS-independent owner recovery. A disposable Sepolia fork at block 11781277 additionally passed runtime swap/LP actions against the deployed PoolManager, PositionManager and actual Permit2, followed by owner close and complete recovery.
 

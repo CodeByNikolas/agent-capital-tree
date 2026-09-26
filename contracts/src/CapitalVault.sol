@@ -15,10 +15,43 @@ import {Actions} from "@uniswap/v4-periphery/src/libraries/Actions.sol";
 import {IAllowanceTransfer} from "permit2/src/interfaces/IAllowanceTransfer.sol";
 import {IERC721Receiver} from "@openzeppelin/contracts/token/ERC721/IERC721Receiver.sol";
 import {IERC721} from "@openzeppelin/contracts/token/ERC721/IERC721.sol";
+import {IERC1271} from "@openzeppelin/contracts/interfaces/IERC1271.sol";
+import {ECDSA} from "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
 
-/// @notice Token custody for one tree node. Only its immutable controller can move funds.
-contract CapitalVault is IUnlockCallback, IERC721Receiver {
+interface IEIP3009Domain {
+    function DOMAIN_SEPARATOR() external view returns (bytes32);
+}
+
+interface ICapitalPaymentController {
+    function checkPayment(
+        address vault,
+        address actor,
+        uint8 tokenIndex,
+        uint256 amount,
+        uint64 validBefore,
+        bytes32 nonce
+    ) external view;
+}
+
+/// @notice Token custody for one tree node with controller-authorized operations and EIP-3009 payments.
+contract CapitalVault is IUnlockCallback, IERC721Receiver, IERC1271 {
     using SafeERC20 for IERC20;
+
+    struct PaymentAuthorization {
+        address token;
+        address recipient;
+        uint256 value;
+        uint256 validAfter;
+        uint256 validBefore;
+        bytes32 nonce;
+        bytes agentSignature;
+    }
+
+    bytes4 private constant ERC1271_MAGIC_VALUE = IERC1271.isValidSignature.selector;
+    bytes4 private constant ERC1271_INVALID_VALUE = 0xffffffff;
+    bytes32 private constant TRANSFER_WITH_AUTHORIZATION_TYPEHASH = keccak256(
+        "TransferWithAuthorization(address from,address to,uint256 value,uint256 validAfter,uint256 validBefore,bytes32 nonce)"
+    );
 
     error OnlyController();
     error InvalidController();
@@ -61,6 +94,86 @@ contract CapitalVault is IUnlockCallback, IERC721Receiver {
     function transferToken(IERC20 token, address recipient, uint256 amount) external {
         if (msg.sender != CONTROLLER) revert OnlyController();
         token.safeTransfer(recipient, amount);
+    }
+
+    /// @notice Validates a current operator's exact EIP-3009 authorization for an allowed vault token.
+    /// @dev Signature bytes are abi.encode(token, to, value, validAfter, validBefore, nonce, 65-byte ECDSA signature).
+    function isValidSignature(bytes32 digest, bytes calldata signature) external view override returns (bytes4) {
+        uint8 tokenIndex;
+        if (signature.length != 352) return ERC1271_INVALID_VALUE;
+
+        uint256 tokenWord;
+        uint256 recipientWord;
+        uint256 signatureOffset;
+        uint256 agentSignatureLength;
+        assembly ("memory-safe") {
+            tokenWord := calldataload(signature.offset)
+            recipientWord := calldataload(add(signature.offset, 32))
+            signatureOffset := calldataload(add(signature.offset, 192))
+            agentSignatureLength := calldataload(add(signature.offset, 224))
+        }
+        if (
+            tokenWord > type(uint160).max || recipientWord > type(uint160).max || signatureOffset != 224
+                || agentSignatureLength != 65
+        ) {
+            return ERC1271_INVALID_VALUE;
+        }
+
+        PaymentAuthorization memory authorization;
+        (
+            authorization.token,
+            authorization.recipient,
+            authorization.value,
+            authorization.validAfter,
+            authorization.validBefore,
+            authorization.nonce,
+            authorization.agentSignature
+        ) = abi.decode(signature, (address, address, uint256, uint256, uint256, bytes32, bytes));
+        if (authorization.token == address(TOKEN0)) tokenIndex = 0;
+        else if (authorization.token == address(TOKEN1)) tokenIndex = 1;
+        else return ERC1271_INVALID_VALUE;
+        if (
+            authorization.recipient == address(0) || authorization.recipient == address(this)
+                || authorization.value == 0 || authorization.agentSignature.length != 65
+                || authorization.validBefore > type(uint64).max || block.timestamp <= authorization.validAfter
+                || block.timestamp >= authorization.validBefore
+        ) return ERC1271_INVALID_VALUE;
+
+        bytes32 structHash = keccak256(
+            abi.encode(
+                TRANSFER_WITH_AUTHORIZATION_TYPEHASH,
+                address(this),
+                authorization.recipient,
+                authorization.value,
+                authorization.validAfter,
+                authorization.validBefore,
+                authorization.nonce
+            )
+        );
+        bytes32 domainSeparator = bytes32(0);
+        try IEIP3009Domain(authorization.token).DOMAIN_SEPARATOR() returns (bytes32 result) {
+            domainSeparator = result;
+        } catch {
+            return ERC1271_INVALID_VALUE;
+        }
+        bytes32 authorizationDigest = keccak256(abi.encodePacked("\x19\x01", domainSeparator, structHash));
+        if (authorizationDigest != digest) return ERC1271_INVALID_VALUE;
+
+        (address actor, ECDSA.RecoverError error,) = ECDSA.tryRecover(digest, authorization.agentSignature);
+        if (error != ECDSA.RecoverError.NoError) return ERC1271_INVALID_VALUE;
+        try ICapitalPaymentController(CONTROLLER)
+            .checkPayment(
+                address(this),
+                actor,
+                tokenIndex,
+                authorization.value,
+                uint64(authorization.validBefore),
+                authorization.nonce
+            ) {
+            return ERC1271_MAGIC_VALUE;
+        } catch {
+            return ERC1271_INVALID_VALUE;
+        }
     }
 
     /// @notice Exact-input swap in the one fixed no-hook pool; output remains in this vault.

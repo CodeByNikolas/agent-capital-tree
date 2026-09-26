@@ -59,7 +59,6 @@ export function McpPanel({
   const deploymentFacts: [string, string][] = [
     ["Network", `${deployment.network} (chainId ${deployment.chainId})`],
     ["Controller", deployment.controllerAddress ?? "not deployed yet"],
-    ["Default root", deployment.defaultRootId ?? "—"],
     ["ENS namespace", deployment.namespaceName],
     ["Selected vault", selectedNode?.ensName ?? "—"],
   ];

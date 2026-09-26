@@ -1,0 +1,27 @@
+{
+  "base": "http://127.0.0.1:3040",
+  "checkedAt": "2026-09-26T08:59:23.291Z",
+  "rootId": "1",
+  "rootNodeId": "1",
+  "childNodeId": "2",
+  "checks": [
+    "USDC root and child vault addresses or ENS names resolve to the same tree",
+    "Public vault lookup accepts ENS names or contract addresses only",
+    "root desktop: ?vault route context, Circle faucet link, and PAY label",
+    "child desktop: ?vault route context, Circle faucet link, and PAY label",
+    "root mobile: ?vault route context, Circle faucet link, and PAY label",
+    "child mobile: ?vault route context, Circle faucet link, and PAY label"
+  ],
+  "screenshots": [
+    "usdc-root-desktop.png",
+    "usdc-root-mobile.png",
+    "usdc-child-desktop.png",
+    "usdc-child-mobile.png"
+  ],
+  "transactionsSent": 0,
+  "realWalletTested": false,
+  "limitations": [
+    "MultiBaas controller history excludes token-direct Circle USDC Transfer events; activity is not a complete x402 payment history.",
+    "This read-only browser check does not exercise x402 settlement or sign wallet transactions."
+  ]
+}

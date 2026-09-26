@@ -128,6 +128,7 @@ contract CapitalController is ReentrancyGuard {
     mapping(uint256 => uint8) public rootNodeCount;
     mapping(uint256 => uint256[]) private _rootNodeIds;
     mapping(bytes32 => Operation) private _operations;
+    mapping(address => uint256) private _nodeIdByVault;
 
     constructor(
         IPermissionedRegistry ethRegistry,
@@ -192,6 +193,7 @@ contract CapitalController is ReentrancyGuard {
         node.registry = PROJECT_REGISTRY;
         node.childRegistry = NODE_FACTORY.createRegistry(LABEL_STORE, PROJECT_REGISTRY, label);
         node.vault = NODE_FACTORY.createVault();
+        _nodeIdByVault[address(node.vault)] = rootId;
         PROJECT_REGISTRY.register(label, msg.sender, node.childRegistry, address(0), 0, policy.expiry);
         node.resource = PROJECT_REGISTRY.getResource(uint256(keccak256(bytes(label))));
         rootOwner[rootId] = msg.sender;
@@ -357,6 +359,27 @@ contract CapitalController is ReentrancyGuard {
         }
     }
 
+    /// @notice Checks an EIP-3009 authorization signed by a node's current operator.
+    function checkPayment(
+        address vault,
+        address actor,
+        uint8 tokenIndex,
+        uint256 amount,
+        uint64 validBefore,
+        bytes32 nonce
+    ) external view {
+        uint256 nodeId = _nodeIdByVault[vault];
+        if (
+            msg.sender != vault || nodeId == 0 || tokenIndex >= 2 || amount == 0
+                || uint64(uint256(nonce) >> 192) != _nodes[nodeId].generation
+        ) revert Unauthorized();
+        Policy memory effective = _authorize(nodeId, FinanceRoles.PAY, actor);
+        if (
+            effective.tokenMask & (1 << tokenIndex) == 0 || amount > effective.maxAmounts[tokenIndex]
+                || validBefore > effective.expiry
+        ) revert Unauthorized();
+    }
+
     function swap(
         uint256 nodeId,
         bool zeroForOne,
@@ -495,6 +518,7 @@ contract CapitalController is ReentrancyGuard {
         node.registry = parent.childRegistry;
         node.childRegistry = NODE_FACTORY.createRegistry(LABEL_STORE, parent.childRegistry, label);
         node.vault = NODE_FACTORY.createVault();
+        _nodeIdByVault[address(node.vault)] = nodeId;
         node.registry.register(label, agent, node.childRegistry, address(0), 0, policy.expiry);
         node.resource = node.registry.getResource(uint256(keccak256(bytes(label))));
         node.registry.grantRoles(node.resource, policy.capabilities, agent);
@@ -535,7 +559,7 @@ contract CapitalController is ReentrancyGuard {
 
     function _authorize(uint256 nodeId, uint256 role, address actor) private view returns (Policy memory effective) {
         Node storage node = _node(nodeId);
-        if (role == 0 || role & ~FinanceRoles.ALL != 0 || node.agent != actor || actor == address(0)) {
+        if (role == 0 || role & ~FinanceRoles.KNOWN != 0 || node.agent != actor || actor == address(0)) {
             revert Unauthorized();
         }
         if (node.generation != rootGeneration[node.rootId] || rootOperator[node.rootId] == address(0)) {
@@ -608,7 +632,7 @@ contract CapitalController is ReentrancyGuard {
 
     function _validatePolicy(Policy calldata policy, bool requireFuture) private view {
         if (
-            policy.capabilities & ~FinanceRoles.ALL != 0 || policy.tokenMask & ~uint8(3) != 0
+            policy.capabilities & ~FinanceRoles.KNOWN != 0 || policy.tokenMask & ~uint8(3) != 0
                 || (requireFuture && policy.expiry <= block.timestamp)
                 || (policy.tokenMask & 1 == 0 && policy.maxAmounts[0] != 0)
                 || (policy.tokenMask & 2 == 0 && policy.maxAmounts[1] != 0)

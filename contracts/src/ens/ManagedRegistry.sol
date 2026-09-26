@@ -21,8 +21,9 @@ contract ManagedRegistry is PermissionedRegistry {
     uint256 public constant EXIT_LP = FinanceRoles.EXIT_LP;
     uint256 public constant RESTRICT = FinanceRoles.RESTRICT;
     uint256 public constant RECLAIM = FinanceRoles.RECLAIM;
+    uint256 public constant PAY = FinanceRoles.PAY;
 
-    uint256 private constant FINANCE_ADMIN = FinanceRoles.ALL << 128;
+    uint256 private constant FINANCE_ADMIN = FinanceRoles.KNOWN << 128;
 
     constructor(ILabelStore labelStore, address controller, IRegistry parent, string memory label)
         PermissionedRegistry(labelStore, controller, RegistryRolesLib.ROLE_REGISTRAR | FINANCE_ADMIN)

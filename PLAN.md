@@ -4,6 +4,8 @@ Stand: 26. September 2026. Produktentscheidungen sind festgelegt; Implementierun
 
 ## Aktuelle Erweiterung: offizielles Sepolia-USDC und x402
 
+Nutzerkorrektur26.09.: Rapid Prototyping ohne Abwärtskompatibilität. Das Frontend wird ausschließlich auf die neue USDC-Version umgestellt; keine Versionsauswahl, keine Legacy-Linkauflösung oder Migration. Bereits vorhandenes Onchain-Kapital wird dadurch nicht verändert.
+
 Nutzerauftrag26.09.: Die bestätigten20 Circle-Test-USDC werden für eine additive USDC-Version genutzt. Bestehende ACT-A/B-Contracts, ENS-Verknüpfungen und Root1 bleiben erhalten. Eine neue Version benötigt einen eigenen ENS-Namespace und neue unveränderliche Factories/Controller. Offizieller Token: `0x1c7D4B196Cb0C7B01d743Fbc6116a902379C7238`, sechs Dezimalstellen, Chain11155111.
 
 Reihenfolge: (1) Kapitaldelegation/Rückholung mit echtem Circle-Vertrag lokal forken; (2) enges PAY-Recht und EIP-3009/ERC-1271-Verifikation mit aktuellem ENS-Mandat, exakt gebundenem Empfänger/Betrag/Nonce/Zeitfenster; (3) standardkonformer HTTP402-Ablauf mit ausdrücklich Sepolia-fähigem Facilitator; (4) öffentliche additive Deployment-/Indexierungsabnahme; (5) UI, Companion, Anleitung und Vercel aktualisieren. Keine allgemeinen Transaktionen, keine stillschweigende PAY-Erweiterung vorhandener Policies, kein mint-Aufruf auf Circle-USDC. Bestehende Regeln für Aktionslimits gelten weiterhin; tatsächlicher Vault-Bestand begrenzt Gesamtverbrauch. USDC allein ist noch keine x402-Integration.
@@ -14,7 +16,7 @@ Reihenfolge: (1) Kapitaldelegation/Rückholung mit echtem Circle-Vertrag lokal f
 
 Die bisherige überladene Ein-Seiten-Ansicht wird durch fünf echte, direkt adressierbare Seiten ersetzt: Übersicht, Agentenbaum, Aktivität, Anwendungen und Einrichtung. shadcn/ui Sidebar ist verbindlich; Badge, Button, Card, Sheet und Table werden nach Bedarf verwendet. Frontend Design, Impeccable und shadcn-MCP begleiten die Umsetzung. Eine ruhige Oberfläche, lesbare Schrift (16px Fließtext, mindestens14px ergänzende Informationen), großzügige Abstände und systemabhängiger Hell-/Dunkelmodus sind Abnahmekriterien.
 
-Der Baum erhält den gesamten Arbeitsbereich seiner Seite. Knotenauswahl öffnet verständliche Details zu Kapital, ENS-Namen, tatsächlichen Rechten und geerbten Grenzen. Root-/Preview-Kontext bleibt beim Seitenwechsel erhalten. Die Übersicht enthält nur die wichtigsten Zustandsinformationen und nächste Schritte; ausführliche Historie und LP-Verwaltung liegen auf eigenen Seiten. Das Produkt wird als delegiertes Agentenkapital dargestellt. Trading ist eine vorhandene Anwendung; Payments und Service-Einkäufe sind mögliche Erweiterungen, keine bereits implementierten Fähigkeiten.
+Der Baum erhält den gesamten Arbeitsbereich seiner Seite. Knotenauswahl öffnet verständliche Details zu Kapital, ENS-Namen, tatsächlichen Rechten und geerbten Grenzen. Root-/Preview-Kontext bleibt beim Seitenwechsel erhalten. Die Übersicht enthält nur die wichtigsten Zustandsinformationen und nächste Schritte; ausführliche Historie und LP-Verwaltung liegen auf eigenen Seiten. Das Produkt wird als delegiertes Agentenkapital dargestellt. Trading ist eine vorhandene Anwendung; x402-Service-Einkäufe gehören inzwischen zum USDC-Umfang; allgemeine Transaktionen und Währungsumrechnung bleiben Future Work.
 
 Alle Live-APIs, Wallet-Aktionen, Owner-Rückholung, Fehler-/Veraltungsgrenzen und die ehrliche MultiBaas-Abdeckungsanzeige bleiben erhalten. Keine neue Contract-Funktion und keine Wiederholung abgeschlossener Finanzläufe für dieses Redesign. GPT-6 Sol High implementiert in separatem Worktree; der Hauptagent prüft Änderungen, aktualisiert den read-only Browser-Smoke, testet Desktop/Mobil, beide Farbschemata, Tastatur/Details und Routenwechsel. Kohärente Änderungen werden einzeln geprüft und committet, danach gepusht und auf Vercel veröffentlicht.
 
@@ -34,7 +36,7 @@ World ist ausgeschlossen. Wir planen drei Partner, keine vierte Integration. Meh
 
 - Ethereum Sepolia (Chain-ID 11155111), maximal drei Agentenebenen einschließlich Root und 32 Knoten je Root.
 - Öffentliches Factory-System für eigene Nutzer-Roots unter einem verifizierten Projekt-ENS-Namespace. Jeder Nutzer braucht nur seine eigene Wallet, kein individuelles ENS-Kauf-Onboarding.
-- Zwei eigene, eindeutig als wertlose Demo-Assets bezeichnete Standard-ERC-20-Tokens; keine Rebasing-/Fee-on-transfer-Tokens. Beträge werden ausschließlich in rohen Token-Einheiten abgerechnet.
+- Offizielle Circle-Test-USDC und ein eigener, ausdrücklich wertloser sechsstelliger DEMO-USD-Token; keine Rebasing-/Fee-on-transfer-Tokens. Beträge werden ausschließlich in rohen Token-Einheiten abgerechnet.
 - Ein erlaubter Uniswap-v4-Pool ohne Custom Hook, feste Gebührenstufe und fester Tick-Bereich; höchstens eine aktive LP-Position je Vault.
 - Eigener Codex-Plugin-/MCP-Flow; Aufgaben werden in Codex erteilt. Ein Next.js-Dashboard zeigt Zustand und erlaubt Wallet-Verwaltungsaktionen.
 - Isolierte Docker-Worker mit getrennten Schlüsseln und Workspaces. HomeBox ist Demo-Laufzeit, nicht Pflichtinfrastruktur für die Jury.

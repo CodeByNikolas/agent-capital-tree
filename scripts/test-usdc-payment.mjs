@@ -1,0 +1,68 @@
+import assert from 'node:assert/strict';
+import { readFile, writeFile, mkdir } from 'node:fs/promises';
+import { homedir } from 'node:os';
+import { join } from 'node:path';
+import { createRequire } from 'node:module';
+import { Contract, JsonRpcProvider, Wallet, ZeroHash, id, keccak256 } from 'ethers';
+import { WorkerKeyStore, paymentHandler } from '../packages/runtime/dist/index.js';
+import { journaledTransaction } from './lib/sepolia-transactions.mjs';
+import { startX402DemoService } from './lib/x402-demo-service.mjs';
+const require=createRequire(new URL('../packages/runtime/package.json',import.meta.url));
+const {createWalletClient,http,publicActions,encodeFunctionData}=require('viem');
+const {privateKeyToAccount}=require('viem/accounts');
+const {sepolia}=require('viem/chains');
+const {ExactEvmScheme}=require('@x402/evm/exact/facilitator');
+const {toFacilitatorEvmSigner}=require('@x402/evm');
+const manifest=JSON.parse(await readFile(new URL('../deployments/usdc-sepolia.json',import.meta.url),'utf8'));
+const reportPath=new URL('../deployments/usdc-payment.json',import.meta.url);
+const directory=join(homedir(),'.agent-capital-tree/usdc-payment');
+const rpcUrl='https://ethereum-sepolia.publicnode.com';
+const rpc=new JsonRpcProvider(rpcUrl);
+let seller;
+try {
+  assert.equal((await rpc.getNetwork()).chainId,11155111n);
+  assert.equal(manifest.status,'deployed');
+  assert(manifest.multibaas?.label,'Configure indexing before creating demo activity');
+  try {const done=JSON.parse(await readFile(reportPath,'utf8')); if(done.status==='confirmed'){console.log(JSON.stringify({status:'already-completed',transactionHash:done.payment.transactionHash}));process.exit(0);}}catch(error){if(error.code!=='ENOENT')throw error;}
+  if(!process.argv.includes('--execute')) {console.log(JSON.stringify({mode:'inspect',rootId:manifest.bootstrap.rootId,controller:manifest.contracts.CapitalController.address,priceUSDC:'0.01',childAllocationUSDC:'0.25'}));process.exit(0);}
+  await mkdir(directory,{recursive:true,mode:0o700});
+  const keys=join(homedir(),'.agent-capital-tree/keys');
+  const owner=(await Wallet.fromEncryptedJson(await readFile(join(keys,'jury-e2e.keystore.json'),'utf8'),await readFile(join(keys,'jury-e2e.password'),'utf8'))).connect(rpc);
+  assert.equal(owner.address,manifest.deployer);
+  const workerKeys=new WorkerKeyStore(join(directory,'keys'));
+  const childAccount=await workerKeys.account('researcher',true);
+  const artifact=JSON.parse(await readFile(new URL('../contracts/out/CapitalController.sol/CapitalController.json',import.meta.url),'utf8'));
+  const controller=new Contract(manifest.contracts.CapitalController.address,artifact.abi,owner);
+  const rootId=BigInt(manifest.bootstrap.rootId),root=await controller.getNode(rootId);
+  const generation=await controller.rootGeneration(rootId);
+  assert.equal(root.agent.toLowerCase(),owner.address.toLowerCase());
+  const policy={capabilities:1n<<68n,maxAmounts:[250000n,0n],expiry:BigInt(manifest.bootstrap.policyExpiry),tokenMask:1,poolId:ZeroHash};
+  assert.equal(manifest.tokens[0].address.toLowerCase(),manifest.token.address.toLowerCase());
+  const operationKey=id('usdc-demo-researcher');
+  const {receipt:spawnReceipt}=await journaledTransaction({rpc,signer:owner,directory,name:'spawn-researcher',request:await controller.spawnChild.populateTransaction(rootId,'researcher',childAccount.address,policy,[250000n,0n],operationKey)});
+  const operation=await controller.getOperation(rootId,rootId,generation,operationKey);
+  assert(operation.nodeId>0n);
+  const child=await controller.getNode(operation.nodeId);
+  assert.equal(child.agent.toLowerCase(),childAccount.address.toLowerCase());
+  const token=new Contract(manifest.token.address,['function balanceOf(address) view returns(uint256)'],rpc);
+  const combined=createWalletClient({account:privateKeyToAccount(owner.privateKey),chain:sepolia,transport:http(rpcUrl)}).extend(publicActions);
+  const boundedSigner=toFacilitatorEvmSigner({...combined,address:owner.address,writeContract:async args=>{
+    assert.equal(args.address.toLowerCase(),manifest.token.address.toLowerCase());
+    assert.equal(args.functionName,'transferWithAuthorization');
+    const data=encodeFunctionData({abi:args.abi,functionName:args.functionName,args:args.args});
+    const {transaction}=await journaledTransaction({rpc,signer:owner,directory,name:`settle-${keccak256(data).slice(2,50)}`,request:{to:args.address,data},maxGasCostWei:1_000_000_000_000_000n});
+    return transaction.hash;
+  },sendTransaction:async()=>{throw Error('Generic facilitator sends are disabled');}});
+  const facilitator=new ExactEvmScheme(boundedSigner,{simulateInSettle:true});
+  seller=await startX402DemoService({facilitator,payTo:owner.address,allowedPayers:[child.vault],directory:join(directory,'seller'),port:43827});
+  const context={workerId:'usdc-demo-researcher',rootId:rootId.toString(),nodeId:child.id.toString(),authorityGeneration:generation.toString()};
+  const config={rpcUrl,controller:await controller.getAddress(),directory:join(directory,'buyer'),services:[{id:'research',url:seller.url,payTo:owner.address,maxAmount:'10000'}],accountFor:async()=>childAccount};
+  const args={serviceId:'research',maxAmount:'10000',operationKey:id('usdc-demo-research-purchase')};
+  const result=await paymentHandler(config)(context,args);
+  assert.equal(result.status,'confirmed');
+  assert.deepEqual(await paymentHandler(config)(context,args),result);
+  const childBalance=await token.balanceOf(child.vault);
+  assert.equal(childBalance,240000n);
+  const report={status:'confirmed',checkedAt:new Date().toISOString(),chainId:11155111,controller:await controller.getAddress(),rootId:rootId.toString(),rootVault:root.vault,childId:child.id.toString(),childVault:child.vault,childName:`researcher.capital.${manifest.ensNamespace.name}`,spawn:{hash:spawnReceipt.hash,block:spawnReceipt.blockNumber},payment:{transactionHash:result.transactionHash,amountRaw:result.amount,amountUSDC:'0.01',asset:result.asset,recipient:owner.address},childBalanceRaw:childBalance.toString(),retryChargedAgain:false,checks:['Official x402 SDK exact scheme verifies ERC1271 vault and settles Circle USDC on public Sepolia','HTTP402 payment-required → signed request → paid research response','Companion independently checks canonical Transfer and AuthorizationUsed receipt events','Recreated purchase handler returns cached result without another charge'],limitations:['Controlled loopback research seller with the test owner as recipient, not an independent commercial merchant','PAY ceilings are per payment; service allowlist is enforced by companion, not an onchain recipient allowlist','USDC Transfer events are not part of the controller-only MultiBaas history; payment receipt is the separate evidence','Root and researcher retain remaining demo capital for UI inspection']};
+  await writeFile(reportPath,JSON.stringify(report,null,2)+'\n');console.log(JSON.stringify(report));
+} finally {if(seller)await seller.close();rpc.destroy();}

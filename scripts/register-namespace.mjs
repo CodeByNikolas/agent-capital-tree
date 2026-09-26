@@ -39,8 +39,8 @@ const tokenData = await artifact('MockUSDC', '0xd3322b29a7bdee707d1684676f149bf4
 let signer = rpc;
 if (broadcast) {
   signer = (await Wallet.fromEncryptedJson(
-    await readFile(join(directory, 'keys/deployer.keystore.json'), 'utf8'),
-    await readFile(join(directory, 'keys/deployer.password'), 'utf8'),
+    await readFile(join(directory, usdcVersion ? 'keys/jury-e2e.keystore.json' : 'keys/deployer.keystore.json'), 'utf8'),
+    await readFile(join(directory, usdcVersion ? 'keys/jury-e2e.password' : 'keys/deployer.password'), 'utf8'),
   )).connect(rpc);
   if (signer.address !== manifest.deployer) throw new Error('Signer does not match deployment manifest');
 }

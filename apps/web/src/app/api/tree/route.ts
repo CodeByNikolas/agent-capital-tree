@@ -23,7 +23,7 @@ export async function GET(request: Request) {
 
   const deployment = getPublicDeployment();
   if (!deployment.contractsConfigured) {
-    return errorResponse("deployment_pending", "The public manifest does not contain a deployed controller and both demo tokens.", 503);
+    return errorResponse("deployment_pending", "The public manifest does not contain a deployed controller and both configured tokens.", 503);
   }
   if (!process.env.SEPOLIA_RPC_URL) {
     return errorResponse("rpc_unconfigured", "The server-side Sepolia RPC URL is not configured.", 503);
@@ -35,7 +35,7 @@ export async function GET(request: Request) {
   } catch (cause) {
     const detail = cause instanceof Error ? cause.message : "Unknown server error";
     if (detail === "deployment_pending") {
-      return errorResponse("deployment_pending", "The public manifest does not contain a deployed controller and both demo tokens.", 503);
+      return errorResponse("deployment_pending", "The public manifest does not contain a deployed controller and both configured tokens.", 503);
     }
     if (detail === "rpc_unconfigured") {
       return errorResponse("rpc_unconfigured", "The server-side Sepolia RPC URL is not configured.", 503);
@@ -47,7 +47,7 @@ export async function GET(request: Request) {
       return errorResponse("invalid_tree", "The controller returned inconsistent parent relationships.", 502);
     }
     if (detail === "deployment_token_mismatch") {
-      return errorResponse("deployment_token_mismatch", "The configured demo-token addresses do not match the controller. Live reads and wallet actions are disabled.", 409);
+      return errorResponse("deployment_token_mismatch", "The configured token addresses do not match the controller. Live reads and wallet actions are disabled.", 409);
     }
     if (detail === "live_snapshot_fields_unavailable") {
       return errorResponse("snapshot_incomplete", "The live snapshot is missing current EAC authority or LP position fields. Update the SDK deployment before using live controls.", 503);
