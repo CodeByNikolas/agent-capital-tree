@@ -1,5 +1,3 @@
-import sharp from 'sharp';
-
 const WIDTH = 960;
 const CARD_HEIGHT = 96;
 const ROW_GAP = 22;
@@ -69,11 +67,10 @@ export function treeAsSvg(tree) {
   const edges = ordered.filter(({ node }) => BigInt(node.parentId) !== 0n).map(({ node }) => {
     const parent = positions.get(String(node.parentId));
     const child = positions.get(String(node.id));
-    const startX = parent.x + 24;
-    const startY = parent.y + CARD_HEIGHT;
-    const endX = child.x;
+    const branchX = child.x - 25;
+    const startY = parent.y + CARD_HEIGHT / 2;
     const endY = child.y + CARD_HEIGHT / 2;
-    return `<path d="M ${startX} ${startY} V ${endY} Q ${startX} ${endY + 10} ${endX} ${endY + 10}" fill="none" stroke="#50637e" stroke-width="2"/>`;
+    return `<path d="M ${parent.x + 4} ${startY} H ${branchX} Q ${branchX - 7} ${startY} ${branchX - 7} ${startY + 7} V ${endY - 7} Q ${branchX - 7} ${endY} ${branchX} ${endY} H ${child.x}" fill="none" stroke="#59a7a7" stroke-width="2.5"/><circle cx="${branchX}" cy="${endY}" r="4" fill="#58dec3"/>`;
   }).join('');
   const cards = ordered.map(({ node, depth }) => {
     const { x, y } = positions.get(String(node.id));
@@ -82,14 +79,15 @@ export function treeAsSvg(tree) {
       BigInt(node.effectivePolicy.expiry) > BigInt(tree.source.timestamp);
     const status = active ? 'ACTIVE' : node.revoked ? 'REVOKED' : 'INACTIVE';
     const accent = active ? '#58dec3' : '#ffad78';
+    const selected = tree.selectedNodeId !== undefined && String(node.id) === String(tree.selectedNodeId);
     const role = depth === 0 ? 'ROOT' : `LEVEL ${depth + 1}`;
     const actions = (node.authorizedActions ?? []).slice(0, 4).join(' · ') || 'no active actions';
     const vault = `${String(node.vault).slice(0, 8)}…${String(node.vault).slice(-6)}`;
     const detailsX = x + 24;
     return `<g>
-      <rect x="${x}" y="${y}" width="${width}" height="${CARD_HEIGHT}" rx="17" fill="#18243a" stroke="#35455e"/>
+      <rect x="${x}" y="${y}" width="${width}" height="${CARD_HEIGHT}" rx="17" fill="${selected ? '#1c3145' : '#18243a'}" stroke="${selected ? '#58dec3' : '#35455e'}" stroke-width="${selected ? 3 : 1}"/>
       <rect x="${x}" y="${y + 15}" width="4" height="66" rx="2" fill="${accent}"/>
-      <text x="${detailsX}" y="${y + 29}" fill="#7e9bc1" font-size="13" font-weight="700" letter-spacing="1.1">${role} · #${xml(node.id)}</text>
+      <text x="${detailsX}" y="${y + 29}" fill="#7e9bc1" font-size="13" font-weight="700" letter-spacing="1.1">${role} · #${xml(node.id)}${selected ? ' · SELECTED' : ''}</text>
       <text x="${detailsX}" y="${y + 58}" fill="#f0f6ff" font-size="21" font-weight="650">${xml(short(node.ensName, 43))}</text>
       <text x="${detailsX}" y="${y + 80}" fill="#a6b7cf" font-size="13">Vault ${xml(vault)}  ·  ${xml(short(actions, 57))}</text>
       <text x="${x + width - 20}" y="${y + 29}" fill="${accent}" font-size="12" font-weight="700" text-anchor="end" letter-spacing="1">${status}</text>
@@ -110,5 +108,6 @@ export function treeAsSvg(tree) {
 }
 
 export async function treeAsPng(tree) {
+  const { default: sharp } = await import('sharp');
   return sharp(Buffer.from(treeAsSvg(tree))).png({ compressionLevel: 9 }).toBuffer();
 }

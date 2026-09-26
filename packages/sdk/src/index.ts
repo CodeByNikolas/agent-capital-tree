@@ -1,4 +1,4 @@
-import { BaseError, ContractFunctionRevertedError, parseAbi, createPublicClient, erc20Abi, getContract, http, type Address, type PublicClient, type HttpTransport, type GetContractReturnType, type ContractFunctionReturnType, type Hex } from 'viem';
+import { BaseError, ContractFunctionRevertedError, parseAbi, createPublicClient, erc20Abi, getContract, http, isAddress, type Address, type PublicClient, type HttpTransport, type GetContractReturnType, type ContractFunctionReturnType, type Hex } from 'viem';
 import { sepolia } from 'viem/chains';
 import { capitalControllerAbi } from './abi.js';
 import { financeRoles, type Capability } from './policy.js';
@@ -23,44 +23,63 @@ export type CapitalTree = {
   source: { kind: 'rpc'; chainId: number; blockNumber: bigint; blockHash: Hex; timestamp: bigint; observedAt: string };
 };
 export type CapitalClient = {
-  rpc: Rpc; controller: Controller; verifyDeployment(): Promise<void>; getTree(rootId: bigint): Promise<CapitalTree>;
+  rpc: Rpc; controller: Controller; verifyDeployment(): Promise<void>; getTree(rootId: bigint, blockNumber?: bigint): Promise<CapitalTree>;
+  resolveTree(query: string): Promise<{ tree: CapitalTree; selectedNodeId: bigint }>;
 };
 
 /** A chain-pinned read client. Wallets/signers stay with the caller. */
 export function capitalClient(rpcUrl: string, controllerAddress: Address): CapitalClient {
-  const rpc: PublicClient<HttpTransport, typeof sepolia> = createPublicClient({ chain: sepolia, transport: http(rpcUrl, { timeout: 15000, batch: { batchSize: 50, wait: 10 } }) });
+  const rpc: PublicClient<HttpTransport, typeof sepolia> = createPublicClient({ chain: sepolia, transport: http(rpcUrl, { timeout: 15000, batch: { batchSize: 8, wait: 20 } }) });
   const controller: GetContractReturnType<typeof capitalControllerAbi, typeof rpc> = getContract({ address: controllerAddress, abi: capitalControllerAbi, client: rpc });
+  let active = 0;
+  const waiting: Array<() => void> = [];
+  async function read<T>(action: () => Promise<T>): Promise<T> {
+    if (active >= 3) await new Promise<void>(resolve => waiting.push(resolve));
+    active++;
+    try {
+      for (let attempt = 0; ; attempt++) {
+        try { return await action(); }
+        catch (error) {
+          if (attempt >= 3 || !/\b429\b|Too Many Requests|rate limit/i.test(String(error))) throw error;
+          await new Promise(resolve => setTimeout(resolve, 450 * 2 ** attempt));
+        }
+      }
+    } finally {
+      active--;
+      waiting.shift()?.();
+    }
+  }
 
   async function verifyDeployment() {
-    if (await rpc.getChainId() !== CHAIN_ID) throw new Error('Expected Ethereum Sepolia');
-    const code = await rpc.getCode({ address: controllerAddress });
+    if (await read(() => rpc.getChainId()) !== CHAIN_ID) throw new Error('Expected Ethereum Sepolia');
+    const code = await read(() => rpc.getCode({ address: controllerAddress }));
     if (!code || code === '0x') throw new Error('Controller has not been deployed');
   }
 
-  async function getTree(rootId: bigint) {
+  async function getTree(rootId: bigint, blockNumber?: bigint) {
     await verifyDeployment();
-    const block = await rpc.getBlock();
+    const block = await read(() => rpc.getBlock(blockNumber === undefined ? {} : { blockNumber }));
     const at = { blockNumber: block.number };
     const [ids, owner, operator, generation, token0, token1, namespace] = await Promise.all([
-      controller.read.getRootNodeIds([rootId], at), controller.read.rootOwner([rootId], at),
-      controller.read.rootOperator([rootId], at), controller.read.rootGeneration([rootId], at),
-      controller.read.TOKEN0(at), controller.read.TOKEN1(at), controller.read.namespaceLabel(at),
+      read(() => controller.read.getRootNodeIds([rootId], at)), read(() => controller.read.rootOwner([rootId], at)),
+      read(() => controller.read.rootOperator([rootId], at)), read(() => controller.read.rootGeneration([rootId], at)),
+      read(() => controller.read.TOKEN0(at)), read(() => controller.read.TOKEN1(at)), read(() => controller.read.namespaceLabel(at)),
     ]);
     if (!ids.length || ids.length > 32) throw new Error('Invalid root tree');
     const tokens = [token0, token1] as const;
     const nodes = await Promise.all(ids.map(async id => {
-      const node = await controller.read.getNode([id], at);
+      const node = await read(() => controller.read.getNode([id], at));
       const [effectivePolicy, ...balances] = await Promise.all([
-        controller.read.getEffectivePolicy([id], at),
-        ...tokens.map(address => rpc.readContract({ address, abi: erc20Abi, functionName: 'balanceOf', args: [node.vault], ...at })),
+        read(() => controller.read.getEffectivePolicy([id], at)),
+        ...tokens.map(address => read(() => rpc.readContract({ address, abi: erc20Abi, functionName: 'balanceOf', args: [node.vault], ...at }))),
       ]);
       const [tokenId, liquidity, permissions] = await Promise.all([
-        rpc.readContract({ address: node.vault, abi: capitalVaultReadAbi, functionName: 'positionTokenId', ...at }),
-        rpc.readContract({ address: node.vault, abi: capitalVaultReadAbi, functionName: 'positionLiquidity', ...at }),
+        read(() => rpc.readContract({ address: node.vault, abi: capitalVaultReadAbi, functionName: 'positionTokenId', ...at })),
+        read(() => rpc.readContract({ address: node.vault, abi: capitalVaultReadAbi, functionName: 'positionLiquidity', ...at })),
         Promise.all(Object.values(financeRoles).map(async role => {
           if (!(effectivePolicy.capabilities & role)) return 0n;
           try {
-            await controller.read.checkAction([id, role, node.agent, 2, 0n], at);
+            await read(() => controller.read.checkAction([id, role, node.agent, 2, 0n], at));
             return role;
           } catch (error) {
             if (error instanceof BaseError && error.walk(cause => cause instanceof ContractFunctionRevertedError) instanceof ContractFunctionRevertedError) return 0n;
@@ -92,7 +111,53 @@ export function capitalClient(rpcUrl: string, controllerAddress: Address): Capit
         blockHash: block.hash, timestamp: block.timestamp, observedAt: new Date().toISOString() } };
   }
 
-  return { rpc, controller, verifyDeployment, getTree };
+  async function resolveTree(query: string) {
+    const input = query.trim();
+    if (/^[1-9]\d*$/.test(input)) {
+      const rootId = BigInt(input);
+      const tree = await getTree(rootId);
+      return { tree, selectedNodeId: rootId };
+    }
+    await verifyDeployment();
+    const block = await read(() => rpc.getBlock());
+    const at = { blockNumber: block.number };
+    const namespace = await read(() => controller.read.namespaceLabel(at));
+    const name = input.toLowerCase().replace(/\.$/, '');
+    const addressQuery = isAddress(input);
+    if (!addressQuery && (name.length > 253 || !name.endsWith(`.${namespace}.eth`) || !/^[a-z0-9-]+(?:\.[a-z0-9-]+)+$/.test(name))) {
+      throw new Error(`Enter a positive root ID, a vault address, or a full name under ${namespace}.eth`);
+    }
+    const next = await read(() => controller.read.nextNodeId(at));
+    if (next > 513n) throw new Error('Onchain vault directory exceeds the 512-node demo lookup limit');
+    const nodes = await Promise.all(Array.from({ length: Number(next - 1n) }, (_, index) =>
+      read(() => controller.read.getNode([BigInt(index + 1)], at))));
+    const byId = new Map(nodes.map(node => [node.id, node]));
+    let selected: (typeof nodes)[number] | undefined;
+    for (const node of nodes) {
+      if (addressQuery) {
+        if (node.vault.toLowerCase() === input.toLowerCase()) { selected = node; break; }
+      } else {
+        const labels = [node.label];
+        let parent = node.parentId;
+        for (let depth = 0; parent !== 0n && depth < 3; depth++) {
+          const ancestor = byId.get(parent);
+          if (!ancestor) throw new Error('Incomplete onchain tree');
+          labels.push(ancestor.label);
+          parent = ancestor.parentId;
+        }
+        if (parent !== 0n) throw new Error('Invalid onchain tree depth');
+        if ([...labels, namespace, 'eth'].join('.').toLowerCase() === name) { selected = node; break; }
+      }
+    }
+    if (!selected) throw new Error('No vault in this Sepolia deployment matches that name or address');
+    const tree = await getTree(selected.rootId, block.number);
+    if (!tree.nodes.some(node => node.id === selected.id && node.vault.toLowerCase() === selected.vault.toLowerCase())) {
+      throw new Error('Resolved node is absent from its root tree');
+    }
+    return { tree, selectedNodeId: selected.id };
+  }
+
+  return { rpc, controller, verifyDeployment, getTree, resolveTree };
 }
 
 /** A name-addressed authority attestation: what an agent may currently do under its ENS mandate. */

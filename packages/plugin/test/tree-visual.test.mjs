@@ -23,6 +23,7 @@ test('tree visual uses real hierarchy and raw six-decimal balances', async () =>
   assert.match(svg, /researcher\.capital\.agentcapitalusdc\.eth/);
   assert.match(svg, /BLOCK 42/);
   assert.match(treeAsMermaid(base), /n1 --> n2/);
+  assert.match(treeAsSvg({ ...base, selectedNodeId: 2n }), /LEVEL 2 · #2 · SELECTED/);
   const png = await treeAsPng(base);
   assert.equal(png.subarray(0, 8).toString('hex'), '89504e470d0a1a0a');
 });

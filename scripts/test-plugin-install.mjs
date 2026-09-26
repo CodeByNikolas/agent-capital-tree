@@ -98,10 +98,13 @@ try {
   assert.ok(BigInt(tree.source.blockNumber) >= BigInt(manifest.contracts.CapitalController.blockNumber));
   assert.ok(tree.nodes.length > 0);
   assert.equal(tree.tokens[0].toLowerCase(), manifest.token.address.toLowerCase());
+  assert.equal(result.content[2].type, 'image');
+  assert.ok(['image/png', 'image/svg+xml'].includes(result.content[2].mimeType));
+  assert.match(result.content[1].text, /Mermaid fallback:/);
   console.log(JSON.stringify({ pluginId: install.pluginId, cliVersion: version.trim(),
     mcpServer: registered.name, toolCount: listed.tools.length, rootId: tree.rootId,
     nodeCount: tree.nodes.length, chainId: tree.source.chainId,
-    blockNumber: tree.source.blockNumber, writes: 'disabled' }));
+    blockNumber: tree.source.blockNumber, imageMimeType: result.content[2].mimeType, writes: 'disabled' }));
 } finally {
   await client?.close().catch(() => {});
   if (server) await new Promise(resolve => server.close(resolve));

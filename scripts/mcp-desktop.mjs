@@ -24,7 +24,7 @@ async function close(code = 0) {
 try {
   await client.connect(transport);
   const tools = await client.listTools();
-  if (tools.tools.map(tool => tool.name).sort().join(',') !== 'getTree,visualizeTree') {
+  if (tools.tools.map(tool => tool.name).sort().join(',') !== 'getTree,prepareRootSetup,visualizeTree') {
     throw new Error('Unexpected MCP tool list');
   }
   const result = await client.callTool({ name: 'getTree', arguments: { rootId: '1' } });

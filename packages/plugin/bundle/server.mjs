@@ -36486,7 +36486,7 @@ var restrictions = external_exports.object({
   maxPerAction: external_exports.record(address, amount).optional()
 }).strict();
 var toolSpecs = {
-  getTree: { description: "Read a capital tree at one current RPC block. Each node includes authorizedActions (named capabilities checked onchain for its agent), the exact authorizedCapabilities bitmask, balances and LP state. delegate permits funding direct children; reclaim permits recovering direct children. These authority checks do not guarantee a future transaction: live policy, balances and simulation still apply.", schema: external_exports.object({ rootId: id }).strict(), readOnly: true },
+  getTree: { description: "For tree questions, call this tool and show its PNG graph in the chat. Accepts a numeric rootId or query containing a full ENS name or vault address. JSON and image come from the same Sepolia block and include selectedNodeId, checked onchain rights, balances, hierarchy, block and observation time; Mermaid is a fallback. Rights do not guarantee a future transaction.", schema: external_exports.union([external_exports.object({ rootId: id }).strict(), external_exports.object({ query: external_exports.string().min(1).max(253) }).strict()]), readOnly: true },
   getEffectivePolicy: { description: "Read a node mandate including inherited restrictions.", schema: external_exports.object({ nodeId: id }).strict(), readOnly: true },
   getCapitalActivity: { description: "Read paginated MultiBaas-indexed activity enriched from transaction receipts. verification.checks records independent canonical RPC checks of successful receipts, event identity and decoded financial values. Only confirmed/finalized entries are positive evidence. The index checkpoint can lag returned events; missing history does not prove inactivity. Check current getTree balances, named authority and LP state before acting.", schema: external_exports.object({ rootId: id, cursor: external_exports.string().max(512).optional() }).strict(), readOnly: true },
   getOperationStatus: { description: "Reconcile a submitted operation against runtime and chain state.", schema: external_exports.object({ operationKey }).strict(), readOnly: true },
@@ -36547,6 +36547,116 @@ var RuntimeClient = class {
   }
 };
 
+// tree-visual.mjs
+var WIDTH = 960;
+var CARD_HEIGHT = 96;
+var ROW_GAP = 22;
+var START_Y = 142;
+function xml(value) {
+  return String(value).replace(/[&<>"']/g, (character) => ({
+    "&": "&amp;",
+    "<": "&lt;",
+    ">": "&gt;",
+    '"': "&quot;",
+    "'": "&apos;"
+  })[character]);
+}
+function short(value, length = 44) {
+  const input2 = String(value);
+  return input2.length > length ? `${input2.slice(0, length - 1)}\u2026` : input2;
+}
+function amount2(raw) {
+  const value = BigInt(raw);
+  const integer2 = value / 1000000n;
+  const decimal = (value % 1000000n).toString().padStart(6, "0").replace(/0+$/, "");
+  return `${integer2.toLocaleString("en-US")}${decimal ? `.${decimal}` : ""}`;
+}
+function sortedNodes(tree) {
+  const byParent = /* @__PURE__ */ new Map();
+  for (const node2 of tree.nodes) {
+    const key = String(node2.parentId);
+    const siblings = byParent.get(key) ?? [];
+    siblings.push(node2);
+    byParent.set(key, siblings);
+  }
+  const ordered = [];
+  const seen = /* @__PURE__ */ new Set();
+  function visit2(node2, depth) {
+    const key = String(node2.id);
+    if (seen.has(key) || depth > 2) throw new Error("Invalid tree topology");
+    seen.add(key);
+    ordered.push({ node: node2, depth });
+    for (const child of byParent.get(key) ?? []) visit2(child, depth + 1);
+  }
+  const roots = byParent.get("0") ?? [];
+  if (roots.length !== 1) throw new Error("Expected one root node");
+  visit2(roots[0], 0);
+  if (seen.size !== tree.nodes.length) throw new Error("Disconnected tree node");
+  return ordered;
+}
+function treeAsMermaid(tree) {
+  const lines = ["flowchart TD"];
+  for (const { node: node2 } of sortedNodes(tree)) {
+    const label = short(node2.ensName, 55).replace(/[^a-zA-Z0-9 ._-]/g, "");
+    const state = !node2.revoked && BigInt(node2.generation) === BigInt(tree.generation) && BigInt(node2.effectivePolicy.expiry) > BigInt(tree.source.timestamp) ? "active" : "inactive";
+    lines.push(`  n${node2.id}["${label}<br/>${state} \xB7 ${amount2(node2.balances[0])} USDC"]`);
+    if (BigInt(node2.parentId) !== 0n) lines.push(`  n${node2.parentId} --> n${node2.id}`);
+  }
+  return lines.join("\n");
+}
+function treeAsSvg(tree) {
+  const ordered = sortedNodes(tree);
+  const height = START_Y + ordered.length * (CARD_HEIGHT + ROW_GAP) + 52;
+  const positions = new Map(ordered.map(({ node: node2, depth }, index) => [String(node2.id), {
+    x: 34 + depth * 58,
+    y: START_Y + index * (CARD_HEIGHT + ROW_GAP)
+  }]));
+  const edges = ordered.filter(({ node: node2 }) => BigInt(node2.parentId) !== 0n).map(({ node: node2 }) => {
+    const parent = positions.get(String(node2.parentId));
+    const child = positions.get(String(node2.id));
+    const branchX = child.x - 25;
+    const startY = parent.y + CARD_HEIGHT / 2;
+    const endY = child.y + CARD_HEIGHT / 2;
+    return `<path d="M ${parent.x + 4} ${startY} H ${branchX} Q ${branchX - 7} ${startY} ${branchX - 7} ${startY + 7} V ${endY - 7} Q ${branchX - 7} ${endY} ${branchX} ${endY} H ${child.x}" fill="none" stroke="#59a7a7" stroke-width="2.5"/><circle cx="${branchX}" cy="${endY}" r="4" fill="#58dec3"/>`;
+  }).join("");
+  const cards = ordered.map(({ node: node2, depth }) => {
+    const { x, y } = positions.get(String(node2.id));
+    const width = WIDTH - x - 34;
+    const active = !node2.revoked && BigInt(node2.generation) === BigInt(tree.generation) && BigInt(node2.effectivePolicy.expiry) > BigInt(tree.source.timestamp);
+    const status = active ? "ACTIVE" : node2.revoked ? "REVOKED" : "INACTIVE";
+    const accent = active ? "#58dec3" : "#ffad78";
+    const selected = tree.selectedNodeId !== void 0 && String(node2.id) === String(tree.selectedNodeId);
+    const role = depth === 0 ? "ROOT" : `LEVEL ${depth + 1}`;
+    const actions = (node2.authorizedActions ?? []).slice(0, 4).join(" \xB7 ") || "no active actions";
+    const vault = `${String(node2.vault).slice(0, 8)}\u2026${String(node2.vault).slice(-6)}`;
+    const detailsX = x + 24;
+    return `<g>
+      <rect x="${x}" y="${y}" width="${width}" height="${CARD_HEIGHT}" rx="17" fill="${selected ? "#1c3145" : "#18243a"}" stroke="${selected ? "#58dec3" : "#35455e"}" stroke-width="${selected ? 3 : 1}"/>
+      <rect x="${x}" y="${y + 15}" width="4" height="66" rx="2" fill="${accent}"/>
+      <text x="${detailsX}" y="${y + 29}" fill="#7e9bc1" font-size="13" font-weight="700" letter-spacing="1.1">${role} \xB7 #${xml(node2.id)}${selected ? " \xB7 SELECTED" : ""}</text>
+      <text x="${detailsX}" y="${y + 58}" fill="#f0f6ff" font-size="21" font-weight="650">${xml(short(node2.ensName, 43))}</text>
+      <text x="${detailsX}" y="${y + 80}" fill="#a6b7cf" font-size="13">Vault ${xml(vault)}  \xB7  ${xml(short(actions, 57))}</text>
+      <text x="${x + width - 20}" y="${y + 29}" fill="${accent}" font-size="12" font-weight="700" text-anchor="end" letter-spacing="1">${status}</text>
+      <text x="${x + width - 20}" y="${y + 58}" fill="#f0f6ff" font-size="17" font-weight="650" text-anchor="end">${xml(amount2(node2.balances[0]))} USDC</text>
+      <text x="${x + width - 20}" y="${y + 80}" fill="#a6b7cf" font-size="13" text-anchor="end">${xml(amount2(node2.balances[1]))} DEMO-USD</text>
+    </g>`;
+  }).join("");
+  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${WIDTH} ${height}" width="${WIDTH}" height="${height}" role="img" aria-label="Agent Capital Tree root ${xml(tree.rootId)} at Sepolia block ${xml(tree.source.blockNumber)}">
+    <rect width="${WIDTH}" height="${height}" fill="#0d1527"/>
+    <circle cx="882" cy="58" r="82" fill="#173b55" opacity=".34"/>
+    <circle cx="844" cy="66" r="47" fill="#285b67" opacity=".24"/>
+    <text x="34" y="52" fill="#f0f6ff" font-family="Segoe UI, Arial, sans-serif" font-size="27" font-weight="700">Agent Capital Tree</text>
+    <text x="34" y="80" fill="#a6b7cf" font-family="Segoe UI, Arial, sans-serif" font-size="15">Root #${xml(tree.rootId)} \xB7 ${ordered.length} agent${ordered.length === 1 ? "" : "s"} \xB7 Ethereum Sepolia</text>
+    <text x="34" y="111" fill="#58dec3" font-family="Segoe UI, Arial, sans-serif" font-size="13">LIVE READ  \xB7  BLOCK ${xml(tree.source.blockNumber)}  \xB7  ${xml(tree.source.observedAt)}</text>
+    <g font-family="Segoe UI, Arial, sans-serif">${edges}${cards}</g>
+    <text x="34" y="${height - 23}" fill="#7288a4" font-family="Segoe UI, Arial, sans-serif" font-size="12">Read-only snapshot \xB7 Test-USDC on Sepolia \xB7 No transaction submitted</text>
+  </svg>`;
+}
+async function treeAsPng(tree) {
+  const { default: sharp } = await import("sharp");
+  return sharp(Buffer.from(treeAsSvg(tree))).png({ compressionLevel: 9 }).toBuffer();
+}
+
 // src/server.ts
 var client = new RuntimeClient(process.env.ACT_RUNTIME_URL, process.env.ACT_MCP_TOKEN);
 var server = new McpServer({ name: "agent-capital-tree", version: "0.1.0" });
@@ -36558,6 +36668,25 @@ for (const [name, spec] of Object.entries(toolSpecs)) {
   }, async (args) => {
     try {
       const data = await client.call(name, args);
+      if (name === "getTree") {
+        const tree = data;
+        let image;
+        let mimeType = "image/png";
+        try {
+          image = await treeAsPng(tree);
+        } catch {
+          image = Buffer.from(treeAsSvg(tree));
+          mimeType = "image/svg+xml";
+        }
+        return { content: [
+          { type: "text", text: JSON.stringify(data) },
+          { type: "text", text: `Mermaid fallback:
+\`\`\`mermaid
+${treeAsMermaid(tree)}
+\`\`\`` },
+          { type: "image", data: image.toString("base64"), mimeType }
+        ] };
+      }
       return { content: [{ type: "text", text: JSON.stringify(data) }] };
     } catch (error62) {
       const message = error62 instanceof Error ? error62.message : "Local runtime request failed.";
