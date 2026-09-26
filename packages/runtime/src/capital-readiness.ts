@@ -26,6 +26,7 @@ export function capitalReadiness(tree: CapitalTree, localOperator: Address | und
     rootRevoked: Boolean(root.revoked),
     ...(root.revoked ? { status: 'unavailable', transactionSubmitted: false,
       next: 'ROOT_REVOKED: This root is permanently revoked. Do not fund it or top up its signer. Operator replacement cannot reactivate it. Select an active root or explicitly create a new one.' } : {}),
+    setupBlockedReason: root.revoked ? 'ROOT_REVOKED: This root is permanently revoked. Do not fund it or top up its signer for setup. Operator replacement cannot reactivate it. Select an active root or explicitly create a new one.' : null,
     vault: root.vault, owner: tree.owner, boundOperator: tree.operator, localOperator: localOperator ?? null,
     budgetRaw, usdcBalanceRaw: root.balances[index], usdcLimitRaw: root.effectivePolicy.maxAmounts[index],
     totalUsdcBalanceRaw: tree.totalBalances[index],

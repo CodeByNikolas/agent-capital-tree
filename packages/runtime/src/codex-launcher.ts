@@ -216,7 +216,7 @@ class AppSession {
 
   async initialize(apiKey?: string): Promise<void> {
     await this.request('initialize', {
-      clientInfo: { name: 'agent_capital_tree', title: 'Agent Capital Tree', version: '0.1.0' },
+      clientInfo: { name: 'kanoki', title: 'Kanoki', version: '0.1.0' },
       capabilities: { experimentalApi: true }
     });
     this.process.stdin.write(JSON.stringify({ method: 'initialized', params: {} }) + '\n');

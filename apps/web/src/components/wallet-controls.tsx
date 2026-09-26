@@ -1,4 +1,5 @@
 "use client";
+import { ConfirmModal } from "./treasury-records";
 
 import { useEffect, useState, type FormEvent, type ReactNode } from "react";
 import { ArrowUpRight, Check, ShieldAlert, ShieldCheck } from "lucide-react";
@@ -302,6 +303,8 @@ export function WalletControlsPanel({
   const canRevoke = Boolean(selectedNode.parentId && selectedNode.state !== "revoked" && selectedNode.state !== "expired" && data.source === "direct-rpc" && data.contractsConfigured && parentAgentConnected && selectedParent?.authorizedPermissions.includes("restrict") && actions.revokeSubtree);
   const canCloseForRecovery = ownerConnected && selectedNode.position !== null && Boolean(actions.ownerEmergencyClosePosition);
   const canRecover = ownerConnected && !selectedNode.position && Boolean(actions.ownerEmergencyRecover);
+  const descendants = new Set([selectedNode.id]);
+  for (let level = 0; level < 3; level++) for (const node of data.nodes) if (node.parentId && descendants.has(node.parentId)) descendants.add(node.id);
   const canOpenRecovery = canCloseForRecovery || canRecover;
   const canDoSelectedAction = canSpawn || canTighten || canRevoke || canCloseForRecovery || canRecover;
 
@@ -508,17 +511,13 @@ export function WalletControlsPanel({
         />
       )}
 
-      {mode === "revoke-subtree" && (
-        <div className="wallet-confirm-action">
-          <div><ShieldAlert size={16} aria-hidden="true" /><p><strong>Revoke {selectedNode.ensName} and its delegated authority?</strong><span>This permanently marks the vault revoked. Its descendants stop passing the controller’s ancestor authorization checks.</span></p></div>
-          {confirming ? (
-            <div className="wallet-confirm-buttons">
-              <button className="button button-danger button-small" type="button" disabled={busy} onClick={() => runAndClose(() => actions.revokeSubtree?.(selectedNode.id))}>Confirm revoke</button>
-              <button className="button button-secondary button-small" type="button" onClick={() => setConfirming(false)}>Cancel</button>
-            </div>
-          ) : <button className="button button-danger button-small" type="button" disabled={!canRevoke || busy} onClick={() => setConfirming(true)}>Review permanent revoke</button>}
-        </div>
-      )}
+      {mode === "revoke-subtree" && <div className="wallet-confirm-action">
+        <p>Revoke <code>{selectedNode.ensName}</code> and {descendants.size - 1} descendants. Management stops. Funds stay in their vaults until recovery. One transaction.</p>
+        <button className="button button-danger" disabled={!canRevoke || busy} onClick={() => setConfirming(true)}>Review revoke</button>
+        <ConfirmModal open={confirming} onClose={() => setConfirming(false)} title="Revoke subtree." onConfirm={async () => { await actions.revokeSubtree?.(selectedNode.id); onModeChange(null); }}>
+          Revoke {selectedNode.ensName} and {descendants.size - 1} descendants. Funds stay in their vaults. One transaction.
+        </ConfirmModal>
+      </div>}
 
       {mode === "owner-recovery" && (
         selectedNode.position ? (

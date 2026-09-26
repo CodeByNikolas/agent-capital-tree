@@ -94,6 +94,7 @@ export interface X402PaymentPayload {
 
 /** What a completed purchase returns to the browser: the resource plus its receipt. */
 export interface X402PurchaseResult {
+  alreadySettled?: boolean;
   service: { id: string; ensName: string; name: string };
   paidBy: string;
   content: Record<string, unknown>;

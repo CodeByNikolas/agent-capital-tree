@@ -61,9 +61,14 @@ test('chat Markdown links point to the exact returned PNG, not an invented attac
 });
 
 
-test('Kanoki response adds readable and structured data without breaking existing JSON clients', async () => {
+test('Kanoki response preserves data and presentation for text and structured hosts', async () => {
   const result = await visualResult('getTree', {}, base, { readOnly: true });
-  assert.deepEqual(JSON.parse(result.content[0].text), result.structuredContent);
+  const { _kanoki, ...data } = result.structuredContent;
+  assert.deepEqual(data, JSON.parse(JSON.stringify(base, (_, value) => typeof value === 'bigint' ? value.toString() : value)));
+  assert.equal(_kanoki.markdown, result.content[0].text);
+  assert.match(result.content[0].text, /^\*\*kanoki\*\* · sepolia · /);
+  assert.equal(_kanoki.imageLinks.length, 1);
+  assert.ok(result.content[1].text.includes(_kanoki.imageLinks[0]));
   assert.match(result.content[1].text, /\*\*kanoki\*\*/);
   assert.match(result.content[1].text, /1\.250000 USDC/);
   assert.equal(result.content[2].type, 'image');

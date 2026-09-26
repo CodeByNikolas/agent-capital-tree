@@ -1,0 +1,34 @@
+{
+  "base": "http://localhost:3044",
+  "checks": [
+    {
+      "width": 1280,
+      "theme": "dark",
+      "contrast": "all 8 text pairs >= 4.5",
+      "keyboard": "Tab, Enter, Escape, restored focus",
+      "overflow": false
+    },
+    {
+      "width": 1280,
+      "theme": "light",
+      "contrast": "all 8 text pairs >= 4.5",
+      "keyboard": "Tab, Enter, Escape, restored focus",
+      "overflow": false
+    },
+    {
+      "width": 380,
+      "theme": "dark",
+      "contrast": "all 8 text pairs >= 4.5",
+      "keyboard": "Tab, Enter, Escape, restored focus",
+      "overflow": false
+    },
+    {
+      "width": 380,
+      "theme": "light",
+      "contrast": "all 8 text pairs >= 4.5",
+      "keyboard": "Tab, Enter, Escape, restored focus",
+      "overflow": false
+    }
+  ],
+  "wallet": "not used"
+}

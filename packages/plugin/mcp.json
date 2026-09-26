@@ -4,7 +4,9 @@
     "kanoki": {
       "type": "stdio",
       "command": "node",
-      "args": ["./bundle/server.mjs"],
+      "args": [
+        "./bundle/server.mjs"
+      ],
       "cwd": "${PLUGIN_ROOT}"
     }
   }

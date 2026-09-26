@@ -84,6 +84,15 @@ test('explicit root selection, owner-bound recovery, no refund, snapshot and sig
     assert.deepEqual(await readFile(keyPath),originalKeyFile); assert.ok(closed>=4);
     roots.get('5').operator='0x0000000000000000000000000000000000000000';
     await session.select('5');
+    roots.get('5').nodes[0].revoked = true;
+    const revoked = await session.inspect();
+    assert.equal(revoked.rootRevoked, true);
+    assert.equal(revoked.writeReady, false);
+    assert.match(revoked.setupBlockedReason, /ROOT_REVOKED/);
+    await assert.rejects(session.prepare({openBrowser:false}), /ROOT_REVOKED/);
+    await assert.rejects(session.prepare({recovery:true,expectedBoundOperator:roots.get('5').operator,openBrowser:false}), /ROOT_REVOKED/);
+    assert.equal(await session.localOperator(), undefined, 'Revoked setup must not create a key');
+    roots.get('5').nodes[0].revoked = false;
     const fresh = await session.prepare({openBrowser:false});
     assert.ok(fresh.localOperator); assert.equal(fresh.transactionSubmitted,false);
     assert.notEqual(fresh.localOperator,recovery.localOperator);

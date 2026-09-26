@@ -2,7 +2,9 @@
   "mcpServers": {
     "kanoki": {
       "command": "node",
-      "args": ["${PLUGIN_ROOT}/bundle/server.mjs"]
+      "args": [
+        "${PLUGIN_ROOT}/bundle/server.mjs"
+      ]
     }
   }
 }
