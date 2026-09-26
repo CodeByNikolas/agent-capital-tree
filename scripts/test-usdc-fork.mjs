@@ -5,10 +5,10 @@ import {readFile,writeFile,mkdtemp,rm} from 'node:fs/promises';
 import {join} from 'node:path';
 import {homedir,tmpdir} from 'node:os';
 import {setTimeout as delay} from 'node:timers/promises';
-import {Contract,ContractFactory,JsonRpcProvider,JsonRpcSigner,Wallet,AbiCoder,keccak256,ZeroAddress,ZeroHash,id} from 'ethers';
+import {Contract,ContractFactory,JsonRpcProvider,JsonRpcSigner,Wallet,AbiCoder,keccak256,ZeroAddress,ZeroHash,id,TypedDataEncoder} from 'ethers';
 import {createRequire} from 'node:module';
 import {startX402DemoService} from './lib/x402-demo-service.mjs';
-import {paymentHandler} from '../packages/runtime/dist/payments.js';
+import {paymentHandler,signVaultPayment,transferAuthorizationTypes} from '../packages/runtime/dist/payments.js';
 const require=createRequire(new URL('../packages/runtime/package.json',import.meta.url));
 const {createPublicClient,createWalletClient,http,publicActions}=require('viem');
 const {privateKeyToAccount}=require('viem/accounts');
@@ -45,7 +45,7 @@ try{
  async function write(name,c,method,args){console.log(name);const r=await receipt((await c[method](...args,{gasLimit:25_000_000})).hash);transactions.push({name,gas:r.gasUsed.toString()});return r;}
  const token=new Contract(usdc.token.address,['function balanceOf(address) view returns(uint256)','function decimals() view returns(uint8)','function transfer(address,uint256) returns(bool)','function approve(address,uint256) returns(bool)'],donorSigner);
  assert.equal(await token.decimals(),6n);const original=await token.balanceOf(donor);assert(original>=10_000_000n);
- const tokens=[usdc.token.address,manifest.tokens[1].address].sort((a,b)=>BigInt(a)<BigInt(b)?-1:1);
+ const tokens=[usdc.token.address,testPayments?usdc.tokens.find(t=>t.symbol==='DEMO-USD').address:manifest.tokens[1].address].sort((a,b)=>BigInt(a)<BigInt(b)?-1:1);
  assert.equal(tokens[0],usdc.token.address);
  const {poolManager,positionManager,permit2}=manifest.uniswap;
  const vf=await deploy('VaultFactory',[poolManager,positionManager,permit2,tokens]);
@@ -56,15 +56,17 @@ try{
  const registry=new Contract(manifest.ensNamespace.registry,['function setSubregistry(uint256,address)'],owner);
  await write('fork-only-namespace-attachment',registry,'setSubregistry',[manifest.ensNamespace.resource,await controller.PROJECT_REGISTRY()]);
  await write('fork-only-test-funding',token,'transfer',[ownerAddress,10_000_000n]);
+ const originalOwnerBalance=await token.balanceOf(ownerAddress)-10_000_000n;
  const now=(await rpc.getBlock('latest')).timestamp;
  const roles=(1n<<40n)|(1n<<60n)|(1n<<64n)|(testPayments?1n<<68n:0n);
- const policy={capabilities:roles,maxAmounts:[10_000_000n,0n],expiry:now+3600,tokenMask:1,poolId:ZeroHash};
+ const policy={capabilities:roles|(testPayments?((1n<<44n)|(1n<<48n)|(1n<<52n)|(1n<<56n)):0n),maxAmounts:[10_000_000n,testPayments?1_000_000n:0n],expiry:now+3600,tokenMask:testPayments?3:1,poolId:testPayments?poolId:ZeroHash};
  await write('create-root',controller,'createRoot',['usdc-fork',policy]);
  await write('bind-operator',controller,'setRootOperator',[1,ownerAddress,policy]);
  await write('approve-usdc',token.connect(owner),'approve',[await controller.getAddress(),10_000_000n]);
- await write('fund-10-usdc',controller,'fundRoot',[1,[10_000_000n,0n]]);
+ if(testPayments){const quote=new Contract(tokens[1],['function mint()','function approve(address,uint256) returns(bool)'],owner);await write('claim-demo-quote',quote,'mint',[]);await write('approve-demo-quote',quote,'approve',[await controller.getAddress(),1_000_000n]);}
+ await write('fund-10-usdc',controller,'fundRoot',[1,[10_000_000n,testPayments?1_000_000n:0n]]);
  const childWallet=Wallet.createRandom();const child=childWallet.address;
- const childPolicy={...policy,maxAmounts:[2_000_000n,0n]};
+ const childPolicy={...policy,maxAmounts:[2_000_000n,0n],tokenMask:1};
  await write('delegate-2-usdc',controller,'spawnChild',[1,'researcher',child,childPolicy,[2_000_000n,0n],id('usdc-fork-researcher')]);
  const rootNode=await controller.getNode(1),childNode=await controller.getNode(2);
  assert.equal(await token.balanceOf(rootNode.vault),8_000_000n);assert.equal(await token.balanceOf(childNode.vault),2_000_000n);
@@ -86,6 +88,29 @@ try{
    const purchase=paymentHandler(config);
    const args={serviceId:'research',maxAmount:'10000',operationKey:id('usdc-research-purchase')};
    blockTimer=setInterval(()=>{void rpc.send('evm_mine',[]).catch(()=>{});},1000);
+   const currentTime=Number((await rpc.getBlock('latest')).timestamp);
+   const actor=privateKeyToAccount(childWallet.privateKey);
+   const approved=await signVaultPayment(actor,childNode.vault,childNode.generation,seller.requirement,BigInt(now+3600),currentTime);
+   const vaultVerifier=new Contract(childNode.vault,['function isValidSignature(bytes32,bytes) view returns(bytes4)'],rpc);
+   const digest=p=>TypedDataEncoder.hash({name:'USDC',version:'2',chainId:11155111,verifyingContract:usdc.token.address},transferAuthorizationTypes,p.payload.authorization);
+   const check=p=>vaultVerifier.isValidSignature(digest(p),p.payload.signature);
+   assert.equal(await check(approved),'0x1626ba7e');
+   const wrongActor=await signVaultPayment(privateKeyToAccount(Wallet.createRandom().privateKey),childNode.vault,childNode.generation,seller.requirement,BigInt(now+3600),currentTime);
+   assert.equal(await check(wrongActor),'0xffffffff');
+   const excessive=await signVaultPayment(actor,childNode.vault,childNode.generation,{...seller.requirement,amount:'2000001'},BigInt(now+3600),currentTime);
+   assert.equal(await check(excessive),'0xffffffff');
+   const wrongGeneration=await signVaultPayment(actor,childNode.vault,childNode.generation+1n,seller.requirement,BigInt(now+3600),currentTime);
+   assert.equal(await check(wrongGeneration),'0xffffffff');
+   assert.equal(await vaultVerifier.isValidSignature(id('unrelated message'),approved.payload.signature),'0xffffffff');
+   for(const change of ['revoke','tighten','rebind']){
+     const snapshot=await rpc.send('evm_snapshot',[]);
+     if(change==='revoke')await write('negative-revoke-child',controller,'revokeSubtree',[2]);
+     if(change==='tighten')await write('negative-tighten-root',controller,'tightenPolicy',[1,{...policy,maxAmounts:[1n,1_000_000n]}]);
+     if(change==='rebind')await write('negative-rebind-root',controller,'setRootOperator',[1,ownerAddress,policy]);
+     assert.equal(await check(approved),'0xffffffff');
+     assert.equal(await rpc.send('evm_revert',[snapshot]),true);
+   }
+   assert.equal(await check(approved),'0x1626ba7e');
    const result=await purchase(context,args);
    assert.equal(result.status,'confirmed');assert.equal(result.amount,'10000');
    assert.equal(await token.balanceOf(childNode.vault),1_990_000n);
@@ -97,11 +122,21 @@ try{
    assert.equal(await token.balanceOf(childNode.vault),1_990_000n);
    transactions.push({name:'x402-research-payment',transactionHash:result.transactionHash,amountRaw:'10000',retryChargedAgain:false});
  }
+ if(testPayments){
+   const manager=new Contract(poolManager,['function initialize((address,address,uint24,int24,address),uint160) returns(int24)','function extsload(bytes32) view returns(bytes32)'],owner);
+   const poolSlot=keccak256(AbiCoder.defaultAbiCoder().encode(['bytes32','uint256'],[poolId,6]));
+   if((BigInt(await manager.extsload(poolSlot)) & ((1n<<160n)-1n))===0n) await write('initialize-usdc-quote-pool',manager,'initialize',[[...tokens,3000,60,ZeroAddress],1n<<96n]);
+   await write('open-usdc-lp',controller,'openPosition',[1,15_000_000n,[500_000n,500_000n],now+3600]);
+   const vault=new Contract(rootNode.vault,['function positionLiquidity() view returns(uint128)'],rpc);
+   assert.equal(await vault.positionLiquidity(),15_000_000n);
+   await write('close-usdc-lp',controller,'closePosition',[1,[440_000n,440_000n],now+3600]);
+   assert.equal(await vault.positionLiquidity(),0n);
+ }
  await write('recover-child',controller,'ownerEmergencyRecover',[2]);
  await write('recover-root',controller,'ownerEmergencyRecover',[1]);
  assert.equal(await token.balanceOf(rootNode.vault),0n);assert.equal(await token.balanceOf(childNode.vault),0n);
- await write('restore-fork-funding',token.connect(owner),'transfer',[donor,testPayments?9_990_000n:10_000_000n]);
- assert.equal(await token.balanceOf(donor),original);
- const report={checkedAt:new Date().toISOString(),network:'disposable Ethereum Sepolia fork',forkBlock,token:usdc.token,checks:['Real Circle USDC proxy reports 6 decimals','Root funded with 10 USDC; child receives 2; root retains 8','SDK preserves raw balances and readable ENS child name','Excess amount and wrong signer rejected','Owner recovers remaining USDC; fork donor balance restored',...(testPayments?['Official x402 exact facilitator accepts vault ERC1271 and settles 0.01 USDC','HTTP402 to signed request to independently confirmed Transfer and AuthorizationUsed','Restart retry reuses receipt without another charge; conflicting operation and unconfigured service rejected']:[])],transactions,publicTransactionsSent:0,limitations:['No public deployment or token movement',testPayments?'USDC Uniswap pool not tested; local demo seller only':'No USDC Uniswap pool or x402 payment tested','Namespace replaced only inside disposable fork; public deployment must preserve existing namespace']};
+ await write('restore-fork-funding',token.connect(owner),'transfer',[donor,await token.balanceOf(ownerAddress)-originalOwnerBalance]);
+ const roundingLoss=original-await token.balanceOf(donor);assert(roundingLoss>=0n&&roundingLoss<=(testPayments?2n:0n));
+ const report={checkedAt:new Date().toISOString(),network:'disposable Ethereum Sepolia fork',forkBlock,token:usdc.token,checks:['Real Circle USDC proxy reports 6 decimals','Root funded with 10 USDC; child receives 2; root retains 8','SDK preserves raw balances and readable ENS child name','Excess amount and wrong signer rejected',`Owner recovers remaining USDC; LP rounding loss ${roundingLoss} raw units`,...(testPayments?['ERC1271 rejects wrong signer, excess amount, wrong generation, arbitrary digest, revoked child, tightened ancestor and operator rebind','Six-decimal USDC/DEMO-USD pool initialized; LP opened and closed with explicit minimums','Official x402 exact facilitator accepts vault ERC1271 and settles 0.01 USDC','HTTP402 to signed request to independently confirmed Transfer and AuthorizationUsed','Restart retry reuses receipt without another charge; conflicting operation and unconfigured service rejected']:[])],transactions,publicTransactionsSent:0,limitations:['No public deployment or token movement',testPayments?'Local demo seller only; no economic USDC price claim for valueless DEMO-USD':'No USDC Uniswap pool or x402 payment tested','Namespace replaced only inside disposable fork; public deployment must preserve existing namespace']};
  await writeFile(new URL(testPayments?'../deployments/usdc-x402-fork.json':'../deployments/usdc-fork.json',import.meta.url),JSON.stringify(report,null,2)+'\n');console.log(JSON.stringify(report));
 }finally{if(blockTimer)clearInterval(blockTimer);if(seller)await seller.close();anvil.kill('SIGTERM');rpc.destroy();if(privateDirectory)await rm(privateDirectory,{recursive:true,force:true});}

@@ -1,7 +1,7 @@
 {
-  "checkedAt": "2026-09-26T08:20:23.705Z",
+  "checkedAt": "2026-09-26T08:29:37.949Z",
   "network": "disposable Ethereum Sepolia fork",
-  "forkBlock": 11785005,
+  "forkBlock": 11785051,
   "token": {
     "address": "0x1c7D4B196Cb0C7B01d743Fbc6116a902379C7238",
     "symbol": "USDC",
@@ -14,7 +14,9 @@
     "Root funded with 10 USDC; child receives 2; root retains 8",
     "SDK preserves raw balances and readable ENS child name",
     "Excess amount and wrong signer rejected",
-    "Owner recovers remaining USDC; fork donor balance restored",
+    "Owner recovers remaining USDC; LP rounding loss 1 raw units",
+    "ERC1271 rejects wrong signer, excess amount, wrong generation, arbitrary digest, revoked child, tightened ancestor and operator rebind",
+    "Six-decimal USDC/DEMO-USD pool initialized; LP opened and closed with explicit minimums",
     "Official x402 exact facilitator accepts vault ERC1271 and settles 0.01 USDC",
     "HTTP402 to signed request to independently confirmed Transfer and AuthorizationUsed",
     "Restart retry reuses receipt without another charge; conflicting operation and unconfigured service rejected"
@@ -30,29 +32,61 @@
     },
     {
       "name": "create-root",
-      "gas": "5728395"
+      "gas": "5769630"
     },
     {
       "name": "bind-operator",
-      "gas": "244380"
+      "gas": "244815"
     },
     {
       "name": "approve-usdc",
       "gas": "55437"
     },
     {
+      "name": "claim-demo-quote",
+      "gas": "90095"
+    },
+    {
+      "name": "approve-demo-quote",
+      "gas": "46331"
+    },
+    {
       "name": "fund-10-usdc",
-      "gas": "82979"
+      "gas": "121347"
     },
     {
       "name": "delegate-2-usdc",
-      "gas": "5913340"
+      "gas": "5934691"
+    },
+    {
+      "name": "negative-revoke-child",
+      "gas": "193378"
+    },
+    {
+      "name": "negative-tighten-root",
+      "gas": "110074"
+    },
+    {
+      "name": "negative-rebind-root",
+      "gas": "188335"
     },
     {
       "name": "x402-research-payment",
-      "transactionHash": "0xe6236cf548a5ca09a13d5d025ca39fb8e473b5e9e6e426f5526b0e604390b568",
+      "transactionHash": "0xfd8fa185526a3522898adfd39ca2ceb9e2924a8453dc61233c3eca890d022459",
       "amountRaw": "10000",
       "retryChargedAgain": false
+    },
+    {
+      "name": "initialize-usdc-quote-pool",
+      "gas": "51532"
+    },
+    {
+      "name": "open-usdc-lp",
+      "gas": "631911"
+    },
+    {
+      "name": "close-usdc-lp",
+      "gas": "248560"
     },
     {
       "name": "recover-child",
@@ -60,7 +94,7 @@
     },
     {
       "name": "recover-root",
-      "gas": "103761"
+      "gas": "118065"
     },
     {
       "name": "restore-fork-funding",
@@ -70,7 +104,7 @@
   "publicTransactionsSent": 0,
   "limitations": [
     "No public deployment or token movement",
-    "USDC Uniswap pool not tested; local demo seller only",
+    "Local demo seller only; no economic USDC price claim for valueless DEMO-USD",
     "Namespace replaced only inside disposable fork; public deployment must preserve existing namespace"
   ]
 }
