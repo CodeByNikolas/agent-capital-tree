@@ -610,3 +610,14 @@ button:disabled { cursor: not-allowed; opacity: .55; }
   .mcp-fact { grid-template-columns: 110px minmax(0, 1fr); }
   .mcp-tools { grid-template-columns: 1fr; }
 }
+
+/* Root creation shows only the current step, with space between entry cards. */
+.onboarding-page .root-access-bar + .wallet-controls-panel { margin-top: 24px; }
+.onboarding-create-help { margin-top: 14px; max-width: 65ch; color: var(--quiet); line-height: 1.6; }
+.wallet-controls-create .wallet-action-form { grid-template-columns: 1fr; padding: 0; border: 0; background: transparent; }
+.root-name-field, .root-policy-help { grid-column: 1 / -1; }
+.root-name-input { display: flex; gap: 10px; margin-top: 8px; }
+.root-name-input input { min-width: 0; flex: 1; min-height: 41px; padding: 7px 10px; border: 1px solid var(--input); border-radius: 7px; background: var(--surface); color: var(--ink); font-size: 16px; }
+.root-name-preview { margin: 8px 0 0; overflow-wrap: anywhere; color: var(--brand); font-family: var(--font-mono); font-size: 14px; }
+.root-name-field .wallet-form-hint { margin-top: 10px; }
+@media (max-width: 600px) { .root-name-input { flex-direction: column; align-items: stretch; } }

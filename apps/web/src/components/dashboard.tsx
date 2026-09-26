@@ -1540,12 +1540,12 @@ export function Dashboard({ data: initialData, deployment, vaultQuery, nodeQuery
             </CardHeader>
             <CardContent>
               <Button onClick={() => setWalletActionMode("create-root")}>Launch a new root vault</Button>
-              <p>Connect a Sepolia wallet to create a vault. Get USDC from Circle’s faucet; DEMO-USD is a valueless quote token.</p>
-              <a className="button button-secondary button-small" href="https://faucet.circle.com/" target="_blank" rel="noreferrer">Get USDC <ArrowUpRight size={13} aria-hidden="true" /></a>
+              <p className="onboarding-create-help">Connect your wallet, choose a name and permissions, then confirm in your wallet. Creation uses Sepolia ETH for gas. You can add USDC after your vault is ready.</p>
             </CardContent>
           </Card>
           <RootAccessBar vault={null} path="/setup" walletAddress={wallet.address} />
           {walletActionMode === "create-root" && <WalletControlsPanel
+            creationOnly
             data={data}
             deployment={deployment}
             selectedNode={selectedNode}

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, type FormEvent, type ReactNode } from "react";
+import { useEffect, useState, type FormEvent, type ReactNode } from "react";
 import { ArrowUpRight, Check, ShieldAlert, ShieldCheck } from "lucide-react";
 import type {
   DashboardActions,
@@ -13,6 +13,7 @@ import type {
 } from "@/lib/dashboard-types";
 import type { PublicDeployment } from "@/lib/deployment";
 import type { WalletActionNotice } from "@/lib/use-wallet-actions";
+import { generateRootLabel } from "@/lib/root-label";
 import { InfoHint } from "@/components/info-hint";
 
 export type WalletActionMode =
@@ -171,6 +172,7 @@ function PolicyFields({
               />
               <span>Allowed</span>
             </span>
+            <span>Maximum per action</span>
             <input
               aria-label={`Maximum ${label} per action`}
               type="text"
@@ -239,6 +241,7 @@ export function WalletControlsPanel({
   demoLabel,
   demoBudget,
   setupOperator,
+  creationOnly = false,
 }: {
   data: DashboardData;
   deployment: PublicDeployment;
@@ -254,8 +257,12 @@ export function WalletControlsPanel({
   demoLabel?: string | null;
   demoBudget?: string | null;
   setupOperator?: string | null;
+  creationOnly?: boolean;
 }) {
   const [rootLabel, setRootLabel] = useState(demoLabel ?? "");
+  useEffect(() => {
+    if (!demoLabel) setRootLabel(current => current || generateRootLabel());
+  }, [demoLabel]);
   const [operatorAddress, setOperatorAddress] = useState(setupOperator ?? data.rootOperator ?? "");
   const budgetUSDC = demoBudget ? (Number(demoBudget) / 1_000_000).toString() : "0";
   const [fundAmounts, setFundAmounts] = useState<[string, string]>([budgetUSDC, "0"]);
@@ -324,18 +331,18 @@ export function WalletControlsPanel({
   );
 
   return (
-    <section className="panel wallet-controls-panel" id="wallet-controls" aria-labelledby="wallet-controls-title">
+    <section className={`panel wallet-controls-panel${creationOnly ? " wallet-controls-create" : ""}`} id="wallet-controls" aria-labelledby="wallet-controls-title">
       <div className="panel-heading">
         <div>
-          <div className="panel-overline">OWNER &amp; VAULT MANAGEMENT</div>
-          <h2 id="wallet-controls-title">Wallet actions</h2>
+          {!creationOnly && <div className="panel-overline">OWNER &amp; VAULT MANAGEMENT</div>}
+          <h2 id="wallet-controls-title">{creationOnly ? "Name your vault and set its limits" : "Wallet actions"}</h2>
         </div>
-        <span className={`wallet-control-source${deployment.contractsConfigured ? " wallet-control-source-ready" : ""}`}>
+        {!creationOnly && <span className={`wallet-control-source${deployment.contractsConfigured ? " wallet-control-source-ready" : ""}`}>
           {deployment.contractsConfigured ? deployment.poolConfigured ? "Sepolia pool ready" : "Contracts ready · pool pending" : "Contract deployment pending"}
-        </span>
+        </span>}
       </div>
-      <p className="wallet-controls-intro">Every action is simulated before your wallet is asked to sign. Get USDC from Circle’s faucet; this dashboard never mints USDC. DEMO-USD is valueless.</p>
-      <div className="wallet-action-shortcuts">
+      {creationOnly ? <p className="wallet-controls-intro">Your connected wallet will own this vault. Choose its public name and the limits for your agents, then confirm creation in your wallet. You only need Sepolia ETH for the network fee now. Add USDC and authorize an agent from the dashboard afterwards.</p> : <p className="wallet-controls-intro">Every action is simulated before your wallet is asked to sign. Get USDC from Circle’s faucet; this dashboard never mints USDC. DEMO-USD is valueless.</p>}
+      {!creationOnly && <div className="wallet-action-shortcuts">
         <a className="button button-secondary button-small" href="https://faucet.circle.com/" target="_blank" rel="noreferrer">Get test USDC <ArrowUpRight size={13} aria-hidden="true" /></a>
         {deployment.demoQuoteAddress && <button className="button button-secondary button-small" type="button" disabled={!walletAddress || !walletOnSepolia || busy || !actions.claimDemoQuote} onClick={() => void actions.claimDemoQuote?.().catch(() => undefined)}>Get DEMO-USD</button>}
         <button className="button button-secondary button-small" type="button" disabled={!canCreateRoot || busy} onClick={() => toggle("create-root")}>Create root</button>
@@ -345,10 +352,10 @@ export function WalletControlsPanel({
         <button className="button button-secondary button-small" type="button" disabled={!canTighten || busy} onClick={() => toggle("tighten-policy")}>Tighten mandate</button>
         <button className="button button-danger button-small" type="button" disabled={!canRevoke || busy} onClick={() => toggle("revoke-subtree")}>Revoke subtree</button>
         <button className="button button-danger button-small" type="button" disabled={!canOpenRecovery || busy} onClick={() => toggle("owner-recovery")}>Owner recovery</button>
-      </div>
+      </div>}
       {!deployment.contractsConfigured && <p className="wallet-controls-pending">Wallet actions unlock when the USDC controller and both configured tokens are deployed.</p>}
       {deployment.contractsConfigured && !deployment.poolConfigured && <p className="wallet-controls-pending">Root creation, funding, operator binding, and capital controls are available. Swap and LP capabilities remain disabled until the USDC pool is initialized and seeded.</p>}
-      {!walletAddress && <p className="wallet-controls-pending">Connect an injected wallet on Sepolia. Owner and agent actions stay unavailable until the connected account matches on-chain authority.</p>}
+      {!walletAddress && <p className="wallet-controls-pending">{creationOnly ? "Connect your wallet using the button at the top of the page, then switch to Sepolia to create your vault." : "Connect an injected wallet on Sepolia. Owner and agent actions stay unavailable until the connected account matches on-chain authority."}</p>}
       {walletAddress && !walletOnSepolia && <p className="wallet-controls-pending">Switch your wallet to Sepolia to enable wallet actions. The connected account is not checked for vault authority on another network.</p>}
       {data.source === "direct-rpc" && walletAddress && walletOnSepolia && !ownerConnected && !selectedAgentConnected && !selectedOwnerOrParentAgent && (
         <p className="wallet-controls-pending">This account is neither the recorded root owner nor an authorized agent for the selected vault.</p>
@@ -369,10 +376,16 @@ export function WalletControlsPanel({
             onRootCreated(rootId);
           }}
         >
-          <label className="wallet-field">
-            <span>Root ENS label</span>
-            <input value={rootLabel} onChange={(event) => setRootLabel(event.target.value)} placeholder="my-agent" disabled={!canCreateRoot || busy} required />
-          </label>
+          <div className="root-name-field">
+            <label className="wallet-field" htmlFor="root-ens-label">Root ENS label</label>
+            <div className="root-name-input">
+              <input id="root-ens-label" aria-describedby="root-name-help" value={rootLabel} onChange={(event) => setRootLabel(event.target.value)} placeholder="Generating a name…" disabled={busy} pattern="[a-z][a-z0-9-]{0,30}" maxLength={31} required />
+              <button className="button button-secondary button-small" type="button" disabled={busy} onClick={() => setRootLabel(generateRootLabel())}>New suggestion</button>
+            </div>
+            <p id="root-name-help" className="wallet-form-hint">Your vault’s public name. Keep this suggestion or enter your own lowercase name. The name is permanent once created.</p>
+            {rootLabel && <p className="root-name-preview">{rootLabel}.{deployment.namespaceName}</p>}
+          </div>
+          <p className="wallet-form-context root-policy-help">Choose which assets and actions your agents may use. A per-action limit caps each transaction; 0 blocks spending that asset. These limits do not deposit any funds. DEMO-USD is an optional, valueless test token for Uniswap. The expiry sets when agent permissions end; you retain owner recovery.</p>
         </PolicyFields>
       )}
 

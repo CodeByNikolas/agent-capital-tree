@@ -2,6 +2,12 @@
 
 As of 26 September 2026. Read this together with PLAN.md after context compaction. Older sections below retain the evidence and acceptance limits known at the time; the newest E2E status is first.
 
+## Root creation onboarding clarification
+
+- The entry flow now separates the vault lookup and creation panel by 24px. Root creation displays only its form; funding, operator, child, recovery and faucet shortcuts remain in dashboard management. The entry card explains creation, Sepolia gas, later USDC funding and agent authorization.
+- Creation explains the public ENS name, per-action limits (including zero), optional DEMO-USD and policy expiry. Names are editable suggestions from two 64-word lists with a 24-bit cryptographic suffix (36 bits total); a new suggestion leaves other inputs intact. MCP-provided names and budgets retain priority. Existing contract validation and transaction simulation remain authoritative for name availability.
+- Web production build and TypeScript passed. Browser checks passed at 1440px/light and 390px/dark: exact 24px gap, no overflow/page errors, hidden management/faucet shortcuts, generated/editable names, preserved MCP values and retained dashboard faucet. [Report](artifacts/ui/root-setup-report.json). The test used a read-only injected wallet stub and sent no transactions. Generated names also passed ENS label format/length checks.
+
 ## Merge of work/rami into main — 26 September
 
 - Integrated `work/rami` at `be10418` with `main` at `a12eac7`. Preserved native OpenAI Luna High workers, pre-allocation model checks, isolated signing, payment reconciliation, current USDC deployment and prior financial E2E evidence. Added chat-managed capital mode, visual/keyless MCP, root discovery, onboarding/tour, the MCP guide and Applications service panel alongside the existing Uniswap and x402 Pay pages.

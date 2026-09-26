@@ -1,0 +1,27 @@
+{
+  "status": "passed",
+  "checks": [
+    {
+      "width": 1440,
+      "colorScheme": "light",
+      "cardGap": 24,
+      "randomName": true,
+      "customName": true,
+      "managementButtonsHidden": true,
+      "faucetDeferred": true
+    },
+    {
+      "width": 390,
+      "colorScheme": "dark",
+      "cardGap": 24,
+      "randomName": true,
+      "customName": true,
+      "managementButtonsHidden": true,
+      "faucetDeferred": true
+    }
+  ],
+  "prefilledMcpValuesPreserved": true,
+  "dashboardFaucetRetained": true,
+  "transactionsSent": 0,
+  "wallet": "read-only provider stub; no signatures"
+}
