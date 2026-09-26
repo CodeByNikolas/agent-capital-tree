@@ -12,10 +12,11 @@ const broadcast = process.argv.includes('--broadcast');
 if (action !== 'inspect' && !broadcast) throw new Error('Writing requires --broadcast');
 const rpc = new JsonRpcProvider('https://ethereum-sepolia.publicnode.com');
 if ((await rpc.getNetwork()).chainId !== 11155111n) throw new Error('Refusing non-Sepolia network');
-const manifestPath = new URL(usdcVersion ? '../deployments/usdc-sepolia.json' : '../deployments/sepolia.json', import.meta.url);
+const manifestPath = process.env.ACT_DEPLOYMENT_MANIFEST ?? new URL(usdcVersion ? '../deployments/usdc-sepolia.json' : '../deployments/sepolia.json', import.meta.url);
 const manifest = JSON.parse(await readFile(manifestPath, 'utf8'));
 const directory = join(homedir(), '.agent-capital-tree');
-const label = usdcVersion ? 'agentcapitalusdc' : 'agentcapitaltree';
+const label = manifest.ensNamespace.name.replace(/\.eth$/, '');
+if (!/^[a-z0-9-]+$/.test(label)) throw Error('Invalid namespace');
 const duration = 365n * 24n * 60n * 60n;
 
 async function artifact(name, expectedAddress) {
@@ -69,7 +70,7 @@ console.log('Registration price in raw mock USDC:', price.toString());
 if (action === 'inspect') process.exit(0);
 
 await mkdir(join(directory, 'registration'), { recursive: true, mode: 0o700 });
-const secretPath = join(directory, usdcVersion ? 'registration/usdc-namespace-secret' : 'registration/namespace-secret');
+const secretPath = join(directory, 'registration', `${label}-namespace-secret`);
 let secret;
 try { secret = await readFile(secretPath, 'utf8'); }
 catch (error) {

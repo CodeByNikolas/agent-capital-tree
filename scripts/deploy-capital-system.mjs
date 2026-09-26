@@ -1,4 +1,6 @@
 import { journaledTransaction } from './lib/sepolia-transactions.mjs';
+import { etherscanKey } from './lib/etherscan-verification.mjs';
+import { verifyDeployment } from './verify-deployment.mjs';
 import { readFile, writeFile } from 'node:fs/promises';
 import { homedir } from 'node:os';
 import { join } from 'node:path';
@@ -8,11 +10,12 @@ import { Contract, ContractFactory, JsonRpcProvider, Wallet, id, keccak256, getC
 const broadcast = process.argv.includes('--broadcast');
 const attach = process.argv.includes('--attach');
 const usdcVersion = process.argv.includes('--usdc');
-const namespace = usdcVersion ? 'agentcapitalusdc' : 'agentcapitaltree';
 const rpc = new JsonRpcProvider('https://ethereum-sepolia.publicnode.com');
-const manifestPath = new URL(usdcVersion ? '../deployments/usdc-sepolia.json' : '../deployments/sepolia.json', import.meta.url);
+const manifestPath = process.env.ACT_DEPLOYMENT_MANIFEST ?? new URL(usdcVersion ? '../deployments/usdc-sepolia.json' : '../deployments/sepolia.json', import.meta.url);
 const manifest = JSON.parse(await readFile(manifestPath, 'utf8'));
-const privateDir = join(homedir(), usdcVersion ? '.agent-capital-tree/deployments-usdc' : '.agent-capital-tree/deployments');
+const namespace = manifest.ensNamespace.name.replace(/\.eth$/, '');
+if (!/^[a-z0-9-]+$/.test(namespace)) throw Error('Invalid namespace');
+const privateDir = join(homedir(), '.agent-capital-tree/deployments', namespace);
 const addresses = {
   poolManager: '0xE03A1074c86CFeDd5C142C4F04F1a1536e203543',
   positionManager: '0x429ba70129df741B2Ca2a85BC3A2a3328e5c09b4',
@@ -58,6 +61,7 @@ try {
   if (!broadcast) {
     console.log(JSON.stringify({ chainId: 11155111, contracts: manifest.contracts, poolId, addresses, namespaceResource: state.resource.toString(), deployerBalanceWei: (await rpc.getBalance(manifest.deployer)).toString(), mode:'inspect' }));
   } else {
+    await etherscanKey();
     const keys = join(homedir(), '.agent-capital-tree/keys');
     const signer = (await Wallet.fromEncryptedJson(await readFile(join(keys, usdcVersion ? 'jury-e2e.keystore.json' : 'deployer.keystore.json'),'utf8'), await readFile(join(keys, usdcVersion ? 'jury-e2e.password' : 'deployer.password'),'utf8'))).connect(rpc);
     if (!same(signer.address, manifest.deployer)) throw new Error('Unexpected deployer');
@@ -76,12 +80,16 @@ try {
     }
     // Constructor order is validated against the final reviewed artifacts before broadcasting.
     const vaultFactory = await deploy('VaultFactory',[addresses.poolManager,addresses.positionManager,addresses.permit2,tokens]);
+    const implementation = await vaultFactory.IMPLEMENTATION();
+    manifest.contracts.CapitalVaultImplementation = {address:implementation,codeHash:keccak256(await rpc.getCode(implementation))};
+    manifest.vaultArchitecture = 'eip1167';
     const nodeFactory = await deploy('NodeFactory',[await vaultFactory.getAddress()]);
     const controller = await deploy('CapitalController',[registryData.address,labelData.address,await nodeFactory.getAddress(),tokens,namespace,poolId]);
     if (!same(await controller.POOL_ID(),poolId) || !same(await controller.TOKEN0(),tokens[0]) || !same(await controller.TOKEN1(),tokens[1])) throw new Error('Controller configuration mismatch');
     const projectRegistry = await controller.PROJECT_REGISTRY();
     manifest.contracts.ProjectRegistry = {address:projectRegistry};
-    manifest.uniswap = {...addresses,poolId,fee:3000,tickSpacing:60,tickLower:-600,tickUpper:600,codeHashes};
+    const initialization = manifest.uniswap?.poolId === poolId ? manifest.uniswap.initialization : undefined;
+    manifest.uniswap = {...addresses,poolId,fee:3000,tickSpacing:60,tickLower:-600,tickUpper:600,codeHashes,...(initialization ? {initialization} : {})};
     if (attach) {
       const current = await registry.getSubregistry(namespace);
       if (!same(current,projectRegistry)) {
@@ -94,6 +102,7 @@ try {
     }
     manifest.status = attach ? 'contracts-deployed-pool-pending' : 'contracts-deployed-namespace-pending';
     await save();
+    await verifyDeployment(manifestPath);
     console.log(JSON.stringify({contracts:manifest.contracts,status:manifest.status}));
   }
 } finally { rpc.destroy(); }

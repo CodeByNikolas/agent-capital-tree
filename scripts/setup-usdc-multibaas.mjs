@@ -3,11 +3,11 @@ import { homedir } from 'node:os';
 import { join } from 'node:path';
 import { JsonRpcProvider } from 'ethers';
 const env = Object.fromEntries((await readFile(join(homedir(), '.agent-capital-tree/multibaas-admin.env'), 'utf8')).split('\n').filter(l => l && !l.startsWith('#') && l.includes('=')).map(l => { const i=l.indexOf('=');return [l.slice(0,i),l.slice(i+1).replace(/^['"]|['"]$/g,'')]; }));
-const manifestPath = new URL('../deployments/usdc-sepolia.json', import.meta.url);
+const manifestPath = process.env.ACT_DEPLOYMENT_MANIFEST ?? new URL('../deployments/usdc-sepolia.json', import.meta.url);
 const manifest = JSON.parse(await readFile(manifestPath, 'utf8'));
 const address = manifest.contracts.CapitalController?.address;
 if (!address) throw Error('USDC controller not deployed');
-const label = 'capitalcontrollerusdc';
+const label = manifest.multibaas?.label ?? 'capitalcontrollerusdc';
 const origin = new URL(env.MULTIBAAS_URL).origin;
 if (origin !== 'https://d7zveyyfkvdbxdbd7n3rk6o3ee.multibaas.com') throw Error('Unexpected MultiBaas deployment');
 async function api(path, method='GET', body) {

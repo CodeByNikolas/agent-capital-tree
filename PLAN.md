@@ -8,6 +8,8 @@ User decision: replace repeated full CapitalVault deployments with non-upgradeab
 
 Acceptance: reject unauthorized/repeated/zero-controller initialization; prove independent custody, ENS checks, swaps, LP lifecycle, owner recovery, and Circle ERC-1271/x402 settlement through the proxies. Record complete child-spawn gas, not only proxy deployment gas. Stage a new Sepolia controller and namespace with a separate transaction journal and MultiBaas label; retain old onchain funds and names. Switch the current manifest and website only after the new deployment works. UI currency labels say USDC; preview banners continue to identify invented sample balances.
 
+All future public deployments must also be verified on Etherscan. Keep the API key outside Git. Release/deployment runners must finish with source verification and EIP-1167 implementation association, including constructor-created registries and per-node registries. Re-run the read-only verification scanner after creating additional roots/children; source verification is an explorer operation, not an extra onchain transaction.
+
 ## Current extension: official Sepolia USDC and x402
 
 User decision, 26 September: rapid prototyping without backward compatibility. Switch the frontend exclusively to the new USDC version. Do not add a version selector, legacy link resolution, or migration. Existing onchain capital remains unchanged.

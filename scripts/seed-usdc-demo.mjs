@@ -3,9 +3,11 @@ import { homedir } from 'node:os';
 import { join } from 'node:path';
 import { Contract, JsonRpcProvider, Wallet, ZeroAddress, parseEther } from 'ethers';
 import { journaledTransaction } from './lib/sepolia-transactions.mjs';
+import { etherscanKey } from './lib/etherscan-verification.mjs';
+import { verifyDeployment } from './verify-deployment.mjs';
 
 const broadcast=process.argv.includes('--broadcast');
-const manifestPath=new URL('../deployments/usdc-sepolia.json',import.meta.url);
+const manifestPath=process.env.ACT_DEPLOYMENT_MANIFEST ?? new URL('../deployments/usdc-sepolia.json',import.meta.url);
 const manifest=JSON.parse(await readFile(manifestPath,'utf8'));
 const rpc=new JsonRpcProvider('https://ethereum-sepolia.publicnode.com');
 const save=()=>writeFile(manifestPath,JSON.stringify(manifest,null,2)+'\n');
@@ -14,6 +16,7 @@ try {
   if((await rpc.getNetwork()).chainId!==11155111n)throw new Error('Expected Sepolia');
   if(!broadcast){console.log(JSON.stringify({mode:'inspect',status:manifest.status,uniswap:manifest.uniswap??null,bootstrap:manifest.bootstrap??null}));}
   else {
+    await etherscanKey();
     const controllerAddress=manifest.contracts.CapitalController?.address;
     if(!controllerAddress || !manifest.uniswap || !manifest.ensNamespace.subregistry || manifest.ensNamespace.subregistry===ZeroAddress)throw new Error('Deploy and attach the capital system first');
     const keys=join(homedir(),'.agent-capital-tree/keys');
@@ -29,12 +32,14 @@ try {
     const seed=manifest.bootstrap;
     async function send(name,contract,method,args){
       const request=await contract[method].populateTransaction(...args);
-      const {receipt}=await journaledTransaction({rpc,signer,directory:join(homedir(),'.agent-capital-tree/usdc-seed'),name,request});
+      const {receipt}=await journaledTransaction({rpc,signer,directory:join(homedir(),'.agent-capital-tree/usdc-seed',controllerAddress),name,request});
       seed.transactions[name]={transactionHash:receipt.hash,blockNumber:receipt.blockNumber};await save();return receipt;
     }
     const key=[manifest.tokens[0].address,manifest.tokens[1].address,3000,60,ZeroAddress];
-    const initialized=await send('initialize-pool',manager,'initialize',[key,1n<<96n]);
-    manifest.uniswap.initialization={transactionHash:initialized.hash,blockNumber:initialized.blockNumber};await save();
+    if(!manifest.uniswap.initialization){
+      const initialized=await send('initialize-pool',manager,'initialize',[key,1n<<96n]);
+      manifest.uniswap.initialization={transactionHash:initialized.hash,blockNumber:initialized.blockNumber};await save();
+    }
     const capabilities=[40n,44n,48n,52n,56n,60n,64n,68n].reduce((mask,bit)=>mask|(1n<<bit),0n);
     const policy={capabilities,maxAmounts:[2_000_000n,2_000_000n],expiry:BigInt(seed.policyExpiry),tokenMask:3,poolId:manifest.uniswap.poolId};
     const created=await send('create-seed-root',controller,'createRoot',['capital',policy]);
@@ -42,7 +47,7 @@ try {
     if(!rootLog)throw new Error('Seed root creation event missing');
     seed.rootId=rootLog.args.rootId.toString();await save();
     await send('authorize-seed-operator',controller,'setRootOperator',[seed.rootId,signer.address,policy]);
-    for(let i=0;i<2;i++){if(manifest.tokens[i].symbol==='DEMO-USD') await send(`claim-token-${i}`,tokens[i],'mint',[]);await send(`approve-token-${i}`,tokens[i],'approve',[controllerAddress,2_000_000n]);}
+    for(let i=0;i<2;i++){if(manifest.tokens[i].symbol==='DEMO-USD' && await tokens[i].balanceOf(signer.address)<2_000_000n) await send(`claim-token-${i}`,tokens[i],'mint',[]);await send(`approve-token-${i}`,tokens[i],'approve',[controllerAddress,2_000_000n]);}
     await send('fund-seed-root',controller,'fundRoot',[seed.rootId,[2_000_000n,2_000_000n]]);
     const opened=await send('open-seed-position',controller,'openPosition',[seed.rootId,30_000_000n,[2_000_000n,2_000_000n],seed.deadline]);
     const node=await controller.getNode(seed.rootId);
@@ -54,6 +59,7 @@ try {
     manifest.uniswap.seeded={transactionHash:opened.hash,blockNumber:opened.blockNumber,rootId:seed.rootId,vault:node.vault,tokenId:tokenId.toString(),liquidity:liquidity.toString()};
     manifest.limitations=['Testnet assets only; DEMO-USD is valueless and pool price is not a real USD valuation.','x402 service purchases require an explicitly configured Sepolia-capable seller and PAY mandate.'];
     manifest.status='deployed';await save();
+    await verifyDeployment(manifestPath);
     console.log(JSON.stringify({status:manifest.status,seeded:manifest.uniswap.seeded}));
   }
 }finally{rpc.destroy();}

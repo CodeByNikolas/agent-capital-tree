@@ -6,6 +6,8 @@ import { createRequire } from 'node:module';
 import { Contract, JsonRpcProvider, Wallet, ZeroHash, id, keccak256 } from 'ethers';
 import { WorkerKeyStore, paymentHandler } from '../packages/runtime/dist/index.js';
 import { journaledTransaction } from './lib/sepolia-transactions.mjs';
+import { etherscanKey } from './lib/etherscan-verification.mjs';
+import { verifyDeployment } from './verify-deployment.mjs';
 import { startX402DemoService } from './lib/x402-demo-service.mjs';
 const require=createRequire(new URL('../packages/runtime/package.json',import.meta.url));
 const {createWalletClient,http,publicActions,encodeFunctionData}=require('viem');
@@ -13,9 +15,10 @@ const {privateKeyToAccount}=require('viem/accounts');
 const {sepolia}=require('viem/chains');
 const {ExactEvmScheme}=require('@x402/evm/exact/facilitator');
 const {toFacilitatorEvmSigner}=require('@x402/evm');
-const manifest=JSON.parse(await readFile(new URL('../deployments/usdc-sepolia.json',import.meta.url),'utf8'));
-const reportPath=new URL('../deployments/usdc-payment.json',import.meta.url);
-const directory=join(homedir(),'.agent-capital-tree/usdc-payment');
+const manifestPath=process.env.ACT_DEPLOYMENT_MANIFEST ?? new URL('../deployments/usdc-sepolia.json',import.meta.url);
+const manifest=JSON.parse(await readFile(manifestPath,'utf8'));
+const reportPath=process.env.ACT_PAYMENT_REPORT ?? new URL('../deployments/usdc-payment.json',import.meta.url);
+const directory=join(homedir(),'.agent-capital-tree/usdc-payment',manifest.contracts.CapitalController.address);
 const rpcUrl='https://ethereum-sepolia.publicnode.com';
 const rpc=new JsonRpcProvider(rpcUrl);
 let seller;
@@ -23,9 +26,10 @@ try {
   assert.equal((await rpc.getNetwork()).chainId,11155111n);
   assert.equal(manifest.status,'deployed');
   assert(manifest.multibaas?.label,'Configure indexing before creating demo activity');
-  try {const done=JSON.parse(await readFile(reportPath,'utf8')); if(done.status==='confirmed'){console.log(JSON.stringify({status:'already-completed',transactionHash:done.payment.transactionHash}));process.exit(0);}}catch(error){if(error.code!=='ENOENT')throw error;}
+  try {const done=JSON.parse(await readFile(reportPath,'utf8')); if(done.status==='confirmed'){assert.equal(done.controller.toLowerCase(),manifest.contracts.CapitalController.address.toLowerCase(),'Use a separate report for a new controller');if(process.argv.includes('--execute'))await verifyDeployment(manifestPath);console.log(JSON.stringify({status:'already-completed',transactionHash:done.payment.transactionHash}));process.exit(0);}}catch(error){if(error.code!=='ENOENT')throw error;}
   if(!process.argv.includes('--execute')) {console.log(JSON.stringify({mode:'inspect',rootId:manifest.bootstrap.rootId,controller:manifest.contracts.CapitalController.address,priceUSDC:'0.01',childAllocationUSDC:'0.25'}));process.exit(0);}
   await mkdir(directory,{recursive:true,mode:0o700});
+  await etherscanKey();
   const keys=join(homedir(),'.agent-capital-tree/keys');
   const owner=(await Wallet.fromEncryptedJson(await readFile(join(keys,'jury-e2e.keystore.json'),'utf8'),await readFile(join(keys,'jury-e2e.password'),'utf8'))).connect(rpc);
   assert.equal(owner.address,manifest.deployer);
@@ -34,6 +38,9 @@ try {
   const artifact=JSON.parse(await readFile(new URL('../contracts/out/CapitalController.sol/CapitalController.json',import.meta.url),'utf8'));
   const controller=new Contract(manifest.contracts.CapitalController.address,artifact.abi,owner);
   const rootId=BigInt(manifest.bootstrap.rootId),root=await controller.getNode(rootId);
+  const implementation=manifest.contracts.CapitalVaultImplementation.address;
+  const proxyCode=`0x363d3d373d3d3d363d73${implementation.slice(2).toLowerCase()}5af43d82803e903d91602b57fd5bf3`;
+  assert.equal((await rpc.getCode(root.vault)).toLowerCase(),proxyCode);
   const generation=await controller.rootGeneration(rootId);
   assert.equal(root.agent.toLowerCase(),owner.address.toLowerCase());
   const policy={capabilities:1n<<68n,maxAmounts:[250000n,0n],expiry:BigInt(manifest.bootstrap.policyExpiry),tokenMask:1,poolId:ZeroHash};
@@ -43,6 +50,10 @@ try {
   const operation=await controller.getOperation(rootId,rootId,generation,operationKey);
   assert(operation.nodeId>0n);
   const child=await controller.getNode(operation.nodeId);
+  assert.equal((await rpc.getCode(child.vault)).toLowerCase(),proxyCode);
+  const childVault=new Contract(child.vault,['function CONTROLLER() view returns(address)','function initialize(address)'],owner);
+  assert.equal(await childVault.CONTROLLER(),await controller.getAddress());
+  await assert.rejects(childVault.initialize.staticCall(owner.address));
   assert.equal(child.agent.toLowerCase(),childAccount.address.toLowerCase());
   const token=new Contract(manifest.token.address,['function balanceOf(address) view returns(uint256)'],rpc);
   const combined=createWalletClient({account:privateKeyToAccount(owner.privateKey),chain:sepolia,transport:http(rpcUrl)}).extend(publicActions);
@@ -64,5 +75,10 @@ try {
   const childBalance=await token.balanceOf(child.vault);
   assert.equal(childBalance,240000n);
   const report={status:'confirmed',checkedAt:new Date().toISOString(),chainId:11155111,controller:await controller.getAddress(),rootId:rootId.toString(),rootVault:root.vault,childId:child.id.toString(),childVault:child.vault,childName:`researcher.capital.${manifest.ensNamespace.name}`,spawn:{hash:spawnReceipt.hash,block:spawnReceipt.blockNumber},payment:{transactionHash:result.transactionHash,amountRaw:result.amount,amountUSDC:'0.01',asset:result.asset,recipient:owner.address},childBalanceRaw:childBalance.toString(),retryChargedAgain:false,checks:['Official x402 SDK exact scheme verifies ERC1271 vault and settles Circle USDC on public Sepolia','HTTP402 payment-required → signed request → paid research response','Companion independently checks canonical Transfer and AuthorizationUsed receipt events','Recreated purchase handler returns cached result without another charge'],limitations:['Controlled loopback research seller with the test owner as recipient, not an independent commercial merchant','PAY ceilings are per payment; service allowlist is enforced by companion, not an onchain recipient allowlist','USDC Transfer events are not part of the controller-only MultiBaas history; payment receipt is the separate evidence','Root and researcher retain remaining demo capital for UI inspection']};
-  await writeFile(reportPath,JSON.stringify(report,null,2)+'\n');console.log(JSON.stringify(report));
+  report.vaultArchitecture='eip1167';report.implementation=implementation;
+  report.spawn.gasUsed=spawnReceipt.gasUsed.toString();report.spawn.vaultRuntimeBytes=45;
+  report.checks.unshift('Root and child are exact EIP-1167 proxies; child controller binding is correct and cannot be reinitialized');
+  await writeFile(reportPath,JSON.stringify(report,null,2)+'\n');
+  await verifyDeployment(manifestPath);
+  console.log(JSON.stringify(report));
 } finally {if(seller)await seller.close();rpc.destroy();}
