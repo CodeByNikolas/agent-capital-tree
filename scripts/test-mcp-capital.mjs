@@ -15,7 +15,7 @@ async function call(name, args) {
   assert.equal(result.isError, undefined, result.content[0].text);
   const png = result.content.find(item => item.type === 'image');
   assert.equal(png?.mimeType, 'image/png');
-  return { data: JSON.parse(result.content[0].text), png: Buffer.from(png.data, 'base64') };
+  return { data: result.structuredContent, png: Buffer.from(png.data, 'base64') };
 }
 try {
   await client.connect(transport, { timeout: 60000 });

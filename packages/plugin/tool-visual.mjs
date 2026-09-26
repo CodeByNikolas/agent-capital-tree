@@ -1,4 +1,5 @@
 import { t, frame, text, rect, lines, short, amount } from './visual-primitives.mjs';
+import { resultMarkdown } from './kanoki-format.mjs';
 import { svgAsPng } from './png-renderer.mjs';
 import { treeAsMermaid, treeAsPng, NODES_PER_PAGE } from './tree-visual.mjs';
 import { mkdtemp, writeFile } from 'node:fs/promises';
@@ -157,7 +158,7 @@ export async function visualResult(name, args, data, options = {}) {
     try {links.push(await imageLink(images[index],`${view.title}${images.length>1?` (${index+1}/${images.length})`:''}`));}
     catch { /* The in-band PNG remains usable if the host cannot write its cache. */ }
   }
-  content.push({ type:'text', text:`Show the dashboard graphic in your final answer. Copy these Markdown links verbatim; the PNG files already exist:\n${links.join('\n')}\nIf local images are unsupported, display this Mermaid fallback:\n\x60\x60\x60mermaid\n${fallback}\n\x60\x60\x60` });
+  content.push({ type:'text', text:`${resultMarkdown(name, args, data, options)}\n\nShow the dashboard graphic in your final answer. Copy these Markdown links verbatim; the PNG files already exist:\n${links.join('\n')}\nIf local images are unsupported, display this Mermaid fallback:\n\x60\x60\x60mermaid\n${fallback}\n\x60\x60\x60` });
   for (const png of images) content.push({type:'image',data:png.toString('base64'),mimeType:'image/png',annotations:{audience:['user','assistant'],priority:1}});
-  return { ...(options.isError?{isError:true}:{}), content };
+  return { ...(options.isError?{isError:true}:{}), structuredContent: JSON.parse(JSON.stringify(data && typeof data === 'object' ? data : { message: data }, (_,v)=>typeof v==='bigint'?v.toString():v)), content };
 }

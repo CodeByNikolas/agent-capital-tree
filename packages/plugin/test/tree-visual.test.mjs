@@ -20,8 +20,8 @@ const base = {
 
 test('tree visual uses real hierarchy and raw six-decimal balances', async () => {
   const svg = treeAsSvg(base);
-  assert.match(svg, /1\.25 USDC/);
-  assert.match(svg, /0\.25 USDC/);
+  assert.match(svg, /1\.250000 USDC/);
+  assert.match(svg, /0\.250000 USDC/);
   assert.match(svg, /researcher\.capital\.agentcapitalusdc\.eth/);
   assert.match(svg, /BLOCK 42/);
   assert.match(treeAsMermaid(base), /n1 --> n2/);
@@ -58,4 +58,13 @@ test('chat Markdown links point to the exact returned PNG, not an invented attac
   const file = /!\[[^\]]+\]\(<([^>]+)>\)/.exec(result.content[1].text)?.[1];
   assert.ok(file);
   assert.deepEqual(await readFile(file), Buffer.from(result.content[2].data, 'base64'));
+});
+
+
+test('Kanoki response adds readable and structured data without breaking existing JSON clients', async () => {
+  const result = await visualResult('getTree', {}, base, { readOnly: true });
+  assert.deepEqual(JSON.parse(result.content[0].text), result.structuredContent);
+  assert.match(result.content[1].text, /\*\*kanoki\*\*/);
+  assert.match(result.content[1].text, /1\.250000 USDC/);
+  assert.equal(result.content[2].type, 'image');
 });

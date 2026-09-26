@@ -2,6 +2,12 @@
 
 As of 26 September 2026. Read this together with PLAN.md after context compaction. Older sections below retain the evidence and acceptance limits known at the time; the newest E2E status is first.
 
+## Remaining work/rami integration
+
+- Merged the remaining `work/rami` commit `6f51790`: Kanoki assets, CSS/component/layout building blocks and MCP graphics/formatting. Added the missing pinned Dagre dependency so the layout helper typechecks. Existing root creation defaults, owner filtering, recovery guards and native worker support remain intact.
+- MCP responses add Kanoki prose and structuredContent while preserving the original first JSON text block, image positions and richer funded-worker/reconciliation descriptions for existing clients. The latest schema-owned error messages and public verification report fields are retained. The one-off CSS migration script is included as source and was not executed against the current dashboard.
+- Full workspace build/typecheck and all 63 tests passed (33 runtime, 17 plugin, 11 MultiBaas, 2 SDK). A live read-only three-tool MCP check passed against current Sepolia root 1 at block 11788551, including PNG output. No model inference or financial transaction was run for this merge.
+
 ## Root creation defaults
 
 - At the user's request, suggested ENS labels now contain only two words (64 × 64 combinations) without a suffix. Name availability is still enforced by contract simulation. Ordinary new roots start with 20 for both per-action asset limits and all available capabilities enabled. Existing policies and explicit MCP demo budgets retain their values and narrower permissions.

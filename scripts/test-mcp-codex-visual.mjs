@@ -28,7 +28,7 @@ try {
   assert.ok(links.length,'MCP must provide existing local image links');
   const final=events.filter(event=>event.type==='item.completed'&&event.item.type==='agent_message').map(event=>event.item.text).join('\n');
   for(const link of links) {await access(link[1]);assert.ok(final.includes(link[0]),'Codex did not include the supplied image link in its answer');}
-  const tree=JSON.parse(content[0].text);
+  const tree=call.result.structuredContent;
   const report={host:'Codex CLI',query,rootId:tree.rootId,chainId:tree.source.chainId,blockNumber:tree.source.blockNumber,
     controller:tree.mcp?.controller,activeMcpRootId:tree.mcp?.activeMcpRootId,
     imageDelivered:true,realImageLinkInAnswer:true,writes:'none',desktopGui:'not verified'};

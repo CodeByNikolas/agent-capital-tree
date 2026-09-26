@@ -24,7 +24,7 @@ async function call(name,args,errorPattern) {
   const png = result.content.find(item=>item.type==='image'); assert.equal(png?.mimeType,'image/png');
   if (errorPattern) {assert.equal(result.isError,true);assert.match(result.content[0].text,errorPattern);return;}
   assert.equal(result.isError,undefined,result.content[0].text);
-  return { data:JSON.parse(result.content[0].text), png:Buffer.from(png.data,'base64'), links:result.content[1].text };
+  return { data:result.structuredContent, png:Buffer.from(png.data,'base64'), links:result.content[1].text };
 }
 try {
   await mkdir(artifacts,{recursive:true}); await client.connect(transport,{timeout:60000});
