@@ -2,6 +2,12 @@
 
 As of 26 September 2026. Product decisions are fixed; implementation is in progress, and actual acceptance status is in STATUS.md. This plan supersedes earlier brainstorming. Read it with STATUS.md after context compaction.
 
+## Current change: minimal vault proxies
+
+User decision: replace repeated full CapitalVault deployments with non-upgradeable EIP-1167 clones. Each vault retains separate funds and state. Shared pool/token/Permit2 configuration stays immutable in the implementation; only the controller binding is initialized in clone storage. VaultFactory deploys and initializes each clone atomically. The implementation is locked and no upgrade authority exists. ENSv2 ManagedRegistry deployments remain unchanged.
+
+Acceptance: reject unauthorized/repeated/zero-controller initialization; prove independent custody, ENS checks, swaps, LP lifecycle, owner recovery, and Circle ERC-1271/x402 settlement through the proxies. Record complete child-spawn gas, not only proxy deployment gas. Stage a new Sepolia controller and namespace with a separate transaction journal and MultiBaas label; retain old onchain funds and names. Switch the current manifest and website only after the new deployment works. UI currency labels say USDC; preview banners continue to identify invented sample balances.
+
 ## Current extension: official Sepolia USDC and x402
 
 User decision, 26 September: rapid prototyping without backward compatibility. Switch the frontend exclusively to the new USDC version. Do not add a version selector, legacy link resolution, or migration. Existing onchain capital remains unchanged.

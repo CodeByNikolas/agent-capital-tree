@@ -18,6 +18,8 @@ The prototype targets **Ethereum Sepolia, chain 11155111**. The current release 
 
 Capital allocation is an actual transfer, not an overbookable allowance. Amount ceilings are **per action**, not cumulative spending limits. The vault’s allocated balance bounds total exposure. Model intelligence is not a security boundary; recovery does not guarantee the original dollar value.
 
+Vaults are **non-upgradeable EIP-1167 proxies**: every root and child has a separate 45-byte contract, token balances and LP state, with one shared immutable implementation. VaultFactory deploys and initializes the controller binding in the same transaction; the implementation and initialized clones reject reinitialization. ENS registries are still deployed individually. Proxy deployment saves gas; calls incur a small delegation overhead. Existing full vaults cannot be converted in place.
+
 Native Codex subagents do not automatically become capital workers. Agents use our MCP `spawnChild` workflow; no automatic Codex hooks are enabled.
 
 ## Applications
@@ -25,6 +27,8 @@ Native Codex subagents do not automatically become capital workers. Agents use o
 **Service purchases:** `getPaymentServices` lists explicitly configured services. `purchaseService` follows x402 v2’s HTTP402 flow. The agent signs an exact EIP-3009 authorization for its vault, recipient, amount, validity window and nonce. The vault’s ERC-1271 verifier checks the current ENS/PAY mandate at settlement. Nonces bind the authority generation, and retries retain the same authorization. The companion independently verifies Circle’s `Transfer` and `AuthorizationUsed` receipt events.
 
 The supported payment token is Circle Sepolia USDC at [`0x1c7D4B196Cb0C7B01d743Fbc6116a902379C7238`](https://sepolia.etherscan.io/token/0x1c7D4B196Cb0C7B01d743Fbc6116a902379C7238), with six decimals. `10000` raw units is **0.01 Test-USDC**. Obtain test tokens from [Circle’s faucet](https://faucet.circle.com/); the app cannot mint Circle USDC.
+
+The x402 facilitator submits the signed authorization and pays settlement gas. USDC moves from the agent vault to the service provider. The agent can sign this payment without holding ETH; direct controller transactions such as delegation and swaps still require ETH in the transaction sender's wallet. The vault itself does not need ETH.
 
 **Uniswap:** typed swaps and vault-owned LP positions use one fixed v4 pool. Management, fee collection and exit are separate permissions. The quote token is **DEMO-USD**, a clearly valueless six-decimal demo asset. Its pool price is not a real USD valuation. Agents cannot supply arbitrary router commands or redirect outputs.
 
@@ -43,7 +47,7 @@ Current balances and permissions come directly from Sepolia. MultiBaas history c
 | Partner | Contribution | Code |
 | --- | --- | --- |
 | ENS | Nested registries, real subnames, native EAC roles including PAY; contract-enforced ancestor restrictions | [ManagedRegistry](contracts/src/ens/ManagedRegistry.sol), [Controller](contracts/src/CapitalController.sol) |
-| Uniswap | Fixed-pool v4 swaps, vault-owned PositionManager NFT, typed LP lifecycle and independent owner exit | [Swap authorization](contracts/src/CapitalController.sol#L383-L409), [vault swap](contracts/src/CapitalVault.sol#L179-L212), [LP lifecycle](contracts/src/CapitalVault.sol#L241-L310), [FEEDBACK.md](FEEDBACK.md) |
+| Uniswap | Fixed-pool v4 swaps, vault-owned PositionManager NFT, typed LP lifecycle and independent owner exit | [Swap authorization](contracts/src/CapitalController.sol#L383-L409), [vault swap](contracts/src/CapitalVault.sol#L192), [LP lifecycle](contracts/src/CapitalVault.sol#L253), [FEEDBACK.md](FEEDBACK.md) |
 | Curvegrid | MultiBaas event queries, receipt enrichment and canonical RPC verification for UI and MCP | [Adapter](packages/multibaas), [plan limits](docs/multibaas-plan-limits.md) |
 
 ENS roles are actual authorization, not descriptive text metadata. MultiBaas is an indexer, not an authorization service. Its free plan allows only a 100-block backfill; indexing is configured before new demo activity.

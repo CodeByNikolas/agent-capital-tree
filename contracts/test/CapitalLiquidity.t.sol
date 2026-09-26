@@ -13,6 +13,7 @@ import {IPositionDescriptor} from "@uniswap/v4-periphery/src/interfaces/IPositio
 import {IWETH9} from "@uniswap/v4-periphery/src/interfaces/external/IWETH9.sol";
 import {IAllowanceTransfer} from "permit2/src/interfaces/IAllowanceTransfer.sol";
 import {CapitalVault} from "../src/CapitalVault.sol";
+import {VaultFactory} from "../src/VaultFactory.sol";
 import {FixedPool} from "../src/uniswap/FixedPool.sol";
 
 contract LpToken is ERC20 {
@@ -48,6 +49,7 @@ contract CapitalLiquidityTest is Test {
     IPositionManager private posm;
     TestPermit2 private permit2;
     CapitalVault private vault;
+    VaultFactory private factory;
 
     function setUp() public {
         token0 = new LpToken("A");
@@ -68,14 +70,13 @@ contract CapitalLiquidityTest is Test {
                 )
             )
         );
-        vault = new CapitalVault(
-            address(this),
+        factory = new VaultFactory(
             IPoolManager(address(manager)),
             IPositionManager(address(posm)),
             IAllowanceTransfer(address(permit2)),
-            IERC20(address(token0)),
-            IERC20(address(token1))
+            [IERC20(address(token0)), IERC20(address(token1))]
         );
+        vault = factory.createVault(address(this));
         token0.mint(address(vault), 100 ether);
         token1.mint(address(vault), 100 ether);
     }
@@ -95,14 +96,7 @@ contract CapitalLiquidityTest is Test {
         vault.increasePosition(100 ether, [uint128(10 ether), uint128(10 ether)], block.timestamp);
         assertEq(vault.positionLiquidity(), 1100 ether);
 
-        CapitalVault trader = new CapitalVault(
-            address(this),
-            IPoolManager(address(manager)),
-            IPositionManager(address(posm)),
-            IAllowanceTransfer(address(permit2)),
-            IERC20(address(token0)),
-            IERC20(address(token1))
-        );
+        CapitalVault trader = factory.createVault(address(this));
         token0.mint(address(trader), 1 ether);
         trader.swapExactInput(true, 1 ether, 0.9 ether, TickMath.MIN_SQRT_PRICE + 1, block.timestamp);
         uint256[2] memory fees = vault.collectFees([uint128(1), uint128(0)], block.timestamp);

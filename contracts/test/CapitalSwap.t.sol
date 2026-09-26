@@ -10,6 +10,8 @@ import {PoolModifyLiquidityTest} from "@uniswap/v4-core/src/test/PoolModifyLiqui
 import {ModifyLiquidityParams} from "@uniswap/v4-core/src/types/PoolOperation.sol";
 import {TickMath} from "@uniswap/v4-core/src/libraries/TickMath.sol";
 import {CapitalVault} from "../src/CapitalVault.sol";
+import {VaultFactory} from "../src/VaultFactory.sol";
+import {PositionManagerConfig, DummyPermit2} from "./utils/PositionManagerConfig.sol";
 import {IPositionManager} from "@uniswap/v4-periphery/src/interfaces/IPositionManager.sol";
 import {IAllowanceTransfer} from "permit2/src/interfaces/IAllowanceTransfer.sol";
 import {FixedPool} from "../src/uniswap/FixedPool.sol";
@@ -44,14 +46,13 @@ contract CapitalSwapTest is Test {
             ModifyLiquidityParams({tickLower: -600, tickUpper: 600, liquidityDelta: 1_000_000 ether, salt: 0}),
             ""
         );
-        vault = new CapitalVault(
-            address(this),
+        IAllowanceTransfer permit2 = IAllowanceTransfer(address(new DummyPermit2()));
+        vault = new VaultFactory(
             IPoolManager(address(manager)),
-            IPositionManager(address(0x124)),
-            IAllowanceTransfer(address(0x125)),
-            IERC20(address(token0)),
-            IERC20(address(token1))
-        );
+            IPositionManager(address(new PositionManagerConfig(IPoolManager(address(manager)), permit2))),
+            permit2,
+            [IERC20(address(token0)), IERC20(address(token1))]
+        ).createVault(address(this));
         token0.mint(address(vault), 100 ether);
     }
 

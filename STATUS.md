@@ -2,6 +2,12 @@
 
 As of 26 September 2026. Read this together with PLAN.md after context compaction.
 
+## Minimal vault proxy rollout
+
+- VaultFactory now creates non-upgradeable EIP-1167 clones and initializes their controller in the same transaction. The shared implementation is locked. Each clone retains independent funds and LP state; ENS registry deployment is unchanged.
+- All 38 contract tests across eight suites passed, including clone initialization, isolated custody, swaps, LP lifecycle, ENS restrictions and owner recovery. The official Circle/x402 fork passed at block 11785735 with clone bytecode checks, payment-signature isolation, payment retry and recovery. See `deployments/usdc-x402-fork.json`.
+- The fork child spawn used 3,577,156 gas versus 5,934,691 in the previous full-vault fork report (about 40% less; different fork blocks). A separate Sepolia deployment under `agentcapitalvault.eth` is being staged before switching the current website. Existing public names and funds are preserved.
+
 ## Sidebar vault controls
 
 - Moved the ENS/address vault lookup, sample link, live Sepolia read status, and refresh control from the content area into the existing sidebar on all six dashboard routes. The separate no-vault onboarding lookup remains in its onboarding card.

@@ -58,8 +58,11 @@ contract CapitalVault is IUnlockCallback, IERC721Receiver, IERC1271 {
     error InvalidSwap();
     error OnlyPoolManager();
     error InvalidPosition();
+    error OnlyFactory();
+    error AlreadyInitialized();
 
-    address public immutable CONTROLLER;
+    address public CONTROLLER;
+    address private immutable _factory;
     IPoolManager public immutable POOL_MANAGER;
     IERC20 public immutable TOKEN0;
     IERC20 public immutable TOKEN1;
@@ -70,7 +73,6 @@ contract CapitalVault is IUnlockCallback, IERC721Receiver, IERC1271 {
     bool private _swapActive;
 
     constructor(
-        address controller,
         IPoolManager poolManager,
         IPositionManager positionManager,
         IAllowanceTransfer permit2,
@@ -78,17 +80,27 @@ contract CapitalVault is IUnlockCallback, IERC721Receiver, IERC1271 {
         IERC20 token1
     ) {
         if (
-            controller == address(0) || address(poolManager) == address(0) || address(positionManager) == address(0)
+            address(poolManager) == address(0) || address(positionManager) == address(0)
                 || address(permit2) == address(0) || address(token0) >= address(token1)
         ) {
             revert InvalidController();
         }
-        CONTROLLER = controller;
+        // Lock the implementation; clones start with an empty controller slot.
+        CONTROLLER = address(this);
+        _factory = msg.sender;
         POOL_MANAGER = poolManager;
         TOKEN0 = token0;
         TOKEN1 = token1;
         POSITION_MANAGER = positionManager;
         PERMIT2 = permit2;
+    }
+
+    /// @notice Called atomically by the deploying factory, once per clone.
+    function initialize(address controller) external {
+        if (msg.sender != _factory) revert OnlyFactory();
+        if (CONTROLLER != address(0)) revert AlreadyInitialized();
+        if (controller == address(0)) revert InvalidController();
+        CONTROLLER = controller;
     }
 
     function transferToken(IERC20 token, address recipient, uint256 amount) external {

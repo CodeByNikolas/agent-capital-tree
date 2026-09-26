@@ -69,6 +69,13 @@ try{
  const childPolicy={...policy,maxAmounts:[2_000_000n,0n],tokenMask:1};
  await write('delegate-2-usdc',controller,'spawnChild',[1,'researcher',child,childPolicy,[2_000_000n,0n],id('usdc-fork-researcher')]);
  const rootNode=await controller.getNode(1),childNode=await controller.getNode(2);
+ const implementation=await vf.IMPLEMENTATION();
+ for(const node of [rootNode,childNode]){
+   assert.equal((await rpc.getCode(node.vault)).toLowerCase(),`0x363d3d373d3d3d363d73${implementation.slice(2).toLowerCase()}5af43d82803e903d91602b57fd5bf3`);
+   const vault=new Contract(node.vault,['function CONTROLLER() view returns(address)','function initialize(address)'],owner);
+   assert.equal(await vault.CONTROLLER(),await controller.getAddress());
+   await assert.rejects(vault.initialize.staticCall(ownerAddress));
+ }
  assert.equal(await token.balanceOf(rootNode.vault),8_000_000n);assert.equal(await token.balanceOf(childNode.vault),2_000_000n);
  const effective=await controller.getEffectivePolicy(2);assert.equal(effective.maxAmounts[0],2_000_000n);
  const tree=await capitalClient(rpcUrl,await controller.getAddress()).getTree(1n);
@@ -95,6 +102,8 @@ try{
    const digest=p=>TypedDataEncoder.hash({name:'USDC',version:'2',chainId:11155111,verifyingContract:usdc.token.address},transferAuthorizationTypes,p.payload.authorization);
    const check=p=>vaultVerifier.isValidSignature(digest(p),p.payload.signature);
    assert.equal(await check(approved),'0x1626ba7e');
+   const otherVaultVerifier=new Contract(rootNode.vault,['function isValidSignature(bytes32,bytes) view returns(bytes4)'],rpc);
+   assert.equal(await otherVaultVerifier.isValidSignature(digest(approved),approved.payload.signature),'0xffffffff');
    const wrongActor=await signVaultPayment(privateKeyToAccount(Wallet.createRandom().privateKey),childNode.vault,childNode.generation,seller.requirement,BigInt(now+3600),currentTime);
    assert.equal(await check(wrongActor),'0xffffffff');
    const excessive=await signVaultPayment(actor,childNode.vault,childNode.generation,{...seller.requirement,amount:'2000001'},BigInt(now+3600),currentTime);
@@ -138,5 +147,8 @@ try{
  await write('restore-fork-funding',token.connect(owner),'transfer',[donor,await token.balanceOf(ownerAddress)-originalOwnerBalance]);
  const roundingLoss=original-await token.balanceOf(donor);assert(roundingLoss>=0n&&roundingLoss<=(testPayments?2n:0n));
  const report={checkedAt:new Date().toISOString(),network:'disposable Ethereum Sepolia fork',forkBlock,token:usdc.token,checks:['Real Circle USDC proxy reports 6 decimals','Root funded with 10 USDC; child receives 2; root retains 8','SDK preserves raw balances and readable ENS child name','Excess amount and wrong signer rejected',`Owner recovers remaining USDC; LP rounding loss ${roundingLoss} raw units`,...(testPayments?['ERC1271 rejects wrong signer, excess amount, wrong generation, arbitrary digest, revoked child, tightened ancestor and operator rebind','Six-decimal USDC/DEMO-USD pool initialized; LP opened and closed with explicit minimums','Official x402 exact facilitator accepts vault ERC1271 and settles 0.01 USDC','HTTP402 to signed request to independently confirmed Transfer and AuthorizationUsed','Restart retry reuses receipt without another charge; conflicting operation and unconfigured service rejected']:[])],transactions,publicTransactionsSent:0,limitations:['No public deployment or token movement',testPayments?'Local demo seller only; no economic USDC price claim for valueless DEMO-USD':'No USDC Uniswap pool or x402 payment tested','Namespace replaced only inside disposable fork; public deployment must preserve existing namespace']};
+ report.vaultArchitecture='eip1167';
+ report.checks.unshift('Root and child are exact 45-byte EIP-1167 proxies, bound to the controller and rejecting reinitialization');
+ if(testPayments)report.checks.push('A child payment signature cannot be replayed against the sibling/root proxy');
  await writeFile(new URL(testPayments?'../deployments/usdc-x402-fork.json':'../deployments/usdc-fork.json',import.meta.url),JSON.stringify(report,null,2)+'\n');console.log(JSON.stringify(report));
 }finally{if(blockTimer)clearInterval(blockTimer);if(seller)await seller.close();anvil.kill('SIGTERM');rpc.destroy();if(privateDirectory)await rm(privateDirectory,{recursive:true,force:true});}
