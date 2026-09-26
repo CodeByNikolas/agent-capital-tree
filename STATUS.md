@@ -2,6 +2,11 @@
 
 As of 26 September 2026. Read this together with PLAN.md after context compaction.
 
+## Local setup guide audit
+
+- `docs/local-setup.md` now covers the current Circle USDC Sepolia root flow, external CLIProxyAPI and Codex CLI configuration, pinned worker binary/image requirements, private persistent operator files, ETH gas ownership, MCP registration, and a concrete read-and-report child task with raw USDC units and idempotency-key reconciliation. The sample child retains a zero-limit delegation capability because the runtime does not dispatch a worker with no active onchain capability. The guide also records success checks and the optional x402 configuration boundary.
+- The guide was checked against the current deployment manifest, runtime CLI and worker builder, MCP tool schemas, dashboard labels, and Codex CLI 0.154.0 command help. Relative Markdown links, all three JSON examples, and `git diff --check` passed. No wallet transaction, independent-machine setup, or external-user acceptance run was performed; that gate remains open.
+
 ## Live demo entry
 
 - The onboarding link now says **Open live demo** and opens the real Sepolia tree. The visible **Explore sample data** and sidebar **Preview sample** links are removed. The direct fictional preview URL remains available for explicit read-only checks, but normal navigation no longer offers it.
