@@ -16,6 +16,7 @@ const permissionBits: readonly [Permission, bigint][] = [
   ["manage-liquidity", financeRoles.lpManage],
   ["collect-fees", financeRoles.collectFees],
   ["exit-liquidity", financeRoles.exit],
+  ["pay", financeRoles.pay],
   ["restrict", financeRoles.restrict],
   ["reclaim", financeRoles.reclaim],
 ];

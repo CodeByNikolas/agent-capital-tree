@@ -36,6 +36,7 @@ const permissionCapabilities: Record<Permission, Capability> = {
   "manage-liquidity": "lpManage",
   "collect-fees": "collectFees",
   "exit-liquidity": "exit",
+  pay: "pay",
   restrict: "restrict",
   reclaim: "reclaim",
 };
@@ -46,11 +47,16 @@ const permissionBits: Record<Permission, bigint> = {
   "manage-liquidity": financeRoles.lpManage,
   "collect-fees": financeRoles.collectFees,
   "exit-liquidity": financeRoles.exit,
+  pay: financeRoles.pay,
   restrict: financeRoles.restrict,
   reclaim: financeRoles.reclaim,
 };
 
 const zeroPoolId = `0x${"0".repeat(64)}` as const;
+const demoQuoteAbi = [
+  parseAbiItem("function claimed(address account) view returns (bool)"),
+  parseAbiItem("function mint()"),
+];
 const ownerEmergencyClosePositionAbi = [
   parseAbiItem("function ownerEmergencyClosePosition(uint256 nodeId, uint128[2] minAmounts, uint256 deadline)"),
 ];
@@ -58,11 +64,6 @@ const vaultPositionAbi = [
   parseAbiItem("function positionTokenId() view returns (uint256)"),
   parseAbiItem("function positionLiquidity() view returns (uint128)"),
 ];
-const demoTokenAbi = [
-  parseAbiItem("function claimed(address account) view returns (bool)"),
-  parseAbiItem("function mint()"),
-] as const;
-
 function policyToSdk(policy: Policy, tokens: readonly [Address, Address]): SdkPolicy {
   const capabilities = policy.permissions.reduce((mask, permission) => mask | permissionBits[permission], 0n);
   const tokenMask = tokens.reduce((mask, token, index) =>
@@ -99,8 +100,11 @@ function makePolicy(draft: PolicyDraft, decimals: readonly [number, number], dep
   const requestsPoolCapability = draft.permissions.some((permission) =>
     ["swap", "manage-liquidity", "collect-fees", "exit-liquidity"].includes(permission),
   );
+  if (draft.permissions.includes("pay") && !deployment.paymentsSupported) {
+    throw new Error("Companion payment permissions require the USDC deployment.");
+  }
   if (requestsPoolCapability && !deployment.poolConfigured) {
-    throw new Error("Swap and LP permissions stay unavailable until the configured pool is initialized and seeded.");
+    throw new Error("Swap and LP permissions stay unavailable until the USDC pool is initialized and seeded.");
   }
   if (draft.poolId !== zeroPoolId && draft.poolId !== deployment.poolId) {
     throw new Error("The mandate can only use the pool recorded in the public deployment manifest.");
@@ -179,7 +183,7 @@ export function useWalletActions({
       ...deployment.tokenAddresses.map((tokenAddress) => publicClient.getCode({ address: tokenAddress })),
     ]);
     if (!controllerCode || controllerCode === "0x") throw new Error("No controller bytecode exists at the configured address.");
-    if (tokenCodes.some((code) => !code || code === "0x")) throw new Error("A configured demo token has no deployed bytecode.");
+    if (tokenCodes.some((code) => !code || code === "0x")) throw new Error("A configured token has no deployed bytecode.");
 
     return {
       account: address,
@@ -274,67 +278,42 @@ export function useWalletActions({
   }
 
   const actions: DashboardActions = {
-    async claimDemoTokens() {
+    async claimDemoQuote() {
       if (busy.current) throw new Error("Another wallet action is still in progress.");
+      const quoteAddress = deployment.demoQuoteAddress;
+      if (!quoteAddress || !deployment.tokenAddresses || quoteAddress.toLowerCase() !== deployment.tokenAddresses[1].toLowerCase()) {
+        throw new Error("The valueless DEMO-USD quote token is not configured at token index 1.");
+      }
       busy.current = true;
-      const claimed: string[] = [];
-      const skipped: string[] = [];
       try {
         const context = await createContext();
-        for (const index of [0, 1] as const) {
-          const tokenLabel = `Demo token ${index + 1}`;
-          setNotice({
-            stage: "simulating",
-            label: "Claim demo tokens",
-            message: `Checking whether ${tokenLabel} has already been claimed by this wallet.`,
-          });
-          const alreadyClaimed = await context.publicClient.readContract({
-            address: context.tokens[index],
-            abi: demoTokenAbi,
-            functionName: "claimed",
-            args: [context.account],
-          });
-          if (alreadyClaimed) {
-            skipped.push(tokenLabel);
-            continue;
-          }
-
-          await submitWithContext(context, `Claim ${tokenLabel}`, async (tx, awaitingWallet) => {
-            const { request } = await tx.publicClient.simulateContract({
-              account: tx.account,
-              address: tx.tokens[index],
-              abi: demoTokenAbi,
-              functionName: "mint",
-              args: [],
-            });
-            awaitingWallet();
-            return tx.walletClient.writeContract(request);
-          }, false);
-          claimed.push(tokenLabel);
+        if (context.tokens[1].toLowerCase() !== quoteAddress.toLowerCase() || context.tokens[0].toLowerCase() === quoteAddress.toLowerCase()) {
+          throw new Error("DEMO-USD must be isolated at token index 1; USDC cannot be minted here.");
         }
-
-        if (claimed.length === 0) {
-          setNotice({
-            stage: "confirmed",
-            label: "Demo tokens already claimed",
-            message: "This wallet has already claimed both demo tokens.",
-          });
+        const alreadyClaimed = await context.publicClient.readContract({
+          address: quoteAddress,
+          abi: demoQuoteAbi,
+          functionName: "claimed",
+          args: [context.account],
+        });
+        if (alreadyClaimed) {
+          setNotice({ stage: "confirmed", label: "Get DEMO-USD", message: "This wallet has already claimed its one-time DEMO-USD amount; no transaction was sent." });
           return;
         }
-
-        const skippedMessage = skipped.length > 0
-          ? ` ${skipped.join(" and ")} already claimed and skipped.`
-          : "";
-        setNotice({
-          stage: "confirmed",
-          label: "Demo tokens claimed",
-          message: `${claimed.join(" and ")} confirmed on Sepolia.${skippedMessage}`,
+        await submitWithContext(context, "Get DEMO-USD", async (tx, awaitingWallet) => {
+          const { request } = await tx.publicClient.simulateContract({
+            account: tx.account,
+            address: quoteAddress,
+            abi: demoQuoteAbi,
+            functionName: "mint",
+            args: [],
+          });
+          awaitingWallet();
+          return tx.walletClient.writeContract(request);
         });
-        onConfirmed();
       } catch (cause) {
-        const progressMessage = claimed.length > 0 ? `${claimed.join(" and ")} confirmed. ` : "";
-        const message = `${progressMessage}${errorMessage(cause)}`;
-        setNotice({ stage: "error", label: "Claim demo tokens", message });
+        const message = errorMessage(cause);
+        setNotice({ stage: "error", label: "Get DEMO-USD", message });
         throw cause;
       } finally {
         busy.current = false;
@@ -368,7 +347,7 @@ export function useWalletActions({
       const created = parseEventLogs({ abi: capitalControllerAbi, logs: receipt.logs, eventName: "NodeCreated" })
         .find((event) => event.args.parentId === 0n);
       if (!created) throw new Error("The confirmed receipt did not include a root creation event.");
-      return created.args.rootId.toString();
+      return created.args.vault;
     },
 
     async fundRoot(rootId, amountInputs) {

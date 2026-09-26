@@ -75,7 +75,7 @@ interface DashboardProps {
   onboarding?: boolean;
   data: DashboardData;
   deployment: PublicDeployment;
-  rootQuery: string | null;
+  vaultQuery: string | null;
   nodeQuery?: string | null;
   actionQuery?: WalletActionMode;
   view: "overview" | "tree" | "activity" | "applications" | "setup";
@@ -87,6 +87,7 @@ const permissionLabels: Record<Permission, string> = {
   "manage-liquidity": "Manage LP position",
   "collect-fees": "Collect fees",
   "exit-liquidity": "Exit LP position",
+  pay: "Companion x402 payment",
   restrict: "Tighten or revoke child",
   reclaim: "Reclaim assets",
 };
@@ -383,7 +384,19 @@ async function requestActivity(rootId: string, cursor?: string, signal?: AbortSi
   return body;
 }
 
-async function requestLiveTree(rootId: string, signal?: AbortSignal): Promise<DashboardData> {
+async function requestLiveTree(vault: string, signal?: AbortSignal, knownRootId?: string): Promise<{ data: DashboardData; rootId: string; nodeId: string }> {
+  let rootId = knownRootId;
+  let nodeId: string | null = null;
+  if (!rootId) {
+    const lookupResponse = await fetch(`/api/resolve-root?q=${encodeURIComponent(vault)}`, { cache: "no-store", signal });
+    const lookup = await lookupResponse.json() as { rootId?: unknown; nodeId?: unknown; error?: unknown };
+    if (!lookupResponse.ok || typeof lookup.rootId !== "string" || typeof lookup.nodeId !== "string") {
+      throw new Error(typeof lookup.error === "string" ? lookup.error : "The Sepolia vault could not be resolved.");
+    }
+    rootId = lookup.rootId;
+    nodeId = lookup.nodeId;
+  }
+
   const response = await fetch(`/api/tree?root=${encodeURIComponent(rootId)}`, { cache: "no-store", signal });
   const body = await response.json() as Partial<DashboardData> & { error?: { message?: unknown } };
   if (!response.ok || body.source !== "direct-rpc") {
@@ -392,7 +405,7 @@ async function requestLiveTree(rootId: string, signal?: AbortSignal): Promise<Da
   if (body.rootId !== rootId || !Array.isArray(body.nodes) || !Array.isArray(body.positions)) {
     throw new Error("The live read returned an incomplete or mismatched root snapshot.");
   }
-  return body as DashboardData;
+  return { data: body as DashboardData, rootId, nodeId: nodeId ?? rootId };
 }
 
 function PreviewFlag({ source, compact = false }: { source: DataSource; compact?: boolean }) {
@@ -450,20 +463,20 @@ const views = [
   { id: "setup", title: "Setup & control", path: "/setup", icon: ShieldCheck },
 ] as const;
 
-function routeHref(path: string, rootQuery: string | null, nodeId?: string | null): string {
+function routeHref(path: string, vaultQuery: string | null, nodeId?: string | null): string {
   const params = new URLSearchParams();
-  if (rootQuery) params.set("root", rootQuery);
+  if (vaultQuery) params.set("vault", vaultQuery);
   else params.set("preview", "1");
   if (nodeId) params.set("node", nodeId);
   return `${path}?${params}`;
 }
 
-function AppSidebar({ view, rootQuery, selectedId, rootLabel, runtimeLabel }: { view: DashboardProps["view"]; rootQuery: string | null; selectedId: string; rootLabel: string; runtimeLabel: string }) {
+function AppSidebar({ view, vaultQuery, selectedId, rootLabel, runtimeLabel }: { view: DashboardProps["view"]; vaultQuery: string | null; selectedId: string; rootLabel: string; runtimeLabel: string }) {
   const { setOpenMobile } = useSidebar();
   return (
     <ShadcnSidebar collapsible="offcanvas" className="app-sidebar">
       <SidebarHeader className="app-sidebar-header">
-        <Link href={routeHref("/", rootQuery)} className="app-brand" onClick={() => setOpenMobile(false)} aria-label="Agent Capital Tree overview">
+        <Link href={routeHref("/", vaultQuery)} className="app-brand" onClick={() => setOpenMobile(false)} aria-label="Agent Capital Tree overview">
           <span className="app-brand-mark" aria-hidden="true"><GitBranch size={22} /></span>
           <span>agent capital <strong>tree</strong></span>
         </Link>
@@ -475,7 +488,7 @@ function AppSidebar({ view, rootQuery, selectedId, rootLabel, runtimeLabel }: { 
             <SidebarMenu aria-label="Primary navigation">
               {views.map(({ id, title, path, icon: Icon }) => (
                 <SidebarMenuItem key={id}>
-                  <SidebarMenuButton render={<Link href={routeHref(path, rootQuery, selectedId)} onClick={() => setOpenMobile(false)} />} isActive={view === id} aria-current={view === id ? "page" : undefined}>
+                  <SidebarMenuButton render={<Link href={routeHref(path, vaultQuery, selectedId)} onClick={() => setOpenMobile(false)} />} isActive={view === id} aria-current={view === id ? "page" : undefined}>
                     <Icon aria-hidden="true" /><span>{title}</span>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
@@ -489,11 +502,11 @@ function AppSidebar({ view, rootQuery, selectedId, rootLabel, runtimeLabel }: { 
   );
 }
 
-function Topbar({ view, source, wallet, rootQuery, selectedId }: { view: DashboardProps["view"]; source: DataSource; wallet: InjectedWalletState; rootQuery: string | null; selectedId: string }) {
+function Topbar({ view, source, wallet, vaultQuery, selectedId }: { view: DashboardProps["view"]; source: DataSource; wallet: InjectedWalletState; vaultQuery: string | null; selectedId: string }) {
   return (
     <header className="app-topbar">
-      <div className="app-topbar-title"><SidebarTrigger aria-label="Toggle navigation" /><span>{views.find((item) => item.id === view)?.title}</span><Badge variant="outline">{source === "preview" ? "Preview workspace" : source === "direct-rpc" ? "Direct RPC view" : "Local diagnostic"}</Badge></div>
-      <div className="app-topbar-actions"><Link className="app-manage-link" href={routeHref("/setup", rootQuery, selectedId)}>Wallet actions</Link><WalletControl wallet={wallet} /></div>
+      <div className="app-topbar-title"><SidebarTrigger aria-label="Toggle navigation" /><span>{views.find((item) => item.id === view)?.title}</span><Badge variant="outline">Test USDC · Sepolia</Badge><Badge variant="outline">{source === "preview" ? "Preview workspace" : source === "direct-rpc" ? "Direct RPC view" : "Local diagnostic"}</Badge></div>
+      <div className="app-topbar-actions"><Link className="app-manage-link" href={routeHref("/setup", vaultQuery, selectedId)}>Wallet actions</Link><WalletControl wallet={wallet} /></div>
     </header>
   );
 }
@@ -503,17 +516,17 @@ function PreviewNotice({ data, deployment }: { data: DashboardData; deployment: 
   return (
     <div className="preview-notice" role="note">
       <span className="notice-symbol"><CircleDashed size={16} aria-hidden="true" /></span>
-      <p><strong>Preview workspace.</strong> Balances, ENS labels, policies, LP positions and activity below are illustrative sample records. {deployment.contractsConfigured ? "Preview records cannot be used for wallet actions; use the Root ID control below to load live chain state." : "Controller deployment is still pending."}</p>
+      <p><strong>Preview workspace.</strong> Balances, ENS labels, policies, LP positions and activity below are illustrative sample records. {deployment.contractsConfigured ? "Preview records cannot be used for wallet actions; use Open vault below to load live Sepolia state." : "The USDC controller deployment is still pending."}</p>
       <Link href="/setup?preview=1">Why preview data? <ArrowRight size={13} aria-hidden="true" /></Link>
     </div>
   );
 }
 
-function RootAccessBar({ rootId, defaultRootId, path }: { rootId: string | null; defaultRootId: string | null; path: string }) {
+function RootAccessBar({ vault, path }: { vault: string | null; path: string }) {
   const router = useRouter();
   const [lookupError, setLookupError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
-  return <div className="root-access-bar" aria-label="Root navigation">
+  return <div className="root-access-bar" aria-label="Vault navigation">
     <form className="root-access-form" onSubmit={async (event) => {
       event.preventDefault();
       const query = String(new FormData(event.currentTarget).get("lookup") ?? "").trim();
@@ -522,47 +535,50 @@ function RootAccessBar({ rootId, defaultRootId, path }: { rootId: string | null;
         const response = await fetch(`/api/resolve-root?q=${encodeURIComponent(query)}`, { signal: AbortSignal.timeout(30000) });
         const result = await response.json();
         if (!response.ok) throw new Error(result.error ?? "Lookup failed.");
-        router.push(`${path}?root=${encodeURIComponent(result.rootId)}&node=${encodeURIComponent(result.nodeId)}`);
+        if (typeof result.vault !== "string" || typeof result.nodeId !== "string") throw new Error("The lookup did not return a vault address.");
+        router.push(`${path}?vault=${encodeURIComponent(result.vault)}&node=${encodeURIComponent(result.nodeId)}`);
       } catch (cause) { setLookupError(cause instanceof Error ? cause.message : "Lookup failed. Please try again."); }
       finally { setLoading(false); }
     }}>
-      <label htmlFor="root-id">Open vault</label>
-      <input id="root-id" name="lookup" type="text" maxLength={253} placeholder="ENS name or vault contract address" aria-label="ENS name or vault contract address" autoComplete="off" required disabled={loading} />
+      <label htmlFor="vault-reference">Open vault</label>
+      <input id="vault-reference" name="lookup" type="text" maxLength={253} placeholder="ENS name or vault contract address" aria-label="ENS name or vault contract address" autoComplete="off" required disabled={loading} />
       <button className="button button-secondary button-small" type="submit" disabled={loading}>{loading ? "Looking up…" : "Open vault"}</button>
       {lookupError && <span role="alert" className="vault-lookup-error">{lookupError}</span>}
     </form>
-    <a className="root-preview-link" href={rootId ? `${path}?preview=1` : defaultRootId ? `${path}?root=${defaultRootId}` : "/tree?root=5"}>{rootId ? "Preview sample" : "Open live root"}</a>
+    {vault && <a className="root-preview-link" href={`${path}?preview=1`}>Preview sample</a>}
   </div>;
 }
 
 function LiveReadNotice({
   rootId,
+  vaultQuery,
   data,
   loading,
   error,
   onRetry,
 }: {
-  rootId: string;
+  rootId: string | null;
+  vaultQuery: string;
   data: DashboardData;
   loading: boolean;
   error: string | null;
   onRetry: () => void;
 }) {
   const isStale = data.source === "direct-rpc" && error !== null;
-  const missingRoot = error === "No deployed root matches that ID.";
+  const missingVault = error?.includes("No vault in this Sepolia deployment matches that name or address") ?? false;
   return (
     <div className={`live-read-notice${error ? " live-read-notice-error" : loading ? " live-read-notice-loading" : ""}`} role={error ? "alert" : "status"} aria-live={error ? "assertive" : "polite"}>
       <span className="live-read-icon">{error ? <AlertCircle size={16} aria-hidden="true" /> : <CircleDashed size={16} aria-hidden="true" />}</span>
       <p>
-        <strong>{missingRoot ? `Root ${rootId} was not found.` : error ? "Sepolia read unavailable." : loading ? "Reading live root." : `Live root ${rootId}.`}</strong>{" "}
+        <strong>{error ? missingVault ? "Vault was not found." : "Sepolia read unavailable." : loading ? rootId ? "Reading live vault." : "Resolving vault." : "Live vault."}</strong>{" "}
         {error
-          ? missingRoot
-            ? `Enter another Root ID above, or create a root in Wallet actions. ${isStale ? "The last live snapshot remains visible; wallet actions are locked." : "The sample records below are only a preview."}`
-            : `${error} ${isStale ? "The last live snapshot remains visible, but wallet actions are locked until it refreshes." : "The dashboard is showing clearly labeled preview records."}`
+          ? `${error} ${missingVault ? "Check the ENS name or contract address and try again." : "The live Sepolia state could not be loaded."} ${isStale ? "The last live snapshot remains visible, but wallet actions are locked until it refreshes." : "The sample records below are only a preview."}`
           : loading
             ? isStale
               ? "Refreshing balances, current EAC permissions, and LP state. The last snapshot remains visible and wallet actions are locked."
-              : "Loading balances, current EAC permissions, and LP state from the server-side Sepolia RPC."
+              : rootId
+                ? "Loading balances, current EAC permissions, and LP state from the server-side Sepolia RPC."
+                : `Resolving ${vaultQuery} and loading live Sepolia vault state.`
             : `Current state was read from Sepolia${data.snapshot ? ` at block ${data.snapshot.blockNumber}` : ""}. Activity history is fetched from MultiBaas separately.`}
       </p>
       <button className="button button-secondary button-small" type="button" disabled={loading} onClick={onRetry}>{loading ? "Refreshing…" : "Refresh"}</button>
@@ -1128,8 +1144,8 @@ function ContractSetupPanel({ data, deployment, actions, wallet, liveStateReady,
     : contractsConfigured
       ? liveStateReady
         ? "Live state is available. Root and child actions unlock only for the recorded owner or an agent with current parent authority."
-        : "Load a root ID to read current balances and EAC authority. Creating a new root remains available from Wallet actions."
-      : "The Sepolia controller and demo-token addresses are not configured. Wallet actions remain locked until deployment is recorded.";
+        : "Open a vault by ENS name or contract address to read its current balances and EAC authority. Creating a new root remains available from Wallet actions."
+      : "The USDC controller and configured token addresses are pending. Wallet actions remain locked until deployment is recorded.";
   return (
     <section className="setup-panel" id="setup" aria-labelledby="setup-title">
       <div className="setup-orbit" aria-hidden="true"><span /><span /><span /></div>
@@ -1137,7 +1153,7 @@ function ContractSetupPanel({ data, deployment, actions, wallet, liveStateReady,
         <div className="setup-status"><span className="setup-status-dot" /> {ownerRecoveryReady ? "OWNER CONTROLS READY" : contractsConfigured ? "CONTRACTS CONFIGURED" : "DEPLOYMENT PENDING"}</div>
         <h2 id="setup-title">Owner control<br />starts on-chain.</h2>
         <p>{setupDescription}</p>
-        {contractsConfigured ? <a className="button button-setup" href="#wallet-controls">Review wallet actions<ArrowUpRight size={15} aria-hidden="true" /></a> : <button className="button button-setup" disabled title="Available after the controller and demo tokens are deployed">Setup is pending<ArrowUpRight size={15} aria-hidden="true" /></button>}
+        {contractsConfigured ? <a className="button button-setup" href="#wallet-controls">Review wallet actions<ArrowUpRight size={15} aria-hidden="true" /></a> : <button className="button button-setup" disabled title="Available after the USDC controller and tokens are deployed">Setup is pending<ArrowUpRight size={15} aria-hidden="true" /></button>}
       </div>
       <div className="setup-steps" aria-label="Setup status">
         <div className={walletStepReady ? "setup-step setup-step-complete" : "setup-step setup-step-pending"}><span>{walletStepReady ? <Check size={12} /> : "1"}</span><div><strong>{walletStepReady ? "Wallet connected" : wallet.address ? "Switch to Sepolia" : "Connect wallet"}</strong><small>{walletStepReady ? shortAddress(wallet.address ?? "") : wallet.address ? "Connected on another network" : "Injected wallet · Sepolia"}</small></div></div>
@@ -1150,34 +1166,36 @@ function ContractSetupPanel({ data, deployment, actions, wallet, liveStateReady,
   );
 }
 
-function Footer({ source, walletConnected, rootQuery }: { source: DataSource; walletConnected: boolean; rootQuery: string | null }) {
+function Footer({ source, walletConnected, vaultQuery }: { source: DataSource; walletConnected: boolean; vaultQuery: string | null }) {
   return (
     <footer className="dashboard-footer">
       <span><span className="footer-indicator" /> CONTROL PANEL · {source === "preview" ? "READ-ONLY PREVIEW" : source === "direct-rpc" ? "DIRECT RPC VIEW" : "LOCAL DIAGNOSTICS"}</span>
       <span>{walletConnected ? "Owner authority remains with your connected wallet" : "Connect your wallet to review owner controls"}</span>
-      <Link href={routeHref("/setup", rootQuery)}>Integration status <ArrowUpRight size={12} aria-hidden="true" /></Link>
+      <Link href={routeHref("/setup", vaultQuery)}>Integration status <ArrowUpRight size={12} aria-hidden="true" /></Link>
     </footer>
   );
 }
 
-export function Dashboard({ data: initialData, deployment, rootQuery, nodeQuery, actionQuery, view, onboarding = false }: DashboardProps) {
+export function Dashboard({ data: initialData, deployment, vaultQuery, nodeQuery, actionQuery, view, onboarding = false }: DashboardProps) {
   const router = useRouter();
+  const vaultKey = vaultQuery?.toLowerCase() ?? null;
   const [selectedId, setSelectedId] = useState(nodeQuery ?? initialData.rootId);
   const [detailOpen, setDetailOpen] = useState(false);
   const [walletActionMode, setWalletActionMode] = useState<WalletActionMode>(actionQuery ?? null);
-  const [liveSnapshot, setLiveSnapshot] = useState<{ rootId: string; data: DashboardData } | null>(null);
-  const [readState, setReadState] = useState<{ rootId: string | null; status: "idle" | "loading" | "ready" | "error"; error: string | null }>({ rootId: null, status: "idle", error: null });
+  const [liveSnapshot, setLiveSnapshot] = useState<{ vaultKey: string; rootId: string; nodeId: string; data: DashboardData } | null>(null);
+  const [readState, setReadState] = useState<{ vaultKey: string | null; rootId: string | null; status: "idle" | "loading" | "ready" | "error"; error: string | null }>({ vaultKey: null, rootId: null, status: "idle", error: null });
   const [activityState, setActivityState] = useState<{ rootId: string | null; feed: ActivityFeedResult | null; loading: boolean; loadingMore: boolean; loadMoreError: string | null }>({ rootId: null, feed: null, loading: false, loadingMore: false, loadMoreError: null });
   const [treeRetry, setTreeRetry] = useState(0);
   const [activityRetry, setActivityRetry] = useState(0);
   const wallet = useInjectedWallet();
   const walletOnSepolia = wallet.address !== null && wallet.chainId === sepolia.id;
-  const currentSnapshot = rootQuery && liveSnapshot?.rootId === rootQuery ? liveSnapshot.data : null;
-  const currentReadState = rootQuery && readState.rootId === rootQuery
+  const currentSnapshot = vaultKey && liveSnapshot?.vaultKey === vaultKey ? liveSnapshot : null;
+  const rootQuery = currentSnapshot?.rootId ?? null;
+  const currentReadState = vaultKey && readState.vaultKey === vaultKey
     ? readState
-    : { rootId: rootQuery, status: rootQuery ? "loading" as const : "idle" as const, error: null };
+    : { vaultKey, rootId: null, status: vaultKey ? "loading" as const : "idle" as const, error: null };
   const liveStateReady = Boolean(rootQuery && currentSnapshot && currentReadState.status === "ready");
-  const data = currentSnapshot ?? initialData;
+  const data = currentSnapshot?.data ?? initialData;
   const activeActivityState = rootQuery && activityState.rootId === rootQuery
     ? activityState
     : { rootId: rootQuery, feed: null, loading: Boolean(rootQuery), loadingMore: false, loadMoreError: null };
@@ -1221,13 +1239,19 @@ export function Dashboard({ data: initialData, deployment, rootQuery, nodeQuery,
   });
 
   useEffect(() => {
-    if (!rootQuery) {
-      setReadState({ rootId: null, status: "idle", error: null });
+    if (nodeQuery) setSelectedId(nodeQuery);
+  }, [nodeQuery]);
+
+  useEffect(() => {
+    if (!vaultKey) {
+      setReadState({ vaultKey: null, rootId: null, status: "idle", error: null });
       return;
     }
     let cancelled = false;
     let timer: ReturnType<typeof setTimeout> | undefined;
     let controller: AbortController | undefined;
+    let resolvedRootId: string | undefined;
+    let resolvedNodeId: string | undefined;
 
     const scheduleRefresh = () => {
       timer = setTimeout(() => {
@@ -1237,16 +1261,18 @@ export function Dashboard({ data: initialData, deployment, rootQuery, nodeQuery,
     };
     const load = async () => {
       controller = new AbortController();
-      setReadState({ rootId: rootQuery, status: "loading", error: null });
+      setReadState({ vaultKey, rootId: resolvedRootId ?? null, status: "loading", error: null });
       try {
-        const nextData = await requestLiveTree(rootQuery, controller.signal);
+        const result = await requestLiveTree(vaultKey, controller.signal, resolvedRootId);
         if (cancelled) return;
-        setLiveSnapshot({ rootId: rootQuery, data: nextData });
-        setSelectedId((current) => nextData.nodes.some((node) => node.id === current) ? current : nextData.rootId);
-        setReadState({ rootId: rootQuery, status: "ready", error: null });
+        resolvedRootId = result.rootId;
+        resolvedNodeId ??= result.nodeId;
+        setLiveSnapshot({ vaultKey, rootId: result.rootId, nodeId: result.nodeId, data: result.data });
+        setSelectedId((current) => result.data.nodes.some((node) => node.id === current) ? current : resolvedNodeId ?? result.rootId);
+        setReadState({ vaultKey, rootId: result.rootId, status: "ready", error: null });
       } catch (cause) {
         if (cancelled || controller?.signal.aborted) return;
-        setReadState({ rootId: rootQuery, status: "error", error: cause instanceof Error ? cause.message : "The Sepolia read failed." });
+        setReadState({ vaultKey, rootId: resolvedRootId ?? null, status: "error", error: cause instanceof Error ? cause.message : "The Sepolia read failed." });
       }
       if (!cancelled) scheduleRefresh();
     };
@@ -1257,7 +1283,7 @@ export function Dashboard({ data: initialData, deployment, rootQuery, nodeQuery,
       if (timer) clearTimeout(timer);
       controller?.abort();
     };
-  }, [rootQuery, treeRetry]);
+  }, [vaultKey, treeRetry]);
 
   useEffect(() => {
     if (!rootQuery) {
@@ -1358,26 +1384,68 @@ export function Dashboard({ data: initialData, deployment, rootQuery, nodeQuery,
   const requestAction = (mode: Exclude<WalletActionMode, null>) => {
     setDetailOpen(false);
     setWalletActionMode(mode);
-    router.push(`${routeHref("/setup", rootQuery, selectedNode.id)}&action=${mode}`);
+    router.push(`${routeHref("/setup", vaultQuery, selectedNode.id)}&action=${mode}`);
   };
 
-  if (onboarding) return <main className="onboarding-page"><header className="app-topbar"><Link href="/" className="app-brand">agent capital tree</Link><WalletControl wallet={wallet} /></header><div className="dashboard-content"><div className="page-heading"><span className="page-kicker">Your agent capital workspace</span><h1>Create your root vault.</h1><p>Create a vault for your agent team, or open an existing one using its ENS name or contract address.</p></div><Card><CardHeader><CardTitle>Start with your own capital tree</CardTitle><CardDescription>Your wallet owns the main vault. Each agent receives only the capital and permissions you delegate.</CardDescription></CardHeader><CardContent><Button onClick={() => setWalletActionMode("create-root")}>Launch a new root vault</Button><p>Connect your wallet on Sepolia to create a vault. Test assets have no monetary value.</p></CardContent></Card><RootAccessBar rootId={null} defaultRootId={null} path="/setup" />{walletActionMode === "create-root" && <WalletControlsPanel data={data} deployment={deployment} selectedNode={selectedNode} walletAddress={wallet.address} walletOnSepolia={walletOnSepolia} liveStateReady={false} actions={actions} notice={notice} mode="create-root" onModeChange={setWalletActionMode} onRootCreated={(id) => router.push(`/setup?root=${encodeURIComponent(id)}`)} />}<nav className="onboarding-links" aria-label="Explore and get started"><Link href="/tree?root=5"><GitBranch size={18} aria-hidden="true" /><span>Explore a live example</span><ArrowRight size={16} aria-hidden="true" /></Link><Link href="/tree?preview=1"><Layers3 size={18} aria-hidden="true" /><span>Explore sample data</span><ArrowRight size={16} aria-hidden="true" /></Link><a href="https://github.com/CodeByNikolas/agent-capital-tree/blob/main/docs/local-setup.md"><ExternalLink size={18} aria-hidden="true" /><span>Install companion &amp; MCP</span><ArrowUpRight size={16} aria-hidden="true" /></a></nav></div></main>;
+  if (onboarding) {
+    return (
+      <main className="onboarding-page">
+        <header className="app-topbar"><Link href="/" className="app-brand">agent capital tree</Link><WalletControl wallet={wallet} /></header>
+        <div className="dashboard-content">
+          <div className="page-heading">
+            <span className="page-kicker">Your agent capital workspace</span>
+            <h1>Create your root vault.</h1>
+            <p>Create a Sepolia USDC vault for your agent team, or open an existing vault by its ENS name or contract address.</p>
+          </div>
+          <Card>
+            <CardHeader>
+              <CardTitle>Start with your own capital tree</CardTitle>
+              <CardDescription>Your wallet owns the main vault. Each agent receives only the capital and permissions you delegate.</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <Button onClick={() => setWalletActionMode("create-root")}>Launch a new root vault</Button>
+              <p>Connect a Sepolia wallet to create a vault. Get Test USDC from Circle’s faucet; DEMO-USD is a valueless quote token.</p>
+              <a className="button button-secondary button-small" href="https://faucet.circle.com/" target="_blank" rel="noreferrer">Get Test USDC <ArrowUpRight size={13} aria-hidden="true" /></a>
+            </CardContent>
+          </Card>
+          <RootAccessBar vault={null} path="/setup" />
+          {walletActionMode === "create-root" && <WalletControlsPanel
+            data={data}
+            deployment={deployment}
+            selectedNode={selectedNode}
+            walletAddress={wallet.address}
+            walletOnSepolia={walletOnSepolia}
+            liveStateReady={false}
+            actions={actions}
+            notice={notice}
+            mode="create-root"
+            onModeChange={setWalletActionMode}
+            onRootCreated={(vaultAddress) => router.push(`/setup?vault=${encodeURIComponent(vaultAddress)}`)}
+          />}
+          <nav className="onboarding-links" aria-label="Explore and get started">
+            <Link href="/tree?preview=1"><Layers3 size={18} aria-hidden="true" /><span>Explore sample data</span><ArrowRight size={16} aria-hidden="true" /></Link>
+            <a href="https://github.com/CodeByNikolas/agent-capital-tree/blob/main/docs/local-setup.md"><ExternalLink size={18} aria-hidden="true" /><span>Install companion &amp; MCP</span><ArrowUpRight size={16} aria-hidden="true" /></a>
+          </nav>
+        </div>
+      </main>
+    );
+  }
 
   return (
     <SidebarProvider>
-      <AppSidebar view={view} rootQuery={rootQuery} selectedId={selectedNode.id} rootLabel={rootNode?.label ?? "Treasury"} runtimeLabel={runtimeLabel} />
+      <AppSidebar view={view} vaultQuery={vaultQuery} selectedId={selectedNode.id} rootLabel={rootNode?.label ?? "Treasury"} runtimeLabel={runtimeLabel} />
       <SidebarInset className="main-shell">
-        <Topbar view={view} source={data.source} wallet={wallet} rootQuery={rootQuery} selectedId={selectedNode.id} />
+        <Topbar view={view} source={data.source} wallet={wallet} vaultQuery={vaultQuery} selectedId={selectedNode.id} />
         <div className="dashboard-content">
           <PreviewNotice data={data} deployment={deployment} />
-          <RootAccessBar rootId={rootQuery} defaultRootId={deployment.defaultRootId} path={path} />
-          {rootQuery && <LiveReadNotice rootId={rootQuery} data={data} loading={currentReadState.status === "loading"} error={liveError} onRetry={() => setTreeRetry((value) => value + 1)} />}
+          <RootAccessBar vault={vaultQuery} path={path} />
+          {vaultQuery && <LiveReadNotice rootId={currentSnapshot?.rootId ?? null} vaultQuery={vaultQuery} data={data} loading={currentReadState.status === "loading"} error={liveError} onRetry={() => setTreeRetry((value) => value + 1)} />}
           {view === "overview" && <>
             <div className="page-heading"><span className="page-kicker">Delegated capital · Sepolia</span><h1>Capital under clear authority.</h1><p>See what each vault holds, which mandates are active, and where owner control stands.</p></div>
             <SummaryMetrics data={data} />
             <div className="overview-lower">
-              <Card><CardHeader><CardTitle>Agent tree</CardTitle><CardDescription>Capital moves through bounded vaults, one delegation at a time.</CardDescription></CardHeader><CardContent><div className="overview-node-list">{mobileTreeOrder(data.nodes).slice(0, 5).map((node) => <div key={node.id}><span className="overview-node-indent" style={{ width: node.depth * 20 }} aria-hidden="true" /><GitBranch size={17} aria-hidden="true" /><strong>{node.label}</strong><Badge variant="outline">{node.source === "preview" ? "Example " : ""}{vaultStateLabels[node.state]}</Badge></div>)}</div><Button render={<Link href={routeHref("/tree", rootQuery, selectedNode.id)} />} variant="outline">Explore agent tree <ArrowRight data-icon="inline-end" /></Button></CardContent></Card>
-              <Card><CardHeader><CardTitle>Owner control</CardTitle><CardDescription>Owner recovery is separate from ENS agent roles.</CardDescription></CardHeader><CardContent><p>{data.rootOwner ? `Recorded owner ${shortAddress(data.rootOwner)}` : "Connect a wallet and load a root to review its recorded owner."}</p><p>Recovery may require a separate LP close, then one or more explicit transactions.</p><Button render={<Link href={routeHref("/setup", rootQuery, selectedNode.id)} />} variant="outline">Review setup & control <ArrowRight data-icon="inline-end" /></Button></CardContent></Card>
+              <Card><CardHeader><CardTitle>Agent tree</CardTitle><CardDescription>Capital moves through bounded vaults, one delegation at a time.</CardDescription></CardHeader><CardContent><div className="overview-node-list">{mobileTreeOrder(data.nodes).slice(0, 5).map((node) => <div key={node.id}><span className="overview-node-indent" style={{ width: node.depth * 20 }} aria-hidden="true" /><GitBranch size={17} aria-hidden="true" /><strong>{node.label}</strong><Badge variant="outline">{node.source === "preview" ? "Example " : ""}{vaultStateLabels[node.state]}</Badge></div>)}</div><Button render={<Link href={routeHref("/tree", vaultQuery, selectedNode.id)} />} variant="outline">Explore agent tree <ArrowRight data-icon="inline-end" /></Button></CardContent></Card>
+              <Card><CardHeader><CardTitle>Owner control</CardTitle><CardDescription>Owner recovery is separate from ENS agent roles.</CardDescription></CardHeader><CardContent><p>{data.rootOwner ? `Recorded owner ${shortAddress(data.rootOwner)}` : "Connect a wallet and open a vault to review its recorded owner."}</p><p>Recovery may require a separate LP close, then one or more explicit transactions.</p><Button render={<Link href={routeHref("/setup", vaultQuery, selectedNode.id)} />} variant="outline">Review setup & control <ArrowRight data-icon="inline-end" /></Button></CardContent></Card>
             </div>
           </>}
           {view === "tree" && <>
@@ -1398,12 +1466,12 @@ export function Dashboard({ data: initialData, deployment, rootQuery, nodeQuery,
             />
           </>}
           {view === "applications" && <>
-            <div className="page-heading"><span className="page-kicker">Bounded applications</span><h1>Applications</h1><p>Delegated capital can serve a specific mandate. The current integrated application is bounded Uniswap v4 activity.</p></div>
+            <div className="page-heading"><span className="page-kicker">Bounded applications</span><h1>Applications</h1><p>{deployment.poolConfigured ? "The seeded Uniswap v4 pool is available for optional, policy-bounded swaps and liquidity management." : "Uniswap swaps and liquidity management are unavailable for this deployment."}</p></div>
             <PositionsPanel data={data} actions={actions} walletOnSepolia={walletOnSepolia} />
-            <Card className="future-applications"><CardHeader><CardTitle>Future modules</CardTitle><CardDescription>Planned capabilities. Expand an item to see its scope; these modules cannot execute actions.</CardDescription></CardHeader><CardContent>
-              <details className="future-module"><summary><span>x402 service payments</span><Badge variant="outline" className="future-module-badge">Future work</Badge></summary><p>Not implemented. Purchase research, API access, and other services within an agent mandate. Vault-compatible payment authorization, supported test USDC, recipient limits, and retry-safe settlement must be verified before activation.</p></details>
+            <Card className="future-applications"><CardHeader><CardTitle>Modules</CardTitle><CardDescription>Trading is available above. Companion agents can discover configured sellers and make bounded x402 purchases; contract transactions and currency valuation remain future work.</CardDescription></CardHeader><CardContent>
+              <details className="future-module"><summary><span>x402 service payments</span><Badge variant="outline" className="future-module-badge">Available through Companion</Badge></summary><p>With a seller configured, Companion agents can use <code>getPaymentServices</code> to discover it and <code>purchaseService</code> to request a bounded x402 payment using their USDC mandate. This dashboard does not initiate or settle purchases. Controller history omits direct Circle USDC Transfer events, so it does not show the full payment history.</p></details>
               <details className="future-module"><summary><span>Contract transactions</span><Badge variant="outline" className="future-module-badge">Future work</Badge></summary><p>Not implemented. Execute approved contract functions with recipient, token, and spending checks. A balance-delta check alone cannot prevent unsafe approvals or future liabilities.</p></details>
-              <details className="future-module"><summary><span>Currency conversion & valuation</span><Badge variant="outline" className="future-module-badge">Future work</Badge></summary><p>Not implemented. Display supported assets in a chosen currency using verified price sources. Current ACT-A and ACT-B balances are valueless demo tokens, not USDC or dollar balances.</p></details>
+              <details className="future-module"><summary><span>Currency conversion & valuation</span><Badge variant="outline" className="future-module-badge">Future work</Badge></summary><p>Not implemented. Display supported assets in a chosen currency using verified price sources. Test USDC is Sepolia faucet funding; DEMO-USD is a valueless quote token. Neither provides a dollar valuation.</p></details>
             </CardContent></Card>
           </>}
           {view === "setup" && <>
@@ -1420,14 +1488,14 @@ export function Dashboard({ data: initialData, deployment, rootQuery, nodeQuery,
             notice={notice}
             mode={walletActionMode}
             onModeChange={setWalletActionMode}
-            onRootCreated={(rootId) => {
+            onRootCreated={(vaultAddress) => {
               setWalletActionMode(null);
-              router.push(`/setup?root=${encodeURIComponent(rootId)}`);
+              router.push(`/setup?vault=${encodeURIComponent(vaultAddress)}`);
             }}
           />
           <ContractSetupPanel data={dashboardData} deployment={deployment} actions={actions} wallet={wallet} liveStateReady={liveStateReady} historyError={activeActivityState.loadMoreError} />
           </>}
-          <Footer source={data.source} walletConnected={walletOnSepolia} rootQuery={rootQuery} />
+          <Footer source={data.source} walletConnected={walletOnSepolia} vaultQuery={vaultQuery} />
         </div>
       </SidebarInset>
     </SidebarProvider>

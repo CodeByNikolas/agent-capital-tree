@@ -1,13 +1,17 @@
 import { getAddress, isAddress, type Address, type Hex } from "viem";
-import sepoliaManifest from "../../../../deployments/sepolia.json";
+import usdcSepoliaManifest from "../../../../deployments/usdc-sepolia.json";
+
+const USDC_ADDRESS = "0x1c7D4B196Cb0C7B01d743Fbc6116a902379C7238";
 
 export interface PublicDeployment {
+  id: "usdc";
+  paymentsSupported: boolean;
+  demoQuoteAddress: Address | null;
   chainId: number;
   network: string;
   status: string;
   namespaceName: string;
   namespaceExpiry: string | null;
-  defaultRootId: string | null;
   controllerAddress: Address | null;
   tokenAddresses: readonly [Address, Address] | null;
   poolId: Hex | null;
@@ -19,10 +23,9 @@ interface DeploymentManifest {
   chainId: number;
   network: string;
   status: string;
-  ensNamespace: { name: string; expiry?: string };
+  ensNamespace?: { name?: string; expiry?: string } | null;
   contracts: { CapitalController?: { address?: unknown } };
-  tokens?: readonly { address?: unknown }[];
-  bootstrap?: { rootId?: unknown };
+  tokens?: readonly { address?: unknown; symbol?: unknown; decimals?: unknown; valueless?: unknown }[];
   uniswap?: { poolId?: unknown; initialization?: unknown; seeded?: { rootId?: unknown } };
 }
 
@@ -33,18 +36,17 @@ function pickAddress(values: readonly unknown[]): Address | null {
   return null;
 }
 
-function pickRootId(value: unknown): string | null {
-  if (typeof value !== "string" || !/^[1-9]\d*$/.test(value) || value.length > 78) return null;
-  return BigInt(value) < 1n << 256n ? value : null;
-}
-
 export function getPublicDeployment(): PublicDeployment {
-  const manifest = sepoliaManifest as unknown as DeploymentManifest;
+  const manifest = usdcSepoliaManifest as unknown as DeploymentManifest;
   const controllerAddress = pickAddress([manifest.contracts.CapitalController?.address]);
   const token0 = pickAddress([manifest.tokens?.[0]?.address]);
   const token1 = pickAddress([manifest.tokens?.[1]?.address]);
   const tokenAddresses = token0 && token1 ? [token0, token1] as const : null;
-  const defaultRootId = pickRootId(manifest.bootstrap?.rootId) ?? pickRootId(manifest.uniswap?.seeded?.rootId);
+  const usdcAtIndexZero = token0?.toLowerCase() === USDC_ADDRESS.toLowerCase();
+  const demoQuoteAddress = usdcAtIndexZero && token1 && token1.toLowerCase() !== USDC_ADDRESS.toLowerCase() &&
+    manifest.tokens?.[1]?.symbol === "DEMO-USD" && manifest.tokens[1].decimals === 6 && manifest.tokens[1].valueless === true
+    ? token1
+    : null;
   const poolIdValue = manifest.uniswap?.poolId;
   const poolId = typeof poolIdValue === "string" && /^0x[0-9a-fA-F]{64}$/.test(poolIdValue)
     ? poolIdValue as Hex
@@ -54,12 +56,14 @@ export function getPublicDeployment(): PublicDeployment {
     controllerAddress !== null && tokenAddresses !== null;
 
   return {
+    id: "usdc",
+    paymentsSupported: contractsConfigured && usdcAtIndexZero,
+    demoQuoteAddress: contractsConfigured ? demoQuoteAddress : null,
     chainId: manifest.chainId,
     network: manifest.network,
     status,
-    namespaceName: manifest.ensNamespace.name,
-    namespaceExpiry: manifest.ensNamespace.expiry ?? null,
-    defaultRootId: contractsConfigured ? defaultRootId : null,
+    namespaceName: manifest.ensNamespace?.name ?? "agentcapitalusdc.eth",
+    namespaceExpiry: manifest.ensNamespace?.expiry ?? null,
     controllerAddress,
     tokenAddresses,
     poolId,

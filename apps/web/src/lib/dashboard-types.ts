@@ -65,6 +65,7 @@ export type Permission =
   | "manage-liquidity"
   | "collect-fees"
   | "exit-liquidity"
+  | "pay"
   | "restrict"
   | "reclaim";
 
@@ -186,7 +187,7 @@ export interface DashboardData {
 
 /** Optional transaction adapters; absent handlers keep the matching control disabled. */
 export interface DashboardActions {
-  claimDemoTokens?: () => Promise<void>;
+  claimDemoQuote?: () => Promise<void>;
   createRoot?: (label: string, policy: PolicyDraft) => Promise<string>;
   fundRoot?: (rootId: string, amounts: readonly [string, string]) => Promise<void>;
   setRootOperator?: (rootId: string, operator: string, policy: PolicyDraft) => Promise<void>;
