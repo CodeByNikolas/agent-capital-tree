@@ -730,8 +730,8 @@ function SummaryMetrics({ data }: { data: DashboardData }) {
 function TreeCard({ node, selected, onSelect, parentLabel, now, owner }: {
   node: VaultNode; selected: boolean; onSelect: (id: string) => void; parentLabel?: string; now: number; owner?: string | null;
 }) {
-  const balance = node.freeCapital.find(asset => asset.symbol.toUpperCase().includes("USDC"));
-  const demo = node.freeCapital.find(asset => asset.symbol === "DEMO-USD");
+  const balance = node.tokenHoldings.find(asset => asset.symbol.toUpperCase().includes("USDC"));
+  const demo = node.tokenHoldings.find(asset => asset.symbol === "DEMO-USD");
   const expires = Date.parse(node.effectivePolicy.expiresAt);
   const lifetime = node.mandateStartsAt ? expires - Date.parse(node.mandateStartsAt) : null;
   const state = node.state === "active" && expires <= now ? "expired"
@@ -1004,7 +1004,7 @@ function ActivityPanel({
           {(feed?.source === "unavailable" || loadMoreError) && <button className="button button-secondary button-small" type="button" disabled={loading} onClick={onRetry}>{loading ? "Checking…" : "Retry history"}</button>}
         </div>
       </div>
-      <p className="index-status"><span className={"index-dot index-" + (page ? indexLag === 0 ? "synced" : "lagging" : "unreachable")} />{page ? "Indexed by MultiBaas · block " + page.indexing.latestIndexedBlock : data.activitySource === "preview" ? "Illustrative activity" : "MultiBaas unreachable"}<span className="small">{page ? indexLag === 0 ? "in sync" : "lagging" : ""}</span></p>
+      <p className="index-status"><span className={"index-dot index-" + (page ? indexLag === 0 ? "synced" : "lagging" : data.activitySource === "preview" ? "preview" : "unreachable")} />{page ? "Indexed by MultiBaas · block " + page.indexing.latestIndexedBlock : data.activitySource === "preview" ? "Illustrative activity" : "MultiBaas unreachable"}<span className="small">{page ? indexLag === 0 ? "in sync" : "lagging" : ""}</span></p>
       <Table className="activity-list"><TableHeader><TableRow><TableHead>Time</TableHead><TableHead>Event</TableHead><TableHead>Node</TableHead><TableHead>Amount</TableHead><TableHead>Transaction</TableHead></TableRow></TableHeader><TableBody>{data.activity.map(activity => <ActivityRow key={activity.id} activity={activity} event={activityLabels[activity.kind]} node={nodeById(data, activity.nodeId)} />)}</TableBody></Table>
       {data.activity.length === 0 && <p className="activity-empty">{loading ? "Loading activity history…" : data.activitySource === "preview" ? "Preview records are shown above when available." : feed?.source === "unavailable" ? "Indexed activity is unavailable for this root." : page ? "No indexed activity is available for this root within the covered block range." : "No activity records are available for this root yet."}</p>}
       {loadMoreError && feed?.source !== "unavailable" && <p className="activity-load-error" role="alert">{loadMoreError}</p>}

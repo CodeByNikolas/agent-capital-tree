@@ -162,3 +162,8 @@ input[type="checkbox"] { accent-color: var(--moss); }
 @media (max-width: 720px) { .dashboard-content { padding: var(--space-8); } .tree-panel { padding: 0; } .tree-canvas-mobile { display: flex; } .app-topbar-title { gap: var(--space-1); } .app-topbar-title > .button { padding: var(--space-1); } .app-topbar-actions { gap: var(--space-1); } .wallet-control { gap: var(--space-1); } .wallet-address { font-size: 13px; } }
 @media print { [data-slot="sidebar"], .app-topbar-actions { display: none; } }
 @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation: none !important; transition: none !important; } }
+
+.metric-card-accent .metric-value, .metric-card-accent .metric-value > span { color: var(--gold-ink); }
+.metric-card-accent .metric-detail > span { font-family: var(--font-mono); color: var(--ink-muted); }
+.index-preview { background: var(--ink-muted); }
+.activity-amount { white-space: nowrap; }

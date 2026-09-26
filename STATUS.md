@@ -11,6 +11,7 @@ Stand: 26. September 2026. Zusammen mit PLAN.md nach Kontextkomprimierung lesen.
 - Separater Release-Worktree `work/kanoki` schützt diese Arbeit vor parallelen Branchwechseln. Vorhandene fremde Runtime-Arbeit bleibt auf `wip/mcp-inflight` erhalten. Nächste Schritte: MCP-Grafiken, README-GIF, öffentliche Read-Prüfung.
 - UI-Commit `49ef8d5` gepusht und auf Vercel `dpl_En5Ubiws6mGNFSDqJk2p2yZQDptz` veröffentlicht (READY), Alias `https://agent-capital-tree-silk.vercel.app`.
 - MCP: 17/17 Plugin-Tests bestanden; bestehende Toolnamen und Schemas gegenüber `be10418` unverändert. Neue Textausgaben beginnen mit Kanoki-Header, fester Statusreihenfolge und ausgerichtetem Box-Tree; JSON bleibt `structuredContent`. Toolliste bleibt vollständig, Rollen stehen in Beschreibungen. Grafiken nutzen dieselben Tokens, geliefertes Logo und sechsstellige getrennte Assets. Keyless-Live-Test Block11788536 und temporäre Codex-Plugin-Installation mit Servername `kanoki`, 17 Tools, Block11788545 grün. Keine Writes. GUI-Hostrendering bleibt separat offen.
+- Vorschau-Abgleich: NodeCards und Übersicht verwenden konsistente Vault-Bestände; USDC ist einheitlich beschriftet und Kapitalbeträge goldfarben. Vorschau-Indexstatus verwendet keinen Fehlerton. Typecheck, Betrags-/Receipt-Tests und alle vier Browserkombinationen erneut grün.
 
 ## Aktiver Abschluss: Circle USDC und x402
 
