@@ -9,14 +9,15 @@ const browser = await chromium.launch();
 try {
   const page = await browser.newPage({ viewport: { width: 1280, height: 720 }, reducedMotion: 'reduce' });
   const frames = [
-    ['overview', '/', 0], ['tree', '/tree', 400],
-    ['applications', '/applications', 300], ['activity', '/activity', 280],
+    ['overview', '/', 0], ['tree', '/tree', null],
+    ['applications', '/applications', 0], ['activity', '/activity', 0],
   ];
   for (const [name, route, scroll] of frames) {
     await page.goto(base + route + '?preview=1', { waitUntil: 'networkidle' });
     await expect(page.locator('h1')).toBeVisible();
     await page.evaluate(() => document.fonts.ready);
-    await page.evaluate(y => scrollTo(0, y), scroll);
+    if (scroll === null) await page.locator('.tree-canvas-desktop').evaluate(element => scrollTo(0, element.getBoundingClientRect().top + scrollY));
+    else await page.evaluate(y => scrollTo(0, y), scroll);
     await page.screenshot({ path: fileURLToPath(new URL(name + '.png', out)), animations: 'disabled' });
   }
   console.log('Captured 4 Kanoki preview frames at 1280×720. No wallet actions.');

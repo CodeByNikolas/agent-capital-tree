@@ -65,7 +65,7 @@ The keyless MCP renders the live ENS agent tree as PNG with a Mermaid fallback.
 
 ## Dashboard
 
-Five header items separate Overview, Tree, Applications, Activity and Setup. Applications includes Uniswap and payment history; Activity includes the per-agent report. Fraunces and IBM Plex, explicit dark/light themes and the supplied logo follow [the corrected Kanoki design scope](KANOKI_DESIGN.md). USDC and DEMO-USD stay separate. Selecting a node opens its balance, capabilities and limits. A zero-USDC root links to Circle's faucet; funding uses the owner wallet.
+The overview is a balance ledger and node register. Five header items separate Overview, Tree, Applications, Activity and Setup. Applications includes Uniswap and payment history; Activity includes the per-agent report. Fraunces and IBM Plex, explicit dark/light themes and the supplied logo follow [the corrected Kanoki design scope](KANOKI_DESIGN.md). USDC and DEMO-USD stay separate. Selecting a node opens its balance, capabilities and limits. A zero-USDC root links to Circle's faucet; funding uses the owner wallet.
 
 Enter a vault contract address or a registered name under **`agentcapitalvault.eth`** in **Open vault**. Internal numeric IDs are not accepted in this field. Without a selected vault, the app shows onboarding; illustrative data requires explicit preview mode. The preview root **Main agent** at `main.preview`, its addresses, and its small **USDC** sample balances are invented UI examples, not contracts or funds. Historical ACT-A/ACT-B vaults from an earlier controller still exist on Sepolia but are not supported by this USDC dashboard. An active mandate does not imply an agent process is running.
 

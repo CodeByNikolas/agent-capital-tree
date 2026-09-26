@@ -33,7 +33,7 @@ try {
    await cards.first().press('Enter');await expect(page.getByRole('dialog')).toBeVisible();await page.keyboard.press('Escape');await expect(page.getByRole('dialog')).toHaveCount(0);await expect(cards.first()).toBeFocused();
    checks.push({width,theme,contrast:'all 8 text pairs >= 4.5',keyboard:'Tab, Enter, Escape, restored focus',overflow:false});
   }
-  for(const route of ['/', '/applications','/activity','/setup','/mcp']) {
+  for(const route of ['/', '/applications','/activity','/agent-activity','/uniswap','/payments','/setup','/mcp']) {
    await page.goto(base+route+'?preview=1',{waitUntil:'networkidle'});await expect(page.locator('h1')).toHaveCount(1);
    assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),route+' overflow');
    if(width===1280 && ['/applications','/activity','/setup'].includes(route)) await page.screenshot({path:fileURLToPath(new URL('kanoki-'+route.slice(1)+'.png',out)),fullPage:true,animations:'disabled'});

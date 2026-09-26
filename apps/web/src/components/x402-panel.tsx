@@ -1,9 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { ExternalLink, ShoppingCart } from "lucide-react";
 import { ServiceCard } from "./treasury-records";
-import { Badge } from "@/components/ui/badge";
 import type { DashboardActions, VaultNode } from "@/lib/dashboard-types";
 import type { ServiceListing, X402PurchaseResult } from "@/lib/x402";
 
@@ -70,15 +68,11 @@ export function X402Panel({
     <section className="panel x402-panel" id="x402" aria-labelledby="x402-title">
       <div className="panel-heading">
         <div>
-          <div className="panel-overline">AGENT SERVICES · x402</div>
-          <h2 id="x402-title">Buy services in USDC</h2>
+          <h2 id="x402-title">Services · x402</h2>
         </div>
-        <Badge variant="outline">Live · Sepolia</Badge>
       </div>
       <p className="x402-lede">
-        Each service is addressed by an ENS name and priced in USDC. The paying agent is
-        identified by its capital-tree ENS name, and the payment only settles when the agent&apos;s
-        on-chain mandate covers it. Paying as <code>{node.ensName.toLowerCase()}</code>.
+        Selected node <code>{node.ensName.toLowerCase()}</code>.
       </p>
       <p className="small muted">Browser purchases debit the connected agent wallet. The service checks its node mandate.</p>
       {!purchasable && (

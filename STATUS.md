@@ -8,6 +8,14 @@
 
 # Kanoki — Status
 
+## Quiet UI review — 26 September
+
+The overview now uses a balance ledger and node register. Removed decorative metric icons, repeated preview pills, extra notice/search frames, promotional headings and unavailable future-module cards. Node cards use less empty space; Activity has aligned time, node, amount and transaction columns. Application records retain capability restrictions and settlement receipts.
+
+Production build and TypeScript passed. The browser suite passed at 1280×720 and 380×820, dark and light: eight text contrast pairs at least 4.5:1, keyboard entry/Escape/focus return, nine routes without overflow or page errors. Owner-only vault suggestions passed before the final table-only adjustment. Desktop and mobile screenshots were inspected. README and its four-frame 1280×720 GIF were refreshed from the local production preview (128,281 bytes); sample balances remain labelled illustrative. No financial transaction was sent.
+
+Local review: http://localhost:3044/?preview=1. Commit/push targets main. Deployment to kanoki-app.vercel.app remains assigned to someone with access to codebynikolas; this UI pass did not deploy to a different project.
+
 As of 26 September 2026. Read this together with PLAN.md after context compaction. Older sections below retain the evidence and acceptance limits known at the time; the newest E2E status is first.
 
 ## Kanoki — current main reconciliation

@@ -9,7 +9,6 @@ import {
   ArrowRight,
   ArrowUpRight,
   Check,
-  CircleDashed,
   Clock3,
   Coins,
   Copy,
@@ -26,7 +25,6 @@ import {
   ShieldAlert,
   ShieldCheck,
   WalletCards,
-  Zap,
 } from "lucide-react";
 import {
   createWalletClient,
@@ -42,7 +40,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { WalletControlsPanel, type WalletActionMode } from "@/components/wallet-controls";
 import { X402Panel } from "@/components/x402-panel";
@@ -69,7 +67,7 @@ import type {
   VaultState,
 } from "@/lib/dashboard-types";
 import type { PublicDeployment } from "@/lib/deployment";
-import { formatAmount, formatCompactAmount, formatRoundedAmount } from "@/lib/format-display-amount";
+import { formatAmount } from "@/lib/format-display-amount";
 import { ThemeControl, StatusPill, CapabilityPill, Brand, EmptyState } from "@/components/kanoki";
 import { layoutTree, relativeExpiry } from "@/lib/tree-layout";
 import { AgentActivity } from "@/components/agent-activity";
@@ -560,12 +558,12 @@ function Topbar({ wallet, view, vaultQuery, selectedId }: { view: DashboardProps
   </header>;
 }
 
-function PreviewNotice({ data, deployment }: { data: DashboardData; deployment: PublicDeployment }) {
+function PreviewNotice({ data }: { data: DashboardData }) {
   if (data.source !== "preview") return null;
   return (
     <div className="preview-notice" role="note">
-      <span className="notice-symbol"><CircleDashed size={16} aria-hidden="true" /></span>
-      <p><strong>Illustrative preview.</strong> Example balances and capabilities. Transactions are disabled.</p>
+
+      <p>Illustrative preview. Example balances and capabilities. Transactions are disabled.</p>
 
     </div>
   );
@@ -620,7 +618,7 @@ function RootAccessBar({ vault, path, walletAddress }: { vault: string | null; p
       } catch (cause) { setLookupError(cause instanceof Error ? cause.message : "Lookup failed. Please try again."); }
       finally { setLoading(false); }
     }}>
-      <label htmlFor="vault-reference">{path === "/setup" ? "Open root vault" : "Open vault"}</label>
+      <label className="sr-only" htmlFor="vault-reference">{path === "/setup" ? "Open root vault" : "Open vault"}</label>
       <input id="vault-reference" name="lookup" type="text" maxLength={253} placeholder="ENS name or vault address" aria-label="ENS name or vault contract address" autoComplete="off" required disabled={loading} />
       <button className="button button-secondary button-small" type="submit" disabled={loading}>{loading ? "Looking up…" : path === "/setup" ? "Open root vault" : "Open vault"}</button>
       {lookupError && <span role="alert" className="vault-lookup-error">{lookupError}</span>}
@@ -656,87 +654,31 @@ function LiveReadNotice({ data, error }: { data: DashboardData; error: string | 
   );
 }
 
-function MetricCard({
-  label,
-  value,
-  unit,
-  detail,
-  icon,
-  accent = false,
-  source,
-  exactValue,
-  exactDetail,
-  labelHint,
-}: {
-  label: string;
-  value: string;
-  unit: string;
-  detail: string;
-  icon: React.ReactNode;
-  accent?: boolean;
-  source: DataSource;
-  exactValue?: string;
-  exactDetail?: string;
-  labelHint?: GlossaryTerm;
-}) {
-  return (
-    <article className={`metric-card${accent ? " metric-card-accent" : ""}`}>
-      <div className="metric-card-top"><span className="metric-card-label">{label}{labelHint && <InfoHint term={labelHint} />}</span><span className="metric-icon">{icon}</span></div>
-      <div className="metric-value" role={exactValue ? "group" : undefined} aria-label={exactValue ? `Exact balance: ${exactValue}` : undefined} title={exactValue}>{value}<span>{unit}</span></div>
-      <div className="metric-detail"><PreviewFlag source={source} compact /> <span role={exactDetail ? "group" : undefined} aria-label={exactDetail ? `Exact balance: ${exactDetail}` : undefined} title={exactDetail}>{detail}</span></div>
-    </article>
-  );
+function SummaryMetrics({ data }: { data: DashboardData }) {
+  const holdings = data.nodes.flatMap(node => node.tokenHoldings);
+  const assets = uniqueAssets(holdings);
+  const usdc = assets.find(asset => asset.symbol === "USDC");
+  const demo = assets.find(asset => asset.symbol === "DEMO-USD");
+  const runtimeKnown = data.nodes.every(node => node.runtime !== "unknown");
+  return <dl className="summary-ledger" aria-label={data.source === "preview" ? "Preview summary" : "Capital summary"}>
+    <div><dt>Vault balances</dt><dd className="usdc-amount">{usdc ? formatAmount(sumAsset(holdings, usdc)) + " USDC" : "Unavailable"}</dd>{demo && <small className="test-amount">{formatAmount(sumAsset(holdings, demo))} DEMO-USD</small>}</div>
+    <div><dt>Nodes</dt><dd>{data.nodes.length} / 32</dd><small>{data.nodes.filter(node => node.state === "active").length} active · three levels maximum</small></div>
+    <div><dt>Open positions</dt><dd>{data.positions.filter(position => position.state === "open").length}</dd><small>Uniswap v4</small></div>
+    <div><dt>Runtime <InfoHint term="runtime" /></dt><dd>{runtimeKnown ? data.nodes.filter(node => node.runtime === "connected").length + " connected" : "Unknown"}</dd><small>{runtimeKnown ? "Local companion connections" : "Not observable onchain"}</small></div>
+  </dl>;
 }
 
-function SummaryMetrics({ data }: { data: DashboardData }) {
-  const activeVaults = data.nodes.filter((node) => node.state === "active").length;
-  const totalVaults = data.nodes.length;
-  const runtimeKnown = data.nodes.every((node) => node.runtime !== "unknown");
-  const assets = uniqueAssets(data.nodes.flatMap((node) => node.tokenHoldings));
-  const allHoldings = data.nodes.flatMap((node) => node.tokenHoldings);
-  const primaryAsset = assets[0] ? sumAsset(allHoldings, assets[0]) : { rawAmount: "0", decimals: 0, symbol: "" };
-  const secondaryAsset = assets[1] ? sumAsset(allHoldings, assets[1]) : null;
-
-  return (
-    <section className="metrics-grid" aria-label={data.source === "preview" ? "Preview summary" : "Capital summary"}>
-      <MetricCard
-        label="Assets across vaults"
-        value={formatCompactAmount(primaryAsset)}
-        unit={primaryAsset.symbol ? ` ${primaryAsset.symbol}` : ""}
-        detail={secondaryAsset ? `${formatCompactAmount(secondaryAsset)} ${secondaryAsset.symbol} also shown` : "Current vault token balances"}
-        exactValue={`${formatAmount(primaryAsset)} ${primaryAsset.symbol}`.trim()}
-        exactDetail={secondaryAsset ? `${formatAmount(secondaryAsset)} ${secondaryAsset.symbol}` : undefined}
-        icon={<Coins size={17} aria-hidden="true" />}
-        accent
-        source={data.source}
-      />
-      <MetricCard
-        label="Vaults in tree"
-        value={String(totalVaults).padStart(2, "0")}
-        unit=" / 32"
-        detail={`${activeVaults} active · MVP root limit`}
-        icon={<GitBranch size={17} aria-hidden="true" />}
-        source={data.source}
-      />
-      <MetricCard
-        label="Open LP positions"
-        value={String(data.positions.filter((position) => position.state === "open").length).padStart(2, "0")}
-        unit=""
-        detail="Management and exit separate"
-        icon={<Layers3 size={17} aria-hidden="true" />}
-        source={data.source}
-      />
-      <MetricCard
-        label="Runtime connections"
-        value={runtimeKnown ? String(data.nodes.filter((node) => node.runtime === "connected").length).padStart(2, "0") : "—"}
-        unit={runtimeKnown ? " connected" : ""}
-        detail={runtimeKnown ? "Local companion connections" : "Local companion status is not available on-chain"}
-        icon={<Zap size={17} aria-hidden="true" />}
-        source={data.source}
-        labelHint="runtime"
-      />
-    </section>
-  );
+function VaultRegister({ data, vaultQuery }: { data: DashboardData; vaultQuery: string | null }) {
+  return <section className="vault-register" aria-labelledby="register-title">
+    <div className="panel-heading"><h2 id="register-title">Nodes</h2><Link className="text-link" href={routeHref("/tree", vaultQuery)}>View tree</Link></div>
+    <Table><TableHeader><TableRow><TableHead>Node</TableHead><TableHead className="register-balance">USDC balance</TableHead><TableHead>Status</TableHead></TableRow></TableHeader><TableBody>
+      {mobileTreeOrder(data.nodes).map(node => {
+        const balance = node.tokenHoldings.find(asset => asset.symbol === "USDC");
+        return <TableRow key={node.id}><TableCell><Link className="register-node mono" title={node.ensName.toLowerCase()} href={routeHref("/tree", vaultQuery, node.id)}>{node.ensName.toLowerCase()}</Link></TableCell><TableCell className="register-balance usdc-amount">{balance ? formatAmount(balance) + " USDC" : "Unavailable"}</TableCell><TableCell><StatusPill status={node.state} /></TableCell></TableRow>;
+      })}
+    </TableBody></Table>
+    <div className="owner-summary"><p>Owner <span className="mono" title={data.rootOwner ?? undefined}>{data.rootOwner ? shortAddress(data.rootOwner) : "unavailable"}</span>. Recovery remains separate from node capabilities.</p><Link className="text-link" href={routeHref("/setup", vaultQuery)}>Owner controls</Link></div>
+  </section>;
 }
 
 function TreeCard({ node, selected, onSelect, parentLabel, now, owner }: {
@@ -1010,8 +952,7 @@ function ActivityPanel({
     <section className="panel activity-panel" id="activity" aria-labelledby="activity-title">
       <div className="panel-heading">
         <div>
-          <div className="panel-overline">{uniswapOnly ? "UNISWAP ACTION LOG" : "CAPITAL & POLICY LOG"} <PreviewFlag source={activitySource} compact /></div>
-          <h2 id="activity-title">{uniswapOnly ? "Swap and LP history" : "Recent activity"}</h2>
+          <h2 id="activity-title">{uniswapOnly ? "Swap and LP history" : "Events"}</h2>
         </div>
         <div className="activity-heading-actions">
           <span className="activity-count">{loading && !feed ? "Loading records" : `${data.activity.length}${data.activitySource === "preview" ? " preview" : ""} records`}</span>
@@ -1094,13 +1035,12 @@ function ContractSetupPanel({ data, deployment, actions, wallet, liveStateReady,
   );
 }
 
-function Footer({ source, walletConnected, vaultQuery }: { source: DataSource; walletConnected: boolean; vaultQuery: string | null }) {
+function Footer({ source, vaultQuery }: { source: DataSource; vaultQuery: string | null }) {
   return (
     <div className="dashboard-footer-wrap">
     <footer className="dashboard-footer">
-      <span><span className="footer-indicator" /> CONTROL PANEL · {source === "preview" ? "READ-ONLY PREVIEW" : source === "direct-rpc" ? "DIRECT RPC VIEW" : "LOCAL DIAGNOSTICS"}</span>
-      <span>{walletConnected ? "Owner authority remains with your connected wallet" : "Connect your wallet to review owner controls"}</span>
-      <Link href={routeHref("/setup", vaultQuery)}>Integration status <ArrowUpRight size={12} aria-hidden="true" /></Link>
+      <span>{source === "preview" ? "Illustrative preview" : source === "direct-rpc" ? "Sepolia · direct contract reads" : "Local diagnostics"}</span>
+      <Link href={routeHref("/setup", vaultQuery)}>Integration status</Link>
     </footer>
     </div>
   );
@@ -1392,13 +1332,13 @@ export function Dashboard({ data: initialData, deployment, vaultQuery, nodeQuery
       <SidebarInset className="main-shell">
         <Topbar view={view} wallet={wallet} vaultQuery={vaultQuery} selectedId={selectedNode.id} />
         <div className="dashboard-content">
-          {view === "overview" && <div className="page-heading"><span className="page-kicker">Agent Capital Tree</span><h1>Capital follows a mandate.</h1><p>See what each vault holds, which mandates are active, and where owner control stands.</p></div>}
-          {view === "tree" && <div className="page-heading"><span className="page-kicker">Authority & allocation</span><h1>Capital, branch by branch.</h1><p>Select a node to inspect its balance, capabilities and inherited limits.</p></div>}
-          {view === "activity" && <div className="page-heading"><span className="page-kicker">Indexed on-chain events</span><h1>Activity</h1><p>Capital movement, policy changes, and Uniswap actions for this root. Current balances and permissions come from direct RPC reads.</p></div>}
-          {view === "applications" && <div className="page-heading"><span className="page-kicker">Bounded applications</span><h1>Applications</h1><p>Agents can only act inside their mandate. Built-in actions today are bounded Uniswap v4 activity and x402 service payments settled in USDC.</p></div>}
-          {view === "setup" && <div className="page-heading"><span className="page-kicker">Wallet & integration</span><h1>Setup & control</h1><p>Connect the recorded owner or an authorized agent to manage the selected vault. Each available action is simulated before signing.</p></div>}
+          {view === "overview" && <div className="page-heading"><h1>Overview</h1><p>Balances and authority across your vaults.</p></div>}
+          {view === "tree" && <div className="page-heading"><h1>Capital tree</h1><p>Select a node to inspect its balance, capabilities and limits.</p></div>}
+          {view === "activity" && <div className="page-heading"><h1>Activity</h1><p>Indexed capital movements and changes to node authority.</p></div>}
+          {view === "applications" && <div className="page-heading"><h1>Applications</h1><p>Uniswap positions and services within the selected node’s capabilities.</p></div>}
+          {view === "setup" && <div className="page-heading"><h1>Setup</h1><p>Fund the root, authorize an operator and manage owner recovery.</p></div>}
           <GuidedTour active={tour} step={step} />
-          {!(view === "mcp" && !vaultQuery) && <PreviewNotice data={data} deployment={deployment} />}
+          {!(view === "mcp" && !vaultQuery) && <PreviewNotice data={data} />}
           {data.source !== "preview" && (
             <ViewerStatusBar
               source={data.source}
@@ -1417,10 +1357,7 @@ export function Dashboard({ data: initialData, deployment, vaultQuery, nodeQuery
 
 
             <SummaryMetrics data={data} />
-            <div className="overview-lower">
-              <Card><CardHeader><CardTitle>Agent tree</CardTitle><CardDescription>Capital moves through bounded vaults, one delegation at a time.</CardDescription></CardHeader><CardContent><div className="overview-node-list">{mobileTreeOrder(data.nodes).slice(0, 5).map((node) => <div key={node.id}><span className="overview-node-indent" style={{ width: "calc(var(--space-4) * " + node.depth + ")" }} aria-hidden="true" /><GitBranch size={17} aria-hidden="true" /><strong>{node.label}</strong><Badge variant="outline">{node.source === "preview" ? "Example " : ""}{vaultStateLabels[node.state]}</Badge></div>)}</div><Button render={<Link href={routeHref("/tree", vaultQuery, selectedNode.id)} />} variant="outline">Explore agent tree <ArrowRight data-icon="inline-end" /></Button></CardContent></Card>
-              <Card><CardHeader><CardTitle>Owner control</CardTitle><CardDescription>Owner recovery is separate from ENS agent roles.</CardDescription></CardHeader><CardContent><p>{data.rootOwner ? `Recorded owner ${shortAddress(data.rootOwner)}` : "Connect a wallet and open a vault to review its recorded owner."}</p><p>Recovery may require a separate LP close, then one or more explicit transactions.</p><Button render={<Link href={routeHref("/setup", vaultQuery, selectedNode.id)} />} variant="outline">Review setup & control <ArrowRight data-icon="inline-end" /></Button></CardContent></Card>
-            </div>
+            <VaultRegister data={data} vaultQuery={vaultQuery} />
           </>}
           {view === "tree" && <>
 
@@ -1459,10 +1396,7 @@ export function Dashboard({ data: initialData, deployment, vaultQuery, nodeQuery
 
             <PositionsPanel data={data} actions={actions} walletOnSepolia={walletOnSepolia} walletAddress={wallet.address} />
             <X402Panel node={selectedNode} actions={actions} walletOnSepolia={walletOnSepolia} canPay={selectedAgentConnected} />
-            <Card className="future-applications"><CardHeader><CardTitle>Future modules</CardTitle><CardDescription>Planned capabilities. Expand an item to see its scope; these modules cannot execute actions.</CardDescription></CardHeader><CardContent>
-              <details className="future-module"><summary><span>Contract transactions</span><Badge variant="outline" className="future-module-badge">Future work</Badge></summary><p>Not implemented. Execute approved contract functions with recipient, token, and spending checks. A balance-delta check alone cannot prevent unsafe approvals or future liabilities.</p></details>
-              <details className="future-module"><summary><span>Currency conversion & valuation</span><Badge variant="outline" className="future-module-badge">Future work</Badge></summary><p>Not implemented. Display supported assets in a chosen currency using verified price sources. Test USDC is Sepolia faucet funding; DEMO-USD is a valueless quote token. Neither provides a dollar valuation.</p></details>
-            </CardContent></Card>
+
           </>}
           {view === "mcp" && <McpPanel deployment={deployment} selectedNode={vaultQuery ? selectedNode : undefined} runtimeLabel={vaultQuery ? runtimeLabel : "No vault selected"} />}
           {view === "setup" && <>
@@ -1491,7 +1425,7 @@ export function Dashboard({ data: initialData, deployment, vaultQuery, nodeQuery
             <ContractSetupPanel data={dashboardData} deployment={deployment} actions={actions} wallet={wallet} liveStateReady={liveStateReady} historyError={activeActivityState.loadMoreError} />
           </details>
           </>}
-          <Footer source={data.source} walletConnected={walletOnSepolia} vaultQuery={vaultQuery} />
+          <Footer source={data.source} vaultQuery={vaultQuery} />
         </div>
       </SidebarInset>
     </SidebarProvider>

@@ -3,7 +3,7 @@ import type { VaultNode } from "./dashboard-types";
 
 /** Values mirror CSS tokens during server rendering; callers read live tokens after mount. */
 export function layoutTree(nodes: readonly VaultNode[], space = { sibling: 16, level: 32, large: 48 }) {
-  const width = space.large * 6, height = space.level * 7;
+  const width = space.large * 6, height = space.large * 4 + space.sibling / 2;
   const graph = new dagre.graphlib.Graph();
   graph.setGraph({ rankdir: "TB", nodesep: space.sibling, ranksep: space.level, marginx: space.sibling, marginy: space.sibling });
   graph.setDefaultEdgeLabel(() => ({}));
