@@ -1,0 +1,29 @@
+{
+  "status": "passed",
+  "testedAt": "2026-09-26",
+  "sourceCommits": ["7e9b4fc", "e5032d3"],
+  "runtimeUnitTests": { "passed": 16, "failed": 0 },
+  "localChain": {
+    "runner": "packages/runtime/test/chain.integration.mjs",
+    "portableProviderCliConfig": true,
+    "invalidExplicitTokenFilesRejected": true,
+    "hostHelperAttempts": 0,
+    "writesEnabled": false,
+    "rejectedCases": ["missing file", "empty path", "null path", "false path", "numeric path", "0644 permissions", "empty contents", "symlink"],
+    "scope": "Fresh CLI process with synthetic owner-0600 credential on disposable Anvil and a stubbed Docker executable; no model request in this portion. Existing SDK, isolation, capital and restart checks also passed."
+  },
+  "isolatedModel": {
+    "runner": "packages/runtime/test/model.integration.mjs",
+    "code": 0,
+    "toolCalls": 1,
+    "modelMarkerSeen": true,
+    "model": "gpt-6-luna",
+    "workerImage": "sha256:e18863655ebc0b6daf3b4ebb87851d1ffc8504db7c497bc0252fa9d07ca874b0",
+    "scope": "Actual isolated Docker model run through HomeBox CLIProxyAPI, using caller-supplied private config/token files and a synthetic scoped MCP getTree response."
+  },
+  "limitations": [
+    "The trusted outer test setup obtained the existing host credential and wrote temporary owner-0600 files; the application-under-test read the supplied files.",
+    "This is same-host supplied-file acceptance, not an independent user's credentials or independent machine installation.",
+    "No Sepolia transactions or live MultiBaas queries were made."
+  ]
+}

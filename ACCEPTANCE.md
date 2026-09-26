@@ -10,7 +10,7 @@ Reviewed on 26 September 2026 (Europe/Berlin), against [PLAN.md](PLAN.md). **The
 | Published app | https://agent-capital-tree.vercel.app |
 | Verified frontend deployment | `dpl_6j4wuuYQLmaBXY9Xxi4iMA1ustB7`; frontend change `3ffc06f` |
 | Immutable frontend URL | https://agent-capital-tree-eojrpsb9x-tumblockchains-projects.vercel.app |
-| Last fully observed CI before this audit's added probes | [`3474eed`](https://github.com/CodeByNikolas/agent-capital-tree/actions/runs/36196054191), TypeScript and Contracts jobs passed |
+| Last fully observed CI before the provider-file fix | [`840324b`](https://github.com/CodeByNikolas/agent-capital-tree/actions/runs/36197125508), TypeScript and Contracts jobs passed |
 | Chain | Ethereum Sepolia, `11155111` |
 | Controller | `0x55caFFf719B5FA70c0e8942eEe2C7EE6B8c7Db6b`, deployment block `11781260` |
 | ENS namespace / registry | `agentcapitaltree.eth` / `0x72D923aaBc7b1deD019A25577C46D6Fb1Ff67Fb3` |
@@ -52,7 +52,7 @@ Final owner recovery: [`0x2d4a57…4808c`](https://sepolia.etherscan.io/tx/0x2d4
 | P7: plugin package/install | [Plugin](packages/plugin), fresh root/model report | [Fresh native install/read proof](deployments/plugin-install-e2e.json) passed on Codex0.154.0; [runner](scripts/test-plugin-install.mjs). Installed plugin retains the default60s timeout; financial writes use the documented direct MCP path |
 | P8/P9: bounded swaps and LP lifecycle | [Swap tests](contracts/test/CapitalSwap.t.sol), [Liquidity tests](contracts/test/CapitalLiquidity.t.sol), real LP receipts | Custody, caller/callback/slippage checks and owner closure after invalid ENS path covered |
 | P10: indexed activity and canonical verification | [MultiBaas adapter/tests](packages/multibaas), server-only activity route |9 adapter tests /13 event types; **live indexing is not configured** |
-| P11: independent jury setup | [Runtime configuration](packages/runtime/README.md), fresh wallet/profile flow | Caller-supplied `providerTokenFile` exists; a portable execution proof is being checked. Same-host testing must not imply independent external-user/machine acceptance |
+| P11: independent jury setup | [Runtime configuration](packages/runtime/README.md), fresh wallet/profile flow | [Supplied-file acceptance](deployments/provider-file-acceptance.json) passed: local CLI startup, eight invalid-file cases with zero helper calls, and actual isolated model/MCP read using a supplied file. Trusted outer setup used the existing host credential. Independent external-user/machine acceptance remains unproven |
 | P12: combined acceptance and failure modes | Reports above; [browser-negative-cases.json](deployments/browser-negative-cases.json); runtime journal/server tests | Actual reject/network switch, injected tree-API outage, restart/idempotency and recovered final state. Combined live MultiBaas/master-history gate remains open |
 | P13: publication and submission artifacts | Public repository, Vercel and Sepolia; [FEEDBACK.md](FEEDBACK.md), source links in README | Feedback form and ETHGlobal submission have not been sent; no team/contact details or success confirmation invented |
 

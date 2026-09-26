@@ -51,6 +51,7 @@ Ein erster Root-Codex-Versuch wurde vor jedem Write durch MCP-Approval abgewiese
 
 - Frische native Marketplace-Installation unter Codex0.154.0 über `plugin add`, registrierter MCP-Server und echter Sepolia-Read aus installiertem Cache-Bundle bestanden: `deployments/plugin-install-e2e.json`. Test nutzt eine lokale authentifizierte Read-only-Bridge, keinen Operator-Companion und keine Modellinferenz. Native Plugin-Writes bleiben ungeprüft; dessen Timeout bleibt60 Sekunden. Für lange Finanzaktionen gilt der dokumentierte direkte MCP-Pfad mit explizitem Timeout.
 - Historische direkte `eth_call`-Negativtests am kanonischen Block11781852 bestanden: Betragsüberschreitung, drittes nicht unterstütztes Asset, Rechteausweitung und falscher Signer; inklusive erfolgreicher Autoritätskontrollen. `deployments/sepolia-negative-calls.json`. Keine Transaktionen oder State-Overrides; kein Nachweis geminter fehlgeschlagener Transaktionen.
+- Provider-Dateipfad geprüft und korrigiert: Nur eine vollständig fehlende `providerTokenFile`-Eigenschaft erlaubt den dokumentierten HomeBox-Fallback. Acht explizit ungültige Varianten werden ohne Helper-Aufruf abgewiesen. Frischer CLI-Start auf Anvil,16 Runtime-Tests und echter isolierter Luna/MCP-Read mit bereitgestellter0600-Datei bestanden: `deployments/provider-file-acceptance.json`. Gleicher Host/bestehender Zugang, kein unabhängiger Fremdnutzer-Nachweis.
 - Konsolidierte Zuordnung aller Plananforderungen, Nachweise und Grenzen: [ACCEPTANCE.md](ACCEPTANCE.md).
 
 ## Kanonisches Sepolia-Deployment
@@ -74,7 +75,7 @@ Pool `0x80e34634349a395620aa17ea88c88f61b1bc1631cbb5737b2a8445bba27b563d`, fee30
 
 1. MultiBaas: Instanz https://d7zveyyfkvdbxdbd7n3rk6o3ee.multibaas.com bekannt, lokale `~/.agent-capital-tree/multibaas.env` fehlt weiterhin. Nutzer ist um interaktives `bash scripts/configure-multibaas.sh` gebeten; keinen Key im Chat anfordern. Eingeschränkter Daten-Key sowie separate administrative ABI-/Adressverknüpfung und Historical-Indexing ab11781260 erforderlich.
 2. Danach serverseitige Vercel-Konfiguration (`MULTIBAAS_API_KEY`, `MULTIBAAS_CONTROLLER_LABEL`), echte Queries/Receipt-Abgleich, Historie in UI/MCP und tatsächliche Master-Modell-Entscheidung nach Historie prüfen. Adapter unterstützt13 Events; direkte RPC-Bestände ersetzen diesen Nachweis nicht.
-3. Aktuelle Commits pushen und CI prüfen. Zuletzt bestätigte komplette CI: `3474eed`, https://github.com/CodeByNikolas/agent-capital-tree/actions/runs/36196054191.
+3. Aktuelle Commits pushen und CI prüfen. Zuletzt bestätigte komplette CI: `840324b`, https://github.com/CodeByNikolas/agent-capital-tree/actions/runs/36197125508.
 4. Uniswap `FEEDBACK.md` existiert; Feedback-Formular und ETHGlobal-Abgabe wurden nicht gesendet. Fehlende Teamangaben/ausdrückliche Sendeanweisung nicht erfinden.
 
 ## Arbeitsgrenzen
