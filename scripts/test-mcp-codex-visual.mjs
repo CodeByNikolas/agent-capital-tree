@@ -4,7 +4,8 @@ import assert from 'node:assert/strict';
 import { spawn } from 'node:child_process';
 import { access } from 'node:fs/promises';
 
-const prompt='Use only capital_tree_readonly.getTree with query hello.agentcapitalusdc.eth. What is this vault’s current state? Follow the server’s graphical response instructions. No shell, web, browser or write actions.';
+const server=process.env.ACT_CAPITAL_MODE==='1'?'capital_tree_demo':'capital_tree_readonly';
+const prompt=`Use only ${server}.getTree with query hello.agentcapitalusdc.eth. What is this vault’s current state? Follow the server’s graphical response instructions. No shell, web, browser or write actions.`;
 const child=spawn(process.env.ACT_CODEX_BIN??'codex',['exec','--ephemeral','--json','-s','read-only',prompt],{stdio:['pipe','pipe','pipe'],windowsHide:true});
 child.stdin.end();
 let output='',stderr='';

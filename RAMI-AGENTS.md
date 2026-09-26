@@ -43,6 +43,8 @@
 
 ### Hackathon-Schnitt (26.09., vorrangig vor L0–L8)
 
+- Aktueller Demo-Standard: `pnpm mcp:capital settings <ENS>` nach SDK-/MultiBaas-/Plugin-/Runtime-Build. Kapital-MCP = 21 Tools (17 Companion-Tools + `getCapitalSetup`/`prepareCapitalSetup`/`prepareRootSetup`/`visualizeTree`). Kein Docker/CLIProxyAPI/Companion-JSON für chatverwaltete Vaults; `createChildVault` statt `spawnChild`. Windows delegiert automatisch an Standard-WSL mit Node 22+. Owner autorisiert einmal den lokalen Agent-Schlüssel; keinesfalls Owner-Key exportieren oder gebundenen Operator automatisch ersetzen. `hello` besitzt bereits einen passenden privaten Schlüssel in WSL; bei Prüfung fehlte nur natives Sepolia-Gas. Bisher keine öffentliche Child-/Recovery-Transaktion durch diesen Modus. Historische 16-Tool-/Worker-Voraussetzungen unten nicht als aktuellen Kapitalmodus ausgeben.
+
 - `pnpm mcp:doctor` prüft Node, pnpm, Host-Codex und Plattform ohne Secrets. `pnpm mcp:verify` installiert in ein temporäres Codex-Profil und beweist alle 16 Tools plus aktuellen USDC-`getTree` über eine strikt read-only Bridge; kein Wallet, Docker oder Team-Rechner erforderlich. Vorher SDK und Plugin bauen. Genaues Verfahren: `docs/local-setup.md`.
 - Native Windows-Finanz-Runtime ist **nicht** unterstützt; `packages/runtime/cli.mjs` verweist früh auf WSL2. Der alte `/absolute/private-config.json`-Beispielpfad war ein Platzhalter, keine vorhandene Datei. `/mcp` trennt nun Verify von Agent Actions.
 - Host-Codex 0.157.0 ist für den Read-Proof geprüft, Worker-Codex bleibt 0.154.0. Nicht behaupten, dass der lokale Read-Proof das permanente Plugin im persönlichen Codex-Profil installiert oder Writes beweist.

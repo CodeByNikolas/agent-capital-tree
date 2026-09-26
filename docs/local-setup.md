@@ -1,5 +1,41 @@
 # Local companion and MCP setup
 
+## Recommended capital demo: no Docker or CLIProxyAPI
+
+Codex/Claude is already the model. Use it to manage agent **vaults** without launching additional AI processes. The local capital MCP starts the existing signing companion automatically when needed. No hand-written private config, provider API key, bearer copy or separate companion terminal is required. Linux and Windows with Node 22+ in the default WSL distribution are supported; native Windows/macOS signing is not claimed.
+
+From this checkout (do not create a nested clone):
+
+```sh
+pnpm --filter @agent-capital-tree/sdk build
+pnpm --filter @agent-capital-tree/multibaas build
+pnpm --filter @agent-capital-tree/plugin build
+pnpm --filter @agent-capital-tree/runtime build
+pnpm mcp:capital check hello.agentcapitalusdc.eth
+pnpm mcp:capital settings hello.agentcapitalusdc.eth --enable-sepolia-writes
+```
+
+`settings` prints the real command/argument list for Codex STDIO or a Claude `mcpServers` entry. Merge only that entry, preserving unrelated servers. Use one Capital Tree connection for the demo, not the older three-tool read-only server alongside it. Register in PowerShell:
+
+```powershell
+$actScript = (Resolve-Path -LiteralPath 'packages/runtime/capital.mjs').Path
+$actNode = (Get-Command node).Source
+codex mcp add capital_tree_demo -- $actNode $actScript stdio hello.agentcapitalusdc.eth --enable-sepolia-writes
+codex mcp get capital_tree_demo --json
+```
+
+Restart that MCP connection/open a new chat once to refresh the tool catalog. There are **21 tools**: 17 companion operations plus four read/setup tools. They remain visible before wallet setup; unavailable optional workers/history/services do not become fake success. The CLI's `--enable-sepolia-writes` is an explicit local gate, not onchain authorization. Omit it for read-only testing. Codex may additionally request tool approval according to its own policy.
+
+Chat: “Call `getCapitalSetup` for 50000 raw Test-USDC and show every returned image. List all missing requirements. Do not send a transaction.” Then use `prepareCapitalSetup` only when needed. It reuses an existing matching private profile, or prepares a new agent key for an unbound root, and opens the normal system browser with public address and demo limits prefilled. Review the full address and limits in your wallet. URL parameters are suggestions, not trusted authorization.
+
+Your wallet is the **owner**, not automatically an unattended signer. It signs root creation, funding and authorization of the local **agent signing key** (contract name: operator). Afterwards `createChildVault`, `allocateCapital`, `tightenPolicy`, `revokeSubtree` and `reclaimAssets` use that restricted key without another owner signature at every step. No owner key enters the MCP. Native Sepolia-ETH at the agent address pays gas; USDC approval/funding does not supply ETH. A positive gas balance is not proof that it covers the next transaction's fees.
+
+The intended short demo: `getCapitalSetup` → `createChildVault` named `hello-son` with raw amount `50000` and appropriately narrower restrictions → `getTree` → restrict/revoke → reclaim → `getTree`. Use a fresh operationKey for a genuinely new child; reuse exactly that key and identical arguments for reconciliation. Do not repeat completed funding, seed or payment transactions. `hello` must be checked live; its state is not a fixture. `createChildVault` returns `dispatchStatus: not_requested`: real allocated vault, **no autonomous background worker**. A model API per vault is unnecessary; scoped worker APIs are an optional, separate integration.
+
+Existing bound operator but key not found? Point `--runtime-root` at its existing private Linux directory. Never silently create a replacement: rebinding invalidates the authority generation. Multiple matching profiles require explicit selection. Old worker/gas state must be reconciled in worker mode before switching modes. Secrets stay in owner-only Linux storage outside Git and Windows mounts.
+
+Read-only acceptance: `node scripts/test-mcp-capital.mjs` (21 tools, real Sepolia reads, PNGs, disabled write rejected). This is not a public Child/recovery E2E. See STATUS.md. `spawnChild` remains the separate autonomous-worker path and still needs Docker plus CLIProxyAPI. The older instructions below describe keyless reads and that optional worker path.
+
 ## Fast jury check: read-only MCP on Windows, macOS or Linux
 
 With Node 22+, pnpm and Codex CLI installed, run the following in PowerShell or Bash. The `work/rami` branch contains this current proof until it is integrated into the default branch. **If you are already in a checkout containing `package.json`, do not clone again**; run the `pnpm` commands there. A second `git clone` inside the project creates an unnecessary nested repository. No wallet, private configuration, Docker, runtime bearer, operator or team laptop is needed. Internet access to the public app and Sepolia RPC is required.
@@ -23,7 +59,7 @@ pnpm mcp:chat-verify
 pnpm mcp:settings
 ```
 
-`mcp:verify` creates a fresh temporary Codex profile, installs the local marketplace plugin, confirms exactly one enabled `capital-tree` MCP and all 16 tools, then calls its `getTree` with writes disabled. The profile is removed afterwards. `mcp:chat-verify` tests the permanent-use STDIO server's three keyless tools (`getTree`, `visualizeTree`, `prepareRootSetup`), including live ENS and vault resolution, data plus PNG from one block, and a bounded browser-wallet setup link. These tests do not send a transaction. `mcp:settings` prints the **actual absolute Node and script paths** for this checkout. `ACT_APP_URL` and `ACT_SEPOLIA_RPC_URL` optionally override public endpoints; neither is a secret.
+`mcp:verify` creates a fresh temporary Codex profile, installs the local marketplace plugin, confirms exactly one enabled `capital-tree` MCP and all 17 tools, then calls its `getTree` with writes disabled. The profile is removed afterwards. `mcp:chat-verify` tests the permanent-use STDIO server's three keyless tools (`getTree`, `visualizeTree`, `prepareRootSetup`), including live ENS and vault resolution, data plus PNG from one block, and a bounded browser-wallet setup link. These tests do not send a transaction. `mcp:settings` prints the **actual absolute Node and script paths** for this checkout. `ACT_APP_URL` and `ACT_SEPOLIA_RPC_URL` optionally override public endpoints; neither is a secret.
 
 ## Use the read-only MCP in Codex inside the ChatGPT desktop app
 
@@ -78,7 +114,7 @@ claude mcp get capital_tree_readonly
 
 For Claude Desktop chat, open **Settings → Developer** and edit its local MCP configuration (`%APPDATA%\Claude\claude_desktop_config.json` on Windows). Merge the `capital_tree_readonly` entry printed by `pnpm mcp:settings` under the existing `mcpServers` object; do not replace other servers. Fully quit and reopen Claude Desktop, then check **+ → Connectors** and Developer connection status. Anthropic documents this [local configuration](https://py.sdk.modelcontextprotocol.io/get-started/real-host/) and the [Desktop connection check](https://support.claude.com/en/articles/10949351-getting-started-with-local-mcp-servers-on-claude-desktop). A packaged `.mcpb` extension for one-click install via Settings → Extensions is **not** supplied yet; do not select a random remote connector, which would require a publicly reachable server. Claude Desktop chat itself has not yet been manually verified with this project.
 
-This is **Codex in the ChatGPT desktop app**, not a normal chat at chatgpt.com. ChatGPT web does not read local Codex config or start this STDIO process. The [official distinction](https://learn.chatgpt.com/docs/extend/mcp?surface=cli) matters for jury instructions. The keyless server prepares the owner-wallet setup but has no financial signer; the full 16-tool companion remains separate. Avoid registering both under different names in the same chat to prevent duplicate `getTree` tools.
+This is **Codex in the ChatGPT desktop app**, not a normal chat at chatgpt.com. ChatGPT web does not read local Codex config or start this STDIO process. The [official distinction](https://learn.chatgpt.com/docs/extend/mcp?surface=cli) matters for jury instructions. The keyless server prepares the owner-wallet setup but has no financial signer; the full 17-tool companion remains separate. Avoid registering both under different names in the same chat to prevent duplicate `getTree` tools.
 
 ## Full agent actions: Linux companion only
 
@@ -145,9 +181,9 @@ args = ["/your/linux/checkout/packages/runtime/mcp-stdio.mjs", "/your/private/ru
 tool_timeout_sec = 300
 ```
 
-If Codex runs on Windows while the companion runs in WSL2, use `command = "wsl.exe"` and prepend `"--exec", "/absolute/linux/path/to/node"` to `args`; the default WSL distribution must be the one running the companion. Find that Node path with `wsl --exec sh -lc 'command -v node'` in PowerShell. A bare `node` after `wsl --exec` is **not reliable** when Node is installed via nvm: WSL does not load the interactive shell. The launcher validates the private directory/domain/chain, loads the current loopback origin and rotated token inside WSL2, then starts the existing bundled 16-tool MCP without printing either secret. If the companion is stopped, the launcher fails closed. Check registration with `codex mcp get capital_tree_root --json` and restart the chat after changing modes.
+If Codex runs on Windows while the companion runs in WSL2, use `command = "wsl.exe"` and prepend `"--exec", "/absolute/linux/path/to/node"` to `args`; the default WSL distribution must be the one running the companion. Find that Node path with `wsl --exec sh -lc 'command -v node'` in PowerShell. A bare `node` after `wsl --exec` is **not reliable** when Node is installed via nvm: WSL does not load the interactive shell. The launcher validates the private directory/domain/chain, loads the current loopback origin and rotated token inside WSL2, then starts the existing bundled 17-tool MCP without printing either secret. If the companion is stopped, the launcher fails closed. Check registration with `codex mcp get capital_tree_root --json` and restart the chat after changing modes.
 
-See the [plugin guide](../packages/plugin/README.md) for the 16 tool schemas. The standalone plugin includes `bundle/visual-assets` (WASM and fonts) and always returns PNGs for tool responses, with Mermaid fallback for hosts that cannot display images. Keep the assets alongside `bundle/server.mjs`.
+See the [plugin guide](../packages/plugin/README.md) for the 17 tool schemas. The standalone plugin includes `bundle/visual-assets` (WASM and fonts) and always returns PNGs for tool responses, with Mermaid fallback for hosts that cannot display images. Keep the assets alongside `bundle/server.mjs`.
 
 ## 6. Read, then perform one controlled spawn
 

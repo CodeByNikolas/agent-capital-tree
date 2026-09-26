@@ -39,7 +39,7 @@ These checks need internet access for the public app and Sepolia RPC. They use a
 
 Capital allocation is an actual transfer, not an overbookable allowance. Amount ceilings are **per action**, not cumulative spending limits. The vault’s allocated balance bounds total exposure. Model intelligence is not a security boundary; recovery does not guarantee the original dollar value.
 
-Native Codex subagents do not automatically become capital workers. Agents use our MCP `spawnChild` workflow; no automatic Codex hooks are enabled.
+Native Codex subagents do not automatically become capital workers. For the short demo, use `createChildVault`: the current chat manages a real ENS/vault/budget without Docker or another model process. `spawnChild` is the separate autonomous-worker option. No automatic Codex hooks are enabled.
 
 ## Applications
 
@@ -71,9 +71,11 @@ ENS roles are actual authorization, not descriptive text metadata. MultiBaas is 
 
 ## Run and test
 
-The quickstart above proves the keyless MCP path on Windows, macOS or Linux. `mcp:verify` installs the 16-tool plugin into a disposable profile with writes disabled. `mcp:chat-verify` checks the three-tool local STDIO server: `getTree`, `visualizeTree` and `prepareRootSetup`. Every tool returns dashboard-style PNGs and real local image links, including setup, action receipts and errors. Trees accept a root ID, ENS name or vault address and render one Sepolia snapshot. Root setup opens your normal system browser with its existing wallet extensions; the user reviews and signs there. See the [chat setup and demo instructions](docs/local-setup.md).
+The quickstart above proves the keyless MCP path on Windows, macOS or Linux. `mcp:verify` installs the 17-tool plugin into a disposable profile with writes disabled. `mcp:chat-verify` checks the three-tool local STDIO server: `getTree`, `visualizeTree` and `prepareRootSetup`. Every tool returns dashboard-style PNGs and real local image links, including setup, action receipts and errors. Trees accept a root ID, ENS name or vault address and render one Sepolia snapshot. Root setup opens your normal system browser with its existing wallet extensions; the user reviews and signs there. See the [chat setup and demo instructions](docs/local-setup.md).
 
-Full agent actions are separate and currently Linux-only (Windows through WSL2). They additionally require Docker, a wallet/operator setup, a reachable Sepolia RPC and CLIProxyAPI access; a Codex login alone does not provide inference for the worker. Native Windows financial writes and fresh external-laptop write onboarding are not verified. For the full development suite, use Node 22+, pnpm 11.13.1, Docker and Foundry 1.8.3 from the checkout root:
+**Chat-managed capital does not need Docker or CLIProxyAPI.** Build SDK, MultiBaas, plugin and runtime, then run `pnpm mcp:capital settings hello.agentcapitalusdc.eth --enable-sepolia-writes`. This prints the actual local MCP settings (21 tools) without tokens or a private configuration file. `getCapitalSetup` lists all prerequisites together; `prepareCapitalSetup` opens normal-browser wallet authorization. Your wallet remains owner and authorizes a separate limited local agent key once; that key needs native Sepolia-ETH for gas. `createChildVault` creates a vault, not an autonomous AI process. Linux or Windows→WSL2 is required. See [setup](docs/local-setup.md) and the exact test status in [STATUS.md](STATUS.md).
+
+Only autonomous background workers additionally require Docker and CLIProxyAPI; a Codex login alone does not provide inference for such a worker. Native Windows/macOS financial signing, public capital-mode Child/recovery E2E and fresh external-laptop onboarding remain unverified. For the full development suite, use Node 22+, pnpm 11.13.1, Docker and Foundry 1.8.3 from the checkout root:
 
 ```sh
 pnpm install --frozen-lockfile --ignore-scripts

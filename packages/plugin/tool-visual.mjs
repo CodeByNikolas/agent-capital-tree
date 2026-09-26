@@ -19,7 +19,8 @@ async function imageLink(png, title) {
 const titles = {
   getTree: 'Agent tree', visualizeTree: 'Agent tree', prepareRootSetup: 'Create your root vault',
   getEffectivePolicy: 'Mandate and limits', getCapitalActivity: 'Capital activity',
-  getOperationStatus: 'Operation status', spawnChild: 'Create a child agent',
+  getOperationStatus: 'Operation status', spawnChild: 'Create a child agent', createChildVault: 'Create a child vault',
+  getCapitalSetup: 'Capital demo readiness', prepareCapitalSetup: 'Authorize your chat agent',
   getPaymentServices: 'Available services', purchaseService: 'Service payment',
   allocateCapital: 'Delegate capital', tightenPolicy: 'Restrict permissions', swap: 'Vault swap',
   openPosition: 'Open liquidity position', increasePosition: 'Add liquidity', collectFees: 'Collect fees',
@@ -41,7 +42,17 @@ export function toolView(name, args, data, { readOnly = true, isError = false, p
       : 'Reconcile operation status and chain state before retrying. A timeout does not prove failure.';
     return view;
   }
-  if (name === 'prepareRootSetup') {
+  if (name === 'getCapitalSetup' || name === 'prepareCapitalSetup') {
+    view.status = d.prerequisitesMet ? 'CHAIN CHECKS PASSED · REVIEW GAS FEES' : 'SETUP INCOMPLETE · NO TRANSACTION';
+    row('Vault', d.ensName); row('Native ETH gas (wei)', d.operatorGasWei);
+    row('Agent address', d.localOperator ?? 'Not prepared');
+    row('Test-USDC balance / limit', `${amount(d.usdcBalanceRaw ?? 0)} / ${amount(d.usdcLimitRaw ?? 0)}`);
+    row('Missing requirements', Array.isArray(d.missing) ? d.missing.join(' · ') || 'None' : 'Unknown');
+    row('MCP writes', d.writesEnabled ? 'Explicitly enabled; onchain policy still enforced' : 'Disabled');
+    row('Snapshot block', d.source?.blockNumber); row('Observed', d.source?.observedAt);
+    row('Inference', 'This chat. No Docker, model key or background AI worker.');
+    view.next = 'Owner authorizes the agent key in the normal wallet browser. USDC approval is not an ETH gas transfer. Do not repeat completed funding or rebind a correct operator.';
+  } else if (name === 'prepareRootSetup') {
     view.status = d.browser?.opened ? 'AWAITING WALLET' : 'OPEN WALLET IN BROWSER';
     row('ENS name', d.ensName); row('Demo budget', `${d.budgetUSDC} Test-USDC`);
     row('Browser', d.browser?.opened ? 'Launch requested in your normal browser profile' : 'Open the setup link below in your wallet-enabled browser');
@@ -49,8 +60,16 @@ export function toolView(name, args, data, { readOnly = true, isError = false, p
     row('Signing', 'Owner reviews and signs each setup transaction in their wallet.');
     view.next = 'No transaction submitted by this MCP. After setup, return to chat and open the new ENS tree.';
   } else {
+    if (d.status === 'blocked' || d.status === 'unavailable') {
+      view.status = 'NOT EXECUTED'; row('Details', d.next); row('Transaction submitted', d.transactionSubmitted);
+      view.next = d.next ?? view.next;
+    }
     if (d.status === 'confirmed') view.status = 'TRANSACTION CONFIRMED';
     if (d.dispatchStatus === 'started') view.status = 'ALLOCATION CONFIRMED · WORKER STARTED';
+    if (d.dispatchStatus === 'not_requested') {
+      view.status = 'VAULT CONFIRMED · CHAT-MANAGED';
+      view.next = 'Capital is allocated onchain. No autonomous AI worker was requested. Show getTree next.';
+    }
     if (d.dispatchStatus === 'allocation_confirmed_dispatch_unknown') view.status = 'ALLOCATION CONFIRMED · WORKER UNKNOWN';
     if (d.recordedOnchain === false) view.status = 'NO ALLOCATION RECORDED';
     row('Node', args.nodeId ?? args.childId ?? d.childId); row('Root', args.rootId ?? d.rootId);

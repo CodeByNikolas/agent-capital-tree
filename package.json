@@ -12,6 +12,7 @@
     "mcp:chat-verify": "node scripts/test-mcp-chat.mjs",
     "mcp:desktop": "node scripts/mcp-desktop.mjs",
     "mcp:settings": "node scripts/mcp-settings.mjs",
+    "mcp:capital": "node packages/runtime/capital.mjs",
     "wallet:create": "node scripts/create-test-wallet.mjs"
   },
   "devDependencies": {

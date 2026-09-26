@@ -19,6 +19,7 @@ const strategy={nodeId:'1',maxAmount0:'1',maxAmount1:'1',liquidity:'1',deadline:
 const requests={
   getTree:{rootId:'1'},getEffectivePolicy:{nodeId:'1'},getCapitalActivity:{rootId:'1'},getOperationStatus:{operationKey:key},
   spawnChild:{operationKey:key,task:'Read only',model:'m',asset:address,amount:'1',restrictions:{}},getPaymentServices:{},
+  createChildVault:{operationKey:key,name:'researcher',asset:address,amount:'1',restrictions:{}},
   purchaseService:{operationKey:key,serviceId:'demo',maxAmount:'1'},allocateCapital:{childId:'2',asset:address,amount:'1'},
   tightenPolicy:{nodeId:'2',restrictions:{}},swap:{nodeId:'1',tokenIn:address,amountIn:'1',minAmountOut:'0',deadline:1800000000},
   openPosition:strategy,increasePosition:strategy,collectFees:{nodeId:'1',deadline:1800000000},
@@ -36,7 +37,7 @@ function png(result) {
   }
 }
 
-test('all 16 tools return PNG on success, backend failure and invalid input; invalid input never executes',async()=>{
+test('all tools return PNG on success, backend failure and invalid input; invalid input never executes',async()=>{
   let reject=false,calls=0;
   const runtime=createServer((req,res)=>{
     calls++;
@@ -50,7 +51,7 @@ test('all 16 tools return PNG on success, backend failure and invalid input; inv
     await client.connect(new StdioClientTransport({command:process.execPath,args:[fileURLToPath(new URL('../bundle/server.mjs',import.meta.url))],
       env:{PATH:process.env.PATH??'',ACT_RUNTIME_URL:`http://127.0.0.1:${runtime.address().port}`,ACT_MCP_TOKEN:'test-token'}}));
     const listed=await client.listTools();
-    assert.equal(listed.tools.length,16);
+    assert.equal(listed.tools.length,Object.keys(requests).length);
     for(const spec of listed.tools) assert.match(spec.description,/Always show.*PNG/);
     for(const [name,args] of Object.entries(requests)) {
       const success=await client.callTool({name,arguments:args});
@@ -63,7 +64,7 @@ test('all 16 tools return PNG on success, backend failure and invalid input; inv
       assert.equal(invalid.isError,true);png(invalid);assert.equal(calls,before);
     }
     const unknown=await client.callTool({name:'unknown',arguments:{}});assert.equal(unknown.isError,true);png(unknown);
-    assert.equal(calls,32,'Rendering must not retry writes or issue extra RPC reads');
+    assert.equal(calls,2*Object.keys(requests).length,'Rendering must not retry writes or issue extra RPC reads');
   } finally {await client.close();runtime.close();}
 });
 
@@ -77,6 +78,7 @@ test('visuals match dashboard tokens and actual finance-role bits; uncertain wri
   assert.match(uncertain.next,/Reconcile/);
   const view=toolView('spawnChild',{}, {childId:'2',dispatchStatus:'allocation_confirmed_dispatch_unknown'},{readOnly:false});
   assert.equal(view.status,'ALLOCATION CONFIRMED · WORKER UNKNOWN');
+  assert.equal(toolView('createChildVault',{}, {dispatchStatus:'not_requested'},{readOnly:false}).status,'VAULT CONFIRMED · CHAT-MANAGED');
   assert.doesNotMatch(toolAsSvg({...view,rows:[['Test','<svg onload="bad">']]}),/<svg onload=/);
 });
 
