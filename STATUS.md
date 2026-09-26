@@ -2,6 +2,12 @@
 
 As of 26 September 2026. Read this together with PLAN.md after context compaction.
 
+## Website title and footer placement
+
+- The browser title is now `Agent Capital Tree`. The dashboard content fills the available viewport height; a flexible footer wrapper places the footer at the bottom on short pages and after content on long pages, preserving the existing bottom inset and minimum separation.
+- Web build/typecheck, scoped layout detector, and local browser geometry checks passed on short desktop and long desktop/mobile pages. Title, footer position and absence of horizontal overflow were verified. Layout assessment was performed locally, honoring the no-subagents preference.
+- Rechecked MCP/runtime support: all seven plugin and 19 runtime tests pass. Historical model-driven spawning evidence uses Codex workers through the Companion and CLIProxyAPI. Native Codex subagents do not automatically provision vaults; Codex without that provider and Claude Code end-to-end spawning remain unverified. Live LP principal and fee values are explicitly null in the mapper, explaining `Not queried`; no new LP valuation reads were added.
+
 ## Activity evidence layout
 
 - Source `de24701` is pushed and live on Vercel production (`dpl_BtS4dPTyiZdfVxwcGLLpJGki2qBe`), including the preceding setup guide, app icon, and Overview updates. Both CI jobs passed ([run 36244463662](https://github.com/CodeByNikolas/agent-capital-tree/actions/runs/36244463662)). The public six-route browser smoke passed at desktop/light and mobile/dark, including automatic refresh. Focused public checks confirmed single-line Receipt and Integration status links at 1440 px and 390 px on Activity, Uniswap, and x402 Pay, with 20–22 px link heights and no horizontal overflow. All three app icon URLs returned HTTP 200. No wallet transaction was sent.

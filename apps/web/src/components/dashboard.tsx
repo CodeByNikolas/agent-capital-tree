@@ -1204,11 +1204,13 @@ function ContractSetupPanel({ data, deployment, actions, wallet, liveStateReady,
 
 function Footer({ source, walletConnected, vaultQuery }: { source: DataSource; walletConnected: boolean; vaultQuery: string | null }) {
   return (
+    <div className="dashboard-footer-wrap">
     <footer className="dashboard-footer">
       <span><span className="footer-indicator" /> CONTROL PANEL · {source === "preview" ? "READ-ONLY PREVIEW" : source === "direct-rpc" ? "DIRECT RPC VIEW" : "LOCAL DIAGNOSTICS"}</span>
       <span>{walletConnected ? "Owner authority remains with your connected wallet" : "Connect your wallet to review owner controls"}</span>
       <Link href={routeHref("/setup", vaultQuery)}>Integration status <ArrowUpRight size={12} aria-hidden="true" /></Link>
     </footer>
+    </div>
   );
 }
 

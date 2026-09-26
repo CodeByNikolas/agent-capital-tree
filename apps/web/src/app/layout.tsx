@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Agent Capital Tree — Delegated capital",
+  title: "Agent Capital Tree",
   description:
     "A clear view of delegated capital, permissions, positions and activity.",
 };
