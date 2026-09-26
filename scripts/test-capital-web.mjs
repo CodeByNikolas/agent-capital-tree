@@ -16,6 +16,11 @@ try {
   await page.goto(`${base}/mcp`);
   await expect(page.getByRole('heading', { name: 'Authorize once. Manage capital in chat.' })).toBeVisible();
   await expect(page.getByText('createChildVault', { exact: true }).first()).toBeVisible();
+  if (recovery) {
+    await expect(page.getByText('Existing-vault recovery:',{exact:true})).toBeVisible();
+    await expect(page.locator('pre').filter({hasText:'pnpm mcp:capital settings root-agent.agentcapitalusdc.eth --deployment usdc-full-vaults --enable-sepolia-writes'})).toBeVisible();
+    await expect(page.getByRole('link',{name:'the canonical setup page'})).toHaveAttribute('href','https://agent-capital-tree.vercel.app/setup?action=create-root');
+  }
   checks.push('Capital guide and explicit no-background-worker distinction visible');
   await page.goto(`${base}/setup?vault=${root}&action=set-root-operator&operator=${address}&budget=50000`);
   await expect(page.getByLabel('Agent signing address (operator)')).toHaveValue(address, { timeout: 60000 });
