@@ -19,5 +19,32 @@
     "This records a balance, not a verified individual transfer receipt.",
     "Existing ACT-A/ACT-B vaults cannot manage or recover this USDC.",
     "x402 vault payment authorization is not yet implemented."
-  ]
+  ],
+  "deployer": "0x280Ca099242D7164cD001E4479D59f13CD0ea7c9",
+  "tokens": [
+    {
+      "address": "0x1c7D4B196Cb0C7B01d743Fbc6116a902379C7238",
+      "symbol": "USDC",
+      "decimals": 6,
+      "issuerAddressSource": "https://developers.circle.com/stablecoins/usdc-contract-addresses",
+      "testnetOnly": true,
+      "status": "confirmed"
+    },
+    {
+      "symbol": "ACT-B",
+      "name": "Agent Capital Tree Valueless Demo B",
+      "address": "0xB09844F53E5ba103a1cF721626c759a394C7d423",
+      "decimals": 18,
+      "transactionHash": "0xc4501337068c3a9c505dd54294d2ebbfe4fe62fa75b6231874243d609abb0e2e",
+      "status": "confirmed",
+      "blockNumber": 11780914
+    }
+  ],
+  "contracts": {},
+  "ensNamespace": {
+    "name": "agentcapitalusdc.eth",
+    "registry": "0x67b728a792e789a8978b30cf1b3b641f19354b43",
+    "registrar": "0xa4449a0dd2b83007553d9b1d28b583a46a805a30",
+    "transactions": {}
+  }
 }
