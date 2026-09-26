@@ -71,6 +71,10 @@ test('bundled stdio MCP server works from a copied plugin without node_modules',
     await client.connect(transport);
     const listed = await client.listTools();
     assert.ok(listed.tools.some(tool => tool.name === 'getTree'));
+    const status = listed.tools.find(tool => tool.name === 'getOperationStatus');
+    assert.ok(status);
+    assert.match(status.description, /only a spawnChild allocation/);
+    assert.match(status.description, /not_allocated for a payment key says nothing about payment settlement/);
     const spawn = listed.tools.find(tool => tool.name === 'spawnChild');
     assert.ok(spawn);
     assert.match(spawn.description, /native Codex subagents do not create vaults/);
