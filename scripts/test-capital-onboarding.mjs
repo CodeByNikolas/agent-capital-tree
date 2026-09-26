@@ -28,7 +28,7 @@ async function call(name,args,errorPattern) {
 }
 try {
   await mkdir(artifacts,{recursive:true}); await client.connect(transport,{timeout:60000});
-  assert.equal((await client.listTools()).tools.length,23);
+  assert.equal((await client.listTools()).tools.length,19);
   for (const budgetRaw of ['5000000','500000']) await call('getCapitalSetup',{budgetRaw},/100000.*0\.10.*NOT an on-chain/);
   const viewed = await call('getTree',{query:root}); assert.equal(viewed.data.rootId,'4'); assert.equal(viewed.data.mcp.activeMcpRootId,'3');
   const selected = await call('selectCapitalRoot',{query:root}); assert.equal(selected.data.activeMcpRootId,'4'); assert.equal(selected.data.controller.toLowerCase(),controller.toLowerCase());

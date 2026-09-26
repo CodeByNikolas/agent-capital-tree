@@ -20,7 +20,7 @@ async function call(name, args) {
 try {
   await client.connect(transport, { timeout: 60000 });
   const listed = await client.listTools();
-  assert.equal(listed.tools.length, 23);
+  assert.equal(listed.tools.length, 19);
   assert.ok(listed.tools.some(tool => tool.name === 'createChildVault'));
   const rootSetup = await call('prepareRootSetup', { label: 'read-proof-not-created', budgetRaw: '50000', openBrowser: false });
   assert.equal(rootSetup.data.browser.opened, false);

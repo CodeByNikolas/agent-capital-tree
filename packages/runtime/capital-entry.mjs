@@ -5,6 +5,8 @@ import { readFile } from 'node:fs/promises';
 import { homedir } from 'node:os';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import currentManifest from '../../deployments/usdc-sepolia.json' with { type: 'json' };
+import recoveryManifest from '../../deployments/history/usdc-full-vaults-sepolia.json' with { type: 'json' };
 
 const args = process.argv.slice(2);
 const command = args[0];
@@ -36,14 +38,14 @@ if (command === 'settings') {
   const { RuntimeCompanion } = await import('./dist/index.js');
   const { CapitalSession, SetupError, privatePath, safeCapitalError } = await import('./capital-session.mjs');
   const { capitalClient } = await import('../sdk/dist/index.js');
-  const manifest = JSON.parse(await readFile(new URL(recoveryDeployment ? '../../deployments/history/usdc-full-vaults-sepolia.json' : '../../deployments/usdc-sepolia.json', packageBase), 'utf8'));
+  const manifest = recoveryDeployment ? recoveryManifest : currentManifest;
   if (manifest.chainId !== 11155111) throw new Error('Expected Ethereum Sepolia manifest');
   const controller = manifest.contracts.CapitalController.address;
   const rpcUrl = process.env.ACT_SEPOLIA_RPC_URL ?? 'https://ethereum-sepolia.publicnode.com';
   const client = capitalClient(rpcUrl, controller);
   let companion, bridge;
   const session = new CapitalSession({ client, controller, base: join(homedir(), '.agent-capital-tree'),
-    namespace: manifest.ensNamespace.name, walletOrigin: recoveryDeployment ? 'https://agent-capital-tree-silk.vercel.app' : 'https://agent-capital-tree.vercel.app',
+    namespace: manifest.ensNamespace.name, walletOrigin: recoveryDeployment ? 'https://agent-capital-tree-silk.vercel.app' : 'https://kanoki-app.vercel.app',
     repo, query, explicitRoot, writesEnabled, closeRuntime: async () => { await companion?.close(); companion = undefined; bridge = undefined; } });
   const serialize = value => JSON.stringify(value, (_, v) => typeof v === 'bigint' ? v.toString() : v, 2);
   if (command === 'check') console.log(serialize(await session.inspect()));
@@ -54,7 +56,7 @@ if (command === 'settings') {
     const { RuntimeClient } = await import('../plugin/dist/runtime-client.js');
     const { StdioServerTransport } = await import('../plugin/node_modules/@modelcontextprotocol/sdk/dist/esm/server/stdio.js');
     const { z } = await import('../plugin/node_modules/zod/index.js');
-    const { rootSetupSpec, prepareRootSetup } = await import('../../scripts/root-wallet-setup.mjs');
+    const { rootSetupSpec } = await import('../../scripts/root-wallet-setup.mjs');
     const { demoBudgetSchema } = await import('../plugin/demo-budget.mjs');
     const budgetRaw = demoBudgetSchema.default('100000');
     const expectedRootId = z.string().regex(/^[1-9]\d*$/).describe('Required write-target confirmation. Must equal the active MCP root reported by getCapitalSetup. Reading a tree does NOT change it.');
@@ -66,12 +68,15 @@ if (command === 'settings') {
       getCapitalActivity: { ...scoped.getCapitalActivity, description: 'UNAVAILABLE in capital demo mode: indexed activity history is not configured. Use getTree and getEffectivePolicy for current chain state. Worker mode can configure MultiBaas history separately.' },
       purchaseService: { ...scoped.purchaseService, description: 'UNAVAILABLE in capital demo mode: no paid services are configured. Requires separate worker-mode service configuration.' },
       visualizeTree: { ...toolSpecs.getTree, description: 'Alias of getTree. Return data and dashboard images from the same Sepolia snapshot.' },
-      prepareRootSetup: rootSetupSpec,
+      prepareRootSetup: { ...rootSetupSpec, schema: rootSetupSpec.schema.extend({ label: rootSetupSpec.schema.shape.label.optional(), budgetRaw }),
+        description: 'Start or resume the ONE-TIME Kanoki wallet setup. Automatically prepares and preserves the local signer and a unique name; no ENS choice or manual configuration needed. The user confirms creation, authorization, funding and gas in one guided page. Subsequent getCapitalSetup automatically discovers and restores this vault across chat restarts. Sends no transaction itself.' },
       selectCapitalRoot: { readOnly: false, schema: z.object({ query: z.string().min(1).max(253) }).strict(), description: 'Explicitly switch THIS MCP session to a confirmed root ENS/vault/ID. Closes the old companion safely, preserves all profiles, sends no transaction. No restart/config edit needed. New sessions start at the configured root; call this tool again if needed.' },
       getCapitalSetup: { readOnly: true, schema: z.object({ budgetRaw }).strict(), description: 'First call for the capital demo. All setup requirements from one block, active MCP root, signer match, actual rights, shared tree balance, separate LOCAL native gas. Demo budgetRaw maximum 100000 = 0.10 TOTAL Test-USDC, not per child or an onchain balance cap.' },
       prepareCapitalSetup: { readOnly: false, schema: z.object({ budgetRaw, expectedRootId, openBrowser: z.boolean().default(true) }).strict(), description: 'Prepare an unbound root’s local key and a grouped normal-browser wallet handoff. Never replace a bound operator. Reuse existing funding/profile. No autonomous worker. If OPERATOR_RECOVERY_REQUIRED, use prepareOperatorRecovery.' },
       prepareOperatorRecovery: { readOnly: false, schema: z.object({ expectedRootId, expectedBoundOperator: z.string().regex(/^0x[a-fA-F0-9]{40}$/), budgetRaw, openBrowser: z.boolean().default(true) }).strict(), description: 'Explicit recovery for a root bound to a wallet/unavailable signer. Preserve existing keys; prepare/reuse a LOCAL signer and OWNER-REVIEWED operator-change link. Requires current bound address to prevent stale changes. Does NOT replace the operator onchain, import an owner key, fund anything or launch a worker. Shows affected children, exact remaining funding and native gas separately.' }
     };
+    // Do not advertise features that this installation cannot execute.
+    for (const unavailable of ['spawnChild', 'getCapitalActivity', 'getPaymentServices', 'purchaseService']) delete specs[unavailable];
     let starting, bridgeGeneration;
     async function runtime() {
       const setup = await session.inspect();
@@ -98,7 +103,7 @@ if (command === 'settings') {
         if (name === 'selectCapitalRoot') return session.select(input.query);
         if (name === 'prepareRootSetup') {
           if (recoveryDeployment) return { status: 'unavailable', transactionSubmitted: false, next: 'This connection explicitly targets the historical USDC controller for existing-vault recovery. Create new roots with the normal current-deployment capital MCP; never confuse equally numbered roots across controllers.' };
-          return prepareRootSetup(input);
+          return session.onboarding.prepare(input);
         }
         if (name === 'prepareCapitalSetup' || name === 'prepareOperatorRecovery') {
           await session.initialize(); session.assertTarget(input.expectedRootId);
@@ -126,7 +131,7 @@ if (command === 'settings') {
         return { ...result, controller, activeMcpRootId: session.rootId, targetRootId: session.rootId, backgroundWorker: 'not_requested' };
       };
     const server = await visualServer({ name: 'kanoki', specs,
-      instructions: 'Show every returned graphic. Onboarding: prepareRootSetup → wallet confirms root → selectCapitalRoot(ENS) → getCapitalSetup → prepareCapitalSetup (or explicit prepareOperatorRecovery) → owner wallet authorization/funding/gas → getCapitalSetup → createChildVault with expectedRootId. Root selection persists ONLY within this session; no restart for selection. Reading another tree never changes the active root. Budget is shared across all vaults. No background worker is launched. Never repeat completed funding. After actions show getTree.',
+      instructions: 'Show every returned graphic. Normal onboarding is prepareRootSetup → owner confirms the guided wallet setup → getCapitalSetup → createChildVault. Do not ask the user for an ENS name, root selection, signer preparation or configuration. The saved onboarding automatically restores the correct root after confirmation and across restarts. Use expectedRootId from getCapitalSetup for writes. Advanced selection/recovery tools are only for explicitly requested existing roots. Budget is shared across all vaults. No background worker is launched. Never repeat completed funding. After actions show getTree.',
       execute: (name, input) => { const result = queue.then(() => execute(name, input)); queue = result.catch(() => {}); return result; },
       describeError: safeCapitalError });
     let stopping = false;
