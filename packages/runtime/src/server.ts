@@ -37,8 +37,11 @@ export function companionServer(sessions: WorkerSessions, handlers: Partial<Reco
     try { context = sessions.authenticate(req.headers.authorization); }
     catch { return reply(401, { error: 'Unauthorized worker' }); }
     try { return reply(200, await handler(context, args)); }
-    catch {
+    catch (error) {
       // Contract/provider errors can embed private RPC URLs or signing parameters.
+      if (error instanceof Error && error.message === 'Insufficient native Sepolia ETH for estimated child transaction fees; no transaction submitted') {
+        return reply(409, { code: 'INSUFFICIENT_GAS', error: 'Native Sepolia ETH does not cover estimated child transaction fees. No transaction submitted.' });
+      }
       return reply(409, { error: 'Operation was not confirmed; reconcile before retrying' });
     }
   });

@@ -1,4 +1,6 @@
-# Jury walkthrough — Agent Capital Tree
+# Kanoki
+
+Agent Capital Tree
 
 Use the current USDC deployment in `deployments/usdc-sepolia.json` and the public dashboard. Old root links are intentionally unsupported. The exact public acceptance state is recorded in `STATUS.md`.
 

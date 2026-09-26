@@ -21,6 +21,7 @@ const titles = {
   getEffectivePolicy: 'Mandate and limits', getCapitalActivity: 'Capital activity',
   getOperationStatus: 'Operation status', spawnChild: 'Create a child agent', createChildVault: 'Create a child vault',
   getCapitalSetup: 'Capital demo readiness', prepareCapitalSetup: 'Authorize your chat agent',
+  selectCapitalRoot: 'Select the MCP root', prepareOperatorRecovery: 'Recover local agent access',
   getPaymentServices: 'Available services', purchaseService: 'Service payment',
   allocateCapital: 'Delegate capital', tightenPolicy: 'Restrict permissions', swap: 'Vault swap',
   openPosition: 'Open liquidity position', increasePosition: 'Add liquidity', collectFees: 'Collect fees',
@@ -42,13 +43,18 @@ export function toolView(name, args, data, { readOnly = true, isError = false, p
       : 'Reconcile operation status and chain state before retrying. A timeout does not prove failure.';
     return view;
   }
-  if (name === 'getCapitalSetup' || name === 'prepareCapitalSetup') {
+  if (['getCapitalSetup','prepareCapitalSetup','selectCapitalRoot','prepareOperatorRecovery'].includes(name)) {
     view.status = d.prerequisitesMet ? 'CHAIN CHECKS PASSED · REVIEW GAS FEES' : 'SETUP INCOMPLETE · NO TRANSACTION';
-    row('Vault', d.ensName); row('Native ETH gas (wei)', d.operatorGasWei);
-    row('Agent address', d.localOperator ?? 'Not prepared');
+    row('Vault / active MCP root', `${d.ensName} / #${d.activeMcpRootId}`); row('LOCAL ETH gas (wei)', d.operatorGasWei ?? 'Not checked: local signer missing');
+    row('Onchain operator', d.boundOperator);
+    row('Onchain rights', d.onchainRights?.join(', ') || 'None');
+    row('Local signer / match', `${d.localOperator ?? 'Not prepared'} / ${d.checks?.operatorBound ? 'MATCH' : 'NO MATCH'}`);
     row('Test-USDC balance / limit', `${amount(d.usdcBalanceRaw ?? 0)} / ${amount(d.usdcLimitRaw ?? 0)}`);
+    row('Shared tree / still to fund', `${amount(d.totalUsdcBalanceRaw ?? 0)} / ${amount(d.fundingShortfallRaw ?? 0)} Test-USDC`);
     row('Missing requirements', Array.isArray(d.missing) ? d.missing.join(' · ') || 'None' : 'Unknown');
+    row('Write readiness', d.writeReady ? 'Setup checks passed; action simulation and fee check required' : 'BLOCKED');
     row('MCP writes', d.writesEnabled ? 'Explicitly enabled; onchain policy still enforced' : 'Disabled');
+    for (const action of d.walletActions ?? []) row('Wallet action', `${action.action}: ${action.recipient ?? action.newOperator ?? action.vault} ${action.amountWei ? `${action.amountWei} wei` : action.amountRaw ? `${action.amountRaw} raw USDC` : ''}`);
     row('Snapshot block', d.source?.blockNumber); row('Observed', d.source?.observedAt);
     row('Inference', 'This chat. No Docker, model key or background AI worker.');
     view.next = 'Owner authorizes the agent key in the normal wallet browser. USDC approval is not an ETH gas transfer. Do not repeat completed funding or rebind a correct operator.';
@@ -72,7 +78,7 @@ export function toolView(name, args, data, { readOnly = true, isError = false, p
     }
     if (d.dispatchStatus === 'allocation_confirmed_dispatch_unknown') view.status = 'ALLOCATION CONFIRMED · WORKER UNKNOWN';
     if (d.recordedOnchain === false) view.status = 'NO ALLOCATION RECORDED';
-    row('Node', args.nodeId ?? args.childId ?? d.childId); row('Root', args.rootId ?? d.rootId);
+    row('Node', args.nodeId ?? args.childId ?? d.childId); row('Target / active MCP root', d.targetRootId ?? args.expectedRootId ?? args.rootId ?? d.rootId);
     row('Transaction', d.transactionHash ?? d.txHash); row('Receipt block', d.blockNumber);
     row('Worker dispatch', d.dispatchStatus);
     if (name === 'getEffectivePolicy') {

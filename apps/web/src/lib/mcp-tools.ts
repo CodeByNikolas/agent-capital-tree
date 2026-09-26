@@ -104,7 +104,7 @@ export const mcpTools: readonly McpTool[] = [
 ] as const;
 
 export const mcpServerMeta = {
-  name: "capital-tree",
+  name: "kanoki",
   transport: "stdio · node ./bundle/server.mjs",
   endpoint: "POST <ACT_RUNTIME_URL>/v1/tools/<tool>",
   auth: "Authorization: Bearer <ACT_MCP_TOKEN>",

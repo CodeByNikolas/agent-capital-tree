@@ -357,7 +357,7 @@ export function useWalletActions({
       return created.args.vault;
     },
 
-    async fundRoot(rootId, amountInputs) {
+    async fundRoot(rootId, amountInputs, demoTotalBudgetRaw) {
       if (busy.current) throw new Error("Another wallet action is still in progress.");
       busy.current = true;
       try {
@@ -369,6 +369,22 @@ export function useWalletActions({
           parseUnits(amountInputs[1].trim() || "0", decimals[1]),
         ];
         if (amounts[0] === 0n && amounts[1] === 0n) throw new Error("Enter a positive amount for at least one token.");
+
+        const checkDemoFunding = async () => {
+          if (demoTotalBudgetRaw === undefined) return; // The demo cap is NOT a general contract balance limit.
+          if (!/^[1-9]\d{0,5}$/.test(demoTotalBudgetRaw) || BigInt(demoTotalBudgetRaw) > 100000n) throw new Error("Demo total budget must be at most 100000 raw units = 0.10 Test-USDC.");
+          const blockNumber = await context.publicClient.getBlockNumber();
+          const ids = await context.publicClient.readContract({ address: context.controller, abi: capitalControllerAbi, functionName: "getRootNodeIds", args: [BigInt(rootId)], blockNumber });
+          let total = 0n;
+          for (const id of ids) {
+            const node = await context.publicClient.readContract({ address: context.controller, abi: capitalControllerAbi, functionName: "getNode", args: [id], blockNumber });
+            total += await context.publicClient.readContract({ address: context.tokens[0], abi: erc20Abi, functionName: "balanceOf", args: [node.vault], blockNumber });
+          }
+          const missing = BigInt(demoTotalBudgetRaw) > total ? BigInt(demoTotalBudgetRaw) - total : 0n;
+          if (missing === 0n) throw new Error("This tree is already funded to the requested demo total. No additional deposit or approval is needed.");
+          if (amounts[1] !== 0n || amounts[0] > missing) throw new Error(`Only ${missing} raw Test-USDC units are still missing across this tree. Do not fund the budget again for each child.`);
+        };
+        await checkDemoFunding();
 
         for (const index of [0, 1] as const) {
           if (amounts[index] === 0n) continue;
@@ -394,6 +410,7 @@ export function useWalletActions({
         }
 
         await submitWithContext(context, "Fund root vault", async (tx, awaitingWallet) => {
+          await checkDemoFunding(); // Re-read after any wallet approval; do not reuse stale balances.
           const { request } = await tx.publicClient.simulateContract({
             account: tx.account,
             address: tx.controller,
@@ -410,6 +427,23 @@ export function useWalletActions({
       } finally {
         busy.current = false;
       }
+    },
+
+    async fundOperatorGas(rootId, operatorInput) {
+      if (!isAddress(operatorInput)) throw new Error("Expected the prepared local agent address.");
+      const operator = getAddress(operatorInput);
+      await transact("Top up local agent gas", async (context, awaitingWallet) => {
+        await requireOwner(context, rootId);
+        const bound = await context.publicClient.readContract({ address: context.controller, abi: capitalControllerAbi, functionName: "rootOperator", args: [BigInt(rootId)] });
+        if (bound.toLowerCase() !== operator.toLowerCase() || operator === zeroAddress) throw new Error("Authorize this exact local agent for this root before funding its gas.");
+        const balance = await context.publicClient.getBalance({ address: operator });
+        const reserve = 10_000_000_000_000_000n; // 0.01 native Sepolia ETH; not a fee guarantee.
+        if (balance >= reserve) throw new Error("The local agent already has at least 0.01 Sepolia ETH. No top-up is needed.");
+        const value = reserve - balance;
+        const gas = await context.publicClient.estimateGas({ account: context.account, to: operator, value });
+        awaitingWallet();
+        return context.walletClient.sendTransaction({ account: context.account, chain: sepolia, to: operator, value, gas });
+      });
     },
 
     async setRootOperator(rootId, operatorInput, draft) {

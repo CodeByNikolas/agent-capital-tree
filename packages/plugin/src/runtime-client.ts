@@ -1,6 +1,8 @@
 import { toolSpecs, type ToolName } from './tools.js';
 
-export class RuntimeError extends Error {}
+export class RuntimeError extends Error {
+  constructor(message: string, readonly code?: string) { super(message); }
+}
 
 /** Client bearer is scoped by the companion to the real worker/root context. */
 export class RuntimeClient {
@@ -25,7 +27,11 @@ export class RuntimeClient {
         body: JSON.stringify(args), redirect: 'error', signal: AbortSignal.timeout(toolSpecs[name].readOnly ? 30_000 : 300_000)
       });
     } catch { throw new RuntimeError('Local runtime is unavailable. No operation was confirmed. Reconcile status before retrying a write.'); }
-    if (!response.ok) throw new RuntimeError(`Local runtime rejected ${name} (HTTP ${response.status}). No success was reported; reconcile status before retrying a write.`);
+    if (!response.ok) {
+      const failure = await response.json().catch(() => ({})) as { code?: string };
+      if (failure.code === 'INSUFFICIENT_GAS') throw new RuntimeError('Native Sepolia ETH does not cover estimated fees. No transaction submitted.', 'INSUFFICIENT_GAS');
+      throw new RuntimeError(`Local runtime rejected ${name} (HTTP ${response.status}). No success was reported; reconcile status before retrying a write.`);
+    }
     try { return await response.json() as unknown; }
     catch { throw new RuntimeError('Local runtime returned an invalid response. No success was reported.'); }
   }

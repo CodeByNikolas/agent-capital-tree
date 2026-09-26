@@ -65,7 +65,8 @@ export function capitalClient(rpcUrl: string, controllerAddress: Address): Capit
       read(() => controller.read.rootOperator([rootId], at)), read(() => controller.read.rootGeneration([rootId], at)),
       read(() => controller.read.TOKEN0(at)), read(() => controller.read.TOKEN1(at)), read(() => controller.read.namespaceLabel(at)),
     ]);
-    if (!ids.length || ids.length > 32) throw new Error('Invalid root tree');
+    if (!ids.length) throw new Error('Root not found in this Sepolia deployment');
+    if (ids.length > 32) throw new Error('Invalid root tree');
     const tokens = [token0, token1] as const;
     const nodes = await Promise.all(ids.map(async id => {
       const node = await read(() => controller.read.getNode([id], at));

@@ -19,6 +19,7 @@ export type WalletActionMode =
   | "create-root"
   | "fund-root"
   | "set-root-operator"
+  | "fund-operator-gas"
   | "spawn-child"
   | "tighten-policy"
   | "revoke-subtree"
@@ -280,6 +281,9 @@ export function WalletControlsPanel({
   const selectedAgentConnected = Boolean(liveStateReady && walletAddress && walletOnSepolia && selectedNode.agentAddress.toLowerCase() === walletAddress.toLowerCase());
   const canCreateRoot = deployment.contractsConfigured && walletOnSepolia && walletAddress !== null && Boolean(actions.createRoot);
   const canManageRoot = ownerConnected && Boolean(actions.fundRoot && actions.setRootOperator);
+  const treeUsdcRaw = data.nodes.reduce((total, node) => total + BigInt(node.tokenHoldings[0]?.rawAmount ?? "0"), 0n);
+  const demoAlreadyFunded = Boolean(demoBudget && liveStateReady && data.source === "direct-rpc" && treeUsdcRaw >= BigInt(demoBudget));
+  const agentMatches = Boolean(setupOperator && data.rootOperator?.toLowerCase() === setupOperator.toLowerCase());
   const canSpawn = selectedNode.state === "active" && selectedNode.authorizedPermissions.includes("delegate") && data.source === "direct-rpc" && data.contractsConfigured && selectedAgentConnected && Boolean(actions.spawnChild);
   const canTighten = selectedNode.state !== "revoked" && selectedNode.state !== "expired" && data.source === "direct-rpc" && data.contractsConfigured &&
     (selectedNode.parentId ? parentAgentConnected && Boolean(selectedParent?.authorizedPermissions.includes("restrict")) : ownerConnected) && Boolean(actions.tightenPolicy);
@@ -335,6 +339,17 @@ export function WalletControlsPanel({
         </span>
       </div>
       <p className="wallet-controls-intro">Every action is simulated before your wallet is asked to sign. Get Test USDC from Circle’s faucet; this dashboard never mints USDC. DEMO-USD is valueless.</p>
+      {demoBudget && <div className="wallet-action-notice" role="status">
+        <strong>Chat demo · {budgetUSDC} Test-USDC shared across the entire tree</strong>
+        <span>{demoAlreadyFunded ? "USDC funding is complete. No additional deposit is needed, including after child allocation." : "Fund only the remaining difference after root creation. Child budgets come from this same capital."}</span>
+        {setupOperator ? <><span>Local agent: {setupOperator}. {agentMatches ? "Onchain binding matches." : "Owner must review and sign the operator change. This invalidates previous mandates, but does not move vault funds."}</span>
+          <span>Then top up this agent to 0.01 native Sepolia ETH for gas. The live balance is rechecked before signing. This is a reserve, not a guaranteed fee quote.</span>
+          <div className="wallet-action-shortcuts">
+            <button type="button" className="button button-secondary button-small" disabled={busy || agentMatches} onClick={() => toggle("set-root-operator")}>1. Review agent authorization</button>
+            <button type="button" className="button button-secondary button-small" disabled={busy || !agentMatches} onClick={() => toggle("fund-operator-gas")}>2. Review native ETH gas</button>
+          </div></> : <span>After root creation, return to chat: selectCapitalRoot with this ENS, then prepareCapitalSetup. Do not bind your owner wallet as the MCP signer.</span>}
+        <span>Return to the same chat and call getCapitalSetup. createChildVault creates a capital vault, not an autonomous AI worker.</span>
+      </div>}
       <div className="wallet-action-shortcuts">
         <a className="button button-secondary button-small" href="https://faucet.circle.com/" target="_blank" rel="noreferrer">Get test USDC <ArrowUpRight size={13} aria-hidden="true" /></a>
         {deployment.demoQuoteAddress && <button className="button button-secondary button-small" type="button" disabled={!walletAddress || !walletOnSepolia || busy || !actions.claimDemoQuote} onClick={() => void actions.claimDemoQuote?.().catch(() => undefined)}>Get DEMO-USD</button>}
@@ -379,7 +394,7 @@ export function WalletControlsPanel({
       {mode === "fund-root" && (
         <form className="wallet-action-form" onSubmit={(event) => {
           event.preventDefault();
-          void actions.fundRoot?.(data.rootId, fundAmounts).catch(() => undefined);
+          void actions.fundRoot?.(data.rootId, fundAmounts, demoBudget ?? undefined).catch(() => undefined);
         }}>
           <p className="wallet-form-context">Fund <strong>{data.nodes.find((node) => node.depth === 0)?.ensName ?? "the selected root"}</strong> from the recorded root-owner wallet. Each approval is exact to the entered amount.</p>
           <div className="wallet-form-grid wallet-form-grid-two">
@@ -390,9 +405,19 @@ export function WalletControlsPanel({
               </label>
             ))}
           </div>
-          <button className="button button-primary button-small" type="submit" disabled={!canManageRoot || busy}>Approve and fund root <ArrowUpRight size={13} aria-hidden="true" /></button>
+          <button className="button button-primary button-small" type="submit" disabled={!canManageRoot || busy || demoAlreadyFunded}>{demoAlreadyFunded ? "Demo funding already complete" : "Approve and fund root"} <ArrowUpRight size={13} aria-hidden="true" /></button>
         </form>
       )}
+
+      {mode === "fund-operator-gas" && <form className="wallet-action-form" onSubmit={(event) => {
+        event.preventDefault();
+        if (setupOperator) void actions.fundOperatorGas?.(data.rootId, setupOperator).catch(() => undefined);
+      }}>
+        <p className="wallet-form-context">Send native <strong>Sepolia ETH</strong> from the owner wallet to the bound local signer. Only the difference up to <strong>0.01 ETH</strong> is requested. This is separate from the 0.10 Test-USDC vault budget. No USDC approval is involved.</p>
+        <label className="wallet-field"><span>Bound local signer · verify this address</span><input value={setupOperator ?? "No local signer provided"} readOnly /></label>
+        <p className="field-help">Unused gas stays with this local key. The MCP estimates fees again before each child transaction. If this page is stale or binding differs, the transaction is blocked.</p>
+        <button type="submit" className="button button-primary button-small" disabled={!canManageRoot || !agentMatches || !actions.fundOperatorGas || busy}>Review gas top-up in wallet</button>
+      </form>}
 
       {mode === "set-root-operator" && (
         <PolicyFields

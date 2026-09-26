@@ -17,7 +17,11 @@ export async function visualServer({ name, specs, execute, instructions = '', de
   server.setRequestHandler(CallToolRequestSchema,async request=>{
     const name=request.params.name, spec=Object.hasOwn(specs,name)?specs[name]:undefined;
     const parsed=spec?.schema.safeParse(request.params.arguments??{});
-    if (!parsed?.success) return visualResult(name,{},spec?'Invalid tool arguments. Check the required fields and allowed values.':'Unknown tool.',{isError:true,readOnly:spec?.readOnly??true,phase:'validation'});
+    // Only schema-owned messages: never echo supplied values, unknown keys or provider errors.
+    if (!parsed?.success) {
+      const details = parsed?.error.issues.filter(issue => issue.code === 'custom').map(issue => issue.message);
+      return visualResult(name,{},spec?(details?.join(' ') || 'Invalid tool arguments. Check the required fields and allowed values. No handler executed.'):'Unknown tool.',{isError:true,readOnly:spec?.readOnly??true,phase:'validation'});
+    }
     let data;
     try { data=await execute(name,parsed.data); }
     catch(error) { return visualResult(name,{},describeError?.(error)??'Tool unavailable. No successful result was reported.',{isError:true,readOnly:spec.readOnly}); }

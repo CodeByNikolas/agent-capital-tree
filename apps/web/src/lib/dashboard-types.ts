@@ -103,6 +103,7 @@ export interface PolicyConstraint {
 }
 
 export interface VaultNode {
+  mandateStartsAt?: string;
   id: string;
   parentId: string | null;
   rootId: string;
@@ -191,7 +192,8 @@ export interface DashboardData {
 export interface DashboardActions {
   claimDemoQuote?: () => Promise<void>;
   createRoot?: (label: string, policy: PolicyDraft) => Promise<string>;
-  fundRoot?: (rootId: string, amounts: readonly [string, string]) => Promise<void>;
+  fundRoot?: (rootId: string, amounts: readonly [string, string], demoTotalBudgetRaw?: string) => Promise<void>;
+  fundOperatorGas?: (rootId: string, operator: string) => Promise<void>;
   setRootOperator?: (rootId: string, operator: string, policy: PolicyDraft) => Promise<void>;
   spawnChild?: (parentId: string, label: string, agent: string, policy: PolicyDraft, amounts: readonly [string, string]) => Promise<string>;
   tightenPolicy?: (nodeId: string, policy: PolicyDraft) => Promise<void>;

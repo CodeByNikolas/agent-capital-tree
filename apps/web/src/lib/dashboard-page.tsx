@@ -12,7 +12,7 @@ export async function renderDashboard(view: DashboardView, searchParams: Dashboa
   const deployment = getPublicDeployment();
   const vault = params.preview === "1" ? null : typeof params.vault === "string" ? params.vault : null;
   const node = typeof params.node === "string" ? params.node : null;
-  const actions = ["create-root", "fund-root", "set-root-operator", "spawn-child", "tighten-policy", "revoke-subtree", "owner-recovery"] as const;
+  const actions = ["create-root", "fund-root", "set-root-operator", "fund-operator-gas", "spawn-child", "tighten-policy", "revoke-subtree", "owner-recovery"] as const;
   const action = typeof params.action === "string" && actions.some((candidate) => candidate === params.action) ? params.action as (typeof actions)[number] : null;
   const tour = params.tour === "1";
   const parsedStep = typeof params.step === "string" ? Number.parseInt(params.step, 10) : NaN;
