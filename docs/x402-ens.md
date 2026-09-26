@@ -92,3 +92,50 @@ token (token0) is the separate migration described in the branch plan — it req
 the immutable two-token controller with `[USDC, demoToken]`, a new Uniswap v4 pool, and
 6-vs-18-decimal-aware pool seeding. Once done, `x402-verify.ts` automatically enforces the USDC
 policy cap (it already looks for USDC among the controller tokens).
+
+## Status & deferred work (2026-09-26)
+
+**Shipped — ENS/EAC as a queryable trust layer (Phase A).** ENS/EAC is now the name-addressed
+authority source, not internal plumbing:
+
+- `authorityOf(client, nodeId)` (`packages/sdk/src/index.ts`) returns a live per-capability
+  attestation from the same on-chain `checkAction` + effective-policy oracle that gates every action.
+- Public `GET /api/authority?q=<name|vault|nodeId>` (`apps/web/src/app/api/authority/route.ts`,
+  resolving via `apps/web/src/lib/resolve-node.ts`) lets a service or another agent verify a mandate
+  by ENS name before trusting it. Live-verified against the seeded root
+  (`demo-liquidity.agentcapitaltree.eth`).
+- `x402-verify.ts` now routes the spend through `authorityOf` — rejects revoked/stale/expired
+  mandates (closed a prior gap where a revoked-but-unexpired agent could still pay).
+
+**Landed in source, not yet live — vault-custodial payments (Phase B contracts).** The Level-2
+surface sketched above as `payService` was instead implemented via EIP-3009 + ERC-1271:
+`CapitalController.checkPayment(...)` (binds the nonce's top 64 bits to the node generation),
+`CapitalVault.isValidSignature` (reconstructs the `TransferWithAuthorization` digest and calls
+`checkPayment`), and `FinanceRoles.PAY = 1<<68` (`KNOWN = ALL|PAY`). Tests live in
+`contracts/test/CapitalController.t.sol` (see its `TestToken` EIP-3009 double); CI `contracts` is
+green. This surface is **absent from the live ACT-A/ACT-B deployment** (`deployments/sepolia.json`),
+which carries no USDC token — so the runtime `purchaseService` path (`packages/runtime/src/payments.ts`)
+fails closed there.
+
+### Deferred — blocked on the owner / external infra
+1. **Redeploy a payment-enabled stack** with USDC as a controller token (the immutable
+   controller/factory/vault set + a USDC-paired Uniswap v4 pool). Gated on the deployer
+   keystore/gas — an on-chain deploy, owner's call.
+2. **Stand up / register an Ethereum-Sepolia (`eip155:11155111`) x402 facilitator** — the hosted
+   `x402.org` facilitator lists only Base Sepolia (`docs/usdc-x402-feasibility.md`).
+3. After (1)+(2): repoint the runtime at the new deployment and confirm an end-to-end vault-custodial
+   purchase (`AuthorizationUsed` + `Transfer(vault→payTo)` on-chain).
+
+### Deferred — optional, ready to implement (no redeploy blocker)
+4. **Activate the PAY gate** in `x402-verify.ts` (the prepared one-liner) behind a
+   "payment-enabled deployment" flag — harmless on the current deployment, enforcing once USDC is a
+   controller token.
+5. **Surface `/api/authority`** in the dashboard node panel (show live EAC capabilities per agent
+   from the trust layer, not just the stored policy).
+6. **Idea 1 — real name resolution:** a wildcard offchain resolver (ENSIP-10 + CCIP-Read) for
+   `*.agentcapitaltree.eth` + reverse/primary names, so external tools resolve name → vault/agent and
+   then call the authority view. `ManagedRegistry.register` already forwards a `resolver` arg the
+   controller currently passes as `address(0)`. Check the wiring against the pinned ENSv2 commit
+   `48b3e2d`.
+7. **Idea 2 — metadata resolver:** a separate, agent-writable resolver for strategy/model/risk as ENS
+   text records, keeping the locked authority names untouched.
