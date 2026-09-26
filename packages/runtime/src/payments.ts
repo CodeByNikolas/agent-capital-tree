@@ -78,11 +78,12 @@ async function boundedText(response: Response): Promise<string> {
 
 /**
  * Vault-custodial x402 (Level 2). This path signs an EIP-3009 authorization with `from = the node's
- * vault` and gates it on `CapitalController.checkPayment`, which requires a PAYMENT-ENABLED
- * deployment: a controller exposing `checkPayment` + a `CapitalVault` implementing ERC-1271, plus
- * USDC as a controller token. The base ACT-A/ACT-B deployment provides none of these — see
- * `docs/usdc-x402-feasibility.md`. It therefore fails closed with a clear error there (the USDC
- * token guard below), rather than silently misbehaving.
+ * vault` and gates it on `CapitalController.checkPayment`. The contract surface now EXISTS in source
+ * — `CapitalController.checkPayment` + `CapitalVault.isValidSignature` (ERC-1271) + the `PAY` role —
+ * but it is NOT in the live ACT-A/ACT-B deployment (`deployments/sepolia.json`), whose controller
+ * predates it and carries no USDC among its tokens. So against the current deployment this fails
+ * closed at the USDC token guard below; enabling it needs a redeploy with USDC as a controller token
+ * plus an Ethereum-Sepolia x402 facilitator. See `docs/usdc-x402-feasibility.md`.
  */
 export function paymentHandler(config: PaymentConfig): ToolHandler {
   for (const service of config.services) validateService(service);
