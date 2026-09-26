@@ -1,3 +1,10 @@
+## Full shared-limit release in progress — 27 September 2026
+
+- User authorized the complete new-controller release. New ENSv2 Sepolia namespace `kanokiai.eth` is registered and attached to controller `0x0A73C8C960FF46BEBe62B96F57CC0Aa7C53eB83d`; source verification passed. Staged manifest remains outside the published deployment until demo and MCP acceptance finish. Existing `kanoki.eth` contracts and funds remain untouched.
+- Fixed saved onboarding readiness on unsupported/unavailable controllers: existing roots now return a top-level blocker instead of polling wallet steps forever. Regression tests pass. Corrected keyless setup handoff URL, exact uint256 formatting and its per-action-only disclosure.
+- Added explicit private CLIProxyAPI worker-host mode for HomeBox, preserving native Codex as the external-user default. Added `pnpm mcp:readiness` for live controller/ENS/worker prerequisites, distinct from installation and financial E2E. A staged live check passes; it does not imply a worker has run.
+- Validation: 39 contract tests; workspace suite including 43 runtime tests; keyless live MCP chat verification. Financial setup, model-worker proof, refreshed public demo and Vercel publication remain in progress.
+
 ## Current production authorization fix — 27 September 2026
 
 - Live frontend source is `102ea65`, Vercel `dpl_AH5bWPu9Dg1JNXmH84ZjoxHr83o8` (READY), https://kanoki-app.vercel.app. Deployed from an isolated release checkout on the existing controller-compatible frontend. Public desktop/mobile authorization tests passed with controlled wallet/RPC receipts (no broadcasts).

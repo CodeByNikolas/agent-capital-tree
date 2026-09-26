@@ -23,7 +23,10 @@ try {
   else assert.equal(browser.method, 'not-requested');
   assert.equal(prepared.content[2].mimeType, 'image/png');
   if (process.env.ACT_SETUP_VISUAL_OUTPUT) await writeFile(process.env.ACT_SETUP_VISUAL_OUTPUT, Buffer.from(prepared.content[2].data, 'base64'));
-  const excessive = await client.callTool({ name: 'prepareRootSetup', arguments: { label: 'demo-agent', budgetRaw: '100001' } });
+  const larger = await client.callTool({ name: 'prepareRootSetup', arguments: { label: 'demo-agent', budgetRaw: '10000000', openBrowser: false } });
+  assert.equal(larger.isError, undefined);
+  assert.equal(larger.structuredContent.budgetRaw, '10000000');
+  const excessive = await client.callTool({ name: 'prepareRootSetup', arguments: { label: 'demo-agent', budgetRaw: (2n ** 256n).toString() } });
   assert.equal(excessive.isError, true);
   assert.equal(excessive.content[2].mimeType, 'image/png');
   const result = await client.callTool({ name: 'getTree', arguments: { rootId: manifest.bootstrap.rootId } });

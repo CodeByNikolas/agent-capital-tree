@@ -3,7 +3,7 @@ import { spawn } from 'node:child_process';
 import { mkdir, writeFile } from 'node:fs/promises';
 
 const model = process.argv[2];
-const reasoningEffort = model === 'gpt-6-luna' ? 'max' : model === 'gpt-6-sol' ? 'medium' : undefined;
+const reasoningEffort = model === 'gpt-6-luna' ? 'high' : model === 'gpt-6-sol' ? 'medium' : undefined;
 if (!reasoningEffort) throw new Error('unsupported worker model');
 const socketPath = '/run/worker/gateway.sock';
 const proxy = createServer((incoming, outgoing) => {

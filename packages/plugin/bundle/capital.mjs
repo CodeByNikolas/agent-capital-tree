@@ -52908,23 +52908,23 @@ function chainHandlers(config2) {
       if (child.parentId !== node2.id || child.rootId !== node2.rootId)
         throw new Error("Target is not this worker\u2019s direct child");
       let hash5;
-      const common = { address: config2.controller, abi: capitalControllerAbi, account };
+      const common2 = { address: config2.controller, abi: capitalControllerAbi, account };
       if (name === "allocateCapital") {
         const tokens = await Promise.all([client.controller.read.TOKEN0(), client.controller.read.TOKEN1()]);
         const amounts = tokenAmounts([tokens[0], tokens[1]], String(args2.asset), String(args2.amount));
-        const simulation = await client.rpc.simulateContract({ ...common, functionName: name, args: [node2.id, child.id, amounts] });
+        const simulation = await client.rpc.simulateContract({ ...common2, functionName: name, args: [node2.id, child.id, amounts] });
         hash5 = await wallet.writeContract(simulation.request);
       } else if (name === "tightenPolicy") {
         const tokens = await Promise.all([client.controller.read.TOKEN0(), client.controller.read.TOKEN1()]);
         const effective = await client.controller.read.getEffectivePolicy([child.id]);
         const policy = narrowPolicy(effective, args2.restrictions, [tokens[0], tokens[1]]);
-        const simulation = await client.rpc.simulateContract({ ...common, functionName: name, args: [child.id, policy] });
+        const simulation = await client.rpc.simulateContract({ ...common2, functionName: name, args: [child.id, policy] });
         hash5 = await wallet.writeContract(simulation.request);
       } else if (name === "revokeSubtree") {
-        const simulation = await client.rpc.simulateContract({ ...common, functionName: name, args: [child.id] });
+        const simulation = await client.rpc.simulateContract({ ...common2, functionName: name, args: [child.id] });
         hash5 = await wallet.writeContract(simulation.request);
       } else {
-        const simulation = await client.rpc.simulateContract({ ...common, functionName: name, args: [node2.id, child.id] });
+        const simulation = await client.rpc.simulateContract({ ...common2, functionName: name, args: [node2.id, child.id] });
         hash5 = await wallet.writeContract(simulation.request);
       }
       const receipt = await client.rpc.waitForTransactionReceipt({ hash: hash5, confirmations: 2, timeout: 12e4 });
@@ -52938,7 +52938,7 @@ function chainHandlers(config2) {
       const { node: node2, account } = await authority(context);
       const targetId = BigInt(String(args2.nodeId));
       const wallet = createWalletClient({ account, chain: sepolia, transport: http(config2.rpcUrl) });
-      const common = { address: config2.controller, abi: capitalControllerAbi, account };
+      const common2 = { address: config2.controller, abi: capitalControllerAbi, account };
       const uint128 = (value) => {
         const parsed = rawAmount(String(value));
         if (parsed >= 1n << 128n)
@@ -52956,14 +52956,14 @@ function chainHandlers(config2) {
         if (child.parentId !== node2.id || child.rootId !== node2.rootId)
           throw new Error("Recovery target is not a direct child");
         const minimums = [uint128(args2.minAmount0Out), uint128(args2.minAmount1Out)];
-        const simulation = await client.rpc.simulateContract({ ...common, functionName: "parentClosePosition", args: [node2.id, child.id, minimums, deadline2] });
+        const simulation = await client.rpc.simulateContract({ ...common2, functionName: "parentClosePosition", args: [node2.id, child.id, minimums, deadline2] });
         hash5 = await wallet.writeContract(simulation.request);
       } else if (name === "swap") {
         const tokens = await Promise.all([client.controller.read.TOKEN0(), client.controller.read.TOKEN1()]);
         const zeroForOne = tokenIndex([tokens[0], tokens[1]], String(args2.tokenIn)) === 0;
         const priceLimit = zeroForOne ? 4295128740n : 1461446703485210103287273052203988822378723970341n;
         const simulation = await client.rpc.simulateContract({
-          ...common,
+          ...common2,
           functionName: name,
           args: [node2.id, zeroForOne, uint128(args2.amountIn), uint128(args2.minAmountOut), priceLimit, deadline2]
         });
@@ -52971,14 +52971,14 @@ function chainHandlers(config2) {
       } else if (name === "openPosition" || name === "increasePosition") {
         const maximums = [uint128(args2.maxAmount0), uint128(args2.maxAmount1)];
         const simulation = await client.rpc.simulateContract({
-          ...common,
+          ...common2,
           functionName: name,
           args: [node2.id, uint128(args2.liquidity), maximums, deadline2]
         });
         hash5 = await wallet.writeContract(simulation.request);
       } else {
         const minimums = [uint128(args2.minAmount0Out ?? "0"), uint128(args2.minAmount1Out ?? "0")];
-        const simulation = await client.rpc.simulateContract({ ...common, functionName: name, args: [node2.id, minimums, deadline2] });
+        const simulation = await client.rpc.simulateContract({ ...common2, functionName: name, args: [node2.id, minimums, deadline2] });
         hash5 = await wallet.writeContract(simulation.request);
       }
       const receipt = await client.rpc.waitForTransactionReceipt({ hash: hash5, confirmations: 2, timeout: 12e4 });
@@ -61999,10 +61999,10 @@ var init_spawn_chain = __esm({
           const current = await this.#parameters(parent, request);
           if (current.operation.nodeId !== 0n)
             return;
-          const common = { address: this.config.controller, abi: capitalControllerAbi, account: current.account };
+          const common2 = { address: this.config.controller, abi: capitalControllerAbi, account: current.account };
           const args2 = [current.parentId, current.label, current.childAccount.address, current.policy, current.amounts, request.operationKey];
-          await this.client.rpc.simulateContract({ ...common, functionName: "spawnChild", args: args2 });
-          const gas = await this.client.rpc.estimateContractGas({ ...common, functionName: "spawnChild", args: args2 });
+          await this.client.rpc.simulateContract({ ...common2, functionName: "spawnChild", args: args2 });
+          const gas = await this.client.rpc.estimateContractGas({ ...common2, functionName: "spawnChild", args: args2 });
           const fees = await this.client.rpc.estimateFeesPerGas();
           const gasLimit = gas * 120n / 100n;
           const grant = request.execution === "vault-only" ? 0n : childGasGrant(this.config.childGasWei ?? 0n, current.node.depth);
@@ -62012,7 +62012,7 @@ var init_spawn_chain = __esm({
           }
           const wallet = createWalletClient({ account: current.account, chain: sepolia, transport: http(this.config.rpcUrl) });
           const hash5 = await wallet.writeContract({
-            ...common,
+            ...common2,
             functionName: "spawnChild",
             args: args2,
             gas: gasLimit,
@@ -62223,7 +62223,7 @@ function mapActivity(event, rootId, controllerAddress) {
   if (event.eventContractAddress !== controllerAddress) {
     throw new MultiBaasResponseError("/events", "event came from an unexpected contract address");
   }
-  const common = {
+  const common2 = {
     id: `${CHAIN_ID2}:${event.txHash.toLowerCase()}:${event.logIndex}`,
     rootId,
     eventName: event.eventName,
@@ -62241,29 +62241,29 @@ function mapActivity(event, rootId, controllerAddress) {
   };
   switch (event.eventName) {
     case "NodeCreated":
-      return { ...common, kind: "node_created", nodeId: inputUint(event, "nodeId"), parentId: inputUint(event, "parentId"), agent: inputAddress(event, "agent"), vault: inputAddress(event, "vault") };
+      return { ...common2, kind: "node_created", nodeId: inputUint(event, "nodeId"), parentId: inputUint(event, "parentId"), agent: inputAddress(event, "agent"), vault: inputAddress(event, "vault") };
     case "RootFunded":
-      return { ...common, kind: "root_funded", token: inputAddress(event, "token"), amount: inputUint(event, "amount") };
+      return { ...common2, kind: "root_funded", token: inputAddress(event, "token"), amount: inputUint(event, "amount") };
     case "CapitalAllocated":
-      return { ...common, kind: "capital_allocated", parentId: inputUint(event, "parentId"), childId: inputUint(event, "childId"), token: inputAddress(event, "token"), amount: inputUint(event, "amount") };
+      return { ...common2, kind: "capital_allocated", parentId: inputUint(event, "parentId"), childId: inputUint(event, "childId"), token: inputAddress(event, "token"), amount: inputUint(event, "amount") };
     case "CapitalReclaimed":
-      return { ...common, kind: "capital_reclaimed", parentId: inputUint(event, "parentId"), childId: inputUint(event, "childId"), token: inputAddress(event, "token"), amount: inputUint(event, "amount") };
+      return { ...common2, kind: "capital_reclaimed", parentId: inputUint(event, "parentId"), childId: inputUint(event, "childId"), token: inputAddress(event, "token"), amount: inputUint(event, "amount") };
     case "EmergencyRecovered":
-      return { ...common, kind: "emergency_recovered", nodeId: inputUint(event, "nodeId"), token: inputAddress(event, "token"), amount: inputUint(event, "amount"), recipient: inputAddress(event, "recipient") };
+      return { ...common2, kind: "emergency_recovered", nodeId: inputUint(event, "nodeId"), token: inputAddress(event, "token"), amount: inputUint(event, "amount"), recipient: inputAddress(event, "recipient") };
     case "PolicyTightened":
-      return { ...common, kind: "policy_tightened", nodeId: inputUint(event, "nodeId") };
+      return { ...common2, kind: "policy_tightened", nodeId: inputUint(event, "nodeId") };
     case "OperatorChanged":
-      return { ...common, kind: "operator_changed", operator: inputAddress(event, "operator"), generation: inputUint(event, "generation") };
+      return { ...common2, kind: "operator_changed", operator: inputAddress(event, "operator"), generation: inputUint(event, "generation") };
     case "NodeRevoked":
-      return { ...common, kind: "node_revoked", nodeId: inputUint(event, "nodeId") };
+      return { ...common2, kind: "node_revoked", nodeId: inputUint(event, "nodeId") };
     case "SwapExecuted":
-      return { ...common, kind: "swap_executed", nodeId: inputUint(event, "nodeId"), inputToken: inputAddress(event, "inputToken"), outputToken: inputAddress(event, "outputToken"), amountIn: inputUint(event, "amountIn"), amountOut: inputUint(event, "amountOut") };
+      return { ...common2, kind: "swap_executed", nodeId: inputUint(event, "nodeId"), inputToken: inputAddress(event, "inputToken"), outputToken: inputAddress(event, "outputToken"), amountIn: inputUint(event, "amountIn"), amountOut: inputUint(event, "amountOut") };
     case "PositionOpened":
     case "PositionIncreased":
     case "PositionClosed":
-      return { ...common, kind: event.eventName === "PositionOpened" ? "position_opened" : event.eventName === "PositionIncreased" ? "position_increased" : "position_closed", nodeId: inputUint(event, "nodeId"), tokenId: inputUint(event, "tokenId"), liquidity: inputUint(event, "liquidity"), amount0: inputUint(event, "amount0"), amount1: inputUint(event, "amount1") };
+      return { ...common2, kind: event.eventName === "PositionOpened" ? "position_opened" : event.eventName === "PositionIncreased" ? "position_increased" : "position_closed", nodeId: inputUint(event, "nodeId"), tokenId: inputUint(event, "tokenId"), liquidity: inputUint(event, "liquidity"), amount0: inputUint(event, "amount0"), amount1: inputUint(event, "amount1") };
     case "FeesCollected":
-      return { ...common, kind: "fees_collected", nodeId: inputUint(event, "nodeId"), tokenId: inputUint(event, "tokenId"), amount0: inputUint(event, "amount0"), amount1: inputUint(event, "amount1") };
+      return { ...common2, kind: "fees_collected", nodeId: inputUint(event, "nodeId"), tokenId: inputUint(event, "tokenId"), amount0: inputUint(event, "amount0"), amount1: inputUint(event, "amount1") };
     default:
       throw new UnsupportedMultiBaasEventError(event.eventName);
   }
@@ -68533,10 +68533,11 @@ var init_capital_onboarding = __esm({
         }
         let funded = 0n;
         if (tree && limit !== null) funded = await rpc.readContract({ address: this.session.controller, abi: [{ ...limitAbi[0], name: "rootCapitalFunded" }], functionName: "rootCapitalFunded", args: [tree.rootId], blockNumber: tree.source.blockNumber });
-        let supported = true;
+        let supported = limit !== null;
         if (!tree) {
           try {
             await rpc.readContract({ address: this.session.controller, abi: limitAbi, functionName: "rootCapitalLimit", args: [0n] });
+            supported = true;
           } catch {
             supported = false;
           }
@@ -68742,6 +68743,7 @@ var init_capital_session = __esm({
           writeReady: this.writesEnabled && setup.prerequisitesMet && (!onboarding || onboarding.missing.length === 0),
           readinessScope: "Setup prerequisites only; each action still requires a fresh policy, balance, simulation and fee check.",
           onboarding,
+          ...onboarding?.status === "blocked" ? { status: "blocked", blocker: onboarding.blocker } : {},
           next: onboarding?.next,
           steps: onboarding?.steps,
           prerequisitesMet: setup.prerequisitesMet && (!onboarding || onboarding.missing.length === 0),
@@ -68886,40 +68888,58 @@ async function loadWorkerHost(base) {
     throw error62;
   }
   if (!info.isFile() || info.isSymbolicLink() || info.uid !== process.getuid() || (info.mode & 511) !== 384) throw new Error("WORKER_HOST_INVALID: worker-host.json must be an owner-only private file.");
-  const parsed = workerHostSchema.safeParse(JSON.parse(await readFile10(file2, "utf8")));
+  let parsed;
+  try {
+    parsed = workerHostSchema.safeParse(JSON.parse(await readFile10(file2, "utf8")));
+  } catch {
+    throw new Error("WORKER_HOST_INVALID: Project worker settings are invalid. No capital will be allocated to a worker.");
+  }
   if (!parsed.success) throw new Error("WORKER_HOST_INVALID: Project worker settings are invalid. No capital will be allocated to a worker.");
-  return { ...parsed.data, mode: "workers", inference: "codex", childGasWei: BigInt(parsed.data.childGasWei), workerUid: process.getuid(), workerGid: process.getgid() };
+  return { ...parsed.data, mode: "workers", inference: parsed.data.inference ?? "codex", childGasWei: BigInt(parsed.data.childGasWei), workerUid: process.getuid(), workerGid: process.getgid() };
 }
 async function checkWorkerHost(config2, model = config2?.models[0]) {
   if (!config2) return { status: "unavailable", workerReady: false, workerStarted: false, next: "Project operator must provision the private worker-host.json, pinned Docker image and dedicated native Codex authentication. Users should not configure this per vault. No worker allocation was requested." };
   if (!config2.models.includes(model)) return { status: "blocked", workerReady: false, workerStarted: false, next: "Requested model is not approved in the project worker configuration." };
-  const launcher = new NativeCodexLauncher(config2);
+  const launcher = config2.inference === "cliproxyapi" ? new DockerWorkerLauncher() : new NativeCodexLauncher(config2);
   try {
     const image = await promisify(execFile)("docker", ["image", "inspect", config2.imageId, "--format", "{{.Id}}"], { timeout: 2e4 });
     if (image.stdout.trim() !== config2.imageId) throw new Error("Worker image mismatch");
     await launcher.ensureAvailable(model);
     return { status: "ready", workerReady: true, workerStarted: false, model, models: config2.models, childGasWei: config2.childGasWei, next: "Worker prerequisites checked. spawnChild uses the saved root signer and its shared capital limit; no additional owner signature is needed per child." };
   } catch {
-    return { status: "unavailable", workerReady: false, workerStarted: false, next: "Worker preflight failed: check the pinned Docker image, dedicated Codex binary/login or API key and approved model access. No child capital was allocated." };
+    return { status: "unavailable", workerReady: false, workerStarted: false, next: config2.inference === "cliproxyapi" ? "Worker preflight failed: check the pinned Docker image and configured CLIProxyAPI endpoint and credential. No child capital was allocated." : "Worker preflight failed: check the pinned Docker image, dedicated Codex binary/login or API key and approved model access. No child capital was allocated." };
   } finally {
     await launcher.close();
   }
 }
-var workerHostSchema;
+var common, workerHostSchema;
 var init_worker_host = __esm({
   "worker-host.mjs"() {
     "use strict";
     init_zod();
     init_dist3();
-    workerHostSchema = external_exports.object({
+    common = external_exports.object({
       imageId: external_exports.string().regex(/^sha256:[a-f0-9]{64}$/),
       models: external_exports.array(external_exports.string().regex(/^[\w.-]+$/)).min(1),
-      codexBinary: external_exports.string().refine(isAbsolute5),
-      codexHome: external_exports.string().refine(isAbsolute5),
-      openaiApiKeyFile: external_exports.string().refine(isAbsolute5).optional(),
-      reasoningEffort: external_exports.literal("high").optional(),
       childGasWei: external_exports.string().regex(/^(0|[1-9]\d*)$/).refine((value) => BigInt(value) <= 10000000000000000n)
-    }).strict();
+    });
+    workerHostSchema = external_exports.union([
+      common.extend({
+        inference: external_exports.literal("codex").optional(),
+        codexBinary: external_exports.string().refine(isAbsolute5),
+        codexHome: external_exports.string().refine(isAbsolute5),
+        openaiApiKeyFile: external_exports.string().refine(isAbsolute5).optional(),
+        reasoningEffort: external_exports.literal("high").optional()
+      }).strict(),
+      common.extend({
+        inference: external_exports.literal("cliproxyapi"),
+        upstream: external_exports.url().refine((value) => {
+          const url2 = new URL(value);
+          return ["http:", "https:"].includes(url2.protocol) && url2.pathname.endsWith("/v1") && !url2.username && !url2.password && !url2.search && !url2.hash;
+        }),
+        upstreamKey: external_exports.string().trim().min(1)
+      }).strict()
+    ]);
   }
 });
 
@@ -81231,7 +81251,7 @@ __export(root_wallet_setup_exports, {
   rootSetupSpec: () => rootSetupSpec
 });
 async function prepareRootSetup({ label, budgetRaw, openBrowser }) {
-  const url2 = new URL("https://agent-capital-tree.vercel.app/setup");
+  const url2 = new URL("https://kanoki-app.vercel.app/setup");
   url2.searchParams.set("action", "create-root");
   url2.searchParams.set("label", label);
   url2.searchParams.set("budget", budgetRaw);
@@ -81241,9 +81261,11 @@ async function prepareRootSetup({ label, budgetRaw, openBrowser }) {
     chainId: 11155111,
     ensName: `${label}.${usdc_sepolia_default.ensNamespace.name}`,
     budgetRaw,
-    budgetUSDC: (Number(budgetRaw) / 1e6).toString(),
+    budgetUSDC: `${BigInt(budgetRaw) / 1000000n}.${(BigInt(budgetRaw) % 1000000n).toString().padStart(6, "0")}`,
     url: url2.href,
     browser,
+    capitalLimitEnforced: false,
+    budgetMeaning: "Manual root per-action ceiling only. Use the default capital MCP for a shared root-and-children capital limit.",
     transactionSubmitted: false,
     next: "After the root creation receipt confirms, use the capital-mode MCP: selectCapitalRoot with this ENS, then prepareCapitalSetup (or prepareOperatorRecovery if already bound to another signer). The keyless three-tool MCP does not expose these finance setup tools. No restart is needed for root selection inside capital mode. Review existing funding before adding anything. No owner key enters the chat."
   };
@@ -81256,7 +81278,7 @@ var init_root_wallet_setup = __esm({
     init_open_wallet_browser();
     init_demo_budget();
     rootSetupSpec = {
-      description: "Ask the user for the shared capital limit before setup. No assumed amount. Prepare a Sepolia wallet handoff; only the owner signs.",
+      description: "Prepare a Sepolia wallet handoff; only the owner signs. The default capital MCP provides shared-limit onboarding. The separate keyless reader only links to manual root creation, whose budget is a per-action ceiling, not a shared capital limit.",
       schema: external_exports.object({
         label: external_exports.string().regex(/^[a-z][a-z0-9-]{0,30}$/, "label: use 1\u201331 lowercase ASCII letters, digits or hyphens; start with a letter. Spaces and uppercase letters are not allowed.").describe("Optional ENS label: 1\u201331 lowercase ASCII letters, digits or hyphens, starting with a letter. Omit to generate a name."),
         budgetRaw: demoBudgetSchema,

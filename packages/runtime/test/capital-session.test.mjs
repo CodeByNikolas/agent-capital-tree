@@ -108,6 +108,15 @@ test('one-time setup preserves its signer and restores the authorized root after
     assert.equal(restarted.localOperator,first.localOperator);
     assert.equal(restarted.activeMcpRootId,'4');
     assert.equal(restarted.writeReady,true);
+    const originalRead = client.rpc.readContract;
+    client.rpc.readContract = async () => { throw new Error('Unsupported controller'); };
+    const blocked = await fresh().inspect();
+    assert.equal(blocked.status, 'blocked');
+    assert.equal(blocked.blocker, 'CAPITAL_LIMIT_UNSUPPORTED_OR_UNAVAILABLE');
+    assert.equal(blocked.writeReady, false);
+    const continuation = await continueCapitalSetup(fresh(), () => assert.fail('Blocked setup must not execute'), 0);
+    assert.equal(continuation.status, 'blocked');
+    client.rpc.readContract = originalRead;
     chainTree.nodes[0].revoked = true;
     await assert.rejects(fresh().inspect(), /ROOT_REVOKED/);
   } finally { await rm(base,{recursive:true,force:true}); }

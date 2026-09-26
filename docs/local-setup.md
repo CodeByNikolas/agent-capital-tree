@@ -8,6 +8,8 @@ On the retired pre-Kanoki deployment, a same-host acceptance run using the earli
 
 ## Recommended: one-time Kanoki wallet setup
 
+**Release gate:** main contains the new shared-limit flow, but the current public `kanoki.eth` controller does not support it. Until the [new deployment](shared-capital-limit-release.md) is verified and published, use the read-only jury check below; do not fund a setup presented as enforcing this limit. Limited roots support delegation, restriction and reclaim only. Swaps, LP and x402 require an unrestricted root.
+
 Before setup, Kanoki asks for the shared root-and-children capital limit and separate authorized funding. There is no default amount or demo maximum. An explicitly supplied amount answers that question. The chat calls `prepareRootSetup` without asking for an ENS name. Open its normal-browser link, connect your owner wallet and click **Set up Kanoki**. Confirm the displayed wallet requests. The host keeps calling `continueCapitalSetup` while the owner signs, then runs the saved authorized test. No done message or copied ENS/hash is required. The saved local signer survives restart.
 
 The one guided setup creates the root, authorizes the local signer, deposits the shared USDC budget and tops the signer up to 0.01 native Sepolia ETH for gas. Current contracts can require up to five wallet confirmations (creation, authorization, USDC approval, deposit and gas). There is no manual root selection, operator-address copying, JSON profile, bearer token or separate runtime terminal. The owner key never enters the MCP. Completed deposits are never repeated; keep the same link to resume an interrupted setup.

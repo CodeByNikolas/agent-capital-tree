@@ -105,7 +105,7 @@ export class CapitalSession {
     const onboarding = saved ? await this.onboarding.status() : null;
     return { ...setup, controller: this.controller, authorityGeneration: tree.generation, namespace: this.namespace, activeMcpRootId: this.rootId, writesEnabled: this.writesEnabled,
       writeReady: this.writesEnabled && setup.prerequisitesMet && (!onboarding || onboarding.missing.length === 0), readinessScope: 'Setup prerequisites only; each action still requires a fresh policy, balance, simulation and fee check.',
-      onboarding, next:onboarding?.next, steps:onboarding?.steps,
+      onboarding, ...(onboarding?.status === 'blocked' ? {status:'blocked',blocker:onboarding.blocker} : {}), next:onboarding?.next, steps:onboarding?.steps,
       prerequisitesMet:setup.prerequisitesMet && (!onboarding || onboarding.missing.length === 0),
       missing:[...new Set([...setup.missing,...(onboarding?.missing ?? [])])],
       localProfile: this.runtimeRoot, toolVersion: 'capital-demo-2', backgroundWorker: 'not_requested',
