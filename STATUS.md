@@ -1,3 +1,8 @@
+## Current production authorization fix — 27 September 2026
+
+- Live frontend source is `102ea65`, Vercel `dpl_AH5bWPu9Dg1JNXmH84ZjoxHr83o8` (READY), https://kanoki-app.vercel.app. Deployed from an isolated release checkout on the existing controller-compatible frontend. Public desktop/mobile authorization tests passed with controlled wallet/RPC receipts (no broadcasts).
+- Main includes the concurrent shared-capital/worker work via merge `8f44c21`; merged build, wallet-adapter and desktop/mobile authorization tests passed. Main as a whole was deliberately NOT deployed: the new limited-controller prerequisite in docs/shared-capital-limit-release.md remains open. Do not treat this UI release as deployment or acceptance of those contracts/workers.
+
 ## Agent authorization confirmation — 27 September 2026
 
 - Standalone Authorize agent waits for a successful transaction receipt, then navigates to the correct root Agent Tree and shows a dismissible success notification with its receipt link. Wallet acceptance alone, reverted receipts and RPC failures do not trigger success/navigation. The existing guided multi-step setup remains unchanged.
