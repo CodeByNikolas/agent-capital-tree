@@ -8,6 +8,16 @@ import { demoBudgetSchema, DEMO_BUDGET_MESSAGE } from '../../plugin/demo-budget.
 
 const controller = `0x${'1'.repeat(40)}`, owner = `0x${'2'.repeat(40)}`;
 const usdc = '0x1c7D4B196Cb0C7B01d743Fbc6116a902379C7238';
+test('unbound capital session keeps public reads but blocks implicit setup and writes', async () => {
+  const session = new CapitalSession({ controller, base: '/unused', repo: '/repo', writesEnabled: true,
+    client: { resolveTree: async () => ({tree:tree('4'),selectedNodeId:4n}) } });
+  assert.equal((await session.inspect()).activeMcpRootId, null);
+  assert.equal((await session.inspect()).writesEnabled, true);
+  assert.equal((await session.tree('4')).mcp.activeMcpRootId, null);
+  await assert.rejects(session.prepare({openBrowser:false}), /ROOT_NOT_SELECTED/);
+  await assert.rejects(session.preflight('4'), /ROOT_NOT_SELECTED/);
+  assert.equal(session.runtimeRoot, undefined);
+});
 function tree(id) { return { rootId: BigInt(id), generation: 1n, tokens: [usdc, controller], owner, operator: owner,
   nodes: [{ id: BigInt(id), parentId: 0n, ensName: `root-${id}.agentcapitalusdc.eth`, vault: controller,
     balances: [100000n, 0n], authorizedActions: ['delegate','restrict','reclaim'], effectivePolicy: {maxAmounts:[100000n,0n],tokenMask:1} }],

@@ -1,3 +1,9 @@
+## Unbound Kanoki MCP and cleanup — 26 September
+
+- User explicitly authorized deleting the historical revoked root-4 local profile, including its encrypted key and master password. Verified controller/root domain before deletion. Other profiles and chain state were preserved. The integrated MCP worktree/branch and local pnpm cache were removed; older worktrees with uncommitted or unmerged work were preserved.
+- Kanoki now starts with `stdio --enable-sepolia-writes` on the current deployment, without a preselected root. All 23 capital tools remain available, including wallet root setup and child-vault creation after explicit root selection/authorization. No root-4 binding or profile recreation. Autonomous workers still require separate worker configuration.
+- Added unbound startup, explicit ROOT_NOT_SELECTED guards and public tree reads that never implicitly select a root. Build, real 23-tool STDIO handshake and 15/15 Linux runtime tests passed. No financial transaction was submitted. Reconnect existing desktop MCP sessions to load the new configuration.
+
 ## Kanoki MCP repair — 26 September, 20:58 UTC
 
 ## Partner navigation and onboarding restoration (26 September)
