@@ -1,5 +1,6 @@
 "use client";
 import { ConfirmModal } from "./treasury-records";
+import { formatUnits } from "viem";
 
 import { useEffect, useState, type FormEvent, type ReactNode } from "react";
 import { ArrowUpRight, Check, ShieldAlert, ShieldCheck } from "lucide-react";
@@ -110,6 +111,7 @@ function PolicyFields({
   initialPolicy: Policy | null;
   createRoot?: boolean;
   demoBudget?: string | null;
+  setupFunding?: string | null;
   deployment: PublicDeployment;
   data: DashboardData;
   children?: ReactNode;
@@ -128,7 +130,7 @@ function PolicyFields({
     initialPolicy ? initialPolicy.allowedTokens.includes(initialPolicy.maxActionAmounts[0]?.symbol ?? "") : true,
     initialPolicy ? initialPolicy.allowedTokens.includes(initialPolicy.maxActionAmounts[1]?.symbol ?? "") : !demoBudget,
   ]);
-  const [maxAmounts, setMaxAmounts] = useState<[string, string]>(demoBudget && !initialPolicy ? [(Number(demoBudget) / 1_000_000).toString(), "0"] : !initialPolicy && createRoot ? ["20", "20"] : [...defaultAmounts(initialPolicy)]);
+  const [maxAmounts, setMaxAmounts] = useState<[string, string]>(demoBudget && !initialPolicy ? [formatUnits(BigInt(demoBudget), 6), "0"] : !initialPolicy && createRoot ? ["20", "20"] : [...defaultAmounts(initialPolicy)]);
   const [expiresAt, setExpiresAt] = useState(policyDate(initialPolicy) || expiryDateBeforeNamespace(deployment.namespaceExpiry));
   const [error, setError] = useState<string | null>(null);
 
@@ -248,6 +250,7 @@ export function WalletControlsPanel({
   demoLabel,
   demoBudget,
   setupOperator,
+  setupFunding,
   creationOnly = false,
 }: {
   data: DashboardData;
@@ -263,6 +266,7 @@ export function WalletControlsPanel({
   onRootCreated: (rootId: string) => void;
   demoLabel?: string | null;
   demoBudget?: string | null;
+  setupFunding?: string | null;
   setupOperator?: string | null;
   creationOnly?: boolean;
 }) {
@@ -271,7 +275,7 @@ export function WalletControlsPanel({
     if (!demoLabel) setRootLabel(current => current || generateRootLabel());
   }, [demoLabel]);
   const [operatorAddress, setOperatorAddress] = useState(setupOperator ?? data.rootOperator ?? "");
-  const budgetUSDC = demoBudget ? (Number(demoBudget) / 1_000_000).toString() : "0";
+  const budgetUSDC = demoBudget ? formatUnits(BigInt(demoBudget), 6) : "0";
   const [fundAmounts, setFundAmounts] = useState<[string, string]>([budgetUSDC, "0"]);
   const [childLabel, setChildLabel] = useState("");
   const [childAgent, setChildAgent] = useState("");
@@ -282,7 +286,7 @@ export function WalletControlsPanel({
   const [confirming, setConfirming] = useState(false);
   const [setupRunning, setSetupRunning] = useState(false);
   const [setupError, setSetupError] = useState<string | null>(null);
-  const managedSetup = Boolean(creationOnly && setupOperator && demoBudget);
+  const managedSetup = Boolean(creationOnly && setupOperator && demoBudget && setupFunding !== null && setupFunding !== undefined);
   const labels = tokenLabels(data, deployment);
   const busy = notice?.stage === "simulating" || notice?.stage === "awaiting-wallet" || notice?.stage === "confirming";
   const ownerConnected = Boolean(
@@ -335,6 +339,7 @@ export function WalletControlsPanel({
 
   const displayedNotice = notice && (
     <div className={`wallet-action-notice wallet-action-notice-${notice.stage}`} role="status" aria-live="polite">
+      {notice.steps && <ul>{Object.entries(notice.steps).map(([step,value])=><li key={step}>{step}: {value.status}{value.hash && <> · <a href={`https://sepolia.etherscan.io/tx/${value.hash}`} target="_blank" rel="noreferrer">Receipt</a></>}</li>)}</ul>}
       <strong>{notice.label}</strong>
       <span>{notice.message}</span>
       {notice.transactionHash && (
@@ -390,19 +395,19 @@ export function WalletControlsPanel({
 
       {managedSetup && <form className="wallet-action-form" onSubmit={async event => {
         event.preventDefault();
-        if (setupRunning || !setupOperator || !demoBudget || !actions.completeRootSetup) return;
+        if (setupRunning || !setupOperator || !demoBudget || setupFunding == null || !actions.completeRootSetup) return;
         setSetupRunning(true); setSetupError(null);
         try {
           const vault = await actions.completeRootSetup(rootLabel, setupOperator, demoBudget, {
             permissions: ["delegate", "restrict", "reclaim"], allowedTokens: [true, false],
             maxAmounts: [budgetUSDC, "0"], expiresAt: expiryDateBeforeNamespace(deployment.namespaceExpiry), poolId: zeroPoolId,
-          });
+          }, setupFunding);
           onRootCreated(vault);
         } catch (error) { setSetupError(error instanceof Error ? error.message : "Setup paused. Resume with the same link."); }
         finally { setSetupRunning(false); }
       }}>
         <p><strong>{rootLabel}.{deployment.namespaceName}</strong></p>
-        <p>Deposit: <strong>{budgetUSDC} Test-USDC total</strong>, shared by the root and all children. Agent gas reserve: up to <strong>0.01 Sepolia ETH</strong>, plus wallet transaction fees. Completed deposits are skipped when resuming.</p>
+        <p>Shared onchain capital limit: <strong>{budgetUSDC} Test-USDC</strong>. Authorized funding target: <strong>{setupFunding ? formatUnits(BigInt(setupFunding), 6) : "0"} Test-USDC total</strong>, shared by the root and all children. Agent gas reserve: up to <strong>0.01 Sepolia ETH</strong>, plus wallet transaction fees. Completed deposits are skipped when resuming.</p>
         <p>Agent: <code style={{ overflowWrap: "anywhere" }}>{setupOperator}</code>. Permissions: delegate, restrict and reclaim, with a {budgetUSDC} USDC per-action limit. Your wallet remains the owner.</p>
         <p>Your wallet may ask for up to five confirmations. Keep this page open. If interrupted, use this same button and link to resume safely.</p>
         {setupError && <p role="alert">{setupError}</p>}
@@ -459,7 +464,7 @@ export function WalletControlsPanel({
         event.preventDefault();
         if (setupOperator) void actions.fundOperatorGas?.(data.rootId, setupOperator).catch(() => undefined);
       }}>
-        <p className="wallet-form-context">Send native <strong>Sepolia ETH</strong> from the owner wallet to the bound local signer. Only the difference up to <strong>0.01 ETH</strong> is requested. This is separate from the 0.10 Test-USDC vault budget. No USDC approval is involved.</p>
+        <p className="wallet-form-context">Send native <strong>Sepolia ETH</strong> from the owner wallet to the bound local signer. Only the difference up to <strong>0.01 ETH</strong> is requested. This is separate from the shared Test-USDC capital limit. No USDC approval is involved.</p>
         <label className="wallet-field"><span>Bound local signer · verify this address</span><input value={setupOperator ?? "No local signer provided"} readOnly /></label>
         <p className="field-help">Unused gas stays with this local key. The MCP estimates fees again before each child transaction. If this page is stale or binding differs, the transaction is blocked.</p>
         <button type="submit" className="button button-primary button-small" disabled={!canManageRoot || !agentMatches || !actions.fundOperatorGas || busy}>Review gas top-up in wallet</button>

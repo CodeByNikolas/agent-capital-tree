@@ -26,7 +26,7 @@ try {
       simulateContract:async request=>({request}),
       readContract:async({functionName,args})=>{
         switch(functionName){
-          case 'decimals':return 6; case 'nextNodeId':return state.root?2n:1n;
+          case 'rootCapitalLimit':return args[0]===0n?0n:100000n;case 'rootCapitalFunded':return BigInt(state.sends.includes('fundRoot')?100000:0);case 'decimals':return 6; case 'nextNodeId':return state.root?2n:1n;
           case 'getNode':return state.root; case 'rootOwner':return owner; case 'rootOperator':return state.bound;
           case 'getRootNodeIds':return [1n];case 'balanceOf':return state.balance;case 'allowance':return state.allowance;
           default:throw new Error(`Unexpected read ${functionName}`);
@@ -37,7 +37,7 @@ try {
       writeContract:async({functionName,args})=>{
         state.sends.push(functionName);
         if(state.unknownSend) throw new Error('Unknown wallet outcome');
-        if(functionName==='createRoot')state.root={id:1n,parentId:0n,label:args[0],vault,policy:args[1],revoked:false};
+        if(functionName==='createRootWithCapitalLimit')state.root={id:1n,parentId:0n,label:args[0],vault,policy:args[1],revoked:false};
         if(functionName==='setRootOperator')state.bound=args[1];
         if(functionName==='approve')state.allowance=args[1];
         if(functionName==='fundRoot')state.balance+=args[1][0];
@@ -47,21 +47,21 @@ try {
     return {state,restart};
   }
   const first=fixture();
-  assert.equal(await first.restart().completeRootSetup('kanoki-test',operator,'100000',draft),vault);
-  assert.deepEqual(first.state.sends,['createRoot','setRootOperator','approve','fundRoot','gas']);
+  assert.equal(await first.restart().completeRootSetup('kanoki-test',operator,'100000',draft,'100000'),vault);
+  assert.deepEqual(first.state.sends,['createRootWithCapitalLimit','setRootOperator','approve','fundRoot','gas']);
   first.state.balance=60000n; first.state.gas=1n;
-  await first.restart().completeRootSetup('kanoki-test',operator,'100000',draft);
+  await first.restart().completeRootSetup('kanoki-test',operator,'100000',draft,'100000');
   assert.equal(first.state.sends.length,5,'Completed setup must not refill funds or gas after later usage');
   const paused=fixture(); paused.state.failReceipt=true;
-  await assert.rejects(paused.restart().completeRootSetup('kanoki-test',operator,'100000',draft),/RPC unavailable/);
-  await paused.restart().completeRootSetup('kanoki-test',operator,'100000',draft);
-  assert.equal(paused.state.sends.filter(x=>x==='createRoot').length,1,'Resume reconciles the prior creation');
+  await assert.rejects(paused.restart().completeRootSetup('kanoki-test',operator,'100000',draft,'100000'),/RPC unavailable/);
+  await paused.restart().completeRootSetup('kanoki-test',operator,'100000',draft,'100000');
+  assert.equal(paused.state.sends.filter(x=>x==='createRootWithCapitalLimit').length,1,'Resume reconciles the prior creation');
   const unknown=fixture();unknown.state.unknownSend=true;
-  await assert.rejects(unknown.restart().completeRootSetup('kanoki-test',operator,'100000',draft),/Unknown wallet outcome/);
-  await assert.rejects(unknown.restart().completeRootSetup('kanoki-test',operator,'100000',draft),/unknown outcome/);
+  await assert.rejects(unknown.restart().completeRootSetup('kanoki-test',operator,'100000',draft,'100000'),/Unknown wallet outcome/);
+  await assert.rejects(unknown.restart().completeRootSetup('kanoki-test',operator,'100000',draft,'100000'),/unknown outcome/);
   assert.equal(unknown.state.sends.length,1,'Unknown broadcast must never be retried automatically');
   const mismatched=fixture();mismatched.state.root={id:1n,parentId:0n,label:'kanoki-test',vault,policy:{},revoked:false};mismatched.state.bound=controller;
-  await assert.rejects(mismatched.restart().completeRootSetup('kanoki-test',operator,'100000',draft),/different operator/);
+  await assert.rejects(mismatched.restart().completeRootSetup('kanoki-test',operator,'100000',draft,'100000'),/different operator/);
   assert.equal(mismatched.state.sends.length,0);
   console.log('PASS: guided setup, restart reconciliation, no repeat funding, uncertain-send lockout and operator protection. No chain writes.');
 } finally {await unlink(output);}

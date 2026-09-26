@@ -36,6 +36,7 @@ export interface WalletActionNotice {
   label: string;
   message: string;
   transactionHash?: Hash;
+  steps?: Record<string, {status: string; hash?: Hash}>;
 }
 
 const permissionCapabilities: Record<Permission, Capability> = {
@@ -286,10 +287,10 @@ export function useWalletActions({
   }
 
   const actions: DashboardActions = {
-    async completeRootSetup(label, operatorInput, budgetRaw, draft) {
+    async completeRootSetup(label, operatorInput, budgetRaw, draft, fundingRaw) {
       if (busy.current) throw new Error("Setup is already running.");
       if (deployment.recoveryOnly) throw new Error("New setup requires the current Kanoki deployment.");
-      if (!/^[a-z][a-z0-9-]{0,30}$/.test(label) || !isAddress(operatorInput) || operatorInput === zeroAddress || !/^[1-9]\d{0,5}$/.test(budgetRaw) || BigInt(budgetRaw) > 100000n) throw new Error("Invalid prepared setup link.");
+      if (!/^[a-z][a-z0-9-]{0,30}$/.test(label) || !isAddress(operatorInput) || operatorInput === zeroAddress || !/^[1-9]\d{0,77}$/.test(budgetRaw) || BigInt(budgetRaw) >= 2n ** 256n || !/^(0|[1-9]\d{0,77})$/.test(fundingRaw) || BigInt(fundingRaw) > BigInt(budgetRaw)) throw new Error("Invalid prepared setup limit or funding amount.");
       busy.current = true;
       try {
         const context = await createContext();
@@ -297,17 +298,20 @@ export function useWalletActions({
         if (operator.toLowerCase() === context.account.toLowerCase()) throw new Error("The local agent must be separate from your owner wallet.");
         const policy = makePolicy(draft, await readTokenDecimals(context), deployment);
         const journalKey = `kanoki-setup:11155111:${context.controller.toLowerCase()}:${context.account.toLowerCase()}:${label}`;
-        const fingerprint = JSON.stringify({ operator, budgetRaw });
+        const fingerprint = JSON.stringify({ operator, budgetRaw, fundingRaw });
         const saved = localStorage.getItem(journalKey);
-        const journal: { fingerprint: string; pendingHash?: Hash; submitting?: boolean; funded?: boolean; gasFunded?: boolean } = saved ? JSON.parse(saved) : { fingerprint };
+        const journal: { fingerprint: string; pendingHash?: Hash; pendingStep?: string; submitting?: boolean; funded?: boolean; gasFunded?: boolean; steps?: Record<string,{status:string;hash?:Hash}> } = saved ? JSON.parse(saved) : { fingerprint };
+        journal.steps ??= Object.fromEntries(['Root creation','Operator authorization','USDC approval','USDC funding','Operator gas'].map(step=>[step,{status:'required'}]));
         if (journal.fingerprint !== fingerprint) throw new Error("This setup already started with different parameters. Reopen its original link; do not create a replacement.");
         const persist = () => localStorage.setItem(journalKey, JSON.stringify(journal));
         persist(); // Prove durable storage works before the first wallet request.
         if (journal.submitting && !journal.pendingHash) throw new Error("A previous wallet request has an unknown outcome. Check your wallet activity before any retry; no replacement transaction will be sent.");
         const reconcile = async () => {
           if (!journal.pendingHash) return;
-          setNotice({ stage: "confirming", label: "Resume wallet setup", message: "Checking the previously submitted transaction. No replacement will be sent.", transactionHash: journal.pendingHash });
+          if (journal.pendingStep) journal.steps![journal.pendingStep] = {status:'transaction pending',hash:journal.pendingHash};
+          setNotice({ stage: "confirming", label: "Resume wallet setup", message: "Checking the previously submitted transaction. No replacement will be sent.", transactionHash: journal.pendingHash,steps:{...journal.steps} });
           const receipt = await context.publicClient.waitForTransactionReceipt({ hash: journal.pendingHash });
+          if (journal.pendingStep) journal.steps![journal.pendingStep] = {status:receipt.status === 'success'?'confirmed':'failed',hash:journal.pendingHash};
           delete journal.pendingHash; delete journal.submitting; persist();
           if (receipt.status !== "success") throw new Error("The previous setup transaction reverted. Resume setup to retry that step.");
         };
@@ -315,7 +319,9 @@ export function useWalletActions({
         const send = async (label: string, submit: () => Promise<Hash>) => {
           const accounts = await context.walletClient.getAddresses();
           if (accounts[0]?.toLowerCase() !== context.account.toLowerCase() || await context.walletClient.getChainId() !== sepolia.id) throw new Error("Wallet account or network changed; setup stopped.");
-          setNotice({ stage: "awaiting-wallet", label, message: "Confirm this setup transaction in your wallet. Remaining steps continue automatically." });
+          journal.pendingStep = label;
+          journal.steps![label] = {status:'signature pending'};
+          setNotice({ stage: "awaiting-wallet", label, message: "Confirm this setup transaction in your wallet. Remaining steps continue automatically.",steps:{...journal.steps} });
           journal.submitting = true; persist();
           try { journal.pendingHash = await submit(); persist(); }
           catch (error) {
@@ -330,6 +336,7 @@ export function useWalletActions({
           await reconcile();
         };
         const contract = { address: context.controller, abi: capitalControllerAbi } as const;
+        await context.publicClient.readContract({ ...contract, functionName: "rootCapitalLimit", args: [0n] });
         const next = await context.publicClient.readContract({ ...contract, functionName: "nextNodeId" });
         if (next > 513n) throw new Error("Vault directory exceeds the supported lookup size.");
         let root: Awaited<ReturnType<typeof readNode>> | undefined;
@@ -339,38 +346,42 @@ export function useWalletActions({
           if (node.parentId === 0n && node.label === label) { root = node; break; }
         }
         if (!root) {
-          const { request } = await context.publicClient.simulateContract({ ...contract, account: context.account, functionName: "createRoot", args: [label, policy] });
-          await send("1/4 · Create your vault", () => context.walletClient.writeContract(request));
+          const { request } = await context.publicClient.simulateContract({ ...contract, account: context.account, functionName: "createRootWithCapitalLimit", args: [label, policy, BigInt(budgetRaw)] });
+          await send("Root creation", () => context.walletClient.writeContract(request));
           const end = await context.publicClient.readContract({ ...contract, functionName: "nextNodeId" });
           for (let id = next; id < end; id++) { const node = await readNode(id); if (node.parentId === 0n && node.label === label) { root = node; break; } }
         }
         if (!root) throw new Error("Confirmed root could not be found. Resume this same setup; do not choose a new name.");
         if (root.revoked) throw new Error("This vault is permanently revoked. Setup stopped without funding.");
+        const actualLimit = await context.publicClient.readContract({...contract, functionName:"rootCapitalLimit", args:[root.id]});
+        if (actualLimit !== BigInt(budgetRaw)) throw new Error("Onchain shared capital limit differs from the confirmed setup. No funding requested.");
         await requireOwner(context, String(root.id));
         const bound = await context.publicClient.readContract({ ...contract, functionName: "rootOperator", args: [root.id] });
         if (bound !== zeroAddress && bound.toLowerCase() !== operator.toLowerCase()) throw new Error("A different operator is already bound. Setup will not replace it.");
         if (bound === zeroAddress) {
           const { request } = await context.publicClient.simulateContract({ ...contract, account: context.account, functionName: "setRootOperator", args: [root.id, operator, root.policy] });
-          await send("2/4 · Authorize your local Kanoki agent", () => context.walletClient.writeContract(request));
+          await send("Operator authorization", () => context.walletClient.writeContract(request));
         }
         const missingFunding = async () => {
           const blockNumber = await context.publicClient.getBlockNumber();
           const ids = await context.publicClient.readContract({ ...contract, functionName: "getRootNodeIds", args: [root!.id], blockNumber });
           let total = 0n;
           for (const id of ids) { const node = await context.publicClient.readContract({ ...contract, functionName: "getNode", args: [id], blockNumber }); total += await context.publicClient.readContract({ address: context.tokens[0], abi: erc20Abi, functionName: "balanceOf", args: [node.vault], blockNumber }); }
-          return BigInt(budgetRaw) > total ? BigInt(budgetRaw) - total : 0n;
+          const funded = await context.publicClient.readContract({...contract,functionName:"rootCapitalFunded",args:[root!.id],blockNumber});
+          const accounted = total > funded ? total : funded;
+          return BigInt(fundingRaw) > accounted ? BigInt(fundingRaw) - accounted : 0n;
         };
         let missing = await missingFunding();
         if (!journal.funded && missing > 0n) {
           const allowance = await context.publicClient.readContract({ address: context.tokens[0], abi: erc20Abi, functionName: "allowance", args: [context.account, context.controller] });
           if (allowance < missing) {
             const { request } = await context.publicClient.simulateContract({ address: context.tokens[0], abi: erc20Abi, account: context.account, functionName: "approve", args: [context.controller, missing] });
-            await send("3/4 · Approve the exact USDC deposit", () => context.walletClient.writeContract(request));
+            await send("USDC approval", () => context.walletClient.writeContract(request));
           }
           missing = await missingFunding();
           if (missing > 0n) {
             const { request } = await context.publicClient.simulateContract({ ...contract, account: context.account, functionName: "fundRoot", args: [root.id, [missing, 0n]] });
-            await send("3/4 · Fund your shared vault budget", () => context.walletClient.writeContract(request));
+            await send("USDC funding", () => context.walletClient.writeContract(request));
           }
         }
         journal.funded = true; persist();
@@ -379,10 +390,12 @@ export function useWalletActions({
         if (!journal.gasFunded && gasBalance < reserve) {
           const value = reserve - gasBalance;
           const gas = await context.publicClient.estimateGas({ account: context.account, to: operator, value });
-          await send("4/4 · Fund the agent's Sepolia gas reserve", () => context.walletClient.sendTransaction({ account: context.account, chain: sepolia, to: operator, value, gas }));
+          await send("Operator gas", () => context.walletClient.sendTransaction({ account: context.account, chain: sepolia, to: operator, value, gas }));
         }
         journal.gasFunded = true; persist();
-        setNotice({ stage: "confirmed", label: "Kanoki setup completed", message: "Return to your chat. Kanoki recognizes this vault automatically and checks its current balance and gas. Completed deposits are never repeated." });
+        for (const entry of Object.values(journal.steps!)) if (entry.status === 'required') entry.status = 'already satisfied';
+        persist();
+        setNotice({ stage: "confirmed", label: "Kanoki setup completed", message: "Kanoki continues the saved task automatically. No done message or transaction hash is needed. Completed deposits are never repeated.",steps:{...journal.steps} });
         return root.vault;
       } catch (cause) {
         setNotice({ stage: "error", label: "Resume Kanoki setup", message: errorMessage(cause) });
@@ -477,7 +490,7 @@ export function useWalletActions({
 
         const checkDemoFunding = async () => {
           if (demoTotalBudgetRaw === undefined) return; // The demo cap is NOT a general contract balance limit.
-          if (!/^[1-9]\d{0,5}$/.test(demoTotalBudgetRaw) || BigInt(demoTotalBudgetRaw) > 100000n) throw new Error("Demo total budget must be at most 100000 raw units = 0.10 Test-USDC.");
+          if (!/^[1-9]\d{0,77}$/.test(demoTotalBudgetRaw) || BigInt(demoTotalBudgetRaw) >= 2n ** 256n) throw new Error("Shared capital amount must be a positive uint256 in raw Test-USDC units.");
           const blockNumber = await context.publicClient.getBlockNumber();
           const ids = await context.publicClient.readContract({ address: context.controller, abi: capitalControllerAbi, functionName: "getRootNodeIds", args: [BigInt(rootId)], blockNumber });
           let total = 0n;
