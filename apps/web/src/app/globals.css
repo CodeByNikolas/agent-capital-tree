@@ -84,6 +84,7 @@ button:disabled { cursor: not-allowed; opacity: .55; }
 .app-sidebar [data-sidebar="menu-button"] { min-height: 43px; font-size: 15px; font-weight: 600; }
 .app-sidebar [data-sidebar="menu-button"] svg { width: 19px; height: 19px; }
 .app-sidebar-footer { gap: 8px; padding: 18px; border-top: 1px solid var(--border); font-size: 14px; }
+.app-sidebar [data-slot="badge"], .dashboard-content [data-slot="badge"], .app-topbar [data-slot="badge"] { font-size: 14px; }
 .app-sidebar-footer small { color: var(--quiet); font-size: 14px; line-height: 1.4; }
 .app-topbar { display: flex; align-items: center; justify-content: space-between; gap: 18px; min-height: 72px; padding: 12px clamp(20px, 4vw, 56px); border-bottom: 1px solid var(--border); background: var(--surface); }
 .app-topbar-title, .app-topbar-actions { display: flex; align-items: center; gap: 14px; min-width: 0; }
