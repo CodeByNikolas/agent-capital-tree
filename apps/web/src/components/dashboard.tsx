@@ -36,7 +36,7 @@ import { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Sidebar as ShadcnSidebar, SidebarContent, SidebarFooter, SidebarGroup, SidebarGroupContent, SidebarHeader, SidebarInset, SidebarMenu, SidebarMenuButton, SidebarMenuItem, SidebarProvider, SidebarTrigger, useSidebar } from "@/components/ui/sidebar";
-import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from "@/components/ui/sheet";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -525,7 +525,7 @@ function AppSidebar({ view, vaultQuery, selectedId, rootLabel, runtimeLabel }: {
 function Topbar({ view, source, wallet, vaultQuery, selectedId }: { view: DashboardProps["view"]; source: DataSource; wallet: InjectedWalletState; vaultQuery: string | null; selectedId: string }) {
   return (
     <header className="app-topbar">
-      <div className="app-topbar-title"><SidebarTrigger aria-label="Toggle navigation" /><span>{views.find((item) => item.id === view)?.title}</span><Badge variant="outline">Test USDC · Sepolia</Badge><Badge variant="outline">{source === "preview" ? "Preview workspace" : source === "direct-rpc" ? "Direct RPC view" : "Local diagnostic"}</Badge></div>
+      <div className="app-topbar-title"><SidebarTrigger aria-label="Toggle navigation" /><span>{views.find((item) => item.id === view)?.title}</span><Badge variant="outline">{source === "preview" ? "Fictional sample · no funds" : "Test USDC · Sepolia"}</Badge><Badge variant="outline">{source === "preview" ? "Preview workspace" : source === "direct-rpc" ? "Direct RPC view" : "Local diagnostic"}</Badge></div>
       <div className="app-topbar-actions"><Link className="app-manage-link" href={routeHref("/setup", vaultQuery, selectedId)}>Wallet actions</Link><WalletControl wallet={wallet} /></div>
     </header>
   );
@@ -536,8 +536,8 @@ function PreviewNotice({ data, deployment }: { data: DashboardData; deployment: 
   return (
     <div className="preview-notice" role="note">
       <span className="notice-symbol"><CircleDashed size={16} aria-hidden="true" /></span>
-      <p><strong>Preview workspace.</strong> Balances, ENS labels, policies, LP positions and activity below are illustrative sample records. {deployment.contractsConfigured ? "Preview records cannot be used for wallet actions; use Open vault below to load live Sepolia state." : "The USDC controller deployment is still pending."}</p>
-      <Link href="/setup?preview=1">Why preview data? <ArrowRight size={13} aria-hidden="true" /></Link>
+      <p><strong>Fictional preview · no real tokens.</strong> The names, addresses and balances on this page are invented examples, not Sepolia vaults. {deployment.contractsConfigured ? "Open the live demo to see the official Circle Sepolia Test USDC balance." : "The USDC controller deployment is still pending."}</p>
+      {deployment.contractsConfigured && <Link href="/tree?vault=capital.agentcapitalusdc.eth">Open live demo <ArrowRight size={13} aria-hidden="true" /></Link>}
     </div>
   );
 }
@@ -953,9 +953,9 @@ function CapitalLedger({ data, node }: { data: DashboardData; node: VaultNode })
       </div>
       <div className="capital-origin">
         <span>{parent ? `Gross assigned in by ${parent.label}` : "Root funding origin"}</span>
-        <strong title={parent && node.capitalReceivedFromParent ? node.capitalReceivedFromParent.map((amount) => `${formatAmount(amount)} ${amount.symbol}`).join(" · ") : undefined}>{parent ? node.capitalReceivedFromParent === null ? "Not indexed" : node.capitalReceivedFromParent.map((amount) => `${formatRoundedAmount(amount)} ${amount.symbol}`).join(" · ") || "0" : "Owner wallet · no parent vault"}</strong>
+        <strong title={parent && node.capitalReceivedFromParent ? node.capitalReceivedFromParent.map((amount) => `${formatAmount(amount)} ${amount.symbol}`).join(" · ") : undefined}>{parent ? node.capitalReceivedFromParent === null ? "Not indexed" : node.capitalReceivedFromParent.map((amount) => `${formatRoundedAmount(amount)} ${amount.symbol}`).join(" · ") || "0" : node.source === "preview" ? "Example owner · no real wallet" : "Owner wallet · no parent vault"}</strong>
       </div>
-      <p className="capital-ledger-note">{allocationHistoryAvailable ? "Assignments are transfers between vaults. They are tracked separately from current holdings." : "Balances come from direct RPC. Allocation totals require the separate MultiBaas activity source."}</p>
+      <p className="capital-ledger-note">{node.source === "preview" ? "These figures illustrate transfers between vaults; no tokens or on-chain transactions exist for this example." : allocationHistoryAvailable ? "Assignments are transfers between vaults. They are tracked separately from current holdings." : "Balances come from direct RPC. Allocation totals require the separate MultiBaas activity source."}</p>
     </section>
   );
 }
@@ -989,7 +989,7 @@ function MandatePanel({ data, node, canTighten, canRevoke, canRecover, onRequest
       <div className="mandate-divider" />
       <div className="policy-section-heading">
         <span className="policy-heading-icon"><ShieldCheck size={15} aria-hidden="true" /></span>
-        <div><strong>Live authorized capabilities</strong><small>Current EAC roles at this vault</small></div>
+        <div><strong>{node.source === "preview" ? "Example capabilities" : "Live authorized capabilities"}</strong><small>{node.source === "preview" ? "Illustrative roles · not granted on-chain" : "Current EAC roles at this vault"}</small></div>
         <span className="permission-count">{node.authorizedPermissions.length}</span>
       </div>
       {node.authorizedPermissions.length > 0
@@ -1018,14 +1018,14 @@ function MandatePanel({ data, node, canTighten, canRevoke, canRecover, onRequest
       </div>
 
       <div className="mandate-footnote"><Clock3 size={13} aria-hidden="true" /> Expires {new Date(node.effectivePolicy.expiresAt).toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric", timeZone: "UTC" })}<span>·</span><span className="source-label">{sourceLabel(node.source)}</span></div>
-      <div className="mandate-actions">
+      {node.source === "preview" ? <p className="authorization-empty">This fictional vault has no wallet actions. Open a live Sepolia vault to inspect real permissions.</p> : <><div className="mandate-actions">
         <button className="button button-secondary button-small" disabled={!canTighten} onClick={() => onRequestAction("tighten-policy")} title="Connect the recorded root owner or parent agent on Sepolia"><Shield size={14} /> Tighten policy</button>
         <button className="button button-danger button-small" disabled={!canRevoke} onClick={() => onRequestAction("revoke-subtree")} title="Connect the parent agent with current EAC restriction authority"><ShieldAlert size={14} /> Revoke subtree</button>
       </div>
       <div className="owner-recovery-callout">
         <div><strong>Owner emergency recovery</strong><span>ENS-independent recovery remains separate from agent permissions.</span></div>
         <button className="button button-danger button-small" disabled={!canRecover} onClick={() => onRequestAction("owner-recovery")} title="Only the recorded root owner can use emergency recovery">Review exit</button>
-      </div>
+      </div></>}
     </section>
   );
 }
@@ -1520,9 +1520,9 @@ export function Dashboard({ data: initialData, deployment, vaultQuery, nodeQuery
             </div>
           </>}
           {view === "tree" && <>
-            <div className="page-heading"><span className="page-kicker">Authority & allocation</span><h1>Agent tree</h1><p>Select a vault to inspect current funds, EAC permissions, and the inherited limits that narrow its mandate.</p></div>
+            <div className="page-heading"><span className="page-kicker">Authority & allocation</span><h1>Agent tree</h1><p>{data.source === "preview" ? "Select a fictional agent to see how its capital and inherited mandate would be displayed." : "Select a vault to inspect current funds, EAC permissions, and the inherited limits that narrow its mandate."}</p></div>
             <CapitalTree data={data} selectedId={selectedNode.id} onSelect={(id) => { setSelectedId(id); setDetailOpen(true); }} canSpawnVault={canSpawnVault} onRequestSpawn={() => requestAction("spawn-child")} />
-            <Sheet open={detailOpen} onOpenChange={(open) => { setDetailOpen(open); if (!open) requestAnimationFrame(() => document.querySelector<HTMLButtonElement>(`${window.matchMedia("(max-width: 720px)").matches ? ".tree-canvas-mobile" : ".tree-canvas-desktop"} .tree-node[data-node-id="${CSS.escape(selectedNode.id)}"]`)?.focus()); }}><SheetContent className="node-detail-sheet"><SheetHeader><SheetTitle>{selectedNode.ensName}</SheetTitle><SheetDescription>Current vault funds, authority, and limits. {sourceLabel(selectedNode.source)}.</SheetDescription></SheetHeader><div className="node-detail-scroll"><MandatePanel data={data} node={selectedNode} canTighten={canTighten} canRevoke={canRevoke} canRecover={canRecover} onRequestAction={requestAction} /></div></SheetContent></Sheet>
+            <Dialog open={detailOpen} onOpenChange={(open) => { setDetailOpen(open); if (!open) requestAnimationFrame(() => document.querySelector<HTMLButtonElement>(`${window.matchMedia("(max-width: 720px)").matches ? ".tree-canvas-mobile" : ".tree-canvas-desktop"} .tree-node[data-node-id="${CSS.escape(selectedNode.id)}"]`)?.focus()); }}><DialogContent className="node-detail-dialog"><DialogHeader><DialogTitle>{selectedNode.ensName}</DialogTitle><DialogDescription>{data.source === "preview" ? "Fictional example: no on-chain funds or permissions." : "Current vault funds, authority, and limits from Sepolia."}</DialogDescription></DialogHeader><div className="node-detail-scroll"><MandatePanel data={data} node={selectedNode} canTighten={canTighten} canRevoke={canRevoke} canRecover={canRecover} onRequestAction={requestAction} /></div></DialogContent></Dialog>
           </>}
           {view === "activity" && <>
             <div className="page-heading"><span className="page-kicker">Indexed on-chain events</span><h1>Activity</h1><p>Capital movement, policy changes, and Uniswap actions for this root. Current balances and permissions come from direct RPC reads.</p></div>

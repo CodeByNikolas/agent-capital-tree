@@ -2,6 +2,11 @@
 
 As of 26 September 2026. Read this together with PLAN.md after context compaction.
 
+## Current UI clarification
+
+- Preview mode is explicitly fictional: root **Main agent** at `main.preview`, fictional addresses and Fictional USDC balances, scaled down to avoid implying funded Test-USDC. Its vault details now open in a centered shadcn Dialog with Escape dismissal and focus restoration; the earlier side Sheet is no longer used on the tree.
+- Live mode remains official Circle Sepolia Test-USDC at `0x1c7D4B196Cb0C7B01d743Fbc6116a902379C7238`, a testnet token without mainnet monetary value. The historical ACT-A/ACT-B controller is not a supported entry point in the current app.
+
 ## Published six-page dashboard follow-up
 
 - The dashboard now has six routes: overview, agent tree, activity, Uniswap, payments, and setup. The old Applications route returns 404. A root with zero Test-USDC shows a Circle faucet link. The Uniswap page groups the fixed-pool actions, position and indexed swap/LP history.

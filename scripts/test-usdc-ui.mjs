@@ -19,6 +19,17 @@ try {
   await expect(page.getByRole('button', { name: 'Launch a new root vault' })).toBeVisible();
   assert(!/Preview workspace|ACT-A|ACT-B/.test(await page.locator('body').innerText()));
   checks.push('Unselected entry shows root creation rather than preview balances');
+  await page.goto(`${base}/tree?preview=1`);
+  await expect(page.getByText('Fictional preview · no real tokens.')).toBeVisible();
+  await expect(page.getByText('Main agent',{exact:true}).first()).toBeVisible();
+  assert(!/Cedar desk|14,625/.test(await page.locator('body').innerText()));
+  const previewRoot = page.locator('.tree-node:visible').first();
+  await previewRoot.click();
+  await expect(page.getByRole('dialog')).toContainText('Fictional example: no on-chain funds or permissions.');
+  await page.keyboard.press('Escape');
+  await expect(page.getByRole('dialog')).toHaveCount(0);
+  await expect(previewRoot).toBeFocused();
+  checks.push('Preview uses fictional balances and Main agent; centered dialog closes with Escape and restores focus');
   for (const [colorScheme, width] of [['light',1440],['dark',390]]) {
     await page.emulateMedia({colorScheme});
     await page.setViewportSize({width,height:1000});
@@ -27,6 +38,20 @@ try {
       await expect(page.getByText('Live vault.',{exact:true})).toBeVisible({timeout:60000});
       assert(!/ACT-A|ACT-B|Live root \d/.test(await page.locator('body').innerText()), `${path} current asset/identity labels`);
       assert(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth), `${path} ${width}px overflow`);
+      if(path==='/tree') {
+        const rootNode = page.locator('.tree-node:visible').first();
+        await rootNode.click();
+        const dialog = page.getByRole('dialog');
+        await expect(dialog).toBeVisible();
+        const centered = await dialog.evaluate(element => {
+          const rect = element.getBoundingClientRect();
+          return Math.abs((rect.left+rect.right)/2-innerWidth/2)<3 && Math.abs((rect.top+rect.bottom)/2-innerHeight/2)<3;
+        });
+        assert(centered, `${width}px vault detail is centered`);
+        await page.keyboard.press('Escape');
+        await expect(dialog).toHaveCount(0);
+        await expect(rootNode).toBeFocused();
+      }
       if(path==='/uniswap') {
         await expect(page.getByRole('heading',{name:'LP positions'})).toBeVisible();
         await expect(page.locator('.activity-provenance')).toContainText('MultiBaas',{timeout:60000});

@@ -203,9 +203,10 @@ button:disabled { cursor: not-allowed; opacity: .55; }
 .legend-line { display: inline-block; width: 15px; height: 2px; margin: 0 7px 4px 0; background: var(--ring); }
 .legend-node { display: inline-block; width: 10px; height: 10px; margin-right: 7px; border: 1px solid var(--ring); border-radius: 3px; }
 .tree-limit-warning { color: var(--destructive); font-size: 14px; }
-.node-detail-sheet { width: min(100vw, 560px) !important; max-width: 560px !important; font-size: 16px; }
-.node-detail-sheet [data-slot="sheet-title"] { min-width: 0; overflow-wrap: anywhere; font-size: 24px; }
-.node-detail-scroll { min-height: 0; overflow-y: auto; padding: 0 16px 20px; }
+.node-detail-dialog { display: flex !important; flex-direction: column; width: min(760px, calc(100vw - 24px)) !important; max-width: 760px !important; max-height: min(88vh, 900px); padding: 22px !important; font-size: 16px; overflow: hidden; }
+.node-detail-dialog [data-slot="dialog-header"] { flex: 0 0 auto; padding-right: 36px; }
+.node-detail-dialog [data-slot="dialog-title"] { min-width: 0; overflow-wrap: anywhere; font-size: 24px; line-height: 1.25; }
+.node-detail-scroll { min-height: 0; overflow-y: auto; padding: 0 4px 4px; }
 .node-detail-scroll .panel { padding: 0; border: 0; background: transparent; }
 .node-detail-scroll .panel-heading { display: none; }
 .selected-vault-summary { display: flex; align-items: center; gap: 10px; padding: 12px 0 20px; }
@@ -375,7 +376,7 @@ button:disabled { cursor: not-allowed; opacity: .55; }
   .activity-meta strong { white-space: normal; }
   .position-stats { grid-template-columns: 1fr; }
   .wallet-action-form, .wallet-form-grid, .wallet-permission-fields > div { grid-template-columns: 1fr; }
-  .setup-panel { grid-template-columns: 1fr; } .node-detail-scroll { padding: 0 10px 20px; }
+  .setup-panel { grid-template-columns: 1fr; } .node-detail-dialog { max-height: calc(100dvh - 24px); padding: 18px !important; } .node-detail-scroll { padding: 0 2px 4px; }
 }
 @media (max-width: 420px) { .root-access-bar { align-items: flex-start; flex-direction: column; } .panel-heading { flex-wrap: wrap; } .address-pair > div { grid-template-columns: 1fr 28px; } .address-pair > div span { grid-column: 1 / -1; } }
 @media (prefers-reduced-motion: reduce) { *, *::before, *::after { scroll-behavior: auto !important; transition-duration: .01ms !important; animation-duration: .01ms !important; } }
