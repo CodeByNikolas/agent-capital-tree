@@ -86,8 +86,8 @@ try {
     { tokenId: 0n, liquidity: 0n }, { tokenId: 0n, liquidity: 0n }
   ]);
   assert.ok(tree.nodes[1].authorizedCapabilities !== 0n);
-  assert.deepEqual(tree.nodes[1].authorizedActions, Object.entries(financeRoles)
-    .filter(([, role]) => (tree.nodes[1].authorizedCapabilities & role) !== 0n).map(([name]) => name));
+  assert.deepEqual(tree.nodes[1].authorizedActions,
+    ['delegate', 'swap', 'lpManage', 'collectFees', 'exit', 'restrict', 'reclaim']);
   const handlers = chainHandlers({ rpcUrl, controller: controller.address, accountFor: async context => accounts[context.workerId === 'root' ? 1 : 2] });
   const root = { workerId: 'root', rootId: '1', nodeId: '1', authorityGeneration: '1' };
   // Mine a second confirmation automatically while handlers wait for receipt finality depth.
