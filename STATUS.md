@@ -16,11 +16,11 @@ Nutzerentscheidung: Rapid Prototyping, keine Abwärtskompatibilität, kein Legac
 
 ## Jetzt laufend / nächste Schritte
 
-1. Öffentlichen x402-Nachweis `scripts/test-usdc-payment.mjs --execute` abschließen; laufende Session34673 zuerst prüfen. Child researcher mit PAY-only und0,25USDC, Preis0,01USDC, kontrollierter Loopback-Seller. Signierte Journale niemals löschen oder mit neuen Operationsschlüsseln umgehen.
+1. Öffentlicher x402-Nachweis bestanden: `deployments/usdc-payment.json`, Tx `0xf91a8d6619bc3f36f33c4dad8855c777c8e96bbcd451d76eba31d131155e55eb`. Child researcher mit PAY-only,0,25USDC Allokation und0,24USDC Rest. Wiederholung ohne Doppelzahlung. Kontrollierter Loopback-Seller; kein autonomer Modellkauf. Runner abgeschlossen, nicht erneut mit neuen Schlüsseln ausführen. MultiBaas sieben Ereignisse gegen kanonische Receipts bestätigt: `deployments/usdc-multibaas.json`.
 2. Staged Contract-Suite Session11712 prüfen; ARM-solc-js kann bei kaltem Gesamtbuild OOM erzeugen, deshalb `contracts/scripts/test-contracts.sh` verwenden. Contract-Agent hatte36Tests bestanden; zusätzlicher DemoQuote-Test einzeln ebenfalls bestanden.
 3. Frontend-Agent `/root/curvegrid_free_tier`, Worktree `agent-capital-tree-web-usdc`, auf aktuellen SDK-PAY-Stand bringen, Review/Integration/Build/Browsertests.
 4. Payment-Review-Agent liefert minimale explizite Fehlermeldung für abgelaufene, ungenutzte Autorisierungen; keine automatische Neusignatur. Review bisher ohne bestätigten Sicherheitsbypass.
-5. MultiBaas-Nachweis, Workspace-Tests, UI lokal/öffentlich, README/Abnahme aktualisieren, kohärent committen, pushen und Vercel deployen.
+5. Workspace-Tests bestanden:18 Runtime,11 MultiBaas,7 Plugin,2 SDK. UI lokal/öffentlich noch prüfen, README/Abnahme aktualisieren, kohärent committen, pushen und Vercel deployen.
 
 ## Produktgrenzen
 

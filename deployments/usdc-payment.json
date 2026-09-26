@@ -1,0 +1,36 @@
+{
+  "status": "confirmed",
+  "checkedAt": "2026-09-26T08:48:29.717Z",
+  "chainId": 11155111,
+  "controller": "0x17a932987f3cAcFec067c4C1bbE6946963d87F13",
+  "rootId": "1",
+  "rootVault": "0xAc5378EdA34f38A7fd34BB808B1b5492aF499bcf",
+  "childId": "2",
+  "childVault": "0x71Ad59cE3A7f50105eD400C8bd71180a2693920F",
+  "childName": "researcher.capital.agentcapitalusdc.eth",
+  "spawn": {
+    "hash": "0x207416421a67e6281841cd46d753c46a3e2b987483c31ea3b050691391a8ef9d",
+    "block": 11785143
+  },
+  "payment": {
+    "transactionHash": "0xf91a8d6619bc3f36f33c4dad8855c777c8e96bbcd451d76eba31d131155e55eb",
+    "amountRaw": "10000",
+    "amountUSDC": "0.01",
+    "asset": "0x1c7D4B196Cb0C7B01d743Fbc6116a902379C7238",
+    "recipient": "0xbCea84Ed1DaFbb59AaF9797Cb4170394db688d34"
+  },
+  "childBalanceRaw": "240000",
+  "retryChargedAgain": false,
+  "checks": [
+    "Official x402 SDK exact scheme verifies ERC1271 vault and settles Circle USDC on public Sepolia",
+    "HTTP402 payment-required → signed request → paid research response",
+    "Companion independently checks canonical Transfer and AuthorizationUsed receipt events",
+    "Recreated purchase handler returns cached result without another charge"
+  ],
+  "limitations": [
+    "Controlled loopback research seller with the test owner as recipient, not an independent commercial merchant",
+    "PAY ceilings are per payment; service allowlist is enforced by companion, not an onchain recipient allowlist",
+    "USDC Transfer events are not part of the controller-only MultiBaas history; payment receipt is the separate evidence",
+    "Root and researcher retain remaining demo capital for UI inspection"
+  ]
+}
