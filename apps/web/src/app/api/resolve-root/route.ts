@@ -39,7 +39,7 @@ export async function GET(request: Request) {
       if (parent !== 0n) throw new Error("Invalid tree depth");
       const ensName = [...labels, deployment.namespaceName].join(".");
       if (address ? node.vault.toLowerCase() === input.toLowerCase() : ensName.toLowerCase() === name) {
-        return reply({ rootId: node.rootId.toString(), nodeId: node.id.toString(), vault: node.vault, ensName });
+        return reply({ rootId: node.rootId.toString(), nodeId: node.id.toString(), vault: node.vault, rootVault: byId.get(node.rootId)?.vault, ensName });
       }
     }
     return reply({ error: "No vault in this Sepolia deployment matches that name or address." }, 404);

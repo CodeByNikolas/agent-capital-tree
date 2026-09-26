@@ -44,7 +44,12 @@ try {
       await expect(page.getByRole('button', {name: 'Refresh', exact:true})).toHaveCount(0);
       assert(!/Runtime status unknown|Current state was read|Wallet authority and runtime connectivity/.test(await page.locator('body').innerText()));
       if(width<600){await page.keyboard.press('Escape');await expect(page.getByRole('dialog')).toHaveCount(0);}
-      await expect(page.locator('.app-topbar').getByText('Sepolia', {exact:true})).toBeVisible();
+      await expect(page.locator('.app-topbar').getByText('Sepolia', {exact:true})).toHaveCount(0);
+      if(path==='/setup') {
+        await expect(page.locator('.setup-root-name')).toContainText(vault);
+        await expect(page.locator('#setup-node')).toHaveCount(0);
+        await expect(page.getByRole('button',{name:'Create another root'})).toBeVisible();
+      }
       assert(!/ACT-A|ACT-B|Live root \d/.test(await page.locator('body').innerText()), `${path} current asset/identity labels`);
       assert(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth), `${path} ${width}px overflow`);
       if(path==='/tree') {
