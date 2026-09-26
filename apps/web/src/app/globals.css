@@ -83,9 +83,7 @@ button:disabled { cursor: not-allowed; opacity: .55; }
 .app-workspace strong { overflow: hidden; font-size: 14px; text-overflow: ellipsis; white-space: nowrap; }
 .app-sidebar [data-sidebar="menu-button"] { min-height: 43px; font-size: 15px; font-weight: 600; }
 .app-sidebar [data-sidebar="menu-button"] svg { width: 19px; height: 19px; }
-.app-sidebar-footer { gap: 8px; padding: 18px; border-top: 1px solid var(--border); font-size: 14px; }
 .app-sidebar [data-slot="badge"], .dashboard-content [data-slot="badge"], .app-topbar [data-slot="badge"] { font-size: 14px; }
-.app-sidebar-footer small { color: var(--quiet); font-size: 14px; line-height: 1.4; }
 .app-topbar { display: flex; align-items: center; justify-content: space-between; gap: 18px; min-height: 72px; padding: 12px clamp(20px, 4vw, 56px); border-bottom: 1px solid var(--border); background: var(--surface); }
 .app-topbar-title, .app-topbar-actions { display: flex; align-items: center; gap: 14px; min-width: 0; }
 .app-topbar-title > span { font-weight: 700; white-space: nowrap; }
@@ -155,7 +153,6 @@ button:disabled { cursor: not-allowed; opacity: .55; }
 .app-sidebar-vault .root-preview-link { display: inline-block; margin-top: 10px; }
 .app-sidebar-vault .live-read-notice { display: grid; grid-template-columns: 18px minmax(0, 1fr); gap: 7px 9px; margin: 18px 0 0; padding: 12px; }
 .app-sidebar-vault .live-read-notice p { min-width: 0; overflow-wrap: anywhere; font-size: 13px; line-height: 1.5; }
-.app-sidebar-vault .live-read-notice button { grid-column: 1 / -1; width: 100%; }
 .button { display: inline-flex; align-items: center; justify-content: center; gap: 7px; min-height: 39px; padding: 7px 13px; border: 1px solid var(--border); border-radius: 8px; background: var(--surface); color: var(--ink); font-size: 14px; font-weight: 700; line-height: 1.2; cursor: pointer; }
 .button:hover:not(:disabled) { background: var(--accent); border-color: var(--ring); }
 .button-primary { background: var(--primary); border-color: var(--primary); color: var(--primary-foreground); }

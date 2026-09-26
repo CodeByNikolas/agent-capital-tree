@@ -2,6 +2,12 @@
 
 As of 26 September 2026. Read this together with PLAN.md after context compaction.
 
+## Quiet network status and automatic refresh
+
+- The dashboard header uses a single Sepolia badge. Removed the runtime-status sidebar footer, successful-read explanation and manual refresh buttons. Read failures still show an alert and keep wallet actions locked; the fictional-preview notice remains.
+- Tree and activity reads wait 20 seconds between completed requests. Payments now follow the same non-overlapping polling pattern, retaining their table while refreshing. Hidden tabs skip polling; leaving a route cancels its pending reads and timers.
+- Production build passed. The six-route browser smoke now checks the compact badge and absence of the removed notices/buttons; deployment/browser results follow after publication.
+
 ## Minimal vault proxy release — current
 
 - VaultFactory now creates non-upgradeable EIP-1167 clones and initializes their controller in the same transaction. The shared implementation is locked. Each clone retains independent funds and LP state; ENS registry deployment is unchanged.

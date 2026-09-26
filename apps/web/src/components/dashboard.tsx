@@ -35,7 +35,7 @@ import { sepolia } from "viem/chains";
 import { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { Sidebar as ShadcnSidebar, SidebarContent, SidebarFooter, SidebarGroup, SidebarGroupContent, SidebarHeader, SidebarInset, SidebarMenu, SidebarMenuButton, SidebarMenuItem, SidebarProvider, SidebarTrigger, useSidebar } from "@/components/ui/sidebar";
+import { Sidebar as ShadcnSidebar, SidebarContent, SidebarGroup, SidebarGroupContent, SidebarHeader, SidebarInset, SidebarMenu, SidebarMenuButton, SidebarMenuItem, SidebarProvider, SidebarTrigger, useSidebar } from "@/components/ui/sidebar";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -491,7 +491,7 @@ function routeHref(path: string, vaultQuery: string | null, nodeId?: string | nu
   return `${path}?${params}`;
 }
 
-function AppSidebar({ view, vaultQuery, selectedId, rootLabel, runtimeLabel, data, rootId, readLoading, readError, onRetry }: { view: DashboardProps["view"]; vaultQuery: string | null; selectedId: string; rootLabel: string; runtimeLabel: string; data: DashboardData; rootId: string | null; readLoading: boolean; readError: string | null; onRetry: () => void }) {
+function AppSidebar({ view, vaultQuery, selectedId, rootLabel, data, readError }: { view: DashboardProps["view"]; vaultQuery: string | null; selectedId: string; rootLabel: string; data: DashboardData; readError: string | null }) {
   const { setOpenMobile } = useSidebar();
   return (
     <ShadcnSidebar collapsible="offcanvas" className="app-sidebar">
@@ -506,7 +506,7 @@ function AppSidebar({ view, vaultQuery, selectedId, rootLabel, runtimeLabel, dat
         <SidebarGroup className="app-sidebar-vault">
           <SidebarGroupContent>
             <RootAccessBar vault={vaultQuery} path={views.find((item) => item.id === view)?.path ?? "/"} />
-            {vaultQuery && <LiveReadNotice rootId={rootId} vaultQuery={vaultQuery} data={data} loading={readLoading} error={readError} onRetry={onRetry} />}
+            {vaultQuery && <LiveReadNotice data={data} error={readError} />}
           </SidebarGroupContent>
         </SidebarGroup>
         <SidebarGroup>
@@ -523,15 +523,14 @@ function AppSidebar({ view, vaultQuery, selectedId, rootLabel, runtimeLabel, dat
           </SidebarGroupContent>
         </SidebarGroup>
       </SidebarContent>
-      <SidebarFooter className="app-sidebar-footer"><Badge variant="outline">Sepolia test network</Badge><span>{runtimeLabel}</span><small>Wallet authority and runtime connectivity are separate.</small></SidebarFooter>
     </ShadcnSidebar>
   );
 }
 
-function Topbar({ view, source, wallet, vaultQuery, selectedId }: { view: DashboardProps["view"]; source: DataSource; wallet: InjectedWalletState; vaultQuery: string | null; selectedId: string }) {
+function Topbar({ view, wallet, vaultQuery, selectedId }: { view: DashboardProps["view"]; wallet: InjectedWalletState; vaultQuery: string | null; selectedId: string }) {
   return (
     <header className="app-topbar">
-      <div className="app-topbar-title"><SidebarTrigger aria-label="Toggle navigation" /><span>{views.find((item) => item.id === view)?.title}</span><Badge variant="outline">{source === "preview" ? "Fictional sample · no funds" : "USDC · Sepolia"}</Badge><Badge variant="outline">{source === "preview" ? "Preview workspace" : source === "direct-rpc" ? "Direct RPC view" : "Local diagnostic"}</Badge></div>
+      <div className="app-topbar-title"><SidebarTrigger aria-label="Toggle navigation" /><span>{views.find((item) => item.id === view)?.title}</span><Badge variant="outline">Sepolia</Badge></div>
       <div className="app-topbar-actions"><Link className="app-manage-link" href={routeHref("/setup", vaultQuery, selectedId)}>Wallet actions</Link><WalletControl wallet={wallet} /></div>
     </header>
   );
@@ -575,39 +574,12 @@ function RootAccessBar({ vault, path }: { vault: string | null; path: string }) 
   </div>;
 }
 
-function LiveReadNotice({
-  rootId,
-  vaultQuery,
-  data,
-  loading,
-  error,
-  onRetry,
-}: {
-  rootId: string | null;
-  vaultQuery: string;
-  data: DashboardData;
-  loading: boolean;
-  error: string | null;
-  onRetry: () => void;
-}) {
-  const isStale = data.source === "direct-rpc" && error !== null;
-  const missingVault = error?.includes("No vault in this Sepolia deployment matches that name or address") ?? false;
+function LiveReadNotice({ data, error }: { data: DashboardData; error: string | null }) {
+  if (!error) return null;
   return (
-    <div className={`live-read-notice${error ? " live-read-notice-error" : loading ? " live-read-notice-loading" : ""}`} role={error ? "alert" : "status"} aria-live={error ? "assertive" : "polite"}>
-      <span className="live-read-icon">{error ? <AlertCircle size={16} aria-hidden="true" /> : <CircleDashed size={16} aria-hidden="true" />}</span>
-      <p>
-        <strong>{error ? missingVault ? "Vault was not found." : "Sepolia read unavailable." : loading ? rootId ? "Reading live vault." : "Resolving vault." : "Live vault."}</strong>{" "}
-        {error
-          ? `${error} ${missingVault ? "Check the ENS name or contract address and try again." : "The live Sepolia state could not be loaded."} ${isStale ? "The last live snapshot remains visible, but wallet actions are locked until it refreshes." : "The sample records below are only a preview."}`
-          : loading
-            ? isStale
-              ? "Refreshing balances, current EAC permissions, and LP state. The last snapshot remains visible and wallet actions are locked."
-              : rootId
-                ? "Loading balances, current EAC permissions, and LP state from the server-side Sepolia RPC."
-                : `Resolving ${vaultQuery} and loading live Sepolia vault state.`
-            : `Current state was read from Sepolia${data.snapshot ? ` at block ${data.snapshot.blockNumber}` : ""}. Activity history is fetched from MultiBaas separately.`}
-      </p>
-      <button className="button button-secondary button-small" type="button" disabled={loading} onClick={onRetry}>{loading ? "Refreshing…" : "Refresh"}</button>
+    <div className="live-read-notice live-read-notice-error" role="alert">
+      <span className="live-read-icon"><AlertCircle size={16} aria-hidden="true" /></span>
+      <p><strong>Vault data unavailable.</strong> {error} {data.source === "direct-rpc" ? "Showing the last snapshot. Wallet actions are paused until the connection recovers." : "Check the ENS name or vault address."}</p>
     </div>
   );
 }
@@ -1160,11 +1132,10 @@ function PositionsPanel({ data, actions, walletOnSepolia }: { data: DashboardDat
   );
 }
 
-function PaymentsPanel({ history, loading, error, onRetry }: { history: PaymentHistory | null; loading: boolean; error: string | null; onRetry: () => void }) {
+function PaymentsPanel({ history, loading, error }: { history: PaymentHistory | null; loading: boolean; error: string | null }) {
   return <Card className="payments-panel">
     <CardHeader className="payments-heading">
       <div><CardTitle>Vault USDC settlements</CardTitle><CardDescription>On-chain EIP-3009 authorizations paired with Circle USDC transfers from this tree’s vaults.</CardDescription></div>
-      <Button variant="outline" size="sm" onClick={onRetry} disabled={loading}>{loading ? "Checking…" : "Refresh"}</Button>
     </CardHeader>
     <CardContent>
       {error && <p className="payment-status payment-status-error" role="alert">{error}</p>}
@@ -1246,7 +1217,6 @@ export function Dashboard({ data: initialData, deployment, vaultQuery, nodeQuery
   const [paymentState, setPaymentState] = useState<{ rootId: string | null; history: PaymentHistory | null; loading: boolean; error: string | null }>({ rootId: null, history: null, loading: false, error: null });
   const [treeRetry, setTreeRetry] = useState(0);
   const [activityRetry, setActivityRetry] = useState(0);
-  const [paymentRetry, setPaymentRetry] = useState(0);
   const wallet = useInjectedWallet();
   const walletOnSepolia = wallet.address !== null && wallet.chainId === sepolia.id;
   const currentSnapshot = vaultKey && liveSnapshot?.vaultKey === vaultKey ? liveSnapshot : null;
@@ -1282,25 +1252,35 @@ export function Dashboard({ data: initialData, deployment, vaultQuery, nodeQuery
   const canTighten = Boolean(liveStateReady && selectedNode && (selectedNode.parentId ? parentCanRestrict : ownerConnected));
   const canRevoke = Boolean(liveStateReady && selectedNode?.parentId && selectedNode.state !== "revoked" && selectedNode.state !== "expired" && parentCanRestrict);
   const canRecover = Boolean(liveStateReady && ownerConnected);
-  const runtimeConnected = data.nodes.some((node) => node.runtime === "connected");
-  const runtimeUnknown = data.nodes.some((node) => node.runtime === "unknown");
-  const runtimeLabel = runtimeConnected ? "Runtime connected" : runtimeUnknown ? "Runtime status unknown" : "Runtime not linked";
 
   useEffect(() => {
     if (view !== "payments" || !rootQuery) return;
-    const controller = new AbortController();
-    setPaymentState({ rootId: rootQuery, history: null, loading: true, error: null });
-    void fetch(`/api/payments?root=${encodeURIComponent(rootQuery)}`, { signal: controller.signal })
-      .then(async (response) => {
+    let cancelled = false;
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    let controller: AbortController | undefined;
+    const scheduleRefresh = () => {
+      timer = setTimeout(() => {
+        if (document.visibilityState === "visible") void load();
+        else scheduleRefresh();
+      }, 20_000);
+    };
+    const load = async () => {
+      controller = new AbortController();
+      setPaymentState((current) => ({ rootId: rootQuery, history: current.rootId === rootQuery ? current.history : null, loading: true, error: null }));
+      try {
+        const response = await fetch(`/api/payments?root=${encodeURIComponent(rootQuery)}`, { signal: controller.signal });
         const result = await response.json();
         if (!response.ok) throw new Error(result.error ?? "Payment history is unavailable.");
         if (result.rootId !== rootQuery || !Array.isArray(result.payments)) throw new Error("Payment history did not match this root.");
-        return result as PaymentHistory;
-      })
-      .then((history) => { if (!controller.signal.aborted) setPaymentState({ rootId: rootQuery, history, loading: false, error: null }); })
-      .catch((cause) => { if (!controller.signal.aborted) setPaymentState({ rootId: rootQuery, history: null, loading: false, error: cause instanceof Error ? cause.message : "Payment history is unavailable." }); });
-    return () => controller.abort();
-  }, [view, rootQuery, paymentRetry]);
+        if (!cancelled) setPaymentState({ rootId: rootQuery, history: result as PaymentHistory, loading: false, error: null });
+      } catch (cause) {
+        if (!cancelled) setPaymentState((current) => ({ ...current, loading: false, error: cause instanceof Error ? cause.message : "Payment history is unavailable." }));
+      }
+      if (!cancelled) scheduleRefresh();
+    };
+    void load();
+    return () => { cancelled = true; if (timer) clearTimeout(timer); controller?.abort(); };
+  }, [view, rootQuery]);
 
   const refreshConfirmedState = useCallback(() => {
     setTreeRetry((value) => value + 1);
@@ -1333,7 +1313,7 @@ export function Dashboard({ data: initialData, deployment, vaultQuery, nodeQuery
       timer = setTimeout(() => {
         if (document.visibilityState === "visible") void load();
         else scheduleRefresh();
-      }, 10_000);
+      }, 20_000);
     };
     const load = async () => {
       controller = new AbortController();
@@ -1374,7 +1354,7 @@ export function Dashboard({ data: initialData, deployment, vaultQuery, nodeQuery
       timer = setTimeout(() => {
         if (document.visibilityState === "visible") void load();
         else scheduleRefresh();
-      }, 10_000);
+      }, 20_000);
     };
     const load = async () => {
       controller = new AbortController();
@@ -1508,9 +1488,9 @@ export function Dashboard({ data: initialData, deployment, vaultQuery, nodeQuery
 
   return (
     <SidebarProvider>
-      <AppSidebar view={view} vaultQuery={vaultQuery} selectedId={selectedNode.id} rootLabel={rootNode?.label ?? "Treasury"} runtimeLabel={runtimeLabel} data={data} rootId={currentSnapshot?.rootId ?? null} readLoading={currentReadState.status === "loading"} readError={liveError} onRetry={() => setTreeRetry((value) => value + 1)} />
+      <AppSidebar view={view} vaultQuery={vaultQuery} selectedId={selectedNode.id} rootLabel={rootNode?.label ?? "Treasury"} data={data} readError={liveError} />
       <SidebarInset className="main-shell">
-        <Topbar view={view} source={data.source} wallet={wallet} vaultQuery={vaultQuery} selectedId={selectedNode.id} />
+        <Topbar view={view} wallet={wallet} vaultQuery={vaultQuery} selectedId={selectedNode.id} />
         <div className="dashboard-content">
           <PreviewNotice data={data} deployment={deployment} />
           {data.source === "direct-rpc" && rootNode?.tokenHoldings[0]?.symbol === "USDC" && BigInt(rootNode.tokenHoldings[0].rawAmount) === 0n && <div className="zero-usdc-notice" role="note"><Coins size={20} aria-hidden="true" /><span><strong>This root has no USDC.</strong> Request Sepolia USDC from Circle, then use Fund root in Setup &amp; control. The owner wallet also needs Sepolia ETH for gas; the vault itself does not.</span><a href="https://faucet.circle.com/" target="_blank" rel="noreferrer">Circle faucet <ArrowUpRight size={15} aria-hidden="true" /></a></div>}
@@ -1548,7 +1528,7 @@ export function Dashboard({ data: initialData, deployment, vaultQuery, nodeQuery
           </>}
           {view === "payments" && <>
             <div className="page-heading"><span className="page-kicker">Circle USDC · EIP-3009</span><h1>Payments</h1><p>See USDC settlements from the vaults in this tree. Agents buy configured x402 services through the local Companion; the dashboard does not initiate a purchase.</p></div>
-            {data.source === "preview" ? <Card><CardHeader><CardTitle>Open a live vault</CardTitle><CardDescription>Payment records are only displayed for a live Sepolia root.</CardDescription></CardHeader></Card> : <PaymentsPanel history={paymentState.rootId === rootQuery ? paymentState.history : null} loading={paymentState.rootId === rootQuery ? paymentState.loading : Boolean(rootQuery)} error={paymentState.rootId === rootQuery ? paymentState.error : null} onRetry={() => setPaymentRetry((value) => value + 1)} />}
+            {data.source === "preview" ? <Card><CardHeader><CardTitle>Open a live vault</CardTitle><CardDescription>Payment records are only displayed for a live Sepolia root.</CardDescription></CardHeader></Card> : <PaymentsPanel history={paymentState.rootId === rootQuery ? paymentState.history : null} loading={paymentState.rootId === rootQuery ? paymentState.loading : Boolean(rootQuery)} error={paymentState.rootId === rootQuery ? paymentState.error : null} />}
             <p className="module-footnote">These receipts prove token settlement, not the merchant’s service delivery. Generic contract transactions and currency valuation remain future work.</p>
           </>}
           {view === "setup" && <>
