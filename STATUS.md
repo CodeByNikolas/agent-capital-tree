@@ -10,6 +10,11 @@
 
 As of 26 September 2026. Read this together with PLAN.md after context compaction. Older sections below retain the evidence and acceptance limits known at the time; the newest E2E status is first.
 
+## Team submission details completed
+
+- README now names Nikolas Hack and Rami Ezzeddine, their shared TUM Information Systems studies and TUM Blockchain Club membership, and their public profile links. Short bios use the user-confirmed affiliations, public GitHub profiles and Nikolas' portfolio; no individual Kanoki implementation responsibilities are inferred.
+- The previously open team-name/social-link README requirement is complete. README relative-link and whitespace checks passed; documentation only.
+
 ## Kanoki — current main reconciliation
 
 The newer per-agent activity report and Curvegrid documentation are preserved alongside the Kanoki header and tokens. Agent activity is reachable under Activity. Production build, TypeScript and exact agent-event totals passed after the merge. Unrelated browser/runtime working files were not staged.
