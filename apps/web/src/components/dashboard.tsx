@@ -506,7 +506,7 @@ function AppSidebar({ view, vaultQuery, selectedId, rootLabel, data, readError }
       <SidebarContent>
         <SidebarGroup className="app-sidebar-vault">
           <SidebarGroupContent>
-            <RootAccessBar vault={vaultQuery} path={views.find((item) => item.id === view)?.path ?? "/"} />
+            <RootAccessBar path={views.find((item) => item.id === view)?.path ?? "/"} />
             {vaultQuery && <LiveReadNotice data={data} error={readError} />}
           </SidebarGroupContent>
         </SidebarGroup>
@@ -557,7 +557,7 @@ function DashboardLoading({ view, error, onRetry }: { view: DashboardProps["view
   </div>;
 }
 
-function RootAccessBar({ vault, path }: { vault: string | null; path: string }) {
+function RootAccessBar({ path }: { path: string }) {
   const router = useRouter();
   const [lookupError, setLookupError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
@@ -582,7 +582,6 @@ function RootAccessBar({ vault, path }: { vault: string | null; path: string }) 
       <button className="button button-secondary button-small" type="submit" disabled={loading}>{loading ? "Looking up…" : path === "/setup" ? "Open root vault" : "Open vault"}</button>
       {lookupError && <span role="alert" className="vault-lookup-error">{lookupError}</span>}
     </form>
-    {vault && <a className="root-preview-link" href={`${path}?preview=1`}>Preview sample</a>}
   </div>;
 }
 
@@ -1471,7 +1470,7 @@ export function Dashboard({ data: initialData, deployment, vaultQuery, nodeQuery
               <a className="button button-secondary button-small" href="https://faucet.circle.com/" target="_blank" rel="noreferrer">Get USDC <ArrowUpRight size={13} aria-hidden="true" /></a>
             </CardContent>
           </Card>
-          <RootAccessBar vault={null} path="/setup" />
+          <RootAccessBar path="/setup" />
           {walletActionMode === "create-root" && <WalletControlsPanel
             data={data}
             deployment={deployment}
@@ -1486,7 +1485,7 @@ export function Dashboard({ data: initialData, deployment, vaultQuery, nodeQuery
             onRootCreated={(vaultAddress) => router.push(`/setup?vault=${encodeURIComponent(vaultAddress)}`)}
           />}
           <nav className="onboarding-links" aria-label="Explore and get started">
-            <Link href="/tree?preview=1"><Layers3 size={18} aria-hidden="true" /><span>Explore sample data</span><ArrowRight size={16} aria-hidden="true" /></Link>
+            <Link href={`/tree?vault=capital.${deployment.namespaceName}`}><Layers3 size={18} aria-hidden="true" /><span>Open live demo</span><ArrowRight size={16} aria-hidden="true" /></Link>
             <a href="https://github.com/CodeByNikolas/agent-capital-tree/blob/main/docs/local-setup.md"><ExternalLink size={18} aria-hidden="true" /><span>Install companion &amp; MCP</span><ArrowUpRight size={16} aria-hidden="true" /></a>
           </nav>
         </div>

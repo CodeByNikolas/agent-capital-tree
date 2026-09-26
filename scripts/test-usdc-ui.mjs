@@ -18,8 +18,10 @@ try {
   checks.push('All six routes reject retired root query links with HTTP404');
   await page.goto(base);
   await expect(page.getByRole('button', { name: 'Launch a new root vault' })).toBeVisible();
+  await expect(page.getByRole('link', { name: 'Open live demo' })).toHaveAttribute('href', `/tree?vault=${vault}`);
+  await expect(page.getByRole('link', { name: 'Explore sample data' })).toHaveCount(0);
   assert(!/Preview workspace|ACT-A|ACT-B/.test(await page.locator('body').innerText()));
-  checks.push('Unselected entry shows root creation rather than preview balances');
+  checks.push('Unselected entry offers root creation and the live demo without a sample-data link');
   await page.goto(`${base}/tree?preview=1`);
   await expect(page.getByText('Fictional preview · no real tokens.')).toBeVisible();
   await expect(page.getByText('Main agent',{exact:true}).first()).toBeVisible();

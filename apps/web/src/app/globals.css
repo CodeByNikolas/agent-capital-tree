@@ -145,14 +145,12 @@ button:disabled { cursor: not-allowed; opacity: .55; }
 .root-access-form { display: flex; align-items: center; flex-wrap: wrap; gap: 10px; }
 .root-access-form label { font-size: 14px; font-weight: 700; }
 .root-access-form input { width: 125px; min-height: 37px; padding: 5px 10px; border: 1px solid var(--input); border-radius: 7px; background: var(--background); font-family: var(--font-mono); font-size: 14px; }
-.root-preview-link { color: var(--brand); font-size: 14px; font-weight: 700; white-space: nowrap; }
 .app-sidebar-vault { padding: 4px 12px 8px; }
 .app-sidebar-vault .root-access-bar { display: block; padding: 0; border: 0; background: transparent; }
 .app-sidebar-vault .root-access-form { display: grid; gap: 8px; }
 .app-sidebar-vault .root-access-form label { font-size: 13px; }
 .app-sidebar-vault .root-access-form input { width: 100%; min-width: 0; font-size: 13px; }
 .app-sidebar-vault .root-access-form button { width: 100%; }
-.app-sidebar-vault .root-preview-link { display: inline-block; margin-top: 10px; }
 .app-sidebar-vault .live-read-notice { display: grid; grid-template-columns: 18px minmax(0, 1fr); gap: 7px 9px; margin: 18px 0 0; padding: 12px; }
 .app-sidebar-vault .live-read-notice p { min-width: 0; overflow-wrap: anywhere; font-size: 13px; line-height: 1.5; }
 .button { display: inline-flex; align-items: center; justify-content: center; gap: 7px; min-height: 39px; padding: 7px 13px; border: 1px solid var(--border); border-radius: 8px; background: var(--surface); color: var(--ink); font-size: 14px; font-weight: 700; line-height: 1.2; cursor: pointer; }
