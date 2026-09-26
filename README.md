@@ -56,7 +56,7 @@ ENS roles are actual authorization, not descriptive text metadata. MultiBaas is 
 
 ## Run and test
 
-Use Node22, pnpm11.13.1, Docker and Foundry1.8.3. Follow the [complete setup guide](docs/local-setup.md) for wallet/operator separation, a private companion configuration, native Codex login and MCP registration. The default worker inference path uses a dedicated authenticated Codex home on the host; HomeBox CLIProxyAPI remains an optional explicit configuration. Docker workers remain network isolated and receive scoped finance tools, while the host owns inference authentication.
+Use Node22, pnpm11.13.1, Docker and Foundry1.8.3. Follow the [complete setup guide](docs/local-setup.md) for wallet/operator separation, a private companion configuration, OpenAI API-key setup (preferred) and MCP registration. The default native worker path uses an OpenAI API key held by the host app-server, with ChatGPT/Codex login as an alternative; HomeBox CLIProxyAPI remains an optional explicit configuration. Docker workers remain network isolated and receive scoped finance tools, while the host owns inference authentication.
 
 ```sh
 git clone --recurse-submodules https://github.com/CodeByNikolas/agent-capital-tree.git

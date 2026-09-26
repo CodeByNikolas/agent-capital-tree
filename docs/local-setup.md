@@ -8,7 +8,7 @@ A same-host acceptance run using the earlier CLIProxyAPI path completed browser 
 
 ## 1. Prepare the checkout and worker
 
-You need a Sepolia-capable browser wallet, Sepolia ETH for wallet and operator transactions, a Sepolia RPC URL, and a ChatGPT account with access to Codex CLI. The default worker inference path uses that account's **native Codex login** on the host. Choose a model available to your account; the CLIProxyAPI aliases `gpt-6-sol` and `gpt-6-luna` are not assumed to be available through native login. HomeBox operators can instead select the optional CLIProxyAPI configuration below. Do not use a direct OpenAI API credential for this setup.
+You need a Sepolia-capable browser wallet, Sepolia ETH for wallet and operator transactions, and a Sepolia RPC URL. **Preferred inference setup: an OpenAI API key** with API billing and access to your chosen Codex model. API inference is billed separately from the child’s USDC allowance. ChatGPT/Codex login is an alternative; HomeBox CLIProxyAPI remains optional. Choose an exact model available through your selected authentication; proxy aliases such as `gpt-6-sol` and `gpt-6-luna` are not assumed to be API model names.
 
 On a Linux host, install Node 22, pnpm 11.13.1, Docker accessible to your non-root user, and **Codex CLI 0.154.0**. Check the prerequisites before continuing:
 
@@ -34,16 +34,34 @@ Record the immutable `sha256:` image ID printed by the builder for the config in
 
 The companion and `pnpm build` use the checked-in SDK ABI and need no contract submodules. If you also build or test the Solidity contracts, run `git submodule update --init --recursive` in this checkout first; the nested ENS and Uniswap dependencies make that a larger download.
 
-Create a dedicated private Codex home for the **host companion** and sign in with your ChatGPT account using the verified `ACT_CODEX_BINARY` from the image build. Keep this worker login profile pristine: do not add manual configuration, MCP registrations, apps or plugins there. The runtime permits only the pinned CLI’s automatically generated `/workspace` trust entry and bundled `.system` skills. The root interactive Codex CLI uses its own normal profile; check that profile's login separately with `CODEX_HOME="$HOME/.codex" codex login status`, and run `CODEX_HOME="$HOME/.codex" codex login` if needed. [Official Codex CLI commands](https://learn.chatgpt.com/docs/developer-commands#codex-login) document `codex login`, `--device-auth`, and `codex login status`. Use device authentication if the host has no browser. Do not copy another profile's auth files into the worker image or checkout.
+### Preferred: OpenAI API key
+
+Create a key in your [OpenAI API project](https://platform.openai.com/api-keys) with model access and API billing enabled. Create a dedicated private Codex home for the **host companion** and a raw key file outside the checkout and worker directories. Put only your OpenAI API key into the file using your editor; do not paste it into chat, command arguments or the JSON config.
 
 ```sh
 ACT_SETUP_DIR="$HOME/.agent-capital-tree-local"
 install -d -m 700 "$ACT_SETUP_DIR" "$ACT_SETUP_DIR/codex-home"
+(umask 077; touch "$ACT_SETUP_DIR/openai-api-key")
+chmod 600 "$ACT_SETUP_DIR/openai-api-key"
+${EDITOR:-vi} "$ACT_SETUP_DIR/openai-api-key"
+```
+
+Set `openaiApiKeyFile` in step 3 to this file’s absolute path. No browser/device login is needed for this worker profile. The host uses the official [Codex app-server API-key flow](https://learn.chatgpt.com/docs/app-server) with ephemeral credential storage. The key is not copied into `auth.json`, worker mounts or worker environment variables. A configured missing or invalid key file fails without falling back to another login.
+
+### Alternative: ChatGPT/Codex login
+
+Omit `openaiApiKeyFile` from the config. Create `ACT_SETUP_DIR` and its private `codex-home` directory as above (no key file needed), then sign in to the dedicated worker profile:
+
+```sh
 CODEX_HOME="$ACT_SETUP_DIR/codex-home" "$ACT_CODEX_BINARY" -c 'cli_auth_credentials_store="file"' login
 CODEX_HOME="$ACT_SETUP_DIR/codex-home" "$ACT_CODEX_BINARY" login status
 ```
 
-The login commands authenticate only this host profile. They do not register MCP tools or authorize wallet actions. In the root interactive CLI, use `/model` to inspect account-available model names. Copy the exact chosen name into `models` below, then run `check-codex` to verify it through the dedicated worker login before binding an operator.
+Use `login --device-auth` if the host has no browser. These commands authenticate only this host profile; they do not register MCP or authorize wallet actions.
+
+For either option, keep the worker profile pristine: no manual configuration, MCP registrations, apps or plugins. Only the pinned CLI’s generated `/workspace` trust entry and bundled `.system` skills are allowed. The root interactive Codex CLI uses its own normal profile and independent authentication. Check it with `CODEX_HOME="$HOME/.codex" codex login status`; For API-key login to the root profile, run `CODEX_HOME="$HOME/.codex" codex login --with-api-key < "$ACT_SETUP_DIR/openai-api-key"`; for ChatGPT login use `CODEX_HOME="$HOME/.codex" codex login`. Unlike the companion’s ephemeral authentication, interactive CLI login uses that profile’s configured credential store. Do not copy another profile’s auth files into the worker image or checkout.
+
+Choose an exact model available to your account/API project, put it in `models` below, and run `check-codex` before binding an operator.
 
 ## 2. Create your root
 
@@ -62,7 +80,7 @@ chmod 600 "$ACT_SETUP_DIR/config.json"
 ${EDITOR:-vi} "$ACT_SETUP_DIR/config.json"
 ```
 
-Use absolute paths for `codexBinary`, `codexHome`, and the CLI commands below. Set `codexBinary` to the same verified `ACT_CODEX_BINARY` used to build the image and sign in to the worker profile; do not use a `command -v codex` path that resolves to a wrapper. Do not put the Codex home, operator key, or `root-session.token` in Git. Example config; replace every placeholder and make `runtimeRoot` a **new, persistent** private directory for this one root and controller:
+Use absolute paths for `codexBinary`, `codexHome`, and the CLI commands below. Set `codexBinary` to the same verified `ACT_CODEX_BINARY` used to build the image and run the worker app-server; do not use a `command -v codex` path that resolves to a wrapper. Do not put the OpenAI key, Codex home, operator key, or `root-session.token` in Git. Example config; replace every placeholder and make `runtimeRoot` a **new, persistent** private directory for this one root and controller:
 
 ```json
 {
@@ -73,21 +91,22 @@ Use absolute paths for `codexBinary`, `codexHome`, and the CLI commands below. S
   "inference": "codex",
   "codexBinary": "/absolute/path/to/linux-codex",
   "codexHome": "/absolute/private/codex-home",
+  "openaiApiKeyFile": "/absolute/private/openai-api-key",
   "imageId": "sha256:YOUR_BUILT_IMAGE_ID",
   "models": ["YOUR_AVAILABLE_CODEX_MODEL"],
   "childGasWei": "0"
 }
 ```
 
-Check the native login, every configured model and Docker before creating or binding the operator:
+Check the configured authentication, every configured model and Docker before creating or binding the operator:
 
 ```sh
 node packages/runtime/cli.mjs check-codex /absolute/private/config.json
 ```
 
-This preflight checks account and model metadata; it does not make a model inference or a financial call. The companion also checks native availability before allocating capital. The host Codex app-server uses `codexHome` for authentication. The Docker worker stays network isolated and receives only scoped finance tools; it does not receive the host's Codex credentials. Preserve `runtimeRoot`, including its encrypted key files and `keys/master.password`; losing either makes the bound operator key unavailable. Do not reuse that directory for another root or controller.
+This preflight checks account and model metadata (including the official OpenAI models endpoint in API-key mode); it does not make a model inference or a financial call. The companion also checks native availability before allocating capital. It does not establish inference quota or billing credit. API-key mode uses the private key file and ephemeral app-server authentication; ChatGPT mode uses the dedicated `codexHome` login. The Docker worker stays network isolated and receives only scoped finance tools; it does not receive the host's Codex credentials. Preserve `runtimeRoot`, including its encrypted key files and `keys/master.password`; losing either makes the bound operator key unavailable. Do not reuse that directory for another root or controller.
 
-**Optional HomeBox CLIProxyAPI path:** set `"inference": "cliproxyapi"` instead of `"codex"`; remove `codexBinary` and `codexHome`; add `"upstream": "http://your-cliproxyapi-host:8317/v1"` and `"providerTokenFile": "/absolute/private/provider-token"`. The provider token file contains only the raw CLIProxyAPI credential, is owned by your user, and has mode `0600`. The endpoint must support `/v1/responses`; use model names available there. Configure the root CLI's user-level custom provider separately if it should also use CLIProxyAPI. See [official custom provider configuration](https://learn.chatgpt.com/docs/config-file/config-advanced#custom-model-providers). This optional path is the HomeBox configuration, not a prerequisite for the native jury flow.
+**Optional HomeBox CLIProxyAPI path:** set `"inference": "cliproxyapi"` instead of `"codex"`; remove `codexBinary`, `codexHome` and `openaiApiKeyFile`; add `"upstream": "http://your-cliproxyapi-host:8317/v1"` and `"providerTokenFile": "/absolute/private/provider-token"`. The provider token file contains only the raw CLIProxyAPI credential, is owned by your user, and has mode `0600`. The endpoint must support `/v1/responses`; use model names available there. Configure the root CLI's user-level custom provider separately if it should also use CLIProxyAPI. See [official custom provider configuration](https://learn.chatgpt.com/docs/config-file/config-advanced#custom-model-providers). This optional path is the HomeBox configuration, not a prerequisite for the native jury flow.
 
 ```sh
 node packages/runtime/cli.mjs prepare-root /absolute/private/config.json

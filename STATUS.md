@@ -2,6 +2,13 @@
 
 As of 26 September 2026. Read this together with PLAN.md after context compaction.
 
+## Preferred OpenAI API-key setup — 26 September
+
+- Native Codex now accepts `openaiApiKeyFile`; the setup guide and README show this as the preferred path. ChatGPT login remains available by omitting that field, and CLIProxyAPI remains explicit. Existing HomeBox inference and control-plane profiles were not modified.
+- The host reads an owned, nonsymlink 0600 key file and authenticates the app-server through `account/login/start` with ephemeral storage. The key is absent from worker mounts, environment and process arguments. Invalid explicit key files fail without fallback. Preflight verifies key/model metadata at the official OpenAI endpoint before allocation, but cannot guarantee inference quota or billing credit. API fees are separate from vault allowances.
+- Runtime build, all **26 runtime tests**, and **7 plugin tests** passed. Four JSON documentation examples, 92 relative links and `git diff --check` also passed. Both real-Codex/real-Docker protocol fixture modes passed: with and without synthetic API-key authentication, including isolated execution, scoped finance reads, absent auth.json and expiry revocation. These checks simulate model responses; no real OpenAI key, live inference or financial transaction was used.
+- Real API-key inference, native funded spawn/x402/Uniswap, and independent-machine acceptance remain open. See the earlier protocol evidence below for historical CI and installation results.
+
 ## Native Codex jury runtime — 26 September
 
 - Source `35813b0` is pushed. Both Contracts and TypeScript CI jobs passed ([run 36258055358](https://github.com/CodeByNikolas/agent-capital-tree/actions/runs/36258055358)).

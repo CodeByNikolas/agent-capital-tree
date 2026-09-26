@@ -28,7 +28,12 @@ if (command === 'prepare-root') {
     if (!isAbsolute(config.codexBinary ?? '') || !isAbsolute(config.codexHome ?? '')) {
       throw new Error('native Codex requires absolute codexBinary and dedicated codexHome paths');
     }
-    provider = { inference, codexBinary: config.codexBinary, codexHome: config.codexHome };
+    if (Object.hasOwn(config, 'openaiApiKeyFile') &&
+        (typeof config.openaiApiKeyFile !== 'string' || !isAbsolute(config.openaiApiKeyFile))) {
+      throw new Error('openaiApiKeyFile must be an absolute private file path');
+    }
+    provider = { inference, codexBinary: config.codexBinary, codexHome: config.codexHome,
+      ...(Object.hasOwn(config, 'openaiApiKeyFile') ? { openaiApiKeyFile: config.openaiApiKeyFile } : {}) };
   } else if (inference === 'cliproxyapi') {
     let upstreamKey;
     if (Object.hasOwn(config, 'providerTokenFile')) upstreamKey = (await privateFile(config.providerTokenFile)).trim();
@@ -48,7 +53,7 @@ if (command === 'prepare-root') {
     const launcher = new NativeCodexLauncher(provider);
     try {
       for (const model of config.models) await launcher.ensureAvailable(model);
-      process.stdout.write('Native Codex login, configured models and Docker are available. No capital was allocated.\n');
+      process.stdout.write('Configured Codex authentication, model metadata and Docker checks passed. No capital was allocated.\n');
     } finally { await launcher.close(); }
     process.exit(0);
   }

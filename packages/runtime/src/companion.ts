@@ -102,7 +102,7 @@ export type CompanionConfig = Readonly<{
   paymentServices?: readonly PaymentService[];
   multibaas?: { deploymentUrl: string; controllerLabel: string; apiKey: string };
 } & ({ inference: 'cliproxyapi'; upstream: string; upstreamKey: string } |
-  { inference?: 'codex'; codexBinary: string; codexHome: string })>;
+  { inference?: 'codex'; codexBinary: string; codexHome: string; openaiApiKeyFile?: string })>;
 
 type Grant = { context: WorkerContext; brokerToken: string | undefined; mcpToken: string; keyFile: string };
 
@@ -141,7 +141,8 @@ export class RuntimeCompanion {
       this.broker = new InferenceBroker({ upstream: config.upstream, upstreamKey: config.upstreamKey, maxBodyBytes: 1_000_000 });
       this.launcher = new DockerWorkerLauncher();
     } else {
-      this.launcher = new NativeCodexLauncher({ codexBinary: config.codexBinary, codexHome: config.codexHome });
+      this.launcher = new NativeCodexLauncher({ codexBinary: config.codexBinary, codexHome: config.codexHome,
+        ...(config.openaiApiKeyFile === undefined ? {} : { openaiApiKeyFile: config.openaiApiKeyFile }) });
     }
     this.gas = new ChildGasFunding(config.rpcUrl, join(config.runtimeRoot, 'gas'));
     this.chain = new OnchainSpawnChain({ rpcUrl: config.rpcUrl, controller: config.controller, keys: this.keys,

@@ -39,7 +39,7 @@ const fixture = createServer(async (req, res) => {
     if (hang) output = [{ type: 'function_call', id: 'fc_wait', call_id: 'call_wait', name: 'exec_command',
       arguments: JSON.stringify({ cmd: 'sleep 30', yield_time_ms: 10000, max_output_tokens: 1000 }), status: 'completed' }];
     else if (step === 0) output = [{ type: 'function_call', id: 'fc_shell', call_id: 'call_shell', name: 'exec_command',
-      arguments: JSON.stringify({ cmd: `test ! -e '${sentinel}' && test "$(wc -l < /proc/net/route)" -eq 1 && pwd > /workspace/fixture-proof.txt && echo ISOLATED`, yield_time_ms: 1000, max_output_tokens: 1000 }), status: 'completed' }];
+      arguments: JSON.stringify({ cmd: `test -z "$OPENAI_API_KEY" && test -z "$CODEX_API_KEY" && test ! -e '${join(root, 'api-key')}' && test ! -e '${sentinel}'  && test "$(wc -l < /proc/net/route)" -eq 1 && pwd > /workspace/fixture-proof.txt && echo ISOLATED`, yield_time_ms: 1000, max_output_tokens: 1000 }), status: 'completed' }];
     else if (step === 1) {
       assert.match(JSON.stringify(outputs), /ISOLATED/);
       assert.ok(inventory.has('apply_patch'));
@@ -82,7 +82,11 @@ const tools = companionServer(sessions, { getPaymentServices: async context => {
   assert.equal(context.workerId, workerId); calls++; return { services: [], marker: 'scoped-fixture' };
 } });
 await new Promise(resolve => tools.listen(0, '127.0.0.1', resolve));
-const launcher = new NativeCodexLauncher({ codexBinary: wrapper, codexHome: home });
+const keyFile = join(root, 'api-key');
+const apiKeyMode = process.env.ACT_TEST_API_KEY === '1';
+if (apiKeyMode) await writeFile(keyFile, 'synthetic-protocol-key', { mode: 0o600 });
+const launcher = new NativeCodexLauncher({ codexBinary: wrapper, codexHome: home,
+  ...(apiKeyMode ? { openaiApiKeyFile: keyFile } : {}) });
 let done;
 const exited = new Promise(resolve => { done = resolve; });
 let revoked = 0;
@@ -113,9 +117,10 @@ try {
   await launcher.close();
   assert.equal(revoked, 2);
   assert.equal(calls, 1);
+  await assert.rejects(readFile(join(home, 'auth.json')), { code: 'ENOENT' });
 
 
-  console.log(JSON.stringify({ passed: true, toolInventory: [...inventory], scopedCalls: calls, expiryRevoked: true, realInference: false }));
+  console.log(JSON.stringify({ passed: true, toolInventory: [...inventory], apiKeyMode, scopedCalls: calls, expiryRevoked: true, realInference: false }));
 } catch (error) {
   console.error(await readFile(join(root, 'fixture-stderr'), 'utf8').catch(() => 'fixture startup failed'));
   throw error;

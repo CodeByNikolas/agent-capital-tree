@@ -63,3 +63,45 @@ test('native finance forwarding validates arguments, supplies only scoped auth, 
     assert.equal(calls, 2);
   } finally { await new Promise(resolve => server.close(resolve)); }
 });
+
+test('API key files fail closed and never use another authentication source', async () => {
+  const { readOpenAiApiKey } = await import('../dist/codex-launcher.js');
+  const { chmod } = await import('node:fs/promises');
+  const home = await mkdtemp(join(tmpdir(), 'act-api-key-'));
+  const file = join(home, 'api-key');
+  try {
+    await writeFile(file, 'synthetic-unit-key\n', { mode: 0o600 });
+    assert.equal(await readOpenAiApiKey(file), 'synthetic-unit-key');
+    await chmod(file, 0o644);
+    await assert.rejects(readOpenAiApiKey(file), /owner-only/);
+    await chmod(file, 0o600);
+    await writeFile(file, '');
+    await assert.rejects(readOpenAiApiKey(file), /empty or invalid/);
+    await writeFile(file, 'synthetic key with spaces');
+    await assert.rejects(readOpenAiApiKey(file), /empty or invalid/);
+    await symlink(file, join(home, 'link'));
+    await assert.rejects(readOpenAiApiKey(join(home, 'link')), /owner-only/);
+    await assert.rejects(readOpenAiApiKey('relative-key'), /absolute/);
+  } finally { await rm(home, { recursive: true, force: true }); }
+});
+
+test('API preflight sends credentials only to OpenAI and sanitizes rejection details', async () => {
+  const { verifyOpenAiModelAccess } = await import('../dist/codex-launcher.js');
+  const previous = globalThis.fetch;
+  const key = 'synthetic-only-secret';
+  try {
+    globalThis.fetch = async (url, options) => {
+      assert.equal(url, 'https://api.openai.com/v1/models/test-model');
+      assert.equal(options.headers.authorization, `Bearer ${key}`);
+      assert.equal(options.redirect, 'error');
+      return new Response('{}', { status: 200 });
+    };
+    await verifyOpenAiModelAccess(key, 'test-model');
+    globalThis.fetch = async () => { throw new Error(`provider echoed ${key}`); };
+    await assert.rejects(verifyOpenAiModelAccess(key), error => {
+      assert.equal(error.message, 'OpenAI API key or model access check failed');
+      assert.ok(!String(error).includes(key));
+      return true;
+    });
+  } finally { globalThis.fetch = previous; }
+});

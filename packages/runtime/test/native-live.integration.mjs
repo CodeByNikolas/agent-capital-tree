@@ -13,7 +13,8 @@ assert.ok(info.isFile() && !info.isSymbolicLink() && info.uid === process.getuid
   (info.mode & 0o777) === 0o600, 'native config must be an owner-only 0600 file');
 const config = JSON.parse(await readFile(configPath, 'utf8'));
 assert.ok(config.inference === undefined || config.inference === 'codex', 'native mode required');
-const launcher = new NativeCodexLauncher({ codexBinary: config.codexBinary, codexHome: config.codexHome });
+const launcher = new NativeCodexLauncher({ codexBinary: config.codexBinary, codexHome: config.codexHome,
+  ...(config.openaiApiKeyFile === undefined ? {} : { openaiApiKeyFile: config.openaiApiKeyFile }) });
 const model = config.models?.[0];
 assert.equal(typeof model, 'string', 'configure a native account model');
 await launcher.ensureAvailable(model);

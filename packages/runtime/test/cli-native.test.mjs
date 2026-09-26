@@ -31,6 +31,14 @@ test('CLI defaults to native Codex even when legacy provider fields exist', asyn
       });
     }
 
+    for (const openaiApiKeyFile of [null, '', 'relative']) {
+      await writeFile(path, JSON.stringify({ codexBinary: '/nonexistent/codex', codexHome: directory,
+        openaiApiKeyFile }), { mode: 0o600 });
+      await assert.rejects(run(process.execPath, [cli, 'check-codex', path], { timeout: 10000 }), error => {
+        assert.match(error.stderr, /openaiApiKeyFile must be an absolute private file path/);
+        return true;
+      });
+    }
     await writeFile(path, JSON.stringify({ inference: 'unknown' }), { mode: 0o600 });
     await assert.rejects(run(process.execPath, [cli, 'start', path], { timeout: 10000 }), error => {
       assert.match(error.stderr, /inference must be codex or cliproxyapi/);

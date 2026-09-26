@@ -109,6 +109,27 @@ export async function validateNativeCodexHome(home: string): Promise<void> {
   }
 }
 
+/** API credentials stay in the trusted companion and app-server, never worker mounts or argv. */
+export async function readOpenAiApiKey(path: string): Promise<string> {
+  if (!isAbsolute(path)) throw new Error('OpenAI API key file must be absolute');
+  const info = await lstat(path);
+  if (!info.isFile() || info.isSymbolicLink() || info.uid !== process.getuid?.() ||
+      (info.mode & 0o777) !== 0o600 || info.size > 16_384) throw new Error('OpenAI API key file must be an owner-only 0600 file');
+  const key = (await readFile(path, 'utf8')).trim();
+  if (!key || /\s/.test(key)) throw new Error('OpenAI API key file is empty or invalid');
+  return key;
+}
+
+export async function verifyOpenAiModelAccess(key: string, model?: string): Promise<void> {
+  try {
+    const response = await fetch(`https://api.openai.com/v1/models${model ? `/${encodeURIComponent(model)}` : ''}`, {
+      headers: { authorization: `Bearer ${key}` }, redirect: 'error', signal: AbortSignal.timeout(20_000)
+    });
+    await response.body?.cancel();
+    if (!response.ok) throw new Error('rejected');
+  } catch { throw new Error('OpenAI API key or model access check failed'); }
+}
+
 class AppSession {
   readonly process: ChildProcessWithoutNullStreams;
   #nextId = 1;
@@ -117,11 +138,11 @@ class AppSession {
   onRequest?: (message: RpcMessage) => void;
   onExit?: (code: number | null, signal: NodeJS.Signals | null) => void;
 
-  constructor(binary: string, home: string) {
+  constructor(binary: string, home: string, apiKeyMode = false) {
     this.process = spawn(binary, [
       'app-server', '--listen', 'stdio://', '--strict-config',
       '-c', 'model_provider="openai"',
-      '-c', 'cli_auth_credentials_store="file"',
+      '-c', `cli_auth_credentials_store="${apiKeyMode ? 'ephemeral' : 'file'}"`,
       '-c', 'web_search="disabled"',
       '-c', 'features.apps=false',
       '-c', 'features.plugins=false',
@@ -193,12 +214,18 @@ class AppSession {
       ? { id, error: { code: -32601, message: error } } : { id, result }) + '\n');
   }
 
-  async initialize(): Promise<void> {
+  async initialize(apiKey?: string): Promise<void> {
     await this.request('initialize', {
       clientInfo: { name: 'agent_capital_tree', title: 'Agent Capital Tree', version: '0.1.0' },
       capabilities: { experimentalApi: true }
     });
     this.process.stdin.write(JSON.stringify({ method: 'initialized', params: {} }) + '\n');
+    if (apiKey !== undefined) {
+      try {
+        const login = await this.request('account/login/start', { type: 'apiKey', apiKey });
+        if (login?.type !== 'apiKey') throw new Error('unexpected auth mode');
+      } catch { throw new Error('OpenAI API key authentication failed'); }
+    }
   }
 
   close(): void { this.process.kill('SIGTERM'); }
@@ -214,33 +241,34 @@ async function run(binary: string, args: string[]): Promise<{ code: number; outp
   });
 }
 
-/** Host Codex keeps ChatGPT auth; Docker only executes its selected environment tools. */
+/** Host Codex keeps OpenAI authentication; Docker only executes its selected environment tools. */
 export class NativeCodexLauncher {
   #active = new Map<string, Active>();
   #starting = new Map<string, Promise<void>>();
-  constructor(private readonly options: { codexBinary: string; codexHome: string; docker?: string }) {}
+  constructor(private readonly options: { codexBinary: string; codexHome: string; openaiApiKeyFile?: string; docker?: string }) {}
 
   async ensureAvailable(model?: string): Promise<void> {
     const { codexBinary, codexHome } = this.options;
     if (!isAbsolute(codexBinary) || !isAbsolute(codexHome)) throw new Error('Codex paths must be absolute');
-    const [home, auth, version, docker] = await Promise.all([
-      lstat(codexHome), lstat(resolve(codexHome, 'auth.json')),
+    const apiKey = this.options.openaiApiKeyFile === undefined ? undefined : await readOpenAiApiKey(this.options.openaiApiKeyFile);
+    if (apiKey === undefined) {
+      const auth = await lstat(resolve(codexHome, 'auth.json'));
+      if (!auth.isFile() || auth.isSymbolicLink() || auth.uid !== process.getuid?.() ||
+          (auth.mode & 0o777) !== 0o600) throw new Error('Codex auth file is not private');
+    }
+    const [version, docker] = await Promise.all([
       run(codexBinary, ['--version']), run(this.options.docker ?? 'docker', ['info', '--format', '{{.ServerVersion}}'])
     ]);
-    if (!home.isDirectory() || home.isSymbolicLink() || home.uid !== process.getuid?.() ||
-        (home.mode & 0o777) !== 0o700 || !auth.isFile() || auth.isSymbolicLink() ||
-        auth.uid !== process.getuid?.() || (auth.mode & 0o777) !== 0o600) {
-      throw new Error('Codex login directory is not private');
-    }
     await validateNativeCodexHome(codexHome);
     if (version.code !== 0 || version.output.trim() !== VERSION || docker.code !== 0) {
       throw new Error('pinned Codex or Docker is unavailable');
     }
-    const app = new AppSession(codexBinary, codexHome);
+    const app = new AppSession(codexBinary, codexHome, apiKey !== undefined);
     try {
-      await app.initialize();
+      await app.initialize(apiKey);
       const account = await app.request('account/read', { refreshToken: true });
-      if (account?.account?.type !== 'chatgpt') throw new Error('normal Codex ChatGPT login is unavailable');
+      if (account?.account?.type !== (apiKey === undefined ? 'chatgpt' : 'apiKey')) throw new Error('configured Codex authentication is unavailable');
+      if (apiKey !== undefined) await verifyOpenAiModelAccess(apiKey, model);
       if (model) {
         let cursor: string | null = null;
         let found = false;
@@ -272,6 +300,7 @@ export class NativeCodexLauncher {
         !Number.isSafeInteger(spec.maxLifetimeMs) || spec.maxLifetimeMs < 1_000 ||
         spec.maxLifetimeMs > 86_400_000) throw new Error('invalid native worker task or lifetime');
     await validateNativeCodexHome(this.options.codexHome);
+    const apiKey = this.options.openaiApiKeyFile === undefined ? undefined : await readOpenAiApiKey(this.options.openaiApiKeyFile);
     const origin = localOrigin(spec.companionOrigin);
     if (!spec.mcpToken) throw new Error('missing scoped tool token');
     const dockerArgs = await nativeDockerArgs(spec.files);
@@ -288,7 +317,7 @@ export class NativeCodexLauncher {
       perMessageDeflate: false, maxPayload: MAX_MESSAGE_BYTES });
     await new Promise<void>((ok, fail) => { server.once('listening', ok); server.once('error', fail); });
     const port = (server.address() as { port: number }).port;
-    const app = new AppSession(this.options.codexBinary, this.options.codexHome);
+    const app = new AppSession(this.options.codexBinary, this.options.codexHome, apiKey !== undefined);
     let container: ChildProcessWithoutNullStreams | undefined;
     let socket: WebSocket | undefined;
     let timer: NodeJS.Timeout | undefined;
@@ -390,7 +419,7 @@ export class NativeCodexLauncher {
     try {
       timer = setTimeout(() => finish(1, null), spec.maxLifetimeMs);
       timer.unref();
-      await app.initialize();
+      await app.initialize(apiKey);
       await app.request('environment/add', { environmentId: id,
         execServerUrl: `ws://127.0.0.1:${port}${secretPath}`, connectTimeoutMs: 10_000 });
       const info = await app.request('environment/info', { environmentId: id });

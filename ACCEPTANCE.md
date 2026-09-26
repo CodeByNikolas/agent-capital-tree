@@ -1,8 +1,12 @@
 # Acceptance evidence — Agent Capital Tree
 
+## OpenAI API-key setup — 26 September 2026
+
+The preferred local setup now uses `openaiApiKeyFile` with ephemeral host app-server authentication. ChatGPT login remains an alternative. All 26 runtime tests passed, and the real pinned Codex/Docker protocol fixture passed in both authentication modes. The API-key mode uses a synthetic credential and simulated Responses output; it verifies routing, credential isolation, no auth.json persistence and expiry, not real API authentication or inference. **Real API-key inference and native financial E2E remain open.** API billing is separate from onchain allowances.
+
 ## Native Codex runtime — 26 September 2026
 
-The default local setup now uses a dedicated normal Codex login without CLIProxyAPI. [Protocol evidence](deployments/native-codex-protocol.json) records a deterministic local Responses fixture driving the real pinned Codex app-server and Docker exec-server: scoped finance reads, isolated shell/file execution, host-file protection and expiry passed. The test-only executable substitutes fixture provider metadata; no real inference credential was used. All 24 runtime and seven plugin tests passed, and a fresh same-host installation passed the full build.
+The initial native setup used a dedicated normal Codex login without CLIProxyAPI. [Protocol evidence](deployments/native-codex-protocol.json) records a deterministic local Responses fixture driving the real pinned Codex app-server and Docker exec-server: scoped finance reads, isolated shell/file execution, host-file protection and expiry passed. The test-only executable substitutes fixture provider metadata; no real inference credential was used. All 24 runtime and seven plugin tests passed, and a fresh same-host installation passed the full build.
 
 **Normal-account inference and native financial E2E remain open.** The real-login smoke is implemented and awaits a separate Codex authentication. The earlier x402/swap receipts below prove the proxy-based financial flow and are not native-login evidence. Independent-machine, Codex desktop and Claude Code acceptance also remain open.
 
