@@ -20,7 +20,7 @@
     "Existing ACT-A/ACT-B vaults cannot manage or recover this USDC.",
     "x402 vault payment authorization is not yet implemented."
   ],
-  "deployer": "0x280Ca099242D7164cD001E4479D59f13CD0ea7c9",
+  "deployer": "0xbCea84Ed1DaFbb59AaF9797Cb4170394db688d34",
   "tokens": [
     {
       "address": "0x1c7D4B196Cb0C7B01d743Fbc6116a902379C7238",
@@ -31,13 +31,15 @@
       "status": "confirmed"
     },
     {
-      "symbol": "ACT-B",
-      "name": "Agent Capital Tree Valueless Demo B",
-      "address": "0xB09844F53E5ba103a1cF721626c759a394C7d423",
-      "decimals": 18,
-      "transactionHash": "0xc4501337068c3a9c505dd54294d2ebbfe4fe62fa75b6231874243d609abb0e2e",
+      "address": "0x892e744064E80211d4a69A9cc0f98FE6815157Cf",
+      "symbol": "DEMO-USD",
+      "name": "Valueless Demo Quote",
+      "decimals": 6,
       "status": "confirmed",
-      "blockNumber": 11780914
+      "testnetOnly": true,
+      "valueless": true,
+      "transactionHash": "0x8145768b6f02006613931f5ed81ebc1bc842b5d117a039882ce46af1291159f2",
+      "blockNumber": 11785024
     }
   ],
   "contracts": {},
@@ -45,6 +47,26 @@
     "name": "agentcapitalusdc.eth",
     "registry": "0x67b728a792e789a8978b30cf1b3b641f19354b43",
     "registrar": "0xa4449a0dd2b83007553d9b1d28b583a46a805a30",
-    "transactions": {}
+    "transactions": {
+      "commit": {
+        "hash": "0x812f783a4bc201d8a856747a47ffd18f158d8b84b640fb2b23f2fcc5c69dc0a3",
+        "block": 11785011
+      },
+      "mint": {
+        "hash": "0x898ad5335ed79ac8a035279a2d309f284ceebe8003e7cf48a5ed1ab16b0e29e6",
+        "block": 11785013
+      },
+      "approve": {
+        "hash": "0xf0e6f7b735e3ea711903b2db39893637f4c95b842ae53360f6a93fb8a02482a7",
+        "block": 11785015
+      },
+      "register": {
+        "hash": "0x387d16b5cc11093c7a4ed5b3da69b3d43fe095e4e9c4c5dc6cdc97dde7794f88",
+        "block": 11785020
+      }
+    },
+    "resource": "34706045413701427428164669263883747271233185103135947683781482824803209445376",
+    "expiry": "1821946980",
+    "subregistry": "0x0000000000000000000000000000000000000000"
   }
 }

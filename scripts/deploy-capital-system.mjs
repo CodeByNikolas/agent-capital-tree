@@ -37,7 +37,7 @@ try {
   if (manifest.tokens?.length !== 2 || manifest.tokens.some(token => token.status !== 'confirmed')) throw new Error('Verified configured tokens required');
   if (usdcVersion) {
     const usdc = new Contract('0x1c7D4B196Cb0C7B01d743Fbc6116a902379C7238', ['function decimals() view returns(uint8)', 'function symbol() view returns(string)'], rpc);
-    if (await usdc.decimals() !== 6n || await usdc.symbol() !== 'USDC' || !same(manifest.tokens[0].address, await usdc.getAddress())) throw new Error('Circle USDC configuration mismatch');
+    if (await usdc.decimals() !== 6n || await usdc.symbol() !== 'USDC' || !manifest.tokens.some(t => same(t.address, '0x1c7D4B196Cb0C7B01d743Fbc6116a902379C7238'))) throw new Error('Circle USDC configuration mismatch');
   }
   const tokens = manifest.tokens.map(token => token.address).sort((a,b) => BigInt(a) < BigInt(b) ? -1 : 1);
   const poolId = keccak256(AbiCoder.defaultAbiCoder().encode(['address','address','uint24','int24','address'], [...tokens, 3000, 60, ZeroAddress]));
@@ -59,7 +59,7 @@ try {
     console.log(JSON.stringify({ chainId: 11155111, contracts: manifest.contracts, poolId, addresses, namespaceResource: state.resource.toString(), deployerBalanceWei: (await rpc.getBalance(manifest.deployer)).toString(), mode:'inspect' }));
   } else {
     const keys = join(homedir(), '.agent-capital-tree/keys');
-    const signer = (await Wallet.fromEncryptedJson(await readFile(join(keys, 'deployer.keystore.json'),'utf8'), await readFile(join(keys, 'deployer.password'),'utf8'))).connect(rpc);
+    const signer = (await Wallet.fromEncryptedJson(await readFile(join(keys, usdcVersion ? 'jury-e2e.keystore.json' : 'deployer.keystore.json'),'utf8'), await readFile(join(keys, usdcVersion ? 'jury-e2e.password' : 'deployer.password'),'utf8'))).connect(rpc);
     if (!same(signer.address, manifest.deployer)) throw new Error('Unexpected deployer');
     const send = (name, request) => journaledTransaction({rpc,signer,directory:privateDir,name,request});
     async function deploy(name,args) {
