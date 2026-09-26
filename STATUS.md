@@ -4,6 +4,7 @@ As of 26 September 2026. Read this together with PLAN.md after context compactio
 
 ## Native Codex jury runtime — 26 September
 
+- Source `35813b0` is pushed. Both Contracts and TypeScript CI jobs passed ([run 36258055358](https://github.com/CodeByNikolas/agent-capital-tree/actions/runs/36258055358)).
 - Native Codex is now the default jury path. CLIProxyAPI is only used with explicit `inference: "cliproxyapi"`; native startup never reads its credential or calls the HomeBox token helper. Existing HomeBox services and login state are unchanged.
 - A host app-server holds a separate file-backed Codex login. Docker workers run the pinned exec-server with no network and only their private workspace mounted. Wallet signing and scoped finance credentials stay in the companion. The local execution relay requires an unguessable path and rejects browser origins. Threads verify their selected container environment; extra host tools, plugins and hooks are disabled.
 - `check-codex` checks the dedicated login, configured model metadata and Docker without financial writes. Native spawn preflight runs before allocation; invalid model names and unavailable login/model access fail before the coordinator can allocate funds. The CLI-generated `/workspace` trust entry and bundled system skills are allowed, while root MCP configuration and additional skills are rejected.

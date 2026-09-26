@@ -29,5 +29,11 @@
     "independent-machine installation",
     "Codex desktop",
     "Claude Code"
-  ]
+  ],
+  "sourceCommit": "35813b066ab327264fcf67de0326739605a0c92d",
+  "ci": {
+    "runId": 36258055358,
+    "contracts": "success",
+    "typescript": "success"
+  }
 }
