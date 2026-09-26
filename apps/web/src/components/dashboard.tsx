@@ -38,6 +38,13 @@ import {
 import { sepolia } from "viem/chains";
 import { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
+import { Sidebar as ShadcnSidebar, SidebarContent, SidebarFooter, SidebarGroup, SidebarGroupContent, SidebarHeader, SidebarInset, SidebarMenu, SidebarMenuButton, SidebarMenuItem, SidebarProvider, SidebarTrigger, useSidebar } from "@/components/ui/sidebar";
+import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from "@/components/ui/sheet";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { WalletControlsPanel, type WalletActionMode } from "@/components/wallet-controls";
 import { useWalletActions } from "@/lib/use-wallet-actions";
 import type {
@@ -72,6 +79,9 @@ interface DashboardProps {
   data: DashboardData;
   deployment: PublicDeployment;
   rootQuery: string | null;
+  nodeQuery?: string | null;
+  actionQuery?: WalletActionMode;
+  view: "overview" | "tree" | "activity" | "applications" | "setup";
 }
 
 const permissionLabels: Record<Permission, string> = {
@@ -443,87 +453,58 @@ function WalletControl({ wallet }: { wallet: InjectedWalletState }) {
   );
 }
 
-function Sidebar({
-  mobileOpen,
-  onNavigate,
-  workspaceLabel,
-  workspaceInitial,
-  runtimeLabel,
-}: {
-  mobileOpen: boolean;
-  onNavigate: () => void;
-  workspaceLabel: string;
-  workspaceInitial: string;
-  runtimeLabel: string;
-}) {
+const views = [
+  { id: "overview", title: "Overview", path: "/", icon: Layers3 },
+  { id: "tree", title: "Agent tree", path: "/tree", icon: GitBranch },
+  { id: "activity", title: "Activity", path: "/activity", icon: ActivityIcon },
+  { id: "applications", title: "Applications", path: "/applications", icon: Coins },
+  { id: "setup", title: "Setup & control", path: "/setup", icon: ShieldCheck },
+] as const;
+
+function routeHref(path: string, rootQuery: string | null, nodeId?: string | null): string {
+  const params = new URLSearchParams();
+  if (rootQuery) params.set("root", rootQuery);
+  else params.set("preview", "1");
+  if (nodeId) params.set("node", nodeId);
+  return `${path}?${params}`;
+}
+
+function AppSidebar({ view, rootQuery, selectedId, rootLabel, runtimeLabel }: { view: DashboardProps["view"]; rootQuery: string | null; selectedId: string; rootLabel: string; runtimeLabel: string }) {
+  const { setOpenMobile } = useSidebar();
   return (
-    <aside className={`sidebar${mobileOpen ? " sidebar-mobile-open" : ""}`}>
-      <a className="brand" href="#overview" aria-label="Agent Capital Tree overview">
-        <span className="brand-mark" aria-hidden="true">
-          <span />
-          <span />
-          <span />
-          <span />
-        </span>
-        <span className="brand-wordmark">agent capital<span>tree</span></span>
-      </a>
-
-      <div className="workspace-picker">
-        <span className="workspace-avatar">{workspaceInitial}</span>
-        <span className="workspace-copy">
-          <span className="workspace-kicker">Workspace</span>
-          <strong>{workspaceLabel}</strong>
-        </span>
-      </div>
-
-      <div className="sidebar-group-label">Control room</div>
-      <nav className="primary-nav" aria-label="Primary navigation">
-        <a className="nav-link nav-link-active" href="#overview" aria-current="page" onClick={onNavigate}>
-          <Layers3 size={17} aria-hidden="true" /> Overview
-          <span className="nav-active-mark" />
-        </a>
-        <a className="nav-link" href="#capital-tree" onClick={onNavigate}><GitBranch size={17} aria-hidden="true" /> Capital tree</a>
-        <a className="nav-link" href="#activity" onClick={onNavigate}><ActivityIcon size={17} aria-hidden="true" /> Activity</a>
-      </nav>
-
-      <div className="sidebar-group-label sidebar-group-spaced">Workspace</div>
-      <nav className="primary-nav" aria-label="Workspace navigation">
-        <a className="nav-link" href="#positions" onClick={onNavigate}><Coins size={17} aria-hidden="true" /> Positions</a>
-        <a className="nav-link" href="#setup" onClick={onNavigate}><Command size={17} aria-hidden="true" /> Plugin setup</a>
-      </nav>
-
-      <div className="sidebar-spacer" />
-      <div className="runtime-card">
-        <div className="runtime-card-icon"><Unplug size={15} aria-hidden="true" /></div>
-        <div>
-          <strong>{runtimeLabel}</strong>
-          <span>Wallet authority and agent runtime are separate.</span>
-        </div>
-        <span className={`runtime-status-dot${runtimeLabel === "Runtime connected" ? " runtime-status-dot-active" : runtimeLabel === "Runtime status unknown" ? " runtime-status-dot-unknown" : ""}`} aria-label={runtimeLabel} />
-      </div>
-      <div className="sidebar-footer">
-        <span className="version-label">SEP · TEST NETWORK</span>
-        <IconButton label="Help and documentation"><CircleHelp size={17} aria-hidden="true" /></IconButton>
-      </div>
-    </aside>
+    <ShadcnSidebar collapsible="offcanvas" className="app-sidebar">
+      <SidebarHeader className="app-sidebar-header">
+        <Link href={routeHref("/", rootQuery)} className="app-brand" onClick={() => setOpenMobile(false)} aria-label="Agent Capital Tree overview">
+          <span className="app-brand-mark" aria-hidden="true"><GitBranch size={22} /></span>
+          <span>agent capital <strong>tree</strong></span>
+        </Link>
+        <div className="app-workspace"><span className="app-workspace-symbol">{rootLabel.slice(0, 1).toUpperCase()}</span><span><small>Current root</small><strong>{rootLabel}</strong></span></div>
+      </SidebarHeader>
+      <SidebarContent>
+        <SidebarGroup>
+          <SidebarGroupContent>
+            <SidebarMenu aria-label="Primary navigation">
+              {views.map(({ id, title, path, icon: Icon }) => (
+                <SidebarMenuItem key={id}>
+                  <SidebarMenuButton render={<Link href={routeHref(path, rootQuery, selectedId)} onClick={() => setOpenMobile(false)} />} isActive={view === id} aria-current={view === id ? "page" : undefined}>
+                    <Icon aria-hidden="true" /><span>{title}</span>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              ))}
+            </SidebarMenu>
+          </SidebarGroupContent>
+        </SidebarGroup>
+      </SidebarContent>
+      <SidebarFooter className="app-sidebar-footer"><Badge variant="outline">Sepolia test network</Badge><span>{runtimeLabel}</span><small>Wallet authority and runtime connectivity are separate.</small></SidebarFooter>
+    </ShadcnSidebar>
   );
 }
 
-function Topbar({ mobileOpen, onMenuToggle, source, wallet }: { mobileOpen: boolean; onMenuToggle: () => void; source: DataSource; wallet: InjectedWalletState }) {
+function Topbar({ view, source, wallet, rootQuery, selectedId }: { view: DashboardProps["view"]; source: DataSource; wallet: InjectedWalletState; rootQuery: string | null; selectedId: string }) {
   return (
-    <header className="topbar">
-      <div className="breadcrumb">
-        <span>Workspace</span><span className="breadcrumb-divider">/</span><strong>Treasury overview</strong>
-      </div>
-      <div className="topbar-actions">
-        <span className="topbar-environment"><span />{source === "preview" ? "Preview workspace" : source === "direct-rpc" ? "Direct RPC view" : "Local diagnostics"}</span>
-        <a className="topbar-wallet-actions" href="#wallet-controls" aria-label="Wallet actions" title="Create or fund roots, spawn a child vault, or recover owner control">
-          <ShieldCheck size={15} aria-hidden="true" />
-          <span>Wallet actions</span>
-        </a>
-        <WalletControl wallet={wallet} />
-        <button className="mobile-menu icon-button" type="button" aria-label={mobileOpen ? "Close menu" : "Open menu"} aria-expanded={mobileOpen} onClick={onMenuToggle}><Menu size={19} /></button>
-      </div>
+    <header className="app-topbar">
+      <div className="app-topbar-title"><SidebarTrigger aria-label="Toggle navigation" /><span>{views.find((item) => item.id === view)?.title}</span><Badge variant="outline">{source === "preview" ? "Preview workspace" : source === "direct-rpc" ? "Direct RPC view" : "Local diagnostic"}</Badge></div>
+      <div className="app-topbar-actions"><Link className="app-manage-link" href={routeHref("/setup", rootQuery, selectedId)}>Wallet actions</Link><WalletControl wallet={wallet} /></div>
     </header>
   );
 }
@@ -534,20 +515,20 @@ function PreviewNotice({ data, deployment }: { data: DashboardData; deployment: 
     <div className="preview-notice" role="note">
       <span className="notice-symbol"><CircleDashed size={16} aria-hidden="true" /></span>
       <p><strong>Preview workspace.</strong> Balances, ENS labels, policies, LP positions and activity below are illustrative sample records. {deployment.contractsConfigured ? "Preview records cannot be used for wallet actions; use the Root ID control below to load live chain state." : "Controller deployment is still pending."}</p>
-      <a href="#setup">Why preview data? <ArrowRight size={13} aria-hidden="true" /></a>
+      <Link href="/setup?preview=1">Why preview data? <ArrowRight size={13} aria-hidden="true" /></Link>
     </div>
   );
 }
 
-function RootAccessBar({ rootId, defaultRootId }: { rootId: string | null; defaultRootId: string | null }) {
+function RootAccessBar({ rootId, defaultRootId, path }: { rootId: string | null; defaultRootId: string | null; path: string }) {
   const alternateHref = rootId
-    ? "/?preview=1"
+    ? `${path}?preview=1`
     : defaultRootId
-      ? `/?root=${encodeURIComponent(defaultRootId)}`
+      ? `${path}?root=${encodeURIComponent(defaultRootId)}`
       : null;
   return (
     <div className="root-access-bar" aria-label="Root navigation">
-      <form action="/" method="get" className="root-access-form">
+      <form action={path} method="get" className="root-access-form">
         <label htmlFor="root-id">Root ID</label>
         <input
           id="root-id"
@@ -732,6 +713,7 @@ function TreeCard({
   return (
     <button
       className={`tree-node${selected ? " tree-node-selected" : ""}`}
+      data-node-id={node.id}
       type="button"
       onClick={() => onSelect(node.id)}
       aria-pressed={selected}
@@ -1098,7 +1080,9 @@ function ActivityPanel({
           {(feed?.source === "unavailable" || loadMoreError) && <button className="button button-secondary button-small" type="button" disabled={loading} onClick={onRetry}>{loading ? "Checking…" : "Retry history"}</button>}
         </div>
       </div>
-      <ol className="activity-list" id="activity-list">
+      <Table className="activity-list" id="activity-list">
+        <TableHeader><TableRow><TableHead>Event</TableHead><TableHead>Vault and details</TableHead><TableHead>Amount and block</TableHead><TableHead>Source</TableHead></TableRow></TableHeader>
+        <TableBody>
         {data.activity.map((activity, index) => {
           const icon = activity.kind === "capital-assigned"
             ? <ArrowDownLeft size={15} />
@@ -1110,13 +1094,13 @@ function ActivityPanel({
                   ? <ShieldCheck size={15} />
                   : <Coins size={15} />;
           return (
-            <li className="activity-row" key={activity.id}>
-              <span className={`activity-icon activity-icon-${index}`}>{icon}</span>
-              <div className="activity-copy">
+            <TableRow className="activity-row" key={activity.id}>
+              <TableCell><span className={`activity-icon activity-icon-${index}`}>{icon}</span><span className="sr-only">{activityLabels[activity.kind]}</span></TableCell>
+              <TableCell><div className="activity-copy">
                 <strong>{activityLabels[activity.kind]} <span>· {activity.nodeLabel}</span></strong>
                 <small>{activity.description}</small>
-              </div>
-              <div className="activity-meta">
+              </div></TableCell>
+              <TableCell><div className="activity-meta">
                 {activity.amount && <strong>{formatAmount(activity.amount)} <span>{activity.amount.symbol}</span></strong>}
                 <time dateTime={activity.timestamp}>{activity.timestamp ? `${new Date(activity.timestamp).toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit", timeZone: "UTC" })} UTC` : activity.blockNumber !== undefined ? `Block ${activity.blockNumber.toLocaleString()}` : ""}</time>
                 {activity.finality && <small className={`activity-finality activity-finality-${activity.finality}`}>{activity.finality.replaceAll("_", " ")}</small>}
@@ -1125,12 +1109,13 @@ function ActivityPanel({
                     Receipt <ExternalLink size={9} aria-hidden="true" />
                   </a>
                 )}
-              </div>
-              <span className="activity-source">{activity.source === "preview" ? "PREVIEW" : activity.source === "multi-baas" ? "INDEXED" : "LOCAL"}</span>
-            </li>
+              </div></TableCell>
+              <TableCell><Badge variant="outline">{activity.source === "preview" ? "Preview" : activity.source === "multi-baas" ? "Indexed" : "Local"}</Badge></TableCell>
+            </TableRow>
           );
         })}
-      </ol>
+        </TableBody>
+      </Table>
       {data.activity.length === 0 && <p className="activity-empty">{loading ? "Loading activity history…" : data.activitySource === "preview" ? "Preview records are shown above when available." : feed?.source === "unavailable" ? "Indexed activity is unavailable for this root." : page ? "No indexed activity is available for this root within the covered block range." : "No activity records are available for this root yet."}</p>}
       {loadMoreError && feed?.source !== "unavailable" && <p className="activity-load-error" role="alert">{loadMoreError}</p>}
       {page?.hasMore && <button className="button button-secondary button-small activity-load-more" type="button" disabled={loadingMore} onClick={onLoadMore}>{loadingMore ? "Loading…" : "Load more activity"}</button>}
@@ -1208,21 +1193,21 @@ function ContractSetupPanel({ data, deployment, actions, wallet, liveStateReady 
   );
 }
 
-function Footer({ source, walletConnected }: { source: DataSource; walletConnected: boolean }) {
+function Footer({ source, walletConnected, rootQuery }: { source: DataSource; walletConnected: boolean; rootQuery: string | null }) {
   return (
     <footer className="dashboard-footer">
       <span><span className="footer-indicator" /> CONTROL PANEL · {source === "preview" ? "READ-ONLY PREVIEW" : source === "direct-rpc" ? "DIRECT RPC VIEW" : "LOCAL DIAGNOSTICS"}</span>
       <span>{walletConnected ? "Owner authority remains with your connected wallet" : "Connect your wallet to review owner controls"}</span>
-      <a href="#setup">Integration status <ArrowUpRight size={12} aria-hidden="true" /></a>
+      <Link href={routeHref("/setup", rootQuery)}>Integration status <ArrowUpRight size={12} aria-hidden="true" /></Link>
     </footer>
   );
 }
 
-export function Dashboard({ data: initialData, deployment, rootQuery }: DashboardProps) {
+export function Dashboard({ data: initialData, deployment, rootQuery, nodeQuery, actionQuery, view }: DashboardProps) {
   const router = useRouter();
-  const [selectedId, setSelectedId] = useState(initialData.rootId);
-  const [mobileOpen, setMobileOpen] = useState(false);
-  const [walletActionMode, setWalletActionMode] = useState<WalletActionMode>(null);
+  const [selectedId, setSelectedId] = useState(nodeQuery ?? initialData.rootId);
+  const [detailOpen, setDetailOpen] = useState(false);
+  const [walletActionMode, setWalletActionMode] = useState<WalletActionMode>(actionQuery ?? null);
   const [liveSnapshot, setLiveSnapshot] = useState<{ rootId: string; data: DashboardData } | null>(null);
   const [readState, setReadState] = useState<{ rootId: string | null; status: "idle" | "loading" | "ready" | "error"; error: string | null }>({ rootId: null, status: "idle", error: null });
   const [activityState, setActivityState] = useState<{ rootId: string | null; feed: ActivityFeedResult | null; loading: boolean; loadingMore: boolean; loadMoreError: string | null }>({ rootId: null, feed: null, loading: false, loadingMore: false, loadMoreError: null });
@@ -1262,7 +1247,6 @@ export function Dashboard({ data: initialData, deployment, rootQuery }: Dashboar
   const canTighten = Boolean(liveStateReady && selectedNode && (selectedNode.parentId ? parentCanRestrict : ownerConnected));
   const canRevoke = Boolean(liveStateReady && selectedNode?.parentId && selectedNode.state !== "revoked" && selectedNode.state !== "expired" && parentCanRestrict);
   const canRecover = Boolean(liveStateReady && ownerConnected);
-  const activeVaults = data.nodes.filter((node) => node.state === "active").length;
   const runtimeConnected = data.nodes.some((node) => node.runtime === "connected");
   const runtimeUnknown = data.nodes.some((node) => node.runtime === "unknown");
   const runtimeLabel = runtimeConnected ? "Runtime connected" : runtimeUnknown ? "Runtime status unknown" : "Runtime not linked";
@@ -1413,36 +1397,37 @@ export function Dashboard({ data: initialData, deployment, rootQuery }: Dashboar
 
   const liveError = currentReadState.status === "error" ? currentReadState.error : null;
 
+  const path = view === "overview" ? "/" : `/${view}`;
+  const requestAction = (mode: Exclude<WalletActionMode, null>) => {
+    setDetailOpen(false);
+    setWalletActionMode(mode);
+    router.push(`${routeHref("/setup", rootQuery, selectedNode.id)}&action=${mode}`);
+  };
+
   return (
-    <div className="app-shell">
-      <Sidebar
-        mobileOpen={mobileOpen}
-        onNavigate={() => setMobileOpen(false)}
-        workspaceLabel={`${rootNode?.label ?? "Treasury"} · ${data.source === "preview" ? "Preview" : "Root"}`}
-        workspaceInitial={(rootNode?.label ?? "T").slice(0, 1).toUpperCase()}
-        runtimeLabel={runtimeLabel}
-      />
-      <main className="main-shell">
-        <Topbar mobileOpen={mobileOpen} onMenuToggle={() => setMobileOpen((open) => !open)} source={data.source} wallet={wallet} />
+    <SidebarProvider>
+      <AppSidebar view={view} rootQuery={rootQuery} selectedId={selectedNode.id} rootLabel={rootNode?.label ?? "Treasury"} runtimeLabel={runtimeLabel} />
+      <SidebarInset className="main-shell">
+        <Topbar view={view} source={data.source} wallet={wallet} rootQuery={rootQuery} selectedId={selectedNode.id} />
         <div className="dashboard-content">
           <PreviewNotice data={data} deployment={deployment} />
-          <RootAccessBar rootId={rootQuery} defaultRootId={deployment.defaultRootId} />
+          <RootAccessBar rootId={rootQuery} defaultRootId={deployment.defaultRootId} path={path} />
           {rootQuery && <LiveReadNotice rootId={rootQuery} data={data} loading={currentReadState.status === "loading"} error={liveError} onRetry={() => setTreeRetry((value) => value + 1)} />}
-          <OverviewHeader activeVaults={activeVaults} positions={data.positions.length} source={data.source} />
-          <SummaryMetrics data={data} />
-
-          <div className="primary-grid">
-            <CapitalTree data={data} selectedId={selectedNode.id} onSelect={setSelectedId} canSpawnVault={canSpawnVault} onRequestSpawn={() => {
-              setWalletActionMode("spawn-child");
-              router.push("#wallet-controls");
-            }} />
-            <MandatePanel data={data} node={selectedNode} canTighten={canTighten} canRevoke={canRevoke} canRecover={canRecover} onRequestAction={(mode) => {
-              setWalletActionMode(mode);
-              router.push("#wallet-controls");
-            }} />
-          </div>
-
-          <div className="secondary-grid">
+          {view === "overview" && <>
+            <div className="page-heading"><span className="page-kicker">Delegated capital · Sepolia</span><h1>Capital under clear authority.</h1><p>See what each vault holds, which mandates are active, and where owner control stands.</p></div>
+            <SummaryMetrics data={data} />
+            <div className="overview-lower">
+              <Card><CardHeader><CardTitle>Agent tree</CardTitle><CardDescription>Capital moves through bounded vaults, one delegation at a time.</CardDescription></CardHeader><CardContent><div className="overview-node-list">{mobileTreeOrder(data.nodes).slice(0, 5).map((node) => <div key={node.id}><span className="overview-node-indent" style={{ width: node.depth * 20 }} aria-hidden="true" /><GitBranch size={17} aria-hidden="true" /><strong>{node.label}</strong><Badge variant="outline">{node.source === "preview" ? "Example " : ""}{vaultStateLabels[node.state]}</Badge></div>)}</div><Button render={<Link href={routeHref("/tree", rootQuery, selectedNode.id)} />} variant="outline">Explore agent tree <ArrowRight data-icon="inline-end" /></Button></CardContent></Card>
+              <Card><CardHeader><CardTitle>Owner control</CardTitle><CardDescription>Owner recovery is separate from ENS agent roles.</CardDescription></CardHeader><CardContent><p>{data.rootOwner ? `Recorded owner ${shortAddress(data.rootOwner)}` : "Connect a wallet and load a root to review its recorded owner."}</p><p>Recovery may require a separate LP close, then one or more explicit transactions.</p><Button render={<Link href={routeHref("/setup", rootQuery, selectedNode.id)} />} variant="outline">Review setup & control <ArrowRight data-icon="inline-end" /></Button></CardContent></Card>
+            </div>
+          </>}
+          {view === "tree" && <>
+            <div className="page-heading"><span className="page-kicker">Authority & allocation</span><h1>Agent tree</h1><p>Select a vault to inspect current funds, EAC permissions, and the inherited limits that narrow its mandate.</p></div>
+            <CapitalTree data={data} selectedId={selectedNode.id} onSelect={(id) => { setSelectedId(id); setDetailOpen(true); }} canSpawnVault={canSpawnVault} onRequestSpawn={() => requestAction("spawn-child")} />
+            <Sheet open={detailOpen} onOpenChange={(open) => { setDetailOpen(open); if (!open) requestAnimationFrame(() => document.querySelector<HTMLButtonElement>(`${window.matchMedia("(max-width: 720px)").matches ? ".tree-canvas-mobile" : ".tree-canvas-desktop"} .tree-node[data-node-id="${CSS.escape(selectedNode.id)}"]`)?.focus()); }}><SheetContent className="node-detail-sheet"><SheetHeader><SheetTitle>{selectedNode.ensName}</SheetTitle><SheetDescription>Current vault funds, authority, and limits. {sourceLabel(selectedNode.source)}.</SheetDescription></SheetHeader><div className="node-detail-scroll"><MandatePanel data={data} node={selectedNode} canTighten={canTighten} canRevoke={canRevoke} canRecover={canRecover} onRequestAction={requestAction} /></div></SheetContent></Sheet>
+          </>}
+          {view === "activity" && <>
+            <div className="page-heading"><span className="page-kicker">Indexed on-chain events</span><h1>Activity</h1><p>Capital movement, policy changes, and Uniswap actions for this root. Current balances and permissions come from direct RPC reads.</p></div>
             <ActivityPanel
               data={dashboardData}
               feed={activityFeed}
@@ -1452,10 +1437,16 @@ export function Dashboard({ data: initialData, deployment, rootQuery }: Dashboar
               onRetry={() => setActivityRetry((value) => value + 1)}
               onLoadMore={() => void loadEarlierActivity()}
             />
+          </>}
+          {view === "applications" && <>
+            <div className="page-heading"><span className="page-kicker">Bounded applications</span><h1>Applications</h1><p>Delegated capital can serve a specific mandate. The current integrated application is bounded Uniswap v4 activity.</p></div>
             <PositionsPanel data={data} actions={actions} walletOnSepolia={walletOnSepolia} />
-          </div>
-
-          <WalletControlsPanel
+            <Card className="future-applications"><CardHeader><CardTitle>Other uses of delegated capital</CardTitle><CardDescription>Future possibilities, with no controls or integrations in this release.</CardDescription></CardHeader><CardContent><p>Payments for services and other agent expenses may fit the same vault model later. Today the backend supports delegation and recovery plus bounded Uniswap operations.</p></CardContent></Card>
+          </>}
+          {view === "setup" && <>
+            <div className="page-heading"><span className="page-kicker">Wallet & integration</span><h1>Setup & control</h1><p>Connect the recorded owner or an authorized agent to manage the selected vault. Each available action is simulated before signing.</p></div>
+            <div className="setup-selected"><label htmlFor="setup-node">Selected vault</label><select id="setup-node" value={selectedNode.id} onChange={(event) => setSelectedId(event.target.value)}>{data.nodes.map((node) => <option key={node.id} value={node.id}>{node.ensName}</option>)}</select><span>{sourceLabel(data.source)}</span></div>
+            <WalletControlsPanel
             data={data}
             deployment={deployment}
             selectedNode={selectedNode}
@@ -1468,13 +1459,14 @@ export function Dashboard({ data: initialData, deployment, rootQuery }: Dashboar
             onModeChange={setWalletActionMode}
             onRootCreated={(rootId) => {
               setWalletActionMode(null);
-              router.push(`/?root=${encodeURIComponent(rootId)}`);
+              router.push(`/setup?root=${encodeURIComponent(rootId)}`);
             }}
           />
           <ContractSetupPanel data={dashboardData} deployment={deployment} actions={actions} wallet={wallet} liveStateReady={liveStateReady} />
-          <Footer source={data.source} walletConnected={walletOnSepolia} />
+          </>}
+          <Footer source={data.source} walletConnected={walletOnSepolia} rootQuery={rootQuery} />
         </div>
-      </main>
-    </div>
+      </SidebarInset>
+    </SidebarProvider>
   );
 }
