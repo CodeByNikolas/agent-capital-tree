@@ -26,7 +26,6 @@ const capture = (program, args) => new Promise((resolve, reject) => {
   child.once('error', reject);
   child.once('exit', code => code === 0 ? resolve(output.trim()) : reject(new Error(`${program} failed`)));
 });
-if ((await capture(binary, ['--version'])) !== 'codex-cli 0.154.0') throw new Error('expected Codex 0.154.0');
 const dockerArch = await capture('docker', ['info', '--format', '{{.Architecture}}']);
 if ({ aarch64: 'arm64', arm64: 'arm64', x86_64: 'amd64', amd64: 'amd64' }[dockerArch] !== architecture) {
   throw new Error('Codex binary architecture does not match Docker daemon');
@@ -47,5 +46,9 @@ try {
   });
   const imageId = (await readFile(iid, 'utf8')).trim();
   if (!/^sha256:[a-f0-9]{64}$/.test(imageId)) throw new Error('invalid built image ID');
+  const version = await capture('docker', ['run', '--rm', '--network', 'none', '--read-only',
+    '--cap-drop=ALL', '--security-opt=no-new-privileges', '--user=65534:65534',
+    '--entrypoint', '/opt/act/codex', imageId, '--version']);
+  if (version !== 'codex-cli 0.154.0') throw new Error('expected Codex 0.154.0');
   process.stdout.write(`${imageId}\n`);
 } finally { await rm(temp, { recursive: true, force: true }); }

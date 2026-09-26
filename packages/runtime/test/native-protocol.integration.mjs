@@ -1,5 +1,6 @@
 // Deterministic local Responses fixture, real pinned Codex and Docker. No inference account is used.
 import assert from 'node:assert/strict';
+import { randomUUID } from 'node:crypto';
 import { createServer } from 'node:http';
 import { mkdtemp, mkdir, writeFile, readFile, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
@@ -8,7 +9,7 @@ import { NativeCodexLauncher, WorkerSessions, companionServer, validateNativeCod
 
 const binary = process.env.ACT_CODEX_BINARY;
 const imageId = process.env.ACT_WORKER_IMAGE_ID;
-assert.ok(isAbsolute(binary ?? ''), 'set ACT_CODEX_BINARY to pinned native Linux Codex');
+assert.ok(isAbsolute(binary ?? ''), 'set ACT_CODEX_BINARY to pinned native host Codex');
 assert.match(imageId ?? '', /^sha256:[a-f0-9]{64}$/);
 const root = await mkdtemp(join(tmpdir(), 'act-native-protocol-'));
 const home = join(root, 'login');
@@ -18,6 +19,9 @@ await mkdir(home, { mode: 0o700 });
 await mkdir(workspace, { recursive: true, mode: 0o700 });
 const sentinel = join(root, 'host-only.txt');
 await writeFile(sentinel, 'HOST_ONLY_CANARY');
+// Docker's /tmp is writable; macOS host tmpdir paths need not be writable inside Linux.
+const containerOnlyTarget = `/tmp/act-container-only-${randomUUID()}.txt`;
+await assert.rejects(readFile(containerOnlyTarget), { code: 'ENOENT' });
 let requests = 0, calls = 0, fixtureError, hang = false;
 const inventory = new Set();
 const fixture = createServer(async (req, res) => {
@@ -44,7 +48,7 @@ const fixture = createServer(async (req, res) => {
       assert.match(JSON.stringify(outputs), /ISOLATED/);
       assert.ok(inventory.has('apply_patch'));
       output = [{ type: 'custom_tool_call', id: 'ctc_patch', call_id: 'call_patch', name: 'apply_patch',
-        input: `*** Begin Patch\n*** Add File: /workspace/patch-proof.txt\n+REMOTE_PATCH\n*** Add File: ${root}/must-not-exist-on-host.txt\n+CONTAINER_ONLY\n*** End Patch`, status: 'completed' }];
+        input: `*** Begin Patch\n*** Add File: /workspace/patch-proof.txt\n+REMOTE_PATCH\n*** Add File: ${containerOnlyTarget}\n+CONTAINER_ONLY\n*** End Patch`, status: 'completed' }];
     } else if (step === 2) {
       assert.match(JSON.stringify(outputs), /Success/);
       output = [{ type: 'function_call', id: 'fc_finance', call_id: 'call_finance', namespace: 'capitalTree', name: 'getPaymentServices', arguments: '{}', status: 'completed' }];
@@ -104,7 +108,7 @@ try {
   assert.equal(await readFile(join(workspace, 'fixture-proof.txt'), 'utf8'), '/workspace\n');
   await launcher.close();
   assert.equal(await readFile(join(workspace, 'patch-proof.txt'), 'utf8'), 'REMOTE_PATCH\n');
-  await assert.rejects(readFile(join(root, 'must-not-exist-on-host.txt')), { code: 'ENOENT' });
+  await assert.rejects(readFile(containerOnlyTarget), { code: 'ENOENT' });
   assert.ok(revoked >= 1);
   await validateNativeCodexHome(home);
   await validateNativeCodexHome(home);

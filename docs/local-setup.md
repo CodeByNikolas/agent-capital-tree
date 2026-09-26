@@ -148,7 +148,7 @@ The remainder is the Linux/Codex CLI path. On Windows, use WSL2 with Linux-local
 
 You need a Sepolia-capable browser wallet, Sepolia ETH for wallet and operator transactions, and a Sepolia RPC URL. **Preferred inference setup: an OpenAI API key** with API billing and access to your chosen Codex model. API inference is billed separately from the child’s USDC allowance. ChatGPT/Codex login is an alternative; HomeBox CLIProxyAPI remains optional. Choose an exact model available through your selected authentication; `gpt-6-luna` with high reasoning was verified through the official OpenAI API; check current access to your chosen model.
 
-On a Linux host, install Node 22, pnpm 11.13.1, Docker accessible to your non-root user, and **Codex CLI 0.154.0**. Check the prerequisites before continuing:
+On a Linux or macOS host, install Node 22, pnpm 11.13.1, Docker accessible to your non-root user, and **Codex CLI 0.154.0**. Check the prerequisites before continuing:
 
 ```sh
 node --version
@@ -158,15 +158,15 @@ docker info --format '{{.Architecture}}'
 
 ```
 
-Use the [official Codex CLI installation guide](https://developers.openai.com/codex/cli/) to obtain the CLI, but pin version `0.154.0` for this worker image. Do not run an unreviewed install script. The image builder and native launcher require the **same Linux ELF executable**, not an npm shell wrapper, for the same architecture as the Docker daemon. Locate it and independently verify its SHA-256 against your trusted release source. The hash printed by your own downloaded file is not an independent expected hash.
+Use the [official Codex CLI installation guide](https://developers.openai.com/codex/cli/) to obtain the CLI, but pin version `0.154.0` for this worker image. Do not run an unreviewed install script. The image builder requires a **Linux ELF executable** matching the Docker daemon architecture. The native launcher requires a **native host executable** of the same version, not an npm shell wrapper. On macOS these are separate Darwin and Linux binaries; on Linux the same executable can serve both roles. Independently verify the binary SHA-256 values against your trusted release source. The hash printed by your own downloaded file is not an independent expected hash.
 
 ```sh
 git clone https://github.com/CodeByNikolas/agent-capital-tree.git
 cd agent-capital-tree
 pnpm install --frozen-lockfile --ignore-scripts
 pnpm build
-ACT_CODEX_BINARY=/absolute/path/to/linux-codex
-node packages/runtime/build-worker-image.mjs "$ACT_CODEX_BINARY" TRUSTED_64_CHARACTER_SHA256
+ACT_WORKER_CODEX_BINARY=/absolute/path/to/linux-codex
+node packages/runtime/build-worker-image.mjs "$ACT_WORKER_CODEX_BINARY" TRUSTED_64_CHARACTER_SHA256
 
 ```
 
@@ -223,7 +223,7 @@ ${EDITOR:-vi} "$ACT_SETUP_DIR/config.json"
 
 ```
 
-Use absolute paths for `codexBinary`, `codexHome`, and the CLI commands below. Set `codexBinary` to the same verified `ACT_CODEX_BINARY` used to build the image and run the worker app-server; do not use a `command -v codex` path that resolves to a wrapper. Do not put the OpenAI key, Codex home, operator key, or `root-session.token` in Git. Example config; replace every placeholder and make `runtimeRoot` a **new, persistent** private directory for this one root and controller:
+Use absolute paths for `codexBinary`, `codexHome`, and the CLI commands below. Set `codexBinary` to the verified native host executable used to run the worker app-server (Darwin on macOS, Linux ELF on Linux); do not use a `command -v codex` path that resolves to a wrapper. Do not put the OpenAI key, Codex home, operator key, or `root-session.token` in Git. Example config; replace every placeholder and make `runtimeRoot` a **new, persistent** private directory for this one root and controller:
 
 ```json
 {
@@ -232,7 +232,7 @@ Use absolute paths for `codexBinary`, `codexHome`, and the CLI commands below. S
   "rpcUrl": "https://your-sepolia-rpc.example",
   "controller": "0xeB2041B486D66aB91140FFcF54B66513D8eC40c8",
   "inference": "codex",
-  "codexBinary": "/absolute/path/to/linux-codex",
+  "codexBinary": "/absolute/path/to/native-codex",
   "codexHome": "/absolute/private/codex-home",
   "openaiApiKeyFile": "/absolute/private/openai-api-key",
   "imageId": "sha256:YOUR_BUILT_IMAGE_ID",

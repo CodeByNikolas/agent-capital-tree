@@ -1,3 +1,9 @@
+## Native macOS autonomous worker checks — 27 September 2026
+
+- Worker-image builds now verify the pinned Linux Codex version inside the built, network-isolated Docker container before reporting its image ID. SHA-256, ELF and Docker architecture checks remain enforced. The host app-server uses native Codex; macOS and Linux container binaries share version 0.154.0.
+- The deterministic execution fixture now writes its container-only isolation probe under Docker's writable `/tmp`, independently of the host's temporary-directory layout. Host-file exclusion, authentication isolation, network isolation, scoped tool forwarding and expiry checks remain enforced.
+- Validation on macOS: actual Docker image build and pinned-version check; deterministic native protocol integration with one scoped call and expiry revocation; real OpenAI native-worker read-only smoke. The focused builder subprocess regression covers successful container verification and rejection of an incorrect version. These checks do not establish a new autonomous financial payment result.
+
 ## Overview vault ENS — 27 September 2026
 
 - The Overview/Setup funding section now displays the full vault ENS name alongside its contract address. Both have independent copy buttons.
