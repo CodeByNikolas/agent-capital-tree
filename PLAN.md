@@ -157,6 +157,7 @@ Sind Freigaben nicht erfüllt, den konkreten Hinderungsgrund in STATUS.md festha
 
 ### Contracts und Sicherheit
 
+- Neue Finanzabläufe zuerst auf einem wegwerfbaren lokalen Sepolia-Fork prüfen. Erst danach öffentliches Sepolia für echte Wallets, MultiBaas-Indexierung und die veröffentlichte App nutzen; ein Fork ersetzt diese externen Integrationsnachweise nicht. Keine zweite Entwicklungsplattform dafür aufbauen.
 - Kapital bleibt über Transfers erhalten; kein Double-Spend, keine Doppelallokation bei wiederholtem Spawn. Ein Child kann weder Root-/Sibling-Bestände noch deren Freigaben verwenden.
 - Kindregeln werden ausschließlich enger. Vorfahreneinschränkung und Widerruf wirken auf vorhandene Nachfahren, ein Sibling bleibt unabhängig.
 - Direkte RPC-Aufrufe und frei gefälschte MCP-IDs umgehen keine Autorisierung. Resource-Wechsel, Ablauf, Detachment, Namens-/NFT-Transfers und Operator-Approvals erweitern keine Finance-Rechte.
@@ -192,7 +193,7 @@ Zusätzlich mobile Darstellung, Tastaturbedienung, lesbare Zustände, abgelehnte
 
 Bereits verifiziert: GitHub-Login CodeByNikolas, Vercel-Zugriff auf TUM Blockchain Club, Node/pnpm/Docker/Codex, lokales Playwright-Chromium/Xvfb und Browserbase-Zugang. Foundry muss projekt-/nutzerlokal bereitgestellt werden. Zugang ist kein Nachweis, dass die neue Anwendung bereits existiert.
 
-Noch erforderlich: ausreichend Sepolia-ETH für den frischen MultiBaas-Abnahme-Root. ENS-Registrierung, Instanz-URL, administrative Ersteinrichtung und eingeschränkter Laufzeit-Key sind inzwischen vorhanden; tatsächliche Nachweise und offene Schritte stehen in STATUS.md. Einen dedizierten RPC nur bei nachgewiesenem Bedarf ergänzen. Uniswap-API-Key ist für direkte Contracts nicht nötig. Keine persönlichen Seed-Phrases anfordern und keine Modellzugänge anderer Anbieter auf HomeBox einrichten.
+Sepolia-Funding für den frischen MultiBaas-Abnahme-Root ist eingegangen. ENS-Registrierung, Instanz-URL, administrative Ersteinrichtung und eingeschränkter Laufzeit-Key sind vorhanden; tatsächliche Nachweise und offene Schritte stehen in STATUS.md. Einen dedizierten RPC nur bei nachgewiesenem Bedarf ergänzen. Uniswap-API-Key ist für direkte Contracts nicht nötig. Keine persönlichen Seed-Phrases anfordern und keine Modellzugänge anderer Anbieter auf HomeBox einrichten.
 
 Abgabe: öffentliche Contracts/Tests/Doku, klare Setup-Anleitung, Team-/Social-Angaben vom Team, eindeutige Codeverweise pro Partner. Uniswap benötigt FEEDBACK.md und Developer Feedback Form mit Link darauf. Curvegrid benötigt README mit Projektsatz, Setup/Tests und ehrlichem MultiBaas-Erfahrungsbericht. ETHGlobal-Abgabe und Feedback-Formular nicht ohne tatsächliche erfolgreiche Übermittlung als erledigt markieren; fehlende Teamangaben erst am entsprechenden Schritt anfordern.
 
