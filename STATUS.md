@@ -6,7 +6,7 @@
 - Routine tree/history/payment polling keeps loaded content visible. Initial reads and vault switches retain skeletons; read failures remain visible and disable wallet actions. The former whole-page loading transition reproduced in the browser before the fix. History pagination no longer replaces existing rows with skeletons.
 - MultiBaas name, checkpoint lag and detailed provenance are displayed on Curvegrid. Other activity pages retain a coverage/status link and an explicit error if history cannot refresh.
 - Checks: production build/TypeScript; new background-refresh regression on Overview, Activity, Uniswap, x402 and Curvegrid; full-address clipboard and mobile overflow checks; pending-operator setup/deep-link and mandate checks; persistent-shell desktop/mobile regression; nine-route initial skeleton/layout regression. Tests replay current public read responses with controlled latency, without financial writes or inference.
-- Publication: source commit/deployment recorded after the production release below.
+- Published frontend source `86ec1ef`: Vercel `dpl_zyfj48iEM8KrKij6MLZ7Qwpxgpf6` is READY at https://kanoki-app.vercel.app. Production background-refresh/funding/authority, wallet-session, persistent-shell and real five-vault demo browser checks passed. Subsequent release-note commits do not change the deployed frontend.
 
 
 - Connected MCP validation and live tree read passed at Sepolia block 11789135. The session was unselected with no local signer and correctly reported not ready for writes. Plugin tests passed 22/22; keyless STDIO lookup/error/image tests passed at block 11789139; controlled wallet onboarding tests and plugin/runtime builds passed before concurrent onboarding edits.

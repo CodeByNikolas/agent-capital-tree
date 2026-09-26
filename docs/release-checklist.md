@@ -1,6 +1,6 @@
 # Canonical release checklist
 
-Current production is **https://kanoki-app.vercel.app/**, Vercel project `agent-capital-tree` in `tumblockchains-projects`. Source `8e50f9f` was deployed on 27 September 2026 as `dpl_9ZT2SeFt6FmSPjM7o3XhyE7KjtGF` (READY), followed by passing public desktop/mobile checks.
+Current production is **https://kanoki-app.vercel.app/**, Vercel project `agent-capital-tree` in `tumblockchains-projects`. Source `86ec1ef` was deployed on 27 September 2026 as `dpl_zyfj48iEM8KrKij6MLZ7Qwpxgpf6` (READY), followed by passing public desktop/mobile checks.
 
 ## Before deployment
 
@@ -19,6 +19,7 @@ vercel deploy --prod --yes --scope tumblockchains-projects
 Record deployment ID, build SHA, alias and READY status in STATUS.md. Verify the published build:
 
 ```sh
+ACT_TEST_APP_URL=https://kanoki-app.vercel.app node scripts/test-background-refresh.mjs
 ACT_TEST_APP_URL=https://kanoki-app.vercel.app node scripts/test-wallet-session.mjs
 ACT_TEST_APP_URL=https://kanoki-app.vercel.app node scripts/test-dashboard-shell.mjs
 ACT_TEST_APP_URL=https://kanoki-app.vercel.app node scripts/test-live-demo.mjs
