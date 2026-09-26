@@ -1,12 +1,33 @@
 # Agent Capital Tree
 
-Give agents capital, delegate smaller amounts to sub-agents, and enforce narrower permissions down the tree.
+**Give AI agents capital without giving them the whole wallet.** A human funds a root vault, then agents delegate smaller amounts into separate child vaults. ENSv2 roles and contract-enforced ancestor policies narrow what each child can do. The owner retains an independent recovery path.
 
-**ENSv2 Enhanced Access Control** supplies the roles. Separate vaults bound each agent’s available funds. **Uniswap v4** enables bounded swaps and liquidity positions; **x402** enables service purchases with official Circle **Test-USDC**. **Curvegrid MultiBaas** indexes the controller’s capital and strategy events.
+![Animated illustration of owner authorization, capital delegation, narrower child permissions, and owner recovery](assets/agent-capital-tree-flow.gif)
 
-[Dashboard](https://agent-capital-tree.vercel.app) · [Public MCP guide](https://agent-capital-tree-silk.vercel.app/mcp) · [Local companion and MCP setup](docs/local-setup.md) · [Current status](STATUS.md) · [Jury walkthrough](docs/jury-demo.md)
+*Illustrative flow. The dashboard and MCP read current Ethereum Sepolia state independently.*
 
-The prototype targets **Ethereum Sepolia, chain 11155111**. The current release switches directly to the USDC deployment: no legacy deployment selector, old-link support or migration layer. Public contract addresses and deployment progress are recorded in [usdc-sepolia.json](deployments/usdc-sepolia.json). This is an unaudited hackathon prototype using testnet assets.
+[Live dashboard](https://agent-capital-tree-silk.vercel.app) · [Explore the sample tree](https://agent-capital-tree-silk.vercel.app/tree?preview=1) · [Current branch](https://github.com/CodeByNikolas/agent-capital-tree/tree/work/rami) · [MCP guide](https://agent-capital-tree-silk.vercel.app/mcp) · [Local setup](docs/local-setup.md) · [Jury walkthrough](docs/jury-demo.md) · [Current status](STATUS.md)
+
+The prototype runs on **Ethereum Sepolia (chain 11155111)** with official Circle **Test-USDC**. **Uniswap v4** supports bounded swaps and vault-owned liquidity positions. **x402** supports scoped service purchases. **Curvegrid MultiBaas** indexes controller capital and strategy events. Public contract addresses are in [usdc-sepolia.json](deployments/usdc-sepolia.json). This is an unaudited hackathon prototype using testnet assets.
+
+## Try this branch
+
+Open the [live root vault](https://agent-capital-tree-silk.vercel.app/tree?vault=capital.agentcapitalusdc.eth) to inspect a real Sepolia tree, or use the [sample workspace](https://agent-capital-tree-silk.vercel.app/tree?preview=1) to explore the layout without a wallet. Sample balances and names are illustrative. The dashboard shows wallet controls, but viewing a vault does not start a worker or authorize a transaction.
+
+To check the keyless local MCP from this branch, use Node 22+, pnpm and Codex CLI. From an existing checkout, start at `pnpm install`; clone only when you need a new checkout:
+
+```sh
+git clone --branch work/rami https://github.com/CodeByNikolas/agent-capital-tree.git
+cd agent-capital-tree
+pnpm install --frozen-lockfile --ignore-scripts
+pnpm --filter @agent-capital-tree/sdk build
+pnpm --filter @agent-capital-tree/plugin build
+pnpm mcp:doctor
+pnpm mcp:verify
+pnpm mcp:chat-verify
+```
+
+These checks need internet access for the public app and Sepolia RPC. They use a disposable Codex profile or a keyless local STDIO server and send no transaction. The [setup guide](docs/local-setup.md) explains how to register that server in Codex or Claude and ask for the live tree image. Wallet and companion writes have separate prerequisites and acceptance status in [STATUS.md](STATUS.md).
 
 ## How it works
 
@@ -28,7 +49,7 @@ The supported payment token is Circle Sepolia USDC at [`0x1c7D4B196Cb0C7B01d743F
 
 **Uniswap:** typed swaps and vault-owned LP positions use one fixed v4 pool. Management, fee collection and exit are separate permissions. The quote token is **DEMO-USD**, a clearly valueless six-decimal demo asset. Its pool price is not a real USD valuation. Agents cannot supply arbitrary router commands or redirect outputs.
 
-**Future work:** policy-checked generic contract transactions, cumulative/rolling spending budgets, cross-currency valuation and a read-only agent-tree visualization inside Claude/Codex chats are not implemented.
+**Future work:** policy-checked generic contract transactions, cumulative/rolling spending budgets, cross-currency valuation and an owner wallet embedded directly inside a chat. The read-only MCP already renders the live ENS agent tree as a PNG with Mermaid fallback.
 
 ## Dashboard
 
@@ -50,13 +71,11 @@ ENS roles are actual authorization, not descriptive text metadata. MultiBaas is 
 
 ## Run and test
 
-For the keyless MCP jury proof, use Node22+, pnpm and Codex CLI on Windows, macOS or Linux: clone the current `work/rami` branch **only if you do not already have a checkout**, install dependencies, build the SDK and plugin, then run `pnpm mcp:doctor`, `pnpm mcp:verify` and `pnpm mcp:chat-verify`. The first MCP test installs the plugin into a disposable Codex profile and discovers all 16 tools; the second tests the persistent-use read-only STDIO server. To call `getTree` in Codex inside the ChatGPT desktop app, register that one-tool server using the [exact commands and prompt](docs/local-setup.md). Neither path can send a write.
+The quickstart above proves the keyless MCP path on Windows, macOS or Linux. `mcp:verify` installs the 16-tool plugin into a disposable profile with writes disabled. `mcp:chat-verify` checks the three-tool local STDIO server: `getTree`, `visualizeTree` and `prepareRootSetup`. Tree reads accept a root ID, full ENS name or vault address and return data plus an image from one Sepolia block. Root setup prepares a browser-wallet link; it cannot sign. See the [chat setup and demo instructions](docs/local-setup.md).
 
-Full agent actions are separate and currently Linux-only (Windows through WSL2). They additionally require Docker, a wallet/operator setup, a reachable Sepolia RPC and CLIProxyAPI access; a Codex login alone does not provide inference for the worker. Native Windows financial writes and fresh external-laptop write onboarding are not verified. For the full development suite, use Node22, pnpm11.13.1, Docker and Foundry1.8.3:
+Full agent actions are separate and currently Linux-only (Windows through WSL2). They additionally require Docker, a wallet/operator setup, a reachable Sepolia RPC and CLIProxyAPI access; a Codex login alone does not provide inference for the worker. Native Windows financial writes and fresh external-laptop write onboarding are not verified. For the full development suite, use Node 22+, pnpm 11.13.1, Docker and Foundry 1.8.3 from the checkout root:
 
 ```sh
-git clone --branch work/rami --recurse-submodules https://github.com/CodeByNikolas/agent-capital-tree.git # new checkout only
-cd agent-capital-tree
 pnpm install --frozen-lockfile --ignore-scripts
 pnpm build
 pnpm typecheck
