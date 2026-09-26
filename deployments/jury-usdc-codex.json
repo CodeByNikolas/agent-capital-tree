@@ -1,0 +1,130 @@
+{
+  "status": "passed",
+  "startedAt": "2026-09-26T14:11:33.574Z",
+  "controller": "0x7eDFa3D484d64b6bA3b5b2bcef51147E57133FFB",
+  "rootId": "4",
+  "operationKey": "0xa2624bb38bf78305722462c9eeab4dbe7737a5e0358d1c1a77a6f7d7a7a0a625",
+  "paymentKey": "0xd2902ad184b62fea620ace6a7d03be0d5a2c6fd8556295322f581826e8edd9b5",
+  "imageId": "sha256:f4d84013a02c2ca7347f26f5284f06679586c67204b6242818de535570606f6d",
+  "models": {
+    "root": "gpt-6-sol",
+    "child": "gpt-6-sol",
+    "reasoning": "medium"
+  },
+  "checks": {
+    "readOnlyCliStartup": true,
+    "modelConverted10USDC": true,
+    "rootTools": [
+      "getTree",
+      "getEffectivePolicy",
+      "getPaymentServices",
+      "getOperationStatus",
+      "getEffectivePolicy",
+      "getTree",
+      "spawnChild"
+    ],
+    "separateVaultAndNarrowMandate": true,
+    "childCompleted": true,
+    "canonicalPaymentAndSwap": true,
+    "exactSpawnRetryAcrossAttempts": true
+  },
+  "transactions": {
+    "ownerRecovery": {
+      "hash": "0xb004b53afe6f3883b034fdd7d13d8e8b1eb71c5e79b35811f8a993cde36455af",
+      "blockNumber": 11786698
+    },
+    "operatorRetryGas": {
+      "hash": "0x2512d69ec41cdd41ba9b2e42ac35007457062c03820821a4c14dab354b1ff7bd",
+      "blockNumber": 11786720
+    },
+    "spawn": {
+      "hash": "0x6fdb03157bcaaf43c1351dd864e8d71299e665ad131acbf135b60752c061afe0",
+      "blockNumber": 11786728,
+      "gasUsed": "3597274"
+    },
+    "swap": {
+      "hash": "0xe2f4d78d08818cb35b77ebac1d573e0fcd9a2e3703a2f8a0f15b3795a78d4b6b",
+      "blockNumber": 11786738,
+      "gasUsed": "315539"
+    },
+    "payment": {
+      "hash": "0x65c8c4ff2072b53456f711f8cb0b6ed9db6287fd156b0b977f56a60a3e82fd40",
+      "blockNumber": 11786735,
+      "gasUsed": "252702"
+    }
+  },
+  "attempt": 5,
+  "priorAttempt": {
+    "failedStage": "root-codex",
+    "rootCli": {
+      "code": 0,
+      "signal": null,
+      "transcriptSha256": "324fc568e2fb4226567e2083033fb2321715d100f13f0c45e4d45740b344ae38"
+    },
+    "priorAttempt": {
+      "failedStage": "preflight",
+      "priorAttempt": {
+        "failedStage": "child-results",
+        "rootCli": {
+          "code": 0,
+          "signal": null,
+          "transcriptSha256": "e8452567ebfd1bf2806bdd788d7361c587da9a6a78dae12c892b1ceae9a5ca83"
+        },
+        "priorAttempt": {
+          "failedStage": "root-codex",
+          "rootCli": {
+            "code": null,
+            "signal": "SIGTERM",
+            "transcriptSha256": "38cb154c7febd2da508747e779ca553cc4ef365d17c735e5c48441506751f272"
+          },
+          "reason": "Harness used an unreachable loopback provider endpoint before any MCP call; resumed with the actual HomeBox endpoint and the same journaled gas transfers."
+        },
+        "reason": "Child stopped before financial actions after attempting direct RPC in its network-isolated container. A guarded continuation was prepared, but expired authority blocked it before dispatch; no repeated spawn or allocation occurred in that attempt."
+      },
+      "reason": "Original child stopped before spending after attempting direct RPC from its isolated container. Continuation was blocked before dispatch by expired authority. Owner recovered the unspent capital to its parent; fresh Codex spawns a replacement with the corrected runtime context."
+    },
+    "reason": "Replacement spawn had no onchain allocation and passed simulation, but parent gas reserve was below the prepared transaction maximum fee cost. Added a bounded journaled gas grant and retried the original exact request/key."
+  },
+  "limitations": [
+    "Fresh local Codex profile on the same host, not an independent juror machine.",
+    "Codex workers require the configured HomeBox CLIProxyAPI provider.",
+    "Controlled loopback x402 seller; this is not an independent commercial merchant.",
+    "Sepolia USDC is a test token, not real dollars.",
+    "The first child failed before spending and expired; owner recovery and a gas top-up preceded the successful corrected replacement run."
+  ],
+  "recoveredChildId": "5",
+  "swapDeadline": 1790432268,
+  "rootCli": {
+    "code": 0,
+    "signal": null,
+    "transcriptSha256": "838dafa1d12f8faefa2025fb6820cb4b3f7f7646f0a461bb3fccfaec9d19e305"
+  },
+  "nodeCount": 3,
+  "childName": "money-worker-v2",
+  "childId": "6",
+  "childVault": "0xBcA98635bD5975A2eF43d9dd9Fcc5ff5aF82fcA5",
+  "childBalances": [
+    "9980000",
+    "9968"
+  ],
+  "childPolicy": {
+    "capabilities": [
+      "swap",
+      "pay"
+    ],
+    "maxAmounts": [
+      "10000",
+      "0"
+    ],
+    "tokenMask": 3
+  },
+  "finishedAt": "2026-09-26T14:15:48.796Z",
+  "standaloneSellerCheck": {
+    "startup": "passed",
+    "httpStatus": 402,
+    "network": "eip155:11155111",
+    "amountRaw": "10000",
+    "transactionsSent": 0,
+    "limitation": "The standalone CLI was checked read-only; financial settlement above used the same underlying seller library via the acceptance runner."
+  }
+}

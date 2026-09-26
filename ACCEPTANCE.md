@@ -1,10 +1,22 @@
 # Acceptance evidence — Agent Capital Tree
 
-## Current USDC release — 26 September 2026
+## Current clone/USDC jury flow — 26 September 2026
+
+Current controller: `0x7eDFa3D484d64b6bA3b5b2bcef51147E57133FFB`, namespace `agentcapitalvault.eth`. The [local setup guide](docs/local-setup.md) was exercised with two fresh local clones, a real MetaMask owner flow on the public dashboard, and a fresh Codex CLI profile through CLIProxyAPI.
+
+- [Owner setup](deployments/usdc-jury-owner.json): root 4 created, funded with 10 test USDC and bound to its separate runtime operator.
+- [Model/chain flow](deployments/jury-usdc-codex.json): GPT-6 Sol Medium selected funded MCP spawning; isolated child 6 paid 0.01 USDC using x402 and swapped 0.01 USDC using Uniswap v4. Remaining vault balances: 9.98 USDC and 0.009968 valueless DEMO-USD. Its 0.01-USDC action limit was independently checked, including an over-limit rejection.
+- The first child failed at network preflight before spending. The runtime context was repaired; expiry prevented its continuation, owner recovery returned its 10 USDC, and a replacement was launched. An insufficient maximum gas reserve required a top-up and exact-key retry. The successful result does not describe an uninterrupted first attempt.
+- [Public browser report](artifacts/ui/jury-dashboard-report.json): all eight desktop/mobile checks passed on the new tree, including exact spawn/payment/swap links and long ENS names contained within payment cells. The layout correction is live from source `18260a8`, production deployment `dpl_DMuNfp4xtJUgCafddnFxXFUdVEZW`; both CI jobs passed.
+- [Current contract verification](deployments/usdc-sepolia.json) includes all six nodes and their EIP-1167 associations. Runtime tests/build/typecheck and plugin tests pass; see [STATUS.md](STATUS.md) for publication and dashboard checks.
+
+**Independent external-user onboarding remains open.** This was a fresh installation/profile on the same Linux host, with a controlled loopback seller and Sepolia test funds. CLIProxyAPI is required; Codex desktop, no-proxy Codex and Claude Code flows are not proven. Existing historical LP evidence below is not a repeated LP acceptance run.
+
+## Historical first USDC release — 26 September 2026
 
 The six-page follow-up is live at `https://agent-capital-tree.vercel.app` from Vercel deployment `dpl_ESRyCh5768tpUtLwQKaWaykSkrz8`. Public read-only browser checks covered all six routes on desktop/light and mobile/dark, including the verified Uniswap position event and the one 0.01 Test-USDC payment receipt. [Current UI report](artifacts/ui/usdc-ui-report.json). The Payment API scans a bounded Circle USDC log range and marks incomplete coverage; it is separate from MultiBaas controller history. No new wallet write or full current-USDC onboarding was performed.
 
-The product uses only [usdc-sepolia.json](deployments/usdc-sepolia.json), controller `0x17a932987f3cAcFec067c4C1bbE6946963d87F13`, namespace `agentcapitalusdc.eth`. Older reports below are historical evidence, not supported legacy entry points.
+At that stage the product used controller `0x17a932987f3cAcFec067c4C1bbE6946963d87F13`, namespace `agentcapitalusdc.eth`. The current clone deployment above supersedes these addresses; these are historical reports, not supported legacy entry points.
 
 - 37 contract tests passed across8 suites, including256 fuzz runs;18 runtime plus an added payment-expiry test,11 MultiBaas,7 plugin and2 SDK tests passed.
 - Actual Circle proxy / x402 protocol, inherited restrictions, revocation, LP lifecycle and recovery passed on a local fork: [report](deployments/usdc-x402-fork.json).

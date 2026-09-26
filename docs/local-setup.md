@@ -1,6 +1,10 @@
 # Local companion and MCP setup
 
-This is the Linux/Codex CLI path for the current **Circle USDC deployment on Ethereum Sepolia**. Desktop-app environment inheritance and a native macOS runtime have not been independently verified. Independent setup on another person's machine is still an acceptance gate; follow the checks below and report where your environment differs. Keep the owner wallet separate from the runtime operator; never import your owner key into the companion.
+This is the Linux/Codex CLI path for the current **Circle USDC deployment on Ethereum Sepolia**.
+
+Desktop-app environment inheritance and a native macOS runtime have not been independently verified. Independent setup on another person's machine is still an acceptance gate; follow the checks below and report where your environment differs.
+
+A same-host acceptance run has now completed the browser setup, funded MCP spawn, x402 payment and Uniswap swap after the fixes recorded in [the acceptance report](../ACCEPTANCE.md). Keep the owner wallet separate from the runtime operator; never import your owner key into the companion.
 
 ## 1. Prepare the checkout and worker
 
@@ -167,7 +171,13 @@ Only run this scenario after the owner has explicitly authorized a **10 official
 
 The root must already have `delegate`, `pay` and `swap` as needed to pass the child rights, allow **both** pool tokens, permit at least **10 USDC per action** to allocate the child, hold 10 USDC of free balance, and remain active through the proposed child expiry. The child restrictions for this request must explicitly set `capabilities: ["pay", "swap"]`, `allowedAssets` to both addresses in the current manifest, `maxPerAction` for USDC to `"10000"` and DEMO-USD to `"0"`, and a future Unix `expiresAt` no later than the parent expiry. The zero DEMO-USD input limit still allows the requested USDC-to-DEMO-USD swap but prevents a reverse swap. The `spawnChild` allocation uses `asset` set to official USDC and `amount: "10000000"`; a task prompt alone cannot set these onchain limits. If the parent lacks any prerequisite, stop before the spawn and ask the owner to set an appropriate mandate or fund the vault. The example is not permission to broaden an existing mandate.
 
-Configure an approved Sepolia x402 seller in `paymentServices` as described below. The worker should call `getPaymentServices` and use only its listed `serviceId` and price ceiling; `purchaseService.maxAmount` is `"10000"` for the 0.01-USDC purchase. x402 settlement normally uses facilitator gas. A swap is a direct onchain transaction: set a bounded nonzero `childGasWei` in the private companion config and fund the parent operator with enough Sepolia ETH for spawn, gas grant and its own transactions. The child vault itself does not need ETH. For the swap, use `tokenIn` as USDC, `amountIn: "10000"`, the owner-approved `minAmountOut: "9000"`, and a `deadline` based on a fresh chain timestamp. This is a bounded demonstration, not a live market quote: the MCP has no quote tool, and an isolated worker has no general network access. The DEMO-USD output is valueless and is not a USD return.
+Configure an approved Sepolia x402 seller in `paymentServices` as described below. The worker should call `getPaymentServices` and use only its listed `serviceId` and price ceiling; `purchaseService.maxAmount` is `"10000"` for the 0.01-USDC purchase.
+
+x402 settlement normally uses facilitator gas. A swap is a direct onchain transaction: set a bounded nonzero `childGasWei` in the private companion config and fund the parent operator with enough Sepolia ETH for spawn, gas grant and its own transactions. The child vault itself does not need ETH.
+
+Reserve enough operator ETH for the maximum transaction cost (`estimatedGas × maxFeePerGas`) **plus** the child gas grant and any later spawn; an estimate of the eventual fee alone is insufficient. The jury run needed an additional 0.01 Sepolia ETH for its replacement spawn even though the previous spawn had left roughly 0.008 ETH. Recheck current gas prices instead of treating these test amounts as a fixed requirement.
+
+For the swap, use `tokenIn` as USDC, `amountIn: "10000"`, the owner-approved `minAmountOut: "9000"`, and a `deadline` based on a fresh chain timestamp. This is a bounded demonstration, not a live market quote: the MCP has no quote tool, and an isolated worker has no general network access. The DEMO-USD output is valueless and is not a USD return.
 
 The launched worker receives both controller token addresses and their decimals from the companion's onchain reads. It should use `getTree` for a fresh timestamp and vault state, `getPaymentServices` for configured sellers, then the scoped `purchaseService` and `swap` tools for the two actions. It cannot query a public RPC, explorer or website directly from its isolated container. The companion prepares the configured child gas grant before launch, but that does not prove the child's current ETH balance; the swap tool handles simulation and submission. On a gas or simulation error, stop and report it without changing the approved minimum output or starting another payment.
 
@@ -180,7 +190,9 @@ Record the spawn key and full arguments privately. If the spawn call times out o
 - The live Setup & control page shows your root vault and the operator address printed by `prepare-root`; `start` accepts the same root/controller configuration.
 - The root MCP `getTree` returns that root's current onchain balances and agent authority, with no preview balances. `getEffectivePolicy` shows the intended limits.
 - The controlled `spawnChild` returns a confirmed child ID; the dashboard's Agent tree shows its ENS name, vault and allocation. Compare its transaction receipt with the live tree before issuing another operation.
-- The child can report its vault state. Its effective policy shows the zero USDC per-action limit and the narrowly scoped `delegate` capability; attempted capital movement beyond that limit must fail. A task's text alone does not grant rights.
+- For the read-and-report example, the child can report its vault state. Its effective policy shows the zero USDC per-action limit and the narrowly scoped `delegate` capability; attempted capital movement beyond that limit must fail. A task's text alone does not grant rights.
+
+For the two-application jury scenario, instead expect only PAY and swap rights, a 10000-raw-USDC per-action cap, and a 10000000-raw-USDC allocation. After one 0.01-USDC purchase and one 0.01-USDC swap, the child should hold 9.98 USDC plus the DEMO-USD output. Verify the payment receipt on x402 Pay and the swap receipt on Uniswap/Activity; Agent tree shows the actual remaining vault balances.
 
 These checks require a real fresh-wallet run on an independent machine. They have not yet been completed as one external-user acceptance test.
 
@@ -218,4 +230,4 @@ The agent calls `getPaymentServices`, then `purchaseService` with the service ID
 
 The companion’s service allowlist is a runtime restriction. A compromised operator key can sign payments to other recipients allowed by the onchain PAY policy; this release does not provide an onchain merchant allowlist. Each amount ceiling is per payment, not a cumulative spending budget. The vault’s actual allocated balance remains the total financial exposure. Service responses are untrusted data; neither a valid payment nor this demonstration proves their quality.
 
-For the controlled demo seller, `scripts/lib/x402-demo-service.mjs` provides a loopback-only 0.01-USDC research endpoint, explicit payer allowlist, official facilitator integration and durable response caching. An interrupted ambiguous settlement fails closed and requires reconciliation instead of charging again. It is not a production merchant platform.
+For a runnable controlled seller using your own Sepolia wallet, follow [Local x402 demo seller](x402-demo-seller.md). Its shared `scripts/lib/x402-demo-service.mjs` provides a loopback-only 0.01-USDC research endpoint, explicit payer allowlist, official facilitator integration and durable response caching. An interrupted ambiguous settlement fails closed and requires reconciliation instead of charging again. It is not a production merchant platform.

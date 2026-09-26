@@ -1,0 +1,60 @@
+{
+  "status": "passed",
+  "checkedAt": "2026-09-26T14:26:01.050Z",
+  "rootId": "4",
+  "childId": "6",
+  "base": "https://agent-capital-tree.vercel.app",
+  "checks": [
+    {
+      "route": "tree",
+      "width": 1440,
+      "colorScheme": "light",
+      "status": "passed"
+    },
+    {
+      "route": "activity",
+      "width": 1440,
+      "colorScheme": "light",
+      "status": "passed"
+    },
+    {
+      "route": "uniswap",
+      "width": 1440,
+      "colorScheme": "light",
+      "status": "passed"
+    },
+    {
+      "route": "payments",
+      "width": 1440,
+      "colorScheme": "light",
+      "status": "passed",
+      "vaultNameWithinCell": true
+    },
+    {
+      "route": "tree",
+      "width": 390,
+      "colorScheme": "dark",
+      "status": "passed"
+    },
+    {
+      "route": "activity",
+      "width": 390,
+      "colorScheme": "dark",
+      "status": "passed"
+    },
+    {
+      "route": "uniswap",
+      "width": 390,
+      "colorScheme": "dark",
+      "status": "passed"
+    },
+    {
+      "route": "payments",
+      "width": 390,
+      "colorScheme": "dark",
+      "status": "passed",
+      "vaultNameWithinCell": true
+    }
+  ],
+  "transactionsSent": 0
+}
