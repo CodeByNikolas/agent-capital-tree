@@ -5,12 +5,13 @@ Stand: 26. September 2026 (Europe/Berlin). Nach Kontextkomprimierung zusammen mi
 ## Aktueller Stand
 
 - Public Repository: https://github.com/CodeByNikolas/agent-capital-tree.
-- Live-Dashboard: https://agent-capital-tree.vercel.app. Aktuelles Deployment `dpl_CecwmDyVPjRKMLYcUGkMTGie4Js2`, https://agent-capital-tree-ceds85iya-tumblockchains-projects.vercel.app (Sourceb505621). Fünf echte Seiten mit shadcn Sidebar/Badge/Button/Card/Sheet/Table, Agentendetails, System-Hell-/Dunkelmodus und größerer Schrift. Mit frontend-design/impeccable und shadcn-MCP umgesetzt; Sol-High-Subagent und Hauptagent-Review. Kapitaldelegation steht im Mittelpunkt; Uniswap ist eine Anwendung, Payments bleiben Zukunftsumfang.
+- Live-Dashboard: https://agent-capital-tree.vercel.app. Aktuelles Deployment `dpl_8c4tsppjGfNxLEDLTNnW6UsViPTJ`, https://agent-capital-tree-3yholcb6f-tumblockchains-projects.vercel.app (Source1a5ef1e). Fünf echte Seiten mit shadcn Sidebar/Badge/Button/Card/Sheet/Table, Agentendetails, System-Hell-/Dunkelmodus und größerer Schrift. Mit frontend-design/impeccable und shadcn-MCP umgesetzt; Sol-High-Subagent und Hauptagent-Review. Kapitaldelegation steht im Mittelpunkt; Uniswap ist eine Anwendung, Payments bleiben Zukunftsumfang.
 - ENSv2/Uniswap und der echte Browser→Codex→Child→Grandchild-Ablauf sind nachgewiesen. Live-MultiBaas, tatsächlicher Master-Modell-Ablauf und vollständige Root9-Rückholung sind ebenfalls nachgewiesen. Gesamtabnahme bleibt für unabhängiges Fremdnutzer-Onboarding und die unten genannten Grenzen offen. Die letzte echte Browser-Owner-Rückholung ist bestanden.
 - Root1 ist der finanzierte Seed und bleibt unberührt. Root2 ist widerrufen und leer. Root5 ist der vollständig widerrufene und geleerte Browser-/Modell-Testbaum; nicht erneut als Runtime starten. Root9 mit Child10/11 ist ebenfalls widerrufen und leer. Abgeschlossene Finanzrunner niemals blind wiederholen.
 
 ## Modul-Roadmap
 
+- Build/TypeScript und fokussierter Browsercheck (drei Einträge, Tastatur, Desktop/Mobil, Hell/Dunkel) bestanden; öffentliches Vercel-Deployment zusätzlich auf Mobil mit aufgeklappten Details geprüft.
 - Applications enthält aufklappbare, orange markierte Future-Work-Einträge für x402-Servicezahlungen, Contract-Transaktionen und Währungsumrechnung. Keine ausführbaren oder bereits integrierten Fähigkeiten suggeriert.
 - Nutzerwunsch für die nächste Zahlungsintegration: Test-USDC. Bestehende ACT-A/ACT-B bleiben als tatsächliche Demo-Assets benannt; offizielles Test-USDC ist nicht durch Umbenennung integriert.
 - Gemeinsamer Treasury-Vault mit überbuchbaren Ausgabelimits wird als Architekturvariante diskutiert; bestehendes Deployment und separate Vaults bleiben unverändert.
