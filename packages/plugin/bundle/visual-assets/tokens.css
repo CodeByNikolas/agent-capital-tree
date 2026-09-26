@@ -1,0 +1,40 @@
+:root {
+  color-scheme: dark;
+  --surface: #0F1A14;
+  --surface-raised: #16241C;
+  --line: #2A3A30;
+  --ink: #EEF2ED;
+  --ink-muted: #9DB0A4;
+  --moss: #7FC8A0;
+  --moss-soft: #173327;
+  --on-moss: #0F1A14;
+  --gold: #D9B54A;
+  --gold-ink: #E6C35C;
+  --gold-soft: #2E2610;
+  --signal: #F28B82;
+  --signal-soft: #3A1714;
+  --link: var(--moss);
+  --focus-ring: var(--gold);
+  --font-display: "Fraunces", "Iowan Old Style", Georgia, serif;
+  --font-sans: "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, "SF Mono", Menlo, monospace;
+  --space-1: 4px; --space-2: 8px; --space-3: 12px; --space-4: 16px;
+  --space-6: 24px; --space-8: 32px; --space-12: 48px;
+  --radius-sm: 4px; --radius-md: 8px; --radius-lg: 16px; --radius-full: 999px;
+}
+:root[data-theme="light"] {
+  color-scheme: light;
+  --surface: #F7F5EE;
+  --surface-raised: #FFFFFF;
+  --line: #DCD8CC;
+  --ink: #14201A;
+  --ink-muted: #5C6B62;
+  --moss: #1F4D3A;
+  --moss-soft: #E1EFE6;
+  --on-moss: #FFFFFF;
+  --gold: #C9A227;
+  --gold-ink: #7A5A00;
+  --gold-soft: #F6EDCB;
+  --signal: #B3261E;
+  --signal-soft: #FBE4E1;
+}

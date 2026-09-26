@@ -47,7 +47,7 @@ export function toolView(name, args, data, { readOnly = true, isError = false, p
     view.status = d.prerequisitesMet ? 'CHAIN CHECKS PASSED · REVIEW GAS FEES' : 'SETUP INCOMPLETE · NO TRANSACTION';
     row('Vault', d.ensName); row('Native ETH gas (wei)', d.operatorGasWei);
     row('Agent address', d.localOperator ?? 'Not prepared');
-    row('Test-USDC balance / limit', `${amount(d.usdcBalanceRaw ?? 0)} / ${amount(d.usdcLimitRaw ?? 0)}`);
+    row('Test-USDC balance / limit', `${amount(d.usdcBalanceRaw ?? 0)} USDC / ${amount(d.usdcLimitRaw ?? 0)} USDC`);
     row('Missing requirements', Array.isArray(d.missing) ? d.missing.join(' · ') || 'None' : 'Unknown');
     row('MCP writes', d.writesEnabled ? 'Explicitly enabled; onchain policy still enforced' : 'Disabled');
     row('Snapshot block', d.source?.blockNumber); row('Observed', d.source?.observedAt);
@@ -55,7 +55,7 @@ export function toolView(name, args, data, { readOnly = true, isError = false, p
     view.next = 'Owner authorizes the agent key in the normal wallet browser. USDC approval is not an ETH gas transfer. Do not repeat completed funding or rebind a correct operator.';
   } else if (name === 'prepareRootSetup') {
     view.status = d.browser?.opened ? 'AWAITING WALLET' : 'OPEN WALLET IN BROWSER';
-    row('ENS name', d.ensName); row('Demo budget', `${d.budgetUSDC} Test-USDC`);
+    row('ENS name', d.ensName); row('Demo budget', `${amount(d.budgetRaw ?? 0)} USDC`);
     row('Browser', d.browser?.opened ? 'Launch requested in your normal browser profile' : 'Open the setup link below in your wallet-enabled browser');
     row('Wallet steps', 'Create root → approve exact budget → fund vault → bind operator');
     row('Signing', 'Owner reviews and signs each setup transaction in their wallet.');
@@ -81,7 +81,7 @@ export function toolView(name, args, data, { readOnly = true, isError = false, p
       if (scalar(policy.capabilities) && /^\d+$/.test(String(policy.capabilities))) row('Policy capabilities', rights.filter((_,i)=>(BigInt(policy.capabilities)&(1n<<BigInt(40+i*4)))!==0n).join(' · ') || 'None');
       row('Token mask', policy.tokenMask);
       row('Expiry (Unix)', policy.expiry);
-      if (Array.isArray(policy.maxAmounts)) row('Per-action limits (raw)', policy.maxAmounts.join(' / '));
+      if (Array.isArray(policy.maxAmounts)) { row('USDC limit', amount(policy.maxAmounts[0])+' USDC'); row('DEMO-USD limit', amount(policy.maxAmounts[1])+' DEMO-USD (test asset)'); }
       view.next = 'Policy is a limit, not proof of current authority. getTree checks actual authorized actions.';
     }
     if (name === 'getCapitalActivity') {
@@ -94,7 +94,7 @@ export function toolView(name, args, data, { readOnly = true, isError = false, p
       row('Configured services', Array.isArray(d.services) ? d.services.length : 0);
       for (const service of (d.services ?? []).slice(0, 5)) row('Service', service.id);
     }
-    if (name === 'purchaseService') { row('Service', d.serviceId); if (/^\d+$/.test(String(d.amount))) row('Paid', `${amount(d.amount)} Test-USDC`); }
+    if (name === 'purchaseService') { row('Service', d.serviceId); if (/^\d+$/.test(String(d.amount))) row('Paid', `${amount(d.amount)} USDC`); }
     if (!view.rows.length) row('Result', 'Response received. Full structured data accompanies this card.');
   }
   return view;
@@ -104,19 +104,19 @@ export function toolAsSvg(view) {
   const accent = view.error ? t.destructive : t.primary;
   let body = rect(32, 171, 976, 52, t.soft, accent);
   body += `<circle cx="55" cy="197" r="4" fill="${accent}"/>`;
-  body += text(70,203,view.status,{size:14,color:accent,weight:800});
+  body += text(70,203,view.status,{size:15,color:accent,weight:600});
   let y = 245;
   for (const [label,value] of view.rows) {
     const wrapped = lines(value, 78), height = Math.max(64, 24+wrapped.length*22);
     body += rect(32,y,976,height);
     body += text(52,y+30,label,{size:13,color:t.mutedForeground});
-    wrapped.forEach((line,i)=>{body+=text(248,y+30+i*22,line,{size:15,mono:label==='Transaction'||label.includes('block')});});
+    wrapped.forEach((line,i)=>{body+=text(248,y+30+i*22,line,{size:15,mono:/Transaction|block|ENS|Vault|address|balance|limit|Paid|Observed|Expiry|budget|gas/.test(label)});});
     y += height+10;
   }
   const nextLines = lines(view.next, 106), nextHeight = 42+nextLines.length*21;
   body += rect(32,y+8,976,nextHeight,t.accent,t.border);
-  body += text(52,y+34,'NEXT STEP',{size:11,mono:true,color:t.primary});
-  nextLines.forEach((line,i)=>{body+=text(52,y+59+i*21,line,{size:14});});
+  body += text(52,y+34,'NEXT STEP',{size:13,mono:true,color:t.primary});
+  nextLines.forEach((line,i)=>{body+=text(52,y+59+i*21,line,{size:15});});
   return frame(y+nextHeight+70,view.title,`MCP / ${view.tool} · Ethereum Sepolia`,body,`Response received ${view.receivedAt} · See JSON for complete data and provenance.`);
 }
 
