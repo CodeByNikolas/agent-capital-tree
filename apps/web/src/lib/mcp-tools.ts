@@ -39,7 +39,12 @@ export const mcpTools: readonly McpTool[] = [
       "List the operator-configured x402 payment services, their fixed payees, and max Test-USDC prices — runtime limits on top of the vault mandate.",
     readOnly: true,
   },
-  // Write (11)
+  // Write (12)
+  {
+    name: "createChildVault",
+    description: "Create a named child vault with a bounded budget directly from chat. No Docker, model API key or background AI worker; the local authorized agent key signs.",
+    readOnly: false,
+  },
   {
     name: "spawnChild",
     description: "Request an on-chain child vault and a bounded capital allocation, keyed by an idempotency key.",

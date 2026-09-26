@@ -1,0 +1,14 @@
+{
+  "base": "http://127.0.0.1:3095",
+  "checkedAt": "2026-09-26T19:14:14.712Z",
+  "checks": [
+    "Capital guide and explicit no-background-worker distinction visible",
+    "Public address and 0.05 USDC per-action limit prefilled; disconnected wallet cannot submit"
+  ],
+  "widths": [
+    1440,
+    390
+  ],
+  "transactionsSent": 0,
+  "walletConnected": false
+}

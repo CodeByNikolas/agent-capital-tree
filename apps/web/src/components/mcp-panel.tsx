@@ -26,7 +26,11 @@ codex mcp add capital_tree_readonly -- "$(command -v node)" "$PWD/scripts/mcp-re
 codex mcp get capital_tree_readonly --json`;
 
 const chatPrompt = `Call capital_tree_readonly.getTree with query "hello.agentcapitalusdc.eth". Show the returned tree image in this chat and report its Sepolia block, observed time, Test-USDC balance and actual authorized actions. Do not use shell or web.`;
-const imagePrompt = `For a new test vault, call capital_tree_readonly.prepareRootSetup with label "my-demo-agent" and budgetRaw "100000". Give me its wallet-review link; do not claim any transaction was sent.`;
+const imagePrompt = `For a new test vault, call capital_tree_readonly.prepareRootSetup with label "my-demo-agent" and budgetRaw "100000". Show its dashboard graphic. Let the MCP open my normal system browser with my existing wallet extension; do not open a separate chat browser. I will review and sign there.`;
+const capitalSnippet = `pnpm --filter @agent-capital-tree/multibaas build
+pnpm --filter @agent-capital-tree/runtime build
+pnpm mcp:capital check hello.agentcapitalusdc.eth
+pnpm mcp:capital settings hello.agentcapitalusdc.eth --enable-sepolia-writes`;
 
 export function McpPanel({
   deployment,
@@ -61,9 +65,18 @@ export function McpPanel({
         <h1>MCP integration</h1>
         <p>
           Codex can read the capital tree through a local MCP. The dashboard reads Sepolia independently; it cannot
-          see a local Codex session. Financial actions require a separate companion and your own wallet authority.
+          see a local Codex session. Chat-managed capital needs one wallet authorization, but no Docker or model API key.
         </p>
       </div>
+
+      <section className="panel mcp-panel" aria-labelledby="mcp-capital-title">
+        <div className="panel-heading"><span className="panel-overline">Recommended demo</span><h2 id="mcp-capital-title">Authorize once. Manage capital in chat.</h2></div>
+        <p>Build the SDK and plugin with the commands below first, then use capital mode. It starts the local signing companion automatically. No private JSON configuration, CLIProxyAPI account or separate companion terminal.</p>
+        <CopyBlock code={capitalSnippet} label="Capital demo setup — Linux or Windows with WSL2 and Node 22+" />
+        <p>Add the printed STDIO entry in Codex or Claude settings and restart that MCP once. The capital connection exposes 21 tools, including <code>getCapitalSetup</code>, <code>prepareCapitalSetup</code> and <code>createChildVault</code>. Use one Capital Tree connection for the demo.</p>
+        <p>Your wallet remains owner. It authorizes a separate local agent signing key once, with explicit vault limits. The agent needs native Sepolia-ETH for gas as well as Test-USDC in the vault. Wallet login or USDC approval alone is not that authorization or gas payment.</p>
+        <p>Ask the chat to check all requirements, then create a child vault, delegate a small budget, show the tree, restrict/revoke and reclaim. <code>createChildVault</code> does not launch an autonomous model worker. Docker and CLIProxyAPI are only needed for the optional <code>spawnChild</code> background-worker path.</p>
+      </section>
 
       {/* Identity + connection status */}
       <section className="panel mcp-panel" aria-labelledby="mcp-server-title">
@@ -106,7 +119,7 @@ export function McpPanel({
         <div className="mcp-connection-flow" aria-label="Codex uses the local MCP to read Sepolia; the dashboard reads Sepolia independently">
           <div className="mcp-connection-node"><strong>Codex chat</strong><span>Check <code>/mcp</code> in the desktop app</span></div>
           <span className="mcp-connection-arrow" aria-hidden="true">→</span>
-          <div className="mcp-connection-node"><strong>Local read-only MCP</strong><span><code>getTree</code> + <code>visualizeTree</code> · no signer</span></div>
+          <div className="mcp-connection-node"><strong>Local keyless MCP</strong><span>Tree images + wallet-browser setup · no signer</span></div>
           <span className="mcp-connection-arrow" aria-hidden="true">→</span>
           <div className="mcp-connection-node"><strong>Sepolia</strong><span>Current block and vaults</span></div>
         </div>
@@ -120,7 +133,7 @@ export function McpPanel({
           <h2 id="mcp-tools-title">Full companion tools ({mcpTools.length})</h2>
         </div>
         <p className="mcp-lede">
-          The simple Codex chat setup below exposes only <code>getTree</code> and <code>visualizeTree</code>. These 16 tools belong to the separate
+          The keyless Codex chat setup below exposes <code>getTree</code>, <code>visualizeTree</code> and <code>prepareRootSetup</code>. These 17 tools belong to the
           authenticated Linux companion; discovery in the temporary verifier does not make them all usable. Read tools
           inspect chain state; write tools request bounded on-chain actions. Every schema is strict — a
           model-supplied <code>agentId</code> is rejected, and node IDs in arguments are targets, never proof of authority.
@@ -196,7 +209,9 @@ export function McpPanel({
               <CopyBlock code={chatPrompt} label="read-only Codex chat prompt" />
               <CopyBlock code={imagePrompt} label="prepare a wallet-approved root from chat" />
               <small>
-                Every Tree result contains a PNG and Mermaid fallback from the same block. For an independent foreground connection status
+                Every tool response includes a dashboard-style PNG and a real image link, including setup, actions and errors.
+                Tree data and image pages use the same block. Codex is instructed to show them in the chat; Mermaid is the fallback.
+                For an independent foreground connection status
                 window, run <code>pnpm mcp:desktop</code>; Codex and Claude start their own STDIO connections.
               </small>
             </div>
@@ -204,11 +219,12 @@ export function McpPanel({
           <li className="setup-step">
             <span>4</span>
             <div>
-              <strong>Financial actions are a separate setup</strong>
+              <strong>Authorize your chat agent once</strong>
               <small>
-                Root creation and funding are signed in the browser wallet opened from the chat link. Later Child creation,
-                delegation and recovery use the 16-tool Linux companion, an authorized operator and CLIProxyAPI; no
-                owner-wallet popup is needed for each Child. On Windows use WSL2. ChatGPT web cannot run this local STDIO MCP.
+                Setup automatically opens your normal system browser with its existing wallet extensions. Use that profile to connect and sign;
+                a separate chat-controlled browser may have no wallet injection. Root creation and funding require your approval there. Later Child creation,
+                delegation and recovery use capital mode above: a local authorized agent key, no Docker or CLIProxyAPI. No
+                owner-wallet popup is needed for each Child. On Windows use WSL2 with Node. ChatGPT web cannot run this local STDIO MCP.
               </small>
             </div>
           </li>
