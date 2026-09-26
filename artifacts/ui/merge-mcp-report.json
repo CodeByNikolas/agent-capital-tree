@@ -1,0 +1,34 @@
+{
+  "sourceBranches": [
+    "main@a12eac7",
+    "work/rami@be10418"
+  ],
+  "checks": [
+    {
+      "server": "agent-capital-tree-readonly",
+      "toolCount": 3,
+      "rootId": "1",
+      "nodeCount": 2,
+      "chainId": 11155111,
+      "blockNumber": "11788299",
+      "visualBytes": 67009,
+      "browserLaunch": "not-requested",
+      "writes": "not exposed"
+    },
+    {
+      "mode": "capital",
+      "tools": 21,
+      "chainId": 11155111,
+      "rootId": "1",
+      "blockNumber": "11788304",
+      "missing": [
+        "localKey",
+        "operatorBound"
+      ],
+      "writes": "disabled",
+      "images": "PNG",
+      "backgroundWorker": "not-requested"
+    }
+  ],
+  "transactionsSent": 0
+}

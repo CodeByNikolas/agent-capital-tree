@@ -1,6 +1,7 @@
 node_modules/
 .next/
 dist/
+packages/runtime/bundle/
 coverage/
 .vercel/
 .env
@@ -15,3 +16,4 @@ playwright-report/
 *.pem
 *.key
 .DS_Store
+.vercel

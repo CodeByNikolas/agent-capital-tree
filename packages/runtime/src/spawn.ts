@@ -9,9 +9,11 @@ export type SpawnRequest = Readonly<{
   token: `0x${string}`;
   amount: string;
   restrictions: unknown;
+  /** Omitted on legacy worker requests to preserve their durable fingerprints. */
+  execution?: 'vault-only';
 }>;
-export type SpawnReceipt = Readonly<{ childId: string; txHash?: string; blockHash: string; blockNumber?: string; dispatchStatus?: 'started' | 'allocation_confirmed_dispatch_unknown' }>;
-export type SpawnRecord = Readonly<{ scope: string; requestHash: string; childId?: string; dispatchAttempted?: boolean; started?: boolean }>;
+export type SpawnReceipt = Readonly<{ childId: string; txHash?: string; blockHash: string; blockNumber?: string; dispatchStatus?: 'not_requested' | 'started' | 'allocation_confirmed_dispatch_unknown' }>;
+export type SpawnRecord = Readonly<{ scope: string; requestHash: string; childId?: string; dispatchAttempted?: boolean; started?: boolean; execution?: 'vault-only' }>;
 
 /** SDK adapter must enforce current parent mandate and contract parameter hashing. */
 export type SpawnChain = {
@@ -71,6 +73,12 @@ export class SpawnCoordinator {
       receipt = await this.chain.reconcile(parent, request);
     }
     if (!receipt || !(await this.chain.confirmed(receipt))) throw new Error('spawn transaction not confirmed');
+    if (request.execution === 'vault-only') {
+      // This operation creates capital authority, not a background model process. No gas grant,
+      // credentials, container or inference call. Durable intent still prevents cross-mode replay.
+      await this.journal.put({ scope, requestHash, childId: receipt.childId, execution: 'vault-only' });
+      return { ...receipt, dispatchStatus: 'not_requested' };
+    }
     if (previous?.started && previous.childId === receipt.childId) return { ...receipt, dispatchStatus: 'started' };
     if (!previous && existedBeforeSubmit) {
       await this.journal.put({ scope, requestHash, childId: receipt.childId, dispatchAttempted: true });

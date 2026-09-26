@@ -19,6 +19,7 @@ import {
   LockKeyhole,
   MoreHorizontal,
   Network,
+  Plug,
   Plus,
   Shield,
   ShieldAlert,
@@ -43,6 +44,15 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { WalletControlsPanel, type WalletActionMode } from "@/components/wallet-controls";
+import { X402Panel } from "@/components/x402-panel";
+import { InfoHint } from "@/components/info-hint";
+import { GuidedTour } from "@/components/guided-tour";
+import { OnboardingHero, ONBOARDING_OPEN_EVENT } from "@/components/onboarding-hero";
+import { ViewerStatusBar } from "@/components/viewer-status";
+import { McpPanel } from "@/components/mcp-panel";
+import { TooltipProvider } from "@/components/ui/tooltip";
+import type { GlossaryTerm } from "@/lib/glossary";
+import { useDiscoveredRoots } from "@/lib/use-roots";
 import { useWalletActions } from "@/lib/use-wallet-actions";
 import type {
   ActivityFeedResult,
@@ -79,7 +89,12 @@ interface DashboardProps {
   vaultQuery: string | null;
   nodeQuery?: string | null;
   actionQuery?: WalletActionMode;
-  view: "overview" | "tree" | "activity" | "uniswap" | "payments" | "setup";
+  demoLabel?: string | null;
+  demoBudget?: string | null;
+  setupOperator?: string | null;
+  view: "overview" | "tree" | "activity" | "uniswap" | "payments" | "applications" | "mcp" | "setup";
+  tour?: boolean;
+  step?: number;
 }
 
 interface PaymentRecord {
@@ -481,10 +496,13 @@ const views = [
   { id: "activity", title: "Activity", path: "/activity", icon: ActivityIcon },
   { id: "uniswap", title: "Uniswap", path: "/uniswap", icon: ArrowLeftRight },
   { id: "payments", title: "x402 Pay", path: "/payments", icon: Coins },
+  { id: "applications", title: "Applications", path: "/applications", icon: Coins },
+  { id: "mcp", title: "MCP", path: "/mcp", icon: Plug },
   { id: "setup", title: "Setup & control", path: "/setup", icon: ShieldCheck },
 ] as const;
 
 function routeHref(path: string, vaultQuery: string | null, nodeId?: string | null): string {
+  if (path === "/mcp" && !vaultQuery) return "/mcp";
   const params = new URLSearchParams();
   if (vaultQuery) params.set("vault", vaultQuery);
   else params.set("preview", "1");
@@ -492,7 +510,7 @@ function routeHref(path: string, vaultQuery: string | null, nodeId?: string | nu
   return `${path}?${params}`;
 }
 
-function AppSidebar({ view, vaultQuery, selectedId, rootLabel, data, readError }: { view: DashboardProps["view"]; vaultQuery: string | null; selectedId: string; rootLabel: string; data: DashboardData; readError: string | null }) {
+function AppSidebar({ view, vaultQuery, selectedId, rootLabel, data, readError, walletAddress }: { view: DashboardProps["view"]; vaultQuery: string | null; selectedId: string; rootLabel: string; data: DashboardData; readError: string | null; walletAddress: string | null }) {
   const { setOpenMobile } = useSidebar();
   return (
     <ShadcnSidebar collapsible="offcanvas" className="app-sidebar">
@@ -506,7 +524,7 @@ function AppSidebar({ view, vaultQuery, selectedId, rootLabel, data, readError }
       <SidebarContent>
         <SidebarGroup className="app-sidebar-vault">
           <SidebarGroupContent>
-            <RootAccessBar path={views.find((item) => item.id === view)?.path ?? "/"} />
+            <RootAccessBar vault={vaultQuery} path={views.find((item) => item.id === view)?.path ?? "/"} walletAddress={walletAddress} />
             {vaultQuery && <LiveReadNotice data={data} error={readError} />}
           </SidebarGroupContent>
         </SidebarGroup>
@@ -532,7 +550,7 @@ function Topbar({ view, wallet, vaultQuery, selectedId }: { view: DashboardProps
   return (
     <header className="app-topbar">
       <div className="app-topbar-title"><SidebarTrigger aria-label="Toggle navigation" /><span>{views.find((item) => item.id === view)?.title}</span></div>
-      <div className="app-topbar-actions"><Link className="app-manage-link" href={routeHref("/setup", vaultQuery, selectedId)}>Wallet actions</Link><WalletControl wallet={wallet} /></div>
+      <div className="app-topbar-actions"><Link className="app-manage-link app-topbar-guide" href={routeHref("/", vaultQuery)} onClick={() => { try { window.localStorage.removeItem("act.onboarding.dismissed"); } catch { /* storage unavailable */ } window.dispatchEvent(new Event(ONBOARDING_OPEN_EVENT)); }}>How it works</Link><Link className="app-manage-link" href={routeHref("/setup", vaultQuery, selectedId)}>Wallet actions</Link><WalletControl wallet={wallet} /></div>
     </header>
   );
 }
@@ -557,10 +575,32 @@ function DashboardLoading({ view, error, onRetry }: { view: DashboardProps["view
   </div>;
 }
 
-function RootAccessBar({ path }: { path: string }) {
+function RootAccessBar({ vault, path, walletAddress }: { vault: string | null; path: string; walletAddress: string | null }) {
   const router = useRouter();
   const [lookupError, setLookupError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const { roots: discovered } = useDiscoveredRoots();
+
+  const walletLower = walletAddress?.toLowerCase() ?? null;
+  const vaultLower = vault?.toLowerCase() ?? null;
+  const chips = discovered
+    .map((root) => {
+      const owned = Boolean(walletLower && root.owner && root.owner.toLowerCase() === walletLower);
+      const leaf = root.ensName ? root.ensName.split(".")[0] : "";
+      return {
+        id: root.id,
+        vault: root.vault,
+        owned,
+        active: Boolean(vaultLower && root.vault && root.vault.toLowerCase() === vaultLower),
+        // Read the label straight from ENS/chain rather than a hardcoded list.
+        label: leaf || `Root ${root.id}`,
+        sub: owned ? "Your vault" : root.revoked ? "Revoked" : `${root.nodeCount} vault${root.nodeCount === 1 ? "" : "s"}`,
+      };
+    })
+    .sort((left, right) => (left.owned === right.owned ? Number(BigInt(left.id) - BigInt(right.id)) : left.owned ? -1 : 1))
+    .slice(0, 8);
+  const hasOwned = chips.some((chip) => chip.owned);
+
   return <div className="root-access-bar" aria-label="Vault navigation">
     <form className="root-access-form" onSubmit={async (event) => {
       event.preventDefault();
@@ -582,6 +622,24 @@ function RootAccessBar({ path }: { path: string }) {
       <button className="button button-secondary button-small" type="submit" disabled={loading}>{loading ? "Looking up…" : path === "/setup" ? "Open root vault" : "Open vault"}</button>
       {lookupError && <span role="alert" className="vault-lookup-error">{lookupError}</span>}
     </form>
+    {chips.length > 0 && (
+      <div className="root-quick-start">
+        <span className="root-quick-label">{hasOwned ? "Your roots" : "Roots on-chain"}</span>
+        <div className="demo-root-chips" role="group" aria-label="Roots on Sepolia">
+          {chips.map((chip) => (
+            <a
+              key={chip.id}
+              className={`demo-root-chip${chip.active ? " demo-root-chip-active" : ""}${chip.owned ? " demo-root-chip-owned" : ""}`}
+              href={`${path}?vault=${encodeURIComponent(chip.vault)}&node=${encodeURIComponent(chip.id)}`}
+              aria-current={chip.active ? "true" : undefined}
+            >
+              <strong>{chip.label}</strong>
+              <span>{chip.sub}</span>
+            </a>
+          ))}
+        </div>
+      </div>
+    )}
   </div>;
 }
 
@@ -605,6 +663,7 @@ function MetricCard({
   source,
   exactValue,
   exactDetail,
+  labelHint,
 }: {
   label: string;
   value: string;
@@ -615,10 +674,11 @@ function MetricCard({
   source: DataSource;
   exactValue?: string;
   exactDetail?: string;
+  labelHint?: GlossaryTerm;
 }) {
   return (
     <article className={`metric-card${accent ? " metric-card-accent" : ""}`}>
-      <div className="metric-card-top"><span>{label}</span><span className="metric-icon">{icon}</span></div>
+      <div className="metric-card-top"><span className="metric-card-label">{label}{labelHint && <InfoHint term={labelHint} />}</span><span className="metric-icon">{icon}</span></div>
       <div className="metric-value" role={exactValue ? "group" : undefined} aria-label={exactValue ? `Exact balance: ${exactValue}` : undefined} title={exactValue}>{value}<span>{unit}</span></div>
       <div className="metric-detail"><PreviewFlag source={source} compact /> <span role={exactDetail ? "group" : undefined} aria-label={exactDetail ? `Exact balance: ${exactDetail}` : undefined} title={exactDetail}>{detail}</span></div>
     </article>
@@ -667,9 +727,10 @@ function SummaryMetrics({ data }: { data: DashboardData }) {
         label="Runtime connections"
         value={runtimeKnown ? String(data.nodes.filter((node) => node.runtime === "connected").length).padStart(2, "0") : "—"}
         unit={runtimeKnown ? " connected" : ""}
-        detail={runtimeKnown ? "Local companion connections" : "Local companion status is not available onchain"}
+        detail={runtimeKnown ? "Local companion connections" : "Local companion status is not available on-chain"}
         icon={<Zap size={17} aria-hidden="true" />}
         source={data.source}
+        labelHint="runtime"
       />
     </section>
   );
@@ -930,7 +991,7 @@ function CapitalLedger({ data, node }: { data: DashboardData; node: VaultNode })
       <div className="capital-ledger-heading"><strong>Vault holdings &amp; flow</strong><PreviewFlag source={data.source} compact /></div>
       <div className="capital-ledger-table" role="table" aria-label="Current holdings compared with free and directly allocated capital">
         <div className="capital-ledger-row capital-ledger-header" role="row">
-          <span role="columnheader">Asset</span><span role="columnheader">Held now</span><span role="columnheader">Free</span><span role="columnheader">Allocated out</span>
+          <span role="columnheader">Asset</span><span role="columnheader">Held now <InfoHint term="held" /></span><span role="columnheader">Available <InfoHint term="free" /></span><span role="columnheader">Sent to children <InfoHint term="allocated" /></span>
         </div>
         {assets.map((asset) => (
           <div className="capital-ledger-row" role="row" key={asset.key}>
@@ -958,8 +1019,8 @@ function MandatePanel({ data, node, canTighten, canRevoke, canRecover, onRequest
     <section className="panel mandate-panel" aria-labelledby="mandate-title">
       <div className="panel-heading panel-heading-compact">
         <div>
-          <div className="panel-overline">SELECTED VAULT <PreviewFlag source={node.source} compact /></div>
-          <h2 id="mandate-title">Effective mandate</h2>
+          <div className="panel-overline">WHAT THIS AGENT MAY DO <PreviewFlag source={node.source} compact /></div>
+          <h2 id="mandate-title">Effective mandate <InfoHint term="effectivePolicy" /></h2>
         </div>
       </div>
 
@@ -969,17 +1030,24 @@ function MandatePanel({ data, node, canTighten, canRevoke, canRecover, onRequest
         <span className={`vault-state-pill vault-state-${node.state}`}><span />{node.source === "preview" ? `Example ${vaultStateLabels[node.state].toLowerCase()}` : vaultStateLabels[node.state]}</span>
       </div>
 
+      <p className="mandate-summary">
+        {node.effectivePolicy.allowedTokens.join(" · ")} · {actionCeiling} · {node.authorizedPermissions.length} capabilities · expires {new Date(node.effectivePolicy.expiresAt).toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric", timeZone: "UTC" })}
+      </p>
+
       <CapitalLedger data={data} node={node} />
 
-      <div className="address-pair">
-        <AddressLine label="Agent address" value={node.agentAddress} source={node.source} />
-        <AddressLine label="Bound vault" value={node.vaultAddress} source={node.source} />
-      </div>
+      <details className="mandate-disclosure">
+        <summary>Addresses</summary>
+        <div className="address-pair">
+          <AddressLine label="Agent address" value={node.agentAddress} source={node.source} />
+          <AddressLine label="Bound vault" value={node.vaultAddress} source={node.source} />
+        </div>
+      </details>
 
       <div className="mandate-divider" />
       <div className="policy-section-heading">
         <span className="policy-heading-icon"><ShieldCheck size={15} aria-hidden="true" /></span>
-        <div><strong>{node.source === "preview" ? "Example capabilities" : "Live authorized capabilities"}</strong><small>{node.source === "preview" ? "Illustrative roles · not granted on-chain" : "Current EAC roles at this vault"}</small></div>
+        <div><strong>{node.source === "preview" ? "Example capabilities" : "Live authorized capabilities"} <InfoHint term="authorizedCapabilities" /></strong><small>{node.source === "preview" ? "Illustrative roles · not granted on-chain" : "Current EAC roles at this vault; can be narrower than policy"}</small></div>
         <span className="permission-count">{node.authorizedPermissions.length}</span>
       </div>
       {node.authorizedPermissions.length > 0
@@ -988,21 +1056,24 @@ function MandatePanel({ data, node, canTighten, canRevoke, canRecover, onRequest
       {notCurrentlyAuthorized.length > 0 && <p className="authorization-gap">Policy lists {notCurrentlyAuthorized.map((permission) => permissionLabels[permission]).join(" · ")}, but current EAC state does not authorize those actions.</p>}
 
       <div className="inherited-box">
-        <div className="inherited-box-heading"><Network size={14} aria-hidden="true" /><strong>Inherited limits</strong><span>{node.inheritedConstraints.length} ancestors</span></div>
+        <div className="inherited-box-heading"><Network size={14} aria-hidden="true" /><strong>Limits inherited from parents <InfoHint term="inheritedLimits" /></strong><span>{node.inheritedConstraints.length} ancestors</span></div>
         <p>This mandate is capped by every parent on the path to the owner.</p>
         <div className="inherited-limit-row"><span>Allowed assets</span><strong>{node.effectivePolicy.allowedTokens.join(" · ")}</strong></div>
         <div className="inherited-limit-row"><span>Maximum per token</span><strong>{actionCeiling}</strong></div>
         <div className="inherited-limit-row"><span>Authorized now</span><strong>{node.authorizedPermissions.length} capabilities</strong></div>
         {node.inheritedConstraints.length > 0 && (
-          <div className="ancestor-rules">
-            {node.inheritedConstraints.map((constraint) => (
-              <div className="ancestor-rule" key={constraint.ancestorId}>
-                <strong>{constraint.ancestorLabel}</strong>
-                <span>{constraint.policy.permissions.map((permission) => permissionLabels[permission]).join(" · ")}</span>
-                <small>{policyAmountLabel(constraint.policy)} per token</small>
-              </div>
-            ))}
-          </div>
+          <details className="mandate-disclosure mandate-disclosure-inset">
+            <summary>Per-ancestor rules ({node.inheritedConstraints.length})</summary>
+            <div className="ancestor-rules">
+              {node.inheritedConstraints.map((constraint) => (
+                <div className="ancestor-rule" key={constraint.ancestorId}>
+                  <strong>{constraint.ancestorLabel}</strong>
+                  <span>{constraint.policy.permissions.map((permission) => permissionLabels[permission]).join(" · ")}</span>
+                  <small>{policyAmountLabel(constraint.policy)} per token</small>
+                </div>
+              ))}
+            </div>
+          </details>
         )}
         {node.inheritedConstraints.length === 0 && <div className="root-mandate-note">Root mandate · no parent constraints above this vault.</div>}
       </div>
@@ -1195,7 +1266,7 @@ function ContractSetupPanel({ data, deployment, actions, wallet, liveStateReady,
         <div className={walletStepReady ? "setup-step setup-step-complete" : "setup-step setup-step-pending"}><span>{walletStepReady ? <Check size={12} /> : "1"}</span><div><strong>{walletStepReady ? "Wallet connected" : wallet.address ? "Switch to Sepolia" : "Connect wallet"}</strong><small>{walletStepReady ? shortAddress(wallet.address ?? "") : wallet.address ? "Connected on another network" : "Injected wallet · Sepolia"}</small></div></div>
         <div className={contractsConfigured ? "setup-step setup-step-complete" : "setup-step setup-step-pending"}><span>{contractsConfigured ? <Check size={12} /> : "2"}</span><div><strong>Controller deploy</strong><small>{contractsConfigured ? "Address configuration present" : "Contract address pending"}</small></div></div>
         <div className={indexerConnected ? "setup-step setup-step-complete" : "setup-step setup-step-pending"}><span>{indexerConnected ? <Check size={12} /> : "3"}</span><div><strong>Indexer connect</strong><small>{historyError && data.activitySource === "multi-baas" ? "Last indexed data retained; history refresh unavailable" : indexerConnected ? "MultiBaas activity source active" : "MultiBaas activity source pending"}</small></div></div>
-        <div className="setup-step setup-step-pending"><span>4</span><div><strong>Codex plugin</strong><small>Independent setup pending</small></div></div>
+        <a className="setup-step setup-step-link" href={routeHref("/mcp", data.source === "preview" ? null : data.rootId)}><span><Plug size={12} /></span><div><strong>Codex plugin (MCP)</strong><small>Open the MCP integration guide →</small></div></a>
       </div>
       <div className="setup-border" aria-hidden="true" />
     </section>
@@ -1214,7 +1285,7 @@ function Footer({ source, walletConnected, vaultQuery }: { source: DataSource; w
   );
 }
 
-export function Dashboard({ data: initialData, deployment, vaultQuery, nodeQuery, actionQuery, view, onboarding = false }: DashboardProps) {
+export function Dashboard({ data: initialData, deployment, vaultQuery, nodeQuery, actionQuery, demoLabel, demoBudget, setupOperator, view, onboarding = false, tour = false, step = 1 }: DashboardProps) {
   const router = useRouter();
   const vaultKey = vaultQuery?.toLowerCase() ?? null;
   const [selectedId, setSelectedId] = useState(nodeQuery ?? initialData.rootId);
@@ -1444,6 +1515,7 @@ export function Dashboard({ data: initialData, deployment, vaultQuery, nodeQuery
   if (!selectedNode) return null;
 
   const liveError = currentReadState.status === "error" ? currentReadState.error : null;
+  const runtimeLabel = !vaultQuery ? "No vault selected" : data.nodes.every((node) => node.runtime === "unknown") ? "Local companion status unavailable on-chain" : `${data.nodes.filter((node) => node.runtime === "connected").length} connected`;
 
   const requestAction = (mode: Exclude<WalletActionMode, null>) => {
     setDetailOpen(false);
@@ -1472,7 +1544,7 @@ export function Dashboard({ data: initialData, deployment, vaultQuery, nodeQuery
               <a className="button button-secondary button-small" href="https://faucet.circle.com/" target="_blank" rel="noreferrer">Get USDC <ArrowUpRight size={13} aria-hidden="true" /></a>
             </CardContent>
           </Card>
-          <RootAccessBar path="/setup" />
+          <RootAccessBar vault={null} path="/setup" walletAddress={wallet.address} />
           {walletActionMode === "create-root" && <WalletControlsPanel
             data={data}
             deployment={deployment}
@@ -1484,7 +1556,10 @@ export function Dashboard({ data: initialData, deployment, vaultQuery, nodeQuery
             notice={notice}
             mode="create-root"
             onModeChange={setWalletActionMode}
-            onRootCreated={(vaultAddress) => router.push(`/setup?vault=${encodeURIComponent(vaultAddress)}`)}
+            onRootCreated={(vaultAddress) => router.push(`/setup?vault=${encodeURIComponent(vaultAddress)}${demoBudget ? `&action=fund-root&budget=${demoBudget}` : ""}`)}
+            demoLabel={demoLabel}
+            demoBudget={demoBudget}
+            setupOperator={setupOperator}
           />}
           <nav className="onboarding-links" aria-label="Explore and get started">
             <Link href={`/tree?vault=capital.${deployment.namespaceName}`}><Layers3 size={18} aria-hidden="true" /><span>Open live demo</span><ArrowRight size={16} aria-hidden="true" /></Link>
@@ -1497,7 +1572,7 @@ export function Dashboard({ data: initialData, deployment, vaultQuery, nodeQuery
 
   if (vaultKey && (!currentSnapshot || currentReadState.status === "error")) {
     return <SidebarProvider>
-      <AppSidebar view={view} vaultQuery={vaultQuery} selectedId="" rootLabel="Loading vault" data={initialData} readError={null} />
+      <AppSidebar view={view} vaultQuery={vaultQuery} selectedId="" rootLabel="Loading vault" data={initialData} readError={null} walletAddress={wallet.address} />
       <SidebarInset className="main-shell"><Topbar view={view} wallet={wallet} vaultQuery={vaultQuery} selectedId="" />
         <div className="dashboard-content"><DashboardLoading view={view} error={currentReadState.error} onRetry={() => setTreeRetry((value) => value + 1)} /></div>
       </SidebarInset>
@@ -1505,15 +1580,30 @@ export function Dashboard({ data: initialData, deployment, vaultQuery, nodeQuery
   }
 
   return (
+    <TooltipProvider delay={150}>
     <SidebarProvider>
-      <AppSidebar view={view} vaultQuery={vaultQuery} selectedId={selectedNode.id} rootLabel={rootNode?.label ?? "Treasury"} data={data} readError={liveError} />
+      <AppSidebar view={view} vaultQuery={vaultQuery} selectedId={selectedNode.id} rootLabel={vaultQuery ? rootNode?.label ?? "Treasury" : "No vault"} data={data} readError={liveError} walletAddress={wallet.address} />
       <SidebarInset className="main-shell">
         <Topbar view={view} wallet={wallet} vaultQuery={vaultQuery} selectedId={selectedNode.id} />
         <div className="dashboard-content">
-          <PreviewNotice data={data} deployment={deployment} />
+          <GuidedTour active={tour} step={step} />
+          {!(view === "mcp" && !vaultQuery) && <PreviewNotice data={data} deployment={deployment} />}
+          {data.source !== "preview" && (
+            <ViewerStatusBar
+              source={data.source}
+              vaultLabel={selectedNode.label}
+              walletConnected={wallet.address !== null}
+              walletOnSepolia={walletOnSepolia}
+              liveStateReady={liveStateReady}
+              ownerConnected={ownerConnected}
+              selectedAgentConnected={selectedAgentConnected}
+              parentCanRestrict={parentCanRestrict}
+            />
+          )}
           {data.source === "direct-rpc" && rootNode?.tokenHoldings[0]?.symbol === "USDC" && BigInt(rootNode.tokenHoldings[0].rawAmount) === 0n && <div className="zero-usdc-notice" role="note"><Coins size={20} aria-hidden="true" /><span><strong>This root has no USDC.</strong> Request Sepolia USDC from Circle, then use Fund root in Setup &amp; control. The owner wallet also needs Sepolia ETH for gas; the vault itself does not.</span><a href="https://faucet.circle.com/" target="_blank" rel="noreferrer">Circle faucet <ArrowUpRight size={15} aria-hidden="true" /></a></div>}
           {view === "overview" && <>
-            <div className="page-heading"><span className="page-kicker">Delegated capital · Sepolia</span><h1>Capital under clear authority.</h1><p>See what each vault holds, which mandates are active, and where owner control stands.</p></div>
+            <div className="page-heading"><span className="page-kicker">Delegated capital · Sepolia</span><h1>Each AI agent gets its own wallet — and strict limits.</h1><p>See what each vault holds, which mandates are active, and where owner control stands.</p></div>
+            {!tour && <OnboardingHero />}
             <SummaryMetrics data={data} />
             <div className="overview-lower">
               <Card><CardHeader><CardTitle>Agent tree</CardTitle><CardDescription>Explore each vault’s capital, permissions, and place in the delegation tree.</CardDescription></CardHeader><CardContent><Button render={<Link href={routeHref("/tree", vaultQuery, selectedNode.id)} />}>Explore agent tree <ArrowRight data-icon="inline-end" /></Button></CardContent></Card>
@@ -1549,6 +1639,16 @@ export function Dashboard({ data: initialData, deployment, vaultQuery, nodeQuery
             {data.source === "preview" ? <Card><CardHeader><CardTitle>Open a live vault</CardTitle><CardDescription>Payment records are only displayed for a live Sepolia root.</CardDescription></CardHeader></Card> : <PaymentsPanel history={paymentState.rootId === rootQuery ? paymentState.history : null} loading={paymentState.rootId === rootQuery ? paymentState.loading : Boolean(rootQuery)} error={paymentState.rootId === rootQuery ? paymentState.error : null} />}
             <p className="module-footnote">These receipts prove token settlement, not the merchant’s service delivery. Generic contract transactions and currency valuation remain future work.</p>
           </>}
+          {view === "applications" && <>
+            <div className="page-heading"><span className="page-kicker">Bounded applications</span><h1>Applications</h1><p>Agents can only act inside their mandate. Built-in actions today are bounded Uniswap v4 activity and x402 service payments settled in USDC.</p></div>
+            <PositionsPanel data={data} actions={actions} walletOnSepolia={walletOnSepolia} />
+            <X402Panel node={selectedNode} actions={actions} walletOnSepolia={walletOnSepolia} canPay={selectedAgentConnected} />
+            <Card className="future-applications"><CardHeader><CardTitle>Future modules</CardTitle><CardDescription>Planned capabilities. Expand an item to see its scope; these modules cannot execute actions.</CardDescription></CardHeader><CardContent>
+              <details className="future-module"><summary><span>Contract transactions</span><Badge variant="outline" className="future-module-badge">Future work</Badge></summary><p>Not implemented. Execute approved contract functions with recipient, token, and spending checks. A balance-delta check alone cannot prevent unsafe approvals or future liabilities.</p></details>
+              <details className="future-module"><summary><span>Currency conversion & valuation</span><Badge variant="outline" className="future-module-badge">Future work</Badge></summary><p>Not implemented. Display supported assets in a chosen currency using verified price sources. Test USDC is Sepolia faucet funding; DEMO-USD is a valueless quote token. Neither provides a dollar valuation.</p></details>
+            </CardContent></Card>
+          </>}
+          {view === "mcp" && <McpPanel deployment={deployment} selectedNode={vaultQuery ? selectedNode : undefined} runtimeLabel={vaultQuery ? runtimeLabel : "No vault selected"} />}
           {view === "setup" && <>
             <div className="page-heading"><span className="page-kicker">Wallet & integration</span><h1>Setup & control</h1><p>Connect the recorded owner or an authorized agent to manage the selected vault. Each available action is simulated before signing.</p></div>
             <div className="setup-selected"><strong>Root vault</strong><span className="setup-root-name">{rootNode?.ensName ?? "Unknown root"}</span><span>{sourceLabel(data.source)}</span><Button variant="outline" onClick={() => setWalletActionMode("create-root")}>Create another root</Button></div>
@@ -1564,15 +1664,22 @@ export function Dashboard({ data: initialData, deployment, vaultQuery, nodeQuery
             mode={walletActionMode}
             onModeChange={setWalletActionMode}
             onRootCreated={(vaultAddress) => {
-              setWalletActionMode(null);
-              router.push(`/setup?vault=${encodeURIComponent(vaultAddress)}`);
+              setWalletActionMode(demoBudget ? "fund-root" : null);
+              router.push(`/setup?vault=${encodeURIComponent(vaultAddress)}${demoBudget ? `&action=fund-root&budget=${demoBudget}` : ""}`);
             }}
+            demoLabel={demoLabel}
+            demoBudget={demoBudget}
+            setupOperator={setupOperator}
           />
-          <ContractSetupPanel data={dashboardData} deployment={deployment} actions={actions} wallet={wallet} liveStateReady={liveStateReady} historyError={activeActivityState.loadMoreError} />
+          <details className="setup-disclosure">
+            <summary>Deployment &amp; integration status</summary>
+            <ContractSetupPanel data={dashboardData} deployment={deployment} actions={actions} wallet={wallet} liveStateReady={liveStateReady} historyError={activeActivityState.loadMoreError} />
+          </details>
           </>}
           <Footer source={data.source} walletConnected={walletOnSepolia} vaultQuery={vaultQuery} />
         </div>
       </SidebarInset>
     </SidebarProvider>
+    </TooltipProvider>
   );
 }

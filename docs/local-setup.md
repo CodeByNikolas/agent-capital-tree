@@ -6,9 +6,136 @@ Desktop-app environment inheritance and a native macOS runtime have not been ind
 
 A same-host acceptance run using the earlier CLIProxyAPI path completed browser setup, funded MCP spawn, x402 payment and Uniswap swap after the fixes recorded in [the acceptance report](../ACCEPTANCE.md). A subsequent native OpenAI API-key run with real `gpt-6-luna` / `high` responses passed funded MCP spawn, x402 payment and Uniswap swap; see [native evidence](../deployments/jury-openai-native.json). ChatGPT-login financial E2E remains unverified. Keep the owner wallet separate from the runtime operator; never import your owner key into the companion.
 
+## Recommended capital demo: no Docker or CLIProxyAPI
+
+Codex/Claude is already the model. Use it to manage agent **vaults** without launching additional AI processes. The local capital MCP starts the existing signing companion automatically when needed. No hand-written private config, provider API key, bearer copy or separate companion terminal is required. Linux and Windows with Node 22+ in the default WSL distribution are supported; native Windows/macOS signing is not claimed.
+
+From this checkout (do not create a nested clone):
+
+```sh
+pnpm --filter @agent-capital-tree/sdk build
+pnpm --filter @agent-capital-tree/multibaas build
+pnpm --filter @agent-capital-tree/plugin build
+pnpm --filter @agent-capital-tree/runtime build
+pnpm mcp:capital check capital.agentcapitalvault.eth
+pnpm mcp:capital settings YOUR_INTENDED_ROOT_ENS_NAME --enable-sepolia-writes
+
+```
+
+First choose a new lowercase root label and derive its ENS name under `agentcapitalvault.eth`. `settings` only prints the registration; the MCP catalog loads before this root exists. After registration, call `prepareRootSetup` to open the wallet setup, sign the root creation, then call `getCapitalSetup` and `prepareCapitalSetup` for the new root. `settings` prints the real command/argument list for Codex STDIO or a Claude `mcpServers` entry. Merge only that entry, preserving unrelated servers. Use one Capital Tree connection for the demo, not the older three-tool read-only server alongside it. Register in PowerShell:
+
+```powershell
+$actScript = (Resolve-Path -LiteralPath 'packages/runtime/capital.mjs').Path
+$actNode = (Get-Command node).Source
+codex mcp add capital_tree_demo -- $actNode $actScript stdio YOUR_INTENDED_ROOT_ENS_NAME --enable-sepolia-writes
+codex mcp get capital_tree_demo --json
+
+```
+
+Restart that MCP connection/open a new chat once to refresh the tool catalog. There are **21 tools**: 17 companion operations plus four read/setup tools. They remain visible before wallet setup; unavailable optional workers/history/services do not become fake success. The CLI's `--enable-sepolia-writes` is an explicit local gate, not onchain authorization. Omit it for read-only testing. Codex may additionally request tool approval according to its own policy.
+
+Chat: “Call `getCapitalSetup` for 50000 raw Test-USDC and show every returned image. List all missing requirements. Do not send a transaction.” After the root exists, use `prepareCapitalSetup` only when needed. It reuses an existing matching private profile, or prepares a new agent key for an unbound root, and opens the normal system browser with public address and demo limits prefilled. Review the full address and limits in your wallet. URL parameters are suggestions, not trusted authorization.
+
+Your wallet is the **owner**, not automatically an unattended signer. It signs root creation, funding and authorization of the local **agent signing key** (contract name: operator). Afterwards `createChildVault`, `allocateCapital`, `tightenPolicy`, `revokeSubtree` and `reclaimAssets` use that restricted key without another owner signature at every step. No owner key enters the MCP. Native Sepolia-ETH at the agent address pays gas; USDC approval/funding does not supply ETH. A positive gas balance is not proof that it covers the next transaction's fees.
+
+The intended short demo: `getCapitalSetup` → `createChildVault` named `my-demo-child` with raw amount `50000` and appropriately narrower restrictions → `getTree` → restrict/revoke → reclaim → `getTree`. Use a fresh operationKey for a genuinely new child; reuse exactly that key and identical arguments for reconciliation. Do not repeat completed funding, seed or payment transactions. Use a newly created, owner-authorized root for writes. The public `capital` tree is for read-only inspection. `createChildVault` returns `dispatchStatus: not_requested`: real allocated vault, **no autonomous background worker**. A model API per vault is unnecessary; scoped worker APIs are an optional, separate integration.
+
+If an existing bound operator key is not found, point `--runtime-root` at its existing private Linux directory. Never silently create a replacement: rebinding invalidates the authority generation. Multiple matching profiles require explicit selection. Old worker/gas state must be reconciled in worker mode before switching modes. Secrets stay in owner-only Linux storage outside Git and Windows mounts.
+
+Read-only acceptance: `node scripts/test-mcp-capital.mjs` (21 tools, real Sepolia reads, PNGs, disabled write rejected). This is not a public Child/recovery E2E. See STATUS.md. `spawnChild` remains the separate autonomous-worker path and needs Docker plus native Codex authentication (OpenAI API key preferred or ChatGPT login). CLIProxyAPI is an optional explicit provider. The worker instructions below describe the separately configured autonomous path.
+
+## Fast jury check: read-only MCP on Windows, macOS or Linux
+
+With Node 22+, pnpm and Codex CLI installed, run the following in PowerShell or Bash. **If you are already in a checkout containing `package.json`, do not clone again**; run the `pnpm` commands there. A second `git clone` inside the project creates an unnecessary nested repository. No wallet, private configuration, Docker, runtime bearer, operator or team laptop is needed. Internet access to the public app and Sepolia RPC is required.
+
+For a new checkout only:
+
+```text
+git clone https://github.com/CodeByNikolas/agent-capital-tree.git
+cd agent-capital-tree
+
+```
+
+From the checkout root:
+
+```sh
+pnpm install --frozen-lockfile --ignore-scripts
+pnpm --filter @agent-capital-tree/sdk build
+pnpm --filter @agent-capital-tree/plugin build
+pnpm mcp:doctor
+pnpm mcp:verify
+pnpm mcp:chat-verify
+pnpm mcp:settings
+
+```
+
+`mcp:verify` creates a fresh temporary Codex profile, installs the local marketplace plugin, confirms exactly one enabled `capital-tree` MCP and all 17 tools, then calls its `getTree` with writes disabled. The profile is removed afterwards. `mcp:chat-verify` tests the permanent-use STDIO server's three keyless tools (`getTree`, `visualizeTree`, `prepareRootSetup`), including live ENS and vault resolution, data plus PNG from one block, and a bounded browser-wallet setup link. These tests do not send a transaction. `mcp:settings` prints the **actual absolute Node and script paths** for this checkout. `ACT_APP_URL` and `ACT_SEPOLIA_RPC_URL` optionally override public endpoints; neither is a secret.
+
+## Use the read-only MCP in Codex inside the ChatGPT desktop app
+
+The proof above does **not** leave an MCP installed in your personal profile. To use the keyless tools in an actual Codex chat, register the local STDIO server once. The exact paths are shown by `pnpm mcp:settings`. In PowerShell:
+
+```powershell
+$actScript = (Resolve-Path -LiteralPath 'scripts/mcp-readonly-server.mjs').Path
+$actNode = (Get-Command node).Source
+codex mcp add capital_tree_readonly -- $actNode $actScript
+codex mcp get capital_tree_readonly --json
+codex mcp list --json
+
+```
+
+In Bash:
+
+```sh
+test -f "$PWD/scripts/mcp-readonly-server.mjs" || { echo 'Run this from the current checkout root' >&2; exit 1; }
+codex mcp add capital_tree_readonly -- "$(command -v node)" "$PWD/scripts/mcp-readonly-server.mjs"
+codex mcp get capital_tree_readonly --json
+
+```
+
+The resulting configuration contains only the Node executable and an absolute path to the script; no bearer or wallet key is needed. If `capital_tree_readonly` already exists, inspect it with `codex mcp get capital_tree_readonly --json` before changing anything. If its script path does not exist, remove **only that entry** with `codex mcp remove capital_tree_readonly`, then add it again using the resolved path. For a GUI-only route, use ChatGPT desktop **Settings → MCP servers → Add server → STDIO**; paste the **Command** and **Argument** printed by `pnpm mcp:settings`, then Save and Restart. [OpenAI's MCP documentation](https://learn.chatgpt.com/docs/extend/mcp) says the desktop app and Codex CLI share MCP configuration for the same host and `/mcp` lists connected servers. Do not add both GUI and CLI registrations under different names in the same profile. If a Codex-controlled shell reports an empty `codex mcp list` while the real desktop has entries, check `codex doctor --json`: the shell may be running under an isolated Codex home. Run the check in your normal PowerShell outside the agent sandbox.
+
+Open a **new Codex chat** in the ChatGPT desktop app, select this project, type `/mcp` and confirm `capital_tree_readonly` is enabled. Then ask:
+
+> Use `capital_tree_readonly.getTree` with `query: "capital.agentcapitalvault.eth"`. Show its graph and report its Sepolia block, observation time, root vault, balances and current authorized actions. Do not use shell or another source.
+
+The answer should name Sepolia chain `11155111`, the current root ID and a recent block. Always read the current funding and rights from that snapshot: `capital` changed externally from empty to 0.10 Test-USDC with active rights during development. Do not assume an old balance or reuse it for a write test without checking its owner/operator. You can also pass a vault address or numeric root ID. The dashboard cannot inspect the local STDIO session.
+
+Every MCP tool result includes dashboard-style PNGs, ready-to-use local Markdown image links and a Mermaid fallback, including setup, actions and errors. Codex is instructed to embed the returned image links in its answer automatically. Tree data and every image page use **one** chain snapshot; `visualizeTree` remains an alias. Images use the dashboard's dark green palette, Manrope and DM Mono. The bundled WASM renderer works without native graphics packages. Graphics remain in a per-session `act-mcp-visuals-*` directory in your OS temporary folder so chat links keep working after the MCP process closes; OS cleanup may eventually remove them. No raw provider errors or credentials are rendered. Host GUI image support remains a separate acceptance check; when images cannot be shown, render the supplied Mermaid instead of giving a prose-only response.
+
+To start a new demo from the chat, call `prepareRootSetup` with a lowercase ENS label and `budgetRaw: "100000"` (0.10 Test-USDC maximum). It **automatically opens your normal system browser** with the existing profile and extensions. Make the browser with your wallet extension your OS default. Do not use a separate chat-controlled Chrome window: an isolated profile may lack wallet injection. `openBrowser:false` only prepares the link; tests use this by default. The response keeps a clickable URL if automatic opening fails. `browser.opened` confirms the OS launch request, not wallet detection or a signature.
+
+The page pre-fills the label, narrow delegate/restrict/reclaim mandate and exact funding amount. Connect your wallet and review/sign the separate `createRoot`, optional exact USDC `approve`, `fundRoot`, and `setRootOperator` transactions. No key or token enters the link or chat. After creation, return to chat and read the new ENS name. Later Child operations use the authorized companion operator without a new owner signature at each step.
+
+### Keep a visible MCP connection open on your desktop
+
+Run `pnpm mcp:desktop` in a separate terminal. It starts the same local STDIO server, performs a live `getTree` read, prints `CONNECTED` with chain/block/node count and keeps its **own** connection open, checking it every minute. Ctrl+C stops it. This is an optional, honest status window; Codex and Claude still start **their own** STDIO process when a chat connects. The monitor is not a pairing service and the public dashboard cannot observe it.
+
+### Claude Code and Claude Desktop
+
+For Claude Code on the same laptop, use the same absolute paths printed by `pnpm mcp:settings`:
+
+```powershell
+$actScript = (Resolve-Path -LiteralPath 'scripts/mcp-readonly-server.mjs').Path
+$actNode = (Get-Command node).Source
+claude mcp add --scope user capital_tree_readonly -- $actNode $actScript
+claude mcp get capital_tree_readonly
+
+```
+
+`claude mcp get` must show `Connected`. Then ask for `visualizeTree` in Claude Code. Claude may ask you to approve that read-only tool once. Do not grant a blanket write permission. This Claude Code configuration is **separate** from the Claude Desktop chat configuration. [Claude Code's MCP guide](https://code.claude.com/docs/en/mcp) explains local STDIO installation and scopes.
+
+For Claude Desktop chat, open **Settings → Developer** and edit its local MCP configuration (`%APPDATA%\Claude\claude_desktop_config.json` on Windows). Merge the `capital_tree_readonly` entry printed by `pnpm mcp:settings` under the existing `mcpServers` object; do not replace other servers. Fully quit and reopen Claude Desktop, then check **+ → Connectors** and Developer connection status. Anthropic documents this [local configuration](https://py.sdk.modelcontextprotocol.io/get-started/real-host/) and the [Desktop connection check](https://support.claude.com/en/articles/10949351-getting-started-with-local-mcp-servers-on-claude-desktop). A packaged `.mcpb` extension for one-click install via Settings → Extensions is **not** supplied yet; do not select a random remote connector, which would require a publicly reachable server. Claude Desktop chat itself has not yet been manually verified with this project.
+
+This is a local Codex chat, not a normal chat at chatgpt.com. ChatGPT web does not read local Codex config or start this STDIO process. The [official distinction](https://learn.chatgpt.com/docs/extend/mcp?surface=cli) matters for jury instructions. The keyless server prepares the owner-wallet setup but has no financial signer; the full 17-tool companion remains separate. Avoid registering both under different names in the same chat to prevent duplicate `getTree` tools.
+
+## Full agent actions: Linux companion only
+
+The remainder is the Linux/Codex CLI path. On Windows, use WSL2 with Linux-local paths and a working Docker integration; native PowerShell execution of `packages/runtime/cli.mjs` deliberately fails with a WSL2 message. Native macOS and cross-platform Docker-companion onboarding have not been independently verified. These instructions are not a claim that a fresh Judge laptop can already perform financial writes. Desktop-app environment inheritance is also unverified. The Docker worker uses a pinned Linux Codex binary. Keep the owner wallet separate from the runtime operator; never import your owner key into the companion.
+
 ## 1. Prepare the checkout and worker
 
-You need a Sepolia-capable browser wallet, Sepolia ETH for wallet and operator transactions, and a Sepolia RPC URL. **Preferred inference setup: an OpenAI API key** with API billing and access to your chosen Codex model. API inference is billed separately from the child’s USDC allowance. ChatGPT/Codex login is an alternative; HomeBox CLIProxyAPI remains optional. Choose an exact model available through your selected authentication; proxy aliases such as `gpt-6-sol` and `gpt-6-luna` are not assumed to be API model names.
+You need a Sepolia-capable browser wallet, Sepolia ETH for wallet and operator transactions, and a Sepolia RPC URL. **Preferred inference setup: an OpenAI API key** with API billing and access to your chosen Codex model. API inference is billed separately from the child’s USDC allowance. ChatGPT/Codex login is an alternative; HomeBox CLIProxyAPI remains optional. Choose an exact model available through your selected authentication; `gpt-6-luna` with high reasoning was verified through the official OpenAI API; check current access to your chosen model.
 
 On a Linux host, install Node 22, pnpm 11.13.1, Docker accessible to your non-root user, and **Codex CLI 0.154.0**. Check the prerequisites before continuing:
 
@@ -17,6 +144,7 @@ node --version
 pnpm --version
 codex --version
 docker info --format '{{.Architecture}}'
+
 ```
 
 Use the [official Codex CLI installation guide](https://developers.openai.com/codex/cli/) to obtain the CLI, but pin version `0.154.0` for this worker image. Do not run an unreviewed install script. The image builder and native launcher require the **same Linux ELF executable**, not an npm shell wrapper, for the same architecture as the Docker daemon. Locate it and independently verify its SHA-256 against your trusted release source. The hash printed by your own downloaded file is not an independent expected hash.
@@ -28,6 +156,7 @@ pnpm install --frozen-lockfile --ignore-scripts
 pnpm build
 ACT_CODEX_BINARY=/absolute/path/to/linux-codex
 node packages/runtime/build-worker-image.mjs "$ACT_CODEX_BINARY" TRUSTED_64_CHARACTER_SHA256
+
 ```
 
 Record the immutable `sha256:` image ID printed by the builder for the config in step 3. Rebuild after plugin/runtime changes; an old image contains the old MCP tool schemas. See the [runtime guide](../packages/runtime/README.md) for isolation and image details.
@@ -44,6 +173,7 @@ install -d -m 700 "$ACT_SETUP_DIR" "$ACT_SETUP_DIR/codex-home"
 (umask 077; touch "$ACT_SETUP_DIR/openai-api-key")
 chmod 600 "$ACT_SETUP_DIR/openai-api-key"
 ${EDITOR:-vi} "$ACT_SETUP_DIR/openai-api-key"
+
 ```
 
 Set `openaiApiKeyFile` in step 3 to this file’s absolute path. No browser/device login is needed for this worker profile. The host uses the official [Codex app-server API-key flow](https://learn.chatgpt.com/docs/app-server) with ephemeral credential storage. The key is not copied into `auth.json`, worker mounts or worker environment variables. A configured missing or invalid key file fails without falling back to another login.
@@ -55,6 +185,7 @@ Omit `openaiApiKeyFile` from the config. Create `ACT_SETUP_DIR` and its private 
 ```sh
 CODEX_HOME="$ACT_SETUP_DIR/codex-home" "$ACT_CODEX_BINARY" -c 'cli_auth_credentials_store="file"' login
 CODEX_HOME="$ACT_SETUP_DIR/codex-home" "$ACT_CODEX_BINARY" login status
+
 ```
 
 Use `login --device-auth` if the host has no browser. These commands authenticate only this host profile; they do not register MCP or authorize wallet actions.
@@ -78,6 +209,7 @@ install -d -m 700 "$ACT_SETUP_DIR"
 (umask 077; touch "$ACT_SETUP_DIR/config.json")
 chmod 600 "$ACT_SETUP_DIR/config.json"
 ${EDITOR:-vi} "$ACT_SETUP_DIR/config.json"
+
 ```
 
 Use absolute paths for `codexBinary`, `codexHome`, and the CLI commands below. Set `codexBinary` to the same verified `ACT_CODEX_BINARY` used to build the image and run the worker app-server; do not use a `command -v codex` path that resolves to a wrapper. Do not put the OpenAI key, Codex home, operator key, or `root-session.token` in Git. Example config; replace every placeholder and make `runtimeRoot` a **new, persistent** private directory for this one root and controller:
@@ -97,6 +229,7 @@ Use absolute paths for `codexBinary`, `codexHome`, and the CLI commands below. S
   "reasoningEffort": "high",
   "childGasWei": "0"
 }
+
 ```
 
 The example selects `gpt-6-luna` with `reasoningEffort: "high"` for every native worker. The optional `reasoningEffort` override currently accepts `high`; omit it to use the model default. API-key preflight uses OpenAI’s live model endpoint, because the pinned CLI’s built-in catalog can lag newly released models. ChatGPT mode still checks the CLI account catalog.
@@ -105,6 +238,7 @@ Check the configured authentication, every configured model and Docker before cr
 
 ```sh
 node packages/runtime/cli.mjs check-codex /absolute/private/config.json
+
 ```
 
 This preflight checks account and model metadata (using the official OpenAI models endpoint in API-key mode); it does not make a model inference or a financial call. The companion also checks native availability before allocating capital. It does not establish inference quota or billing credit. API-key mode uses the private key file and ephemeral app-server authentication; ChatGPT mode uses the dedicated `codexHome` login. The Docker worker stays network isolated and receives only scoped finance tools; it does not receive the host's Codex credentials. Preserve `runtimeRoot`, including its encrypted key files and `keys/master.password`; losing either makes the bound operator key unavailable. Do not reuse that directory for another root or controller.
@@ -113,6 +247,7 @@ This preflight checks account and model metadata (using the official OpenAI mode
 
 ```sh
 node packages/runtime/cli.mjs prepare-root /absolute/private/config.json
+
 ```
 
 This prints the **public operator address**, not its key. In your root's Setup & control page, use **Bind operator** to authorize that address and set its mandate. Wait for the wallet transaction to confirm and verify the bound address in the live root before starting the companion. The **vault does not need ETH**: it holds USDC and DEMO-USD, while the external signer pays transaction gas. Fund the operator address with Sepolia ETH for its own transactions; depositing USDC into the vault does not pay gas. A child spawn on the current public deployment used about 3.56 million gas including its ENS registry and allocation, so estimate ETH from current gas prices and keep headroom. `childGasWei` is a separate optional ETH grant for each spawned child; zero gives no grant. Size it from current fees and the task, within the runtime cap described in the runtime guide. A read-only child task does not require child transaction gas; x402 settlement gas is normally paid by the service facilitator, while other child onchain writes need child ETH.
@@ -121,31 +256,28 @@ This prints the **public operator address**, not its key. In your root's Setup &
 
 ```sh
 node packages/runtime/cli.mjs start /absolute/private/config.json
+
 ```
 
-This starts with public-chain writes disabled. Keep this terminal running. It prints a loopback tools URL and a private root-token file path. Use the exact values in the next step. Restarting rotates the root token.
+This starts with public-chain writes disabled. Keep this terminal running. It writes `mcp-ready.json` and `root-session.token` as owner-only `0600` files under the private runtime directory. Restarting rotates the token; do not copy it into a prompt, config file or command line.
 
 ## 5. Register MCP in Codex CLI
 
-In the **root interactive profile's** `~/.codex/config.toml`, add this single registration; replace the repository path. Do not put it in the companion's `codexHome`, and do not also enable the marketplace installation in the root profile.
+After building SDK, plugin and runtime, register the private launcher as a **separate full companion MCP**. The command and both arguments must be absolute Linux paths in the same WSL2 distribution that runs the companion. Use your actual checkout and private `runtimeRoot` from the config above. Do not register the keyless and full server together under different names in one chat.
+Use this launcher with the current native OpenAI API-key worker configuration or ChatGPT login; it does not require CLIProxyAPI.
 
 ```toml
 [mcp_servers.capital_tree_root]
 command = "node"
-args = ["/absolute/path/to/agent-capital-tree/packages/plugin/bundle/server.mjs"]
+args = ["/your/linux/checkout/packages/runtime/mcp-stdio.mjs", "/your/private/runtimeRoot"]
 tool_timeout_sec = 300
-env_vars = ["ACT_RUNTIME_URL", "ACT_MCP_TOKEN"]
+
 ```
 
-In a second Bash terminal, load the companion's printed loopback URL and private MCP token without displaying the token, then launch your root Codex CLI:
+If Codex runs on Windows while the companion runs in WSL2, use `command = "wsl.exe"` and prepend `"--exec", "/absolute/linux/path/to/node"` to `args`; the default WSL distribution must be the one running the companion. Find that Node path with `wsl --exec sh -lc 'command -v node'` in PowerShell. A bare `node` after `wsl --exec` is **not reliable** when Node is installed via nvm: WSL does not load the interactive shell. The launcher validates the private directory/domain/chain, loads the current loopback origin and rotated token inside WSL2, then starts the existing bundled 17-tool MCP without printing either secret. If the companion is stopped, the launcher fails closed. Check registration with `codex mcp get capital_tree_root --json` and restart the chat after changing modes.
 
-```sh
-export ACT_RUNTIME_URL='http://127.0.0.1:PORT_PRINTED_BY_COMPANION'
-export ACT_MCP_TOKEN="$(< /absolute/private/runtime/root-session.token)"
-CODEX_HOME="$HOME/.codex" codex
-```
-
-Use `CODEX_HOME="$HOME/.codex" codex mcp get capital_tree_root --json` to check the registration and 300-second timeout in the root profile. See the [plugin guide](../packages/plugin/README.md) for installation details and the marketplace-write limitation.
+See the [plugin guide](../packages/plugin/README.md) for the 17 tool schemas. The standalone plugin includes `bundle/visual-assets` (WASM and fonts) and always returns PNGs for tool responses, with Mermaid fallback for hosts that cannot display images. Keep the assets alongside `bundle/server.mjs`.
+On Linux, restart the root Codex session after registering the launcher; it reads the current token from the private runtime directory. No token needs to be copied into the root Codex environment.
 
 ## 6. Read, then perform one controlled spawn
 
@@ -155,9 +287,10 @@ For a write test, stop the companion with Ctrl-C and restart explicitly:
 
 ```sh
 node packages/runtime/cli.mjs start /absolute/private/config.json --enable-sepolia-writes
+
 ```
 
-Refresh the printed URL/token in the launching terminal and restart the Codex session. Ask it to use **our MCP `spawnChild`** with these arguments, replacing `operationKey` with a fresh `0x`-prefixed 32-byte hex value. The current manifest's USDC address is shown here; check it against the manifest when you run this. `10000` raw six-decimal units equals 0.01 USDC. The parent must have `delegate`, sufficient free USDC, and an active mandate.
+Restart the Codex session; the launcher reads the current private token automatically. Ask it to use **our MCP `spawnChild`** with these arguments, replacing `operationKey` with a fresh `0x`-prefixed 32-byte hex value. The current manifest's USDC address is shown here; check it against the manifest when you run this. `10000` raw six-decimal units equals 0.01 USDC. The parent must have `delegate`, sufficient free USDC, and an active mandate.
 
 ```json
 {
@@ -173,10 +306,10 @@ Refresh the printed URL/token in the launching terminal and restart the Codex se
     "maxPerAction": { "0x1c7D4B196Cb0C7B01d743Fbc6116a902379C7238": "0" }
   }
 }
+
 ```
 
 The companion requires at least one currently active onchain capability before dispatching a worker. This example retains `delegate` but sets its only allowed asset's per-action limit to zero and grants no child ETH (`childGasWei: "0"` in step 3). The task is read-only, while the onchain mandate still includes a restricted delegation right; do not describe it as a pure read-only mandate. The parent must itself have `delegate` and allow USDC. The name must be lowercase ASCII, begin with a letter, and contain at most 31 letters/digits/hyphens; it must be available under its parent. Record the key and exact arguments privately before calling the tool. On an uncertain result, call `getOperationStatus` with that key and check the onchain child and receipt. Reuse the exact same key and arguments for reconciliation; never create a new key just because the original call timed out.
-
 The companion starts a separate Docker Codex worker after confirmed allocation. A native Codex subagent does not automatically become a capital worker. Verify the new child and its receipt in the dashboard. For another test choose a new name and operation key only after the previous result is known.
 
 ### Jury scenario: a 10 USDC worker with two applications
@@ -197,7 +330,7 @@ For the swap, use `tokenIn` as USDC, `amountIn: "10000"`, the owner-approved `mi
 
 The launched worker receives both controller token addresses and their decimals from the companion's onchain reads. It should use `getTree` for a fresh timestamp and vault state, `getPaymentServices` for configured sellers, then the scoped `purchaseService` and `swap` tools for the two actions. It cannot query a public RPC, explorer or website directly from its isolated container. The companion prepares the configured child gas grant before launch, but that does not prove the child's current ETH balance; the swap tool handles simulation and submission. On a gas or simulation error, stop and report it without changing the approved minimum output or starting another payment.
 
-Record the spawn key and full arguments privately. If the spawn call times out or its result is unclear, check `getOperationStatus`, the current tree and the transaction receipt before taking another action. Retry only with the same key and arguments. `getOperationStatus` tracks spawn allocation and dispatch only; its `not_allocated` result says nothing about a payment or swap. Apply the purchase-specific nonce and merchant reconciliation below to uncertain x402 results, and inspect the receipt and vault state after an uncertain swap before another write. Verify the child's actual rights, vault allocation, payment and swap receipts in the dashboard and onchain; a native Codex subagent has none of this custody or authority.
+Record the spawn key and full arguments privately. If the spawn call times out or its result is unclear, check `getOperationStatus`, the current tree and the transaction receipt before taking another action. Retry only with the same key and arguments. `getOperationStatus` tracks `createChildVault` and `spawnChild` allocation/dispatch only; its `not_allocated` result says nothing about a payment or swap. Apply the purchase-specific nonce and merchant reconciliation below to uncertain x402 results, and inspect the receipt and vault state after an uncertain swap before another write. Verify the child's actual rights, vault allocation, payment and swap receipts in the dashboard and onchain; a native Codex subagent has none of this custody or authority.
 
 `getOperationStatus.dispatchStatus: "started"` confirms worker launch, not task completion. A stopped or failed worker is not automatically replayed. Reconcile payment, swap, vault and receipt state before any supervised continuation; do not allocate a replacement child just to repeat an uncertain task.
 
@@ -238,6 +371,7 @@ With a USDC-compatible controller and a PAY-authorized operator, add an operator
     "maxAmount": "10000"
   }]
 }
+
 ```
 
 Replace the illustrative URL/address with a real service that supports x402 v2 `exact`, Ethereum Sepolia (`eip155:11155111`) and Circle USDC. `10000` raw units equals **0.01 USDC**. HTTPS is required except for explicit loopback demo URLs. No URL, network or payee supplied by a model can override this configuration. The hosted x402.org facilitator currently does not advertise Ethereum Sepolia; compatible settlement infrastructure is required.

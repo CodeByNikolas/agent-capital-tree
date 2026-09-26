@@ -13,3 +13,4 @@ export * from './gas.js';
 export * from './companion.js';
 export * from './payments.js';
 export * from './codex-launcher.js';
+export * from './capital-readiness.js';

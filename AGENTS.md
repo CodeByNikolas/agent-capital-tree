@@ -11,3 +11,4 @@
 - Keep keys, provider credentials, and private runtime data outside the repository. Give workers only their own scoped access.
 - The public targets are CodeByNikolas/agent-capital-tree and a new Vercel project in the tumblockchains-projects team. The user authorized publication. Preserve existing host services and projects.
 - Mark technically unverified integrations as open. The completion criteria in PLAN.md still apply, including real wallet and plugin end-to-end tests on the published app.
+- When using Agent Capital Tree MCP, show every returned dashboard image in chat, including setup, actions and errors. Embed the exact Markdown image links returned by the tool. If the host cannot display them, show the supplied Mermaid fallback and state the limitation. `prepareRootSetup` already opens the normal system browser with the existing wallet profile; wallet approval remains with the user.

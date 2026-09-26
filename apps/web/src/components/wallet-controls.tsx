@@ -13,6 +13,7 @@ import type {
 } from "@/lib/dashboard-types";
 import type { PublicDeployment } from "@/lib/deployment";
 import type { WalletActionNotice } from "@/lib/use-wallet-actions";
+import { InfoHint } from "@/components/info-hint";
 
 export type WalletActionMode =
   | "create-root"
@@ -94,6 +95,7 @@ function defaultAmounts(policy: Policy | null): readonly [string, string] {
 
 function PolicyFields({
   initialPolicy,
+  demoBudget,
   deployment,
   data,
   children,
@@ -102,6 +104,7 @@ function PolicyFields({
   onSubmit,
 }: {
   initialPolicy: Policy | null;
+  demoBudget?: string | null;
   deployment: PublicDeployment;
   data: DashboardData;
   children?: ReactNode;
@@ -110,15 +113,15 @@ function PolicyFields({
   onSubmit: (draft: PolicyDraft) => Promise<void>;
 }) {
   const labels = tokenLabels(data, deployment);
-  const [selectedPermissions, setSelectedPermissions] = useState<Permission[]>([...(initialPolicy?.permissions ?? [])]);
+  const [selectedPermissions, setSelectedPermissions] = useState<Permission[]>([...(initialPolicy?.permissions ?? (demoBudget ? ["delegate", "restrict", "reclaim"] : []))]);
   const [allowedTokens, setAllowedTokens] = useState<[boolean, boolean]>([
     initialPolicy ? initialPolicy.allowedTokens.includes(initialPolicy.maxActionAmounts[0]?.symbol ?? "") : true,
-    initialPolicy ? initialPolicy.allowedTokens.includes(initialPolicy.maxActionAmounts[1]?.symbol ?? "") : true,
+    initialPolicy ? initialPolicy.allowedTokens.includes(initialPolicy.maxActionAmounts[1]?.symbol ?? "") : !demoBudget,
   ]);
-  const [maxAmounts, setMaxAmounts] = useState<[string, string]>([...defaultAmounts(initialPolicy)]);
+  const [maxAmounts, setMaxAmounts] = useState<[string, string]>(demoBudget && !initialPolicy ? [(Number(demoBudget) / 1_000_000).toString(), "0"] : [...defaultAmounts(initialPolicy)]);
   const [expiresAt, setExpiresAt] = useState(policyDate(initialPolicy) || expiryDateBeforeNamespace(deployment.namespaceExpiry));
   const [error, setError] = useState<string | null>(null);
-  const poolId = initialPolicy?.poolId ?? deployment.poolId ?? zeroPoolId;
+  const poolId = initialPolicy?.poolId ?? (demoBudget ? zeroPoolId : deployment.poolId ?? zeroPoolId);
   const canUsePoolCapabilities = deployment.poolConfigured && poolId !== zeroPoolId;
 
   function togglePermission(permission: Permission) {
@@ -196,7 +199,7 @@ function PolicyFields({
         </label>
       </div>
       <fieldset className="wallet-permission-fields" disabled={disabled}>
-        <legend>Allowed capabilities</legend>
+        <legend>Allowed capabilities <InfoHint term="mandate" /></legend>
         <div>
           {permissions.filter((permission) => permission !== "pay" || deployment.paymentsSupported).map((permission) => {
             const needsPool = ["swap", "manage-liquidity", "collect-fees", "exit-liquidity"].includes(permission);
@@ -233,6 +236,9 @@ export function WalletControlsPanel({
   mode,
   onModeChange,
   onRootCreated,
+  demoLabel,
+  demoBudget,
+  setupOperator,
 }: {
   data: DashboardData;
   deployment: PublicDeployment;
@@ -245,10 +251,14 @@ export function WalletControlsPanel({
   mode: WalletActionMode;
   onModeChange: (mode: WalletActionMode) => void;
   onRootCreated: (rootId: string) => void;
+  demoLabel?: string | null;
+  demoBudget?: string | null;
+  setupOperator?: string | null;
 }) {
-  const [rootLabel, setRootLabel] = useState("");
-  const [operatorAddress, setOperatorAddress] = useState(data.rootOperator ?? "");
-  const [fundAmounts, setFundAmounts] = useState<[string, string]>(["0", "0"]);
+  const [rootLabel, setRootLabel] = useState(demoLabel ?? "");
+  const [operatorAddress, setOperatorAddress] = useState(setupOperator ?? data.rootOperator ?? "");
+  const budgetUSDC = demoBudget ? (Number(demoBudget) / 1_000_000).toString() : "0";
+  const [fundAmounts, setFundAmounts] = useState<[string, string]>([budgetUSDC, "0"]);
   const [childLabel, setChildLabel] = useState("");
   const [childAgent, setChildAgent] = useState("");
   const [childAmounts, setChildAmounts] = useState<[string, string]>(["0", "0"]);
@@ -348,6 +358,7 @@ export function WalletControlsPanel({
         <PolicyFields
           key="create-root"
           initialPolicy={null}
+          demoBudget={demoBudget}
           deployment={deployment}
           data={data}
           submitLabel="Create root vault"
@@ -386,19 +397,21 @@ export function WalletControlsPanel({
       {mode === "set-root-operator" && (
         <PolicyFields
           key={`operator-${data.rootId}`}
-          initialPolicy={data.source === "direct-rpc" ? data.nodes.find((node) => node.depth === 0)?.localPolicy ?? null : null}
+          initialPolicy={setupOperator && demoBudget ? null : data.source === "direct-rpc" ? data.nodes.find((node) => node.depth === 0)?.localPolicy ?? null : null}
+          demoBudget={setupOperator ? demoBudget : null}
           deployment={deployment}
           data={data}
-          submitLabel="Set root operator"
+          submitLabel="Authorize agent for this vault"
           disabled={!canManageRoot || busy}
           onSubmit={async (draft) => {
             await actions.setRootOperator?.(data.rootId, operatorAddress, draft);
           }}
         >
           <label className="wallet-field">
-            <span>Root operator address</span>
+            <span>Agent signing address (operator)</span>
             <input value={operatorAddress} onChange={(event) => setOperatorAddress(event.target.value)} placeholder="0x…" disabled={!canManageRoot || busy} required />
           </label>
+          <p className="field-help">Your wallet remains the owner. This separate local key can sign only within the vault mandate. Verify the address and limits before authorizing. Authorizing again changes the generation and invalidates existing agents. The agent also needs native Sepolia-ETH for gas; a USDC approval does not provide gas.</p>
         </PolicyFields>
       )}
 

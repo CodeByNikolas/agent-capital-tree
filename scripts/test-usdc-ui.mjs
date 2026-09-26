@@ -93,7 +93,8 @@ try {
   assert.equal(refreshed.length, 3);
   await expect(page.locator('.payment-table tbody tr')).toContainText('0.010 USDC');
   checks.push('Tree, activity and payments refresh automatically without a refresh button; settlement row stays visible');
-  assert.equal((await page.request.get(`${base}/applications?vault=${vault}`)).status(),404);
+  assert.equal((await page.request.get(`${base}/applications?vault=${vault}`)).status(),200);
+  assert.equal((await page.request.get(`${base}/mcp`)).status(),200);
   assert.deepEqual(errors,[]);
   const report={base,checkedAt:new Date().toISOString(),checks,transactionsSent:0,realWalletTested:false};
   await writeFile(new URL('usdc-ui-report.json',output),JSON.stringify(report,null,2)+'\n');

@@ -1,0 +1,91 @@
+{
+  "status": "passed",
+  "base": "http://127.0.0.1:3096",
+  "checks": [
+    {
+      "route": "/",
+      "width": 1440,
+      "colorScheme": "light"
+    },
+    {
+      "route": "/tree",
+      "width": 1440,
+      "colorScheme": "light"
+    },
+    {
+      "route": "/activity",
+      "width": 1440,
+      "colorScheme": "light"
+    },
+    {
+      "route": "/uniswap",
+      "width": 1440,
+      "colorScheme": "light"
+    },
+    {
+      "route": "/payments",
+      "width": 1440,
+      "colorScheme": "light"
+    },
+    {
+      "route": "/applications",
+      "width": 1440,
+      "colorScheme": "light"
+    },
+    {
+      "route": "/mcp",
+      "width": 1440,
+      "colorScheme": "light"
+    },
+    {
+      "route": "/setup",
+      "width": 1440,
+      "colorScheme": "light"
+    },
+    {
+      "route": "/",
+      "width": 390,
+      "colorScheme": "dark"
+    },
+    {
+      "route": "/tree",
+      "width": 390,
+      "colorScheme": "dark"
+    },
+    {
+      "route": "/activity",
+      "width": 390,
+      "colorScheme": "dark"
+    },
+    {
+      "route": "/uniswap",
+      "width": 390,
+      "colorScheme": "dark"
+    },
+    {
+      "route": "/payments",
+      "width": 390,
+      "colorScheme": "dark"
+    },
+    {
+      "route": "/applications",
+      "width": 390,
+      "colorScheme": "dark"
+    },
+    {
+      "route": "/mcp",
+      "width": 390,
+      "colorScheme": "dark"
+    },
+    {
+      "route": "/setup",
+      "width": 390,
+      "colorScheme": "dark"
+    },
+    {
+      "liveTree": true,
+      "skeletonBeforeData": true
+    }
+  ],
+  "transactionsSent": 0
+}

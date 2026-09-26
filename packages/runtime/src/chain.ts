@@ -39,7 +39,10 @@ export function chainHandlers(config: ChainConfig): Partial<Record<ToolName, Too
   }
 
   const handlers: Partial<Record<ToolName, ToolHandler>> = {
-    getTree: async (_context, args) => client.getTree(BigInt(String(args.rootId))),
+    getTree: async (_context, args) => {
+      const resolved = await client.resolveTree(String(args.query ?? args.rootId));
+      return { ...resolved.tree, selectedNodeId: resolved.selectedNodeId };
+    },
     getEffectivePolicy: async (_context, args) => client.controller.read.getEffectivePolicy([BigInt(String(args.nodeId))]),
   };
   for (const name of ['allocateCapital', 'tightenPolicy', 'revokeSubtree', 'reclaimAssets'] as const) {

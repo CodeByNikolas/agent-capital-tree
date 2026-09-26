@@ -2,8 +2,17 @@
 
 As of 26 September 2026. Product decisions are fixed; implementation is in progress, and actual acceptance status is in STATUS.md. This plan supersedes earlier brainstorming. Read it with STATUS.md after context compaction.
 
-## Current change: minimal vault proxies
+## Current demo: chat-managed capital and autonomous workers
 
+The owner wallet authorizes a separate local operator once. The capital-mode MCP then lets the current Codex or Claude chat manage real ENS child vaults and bounded allocations. `createChildVault` does not start an AI process and reports `dispatchStatus: not_requested`. It needs no Docker, inference key or provider configuration. The owner key never enters the MCP. The local operator needs Sepolia ETH for direct writes; root funding and operator authorization remain wallet actions. Bound operators must be reused rather than silently replaced. Existing worker and gas journals block an unsafe mode switch.
+
+For an autonomous child, use `spawnChild` with an explicit model, task, allocation and narrower mandate. Docker and a configured native Codex host are required. The preferred worker inference path uses a private OpenAI API key with `gpt-6-luna` / `high`; ChatGPT login is an alternative and CLIProxyAPI is optional when explicitly configured. The live funded API-key E2E is recorded in ACCEPTANCE.md. No automatic Codex subagent hook creates onchain custody.
+
+`pnpm mcp:capital` starts and manages the local capital companion on Linux or WSL2, reuses private state and exposes 21 tools, including setup/read helpers. The base companion has 17 tools; the keyless read-only server has three. Every MCP response carries a locally rendered dashboard PNG and a Mermaid fallback without repeating a chain read or write. Large trees split into pages from one snapshot. The host must support local image display; MCP delivery alone does not prove a desktop GUI renders the image. `prepareRootSetup` opens the normal wallet browser for review but never signs a transaction.
+
+The read-only MCP works without a signer or Docker on supported Node hosts. Its keyless installation tests use disposable profiles and verify a live Sepolia tree. The public dashboard independently reads Sepolia; it cannot observe a local STDIO MCP session without explicit pairing. Financial writes on a new external jury laptop, native macOS signing, ChatGPT-login worker E2E and Claude Code financial E2E remain acceptance gates. Avoid repeating completed seed, payment and worker transactions.
+
+## Current change: minimal vault proxies
 User decision: replace repeated full CapitalVault deployments with non-upgradeable EIP-1167 clones. Each vault retains separate funds and state. Shared pool/token/Permit2 configuration stays immutable in the implementation; only the controller binding is initialized in clone storage. VaultFactory deploys and initializes each clone atomically. The implementation is locked and no upgrade authority exists. ENSv2 ManagedRegistry deployments remain unchanged.
 
 Acceptance: reject unauthorized/repeated/zero-controller initialization; prove independent custody, ENS checks, swaps, LP lifecycle, owner recovery, and Circle ERC-1271/x402 settlement through the proxies. Record complete child-spawn gas, not only proxy deployment gas. Stage a new Sepolia controller and namespace with a separate transaction journal and MultiBaas label; retain old onchain funds and names. Switch the current manifest and website only after the new deployment works. UI currency labels say USDC; preview banners continue to identify invented sample balances.

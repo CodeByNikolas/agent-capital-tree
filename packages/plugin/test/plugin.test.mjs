@@ -1,3 +1,4 @@
+import { z } from 'zod';
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { createServer } from 'node:http';
@@ -73,7 +74,7 @@ test('bundled stdio MCP server works from a copied plugin without node_modules',
     assert.ok(listed.tools.some(tool => tool.name === 'getTree'));
     const status = listed.tools.find(tool => tool.name === 'getOperationStatus');
     assert.ok(status);
-    assert.match(status.description, /only a spawnChild allocation/);
+    assert.match(status.description, /only a spawnChild or createChildVault allocation/);
     assert.match(status.description, /not_allocated for a payment key says nothing about payment settlement/);
     const spawn = listed.tools.find(tool => tool.name === 'spawnChild');
     assert.ok(spawn);
@@ -85,6 +86,8 @@ test('bundled stdio MCP server works from a copied plugin without node_modules',
     const result = await client.callTool({ name: 'getTree', arguments: { rootId } });
     assert.equal(result.isError, true);
     assert.match(result.content[0].text, /not configured/);
+    assert.equal(result.content[2].mimeType, 'image/png');
+    assert.equal(Buffer.from(result.content[2].data, 'base64').subarray(0, 8).toString('hex'), '89504e470d0a1a0a');
   } finally {
     await client.close();
     await rm(folder, { recursive: true, force: true });
@@ -104,4 +107,13 @@ test('spawn accepts readable ENS labels but rejects paths and invalid labels', (
   assert.equal(toolSpecs.spawnChild.schema.parse({ ...request, name: 'researcher' }).name, 'researcher');
   for (const name of ['../master', 'child.parent', '', 'A name', 'a'.repeat(32)]) assert.throws(() => toolSpecs.spawnChild.schema.parse({ ...request, name }));
   assert.equal(toolSpecs.spawnChild.schema.parse(request).name, undefined);
+});
+
+
+test('tree lookup retains an object tool schema for native workers and validates one selector', () => {
+  for (const spec of Object.values(toolSpecs)) assert.equal(z.toJSONSchema(spec.schema).type, 'object');
+  assert.deepEqual(toolSpecs.getTree.schema.parse({ rootId: '1' }), { rootId: '1' });
+  assert.deepEqual(toolSpecs.getTree.schema.parse({ query: 'capital.agentcapitalvault.eth' }), { query: 'capital.agentcapitalvault.eth' });
+  assert.throws(() => toolSpecs.getTree.schema.parse({}));
+  assert.throws(() => toolSpecs.getTree.schema.parse({ rootId: '1', query: 'capital.agentcapitalvault.eth' }));
 });

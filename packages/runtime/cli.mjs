@@ -3,12 +3,15 @@ import { execFile } from 'node:child_process';
 import { promisify } from 'node:util';
 import { lstat, readFile } from 'node:fs/promises';
 import { isAbsolute } from 'node:path';
-import { RuntimeCompanion, prepareRootOperator, NativeCodexLauncher } from './dist/index.js';
 
 const [command, configPath, flag] = process.argv.slice(2);
+if (process.platform === 'win32') {
+  throw new Error('Native Windows finance runtime is unsupported. Run this CLI inside WSL2 (Linux) with a Linux-absolute private config path. For a keyless MCP read-only check on Windows, run pnpm mcp:doctor and pnpm mcp:verify from the repo root.');
+}
 if (!['prepare-root', 'start', 'check-codex'].includes(command) || !isAbsolute(configPath ?? '') || (flag && flag !== '--enable-sepolia-writes')) {
   throw new Error('usage: node packages/runtime/cli.mjs prepare-root|start|check-codex /absolute/private-config.json [--enable-sepolia-writes]');
 }
+const { RuntimeCompanion, prepareRootOperator, NativeCodexLauncher } = await import('./dist/index.js');
 const privateFile = async path => {
   if (!isAbsolute(path)) throw new Error('private file path must be absolute');
   const info = await lstat(path);

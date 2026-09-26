@@ -7,6 +7,12 @@
     "build": "pnpm -r --if-present build",
     "typecheck": "pnpm -r --if-present typecheck",
     "test": "pnpm -r --if-present test",
+    "mcp:doctor": "node scripts/mcp-doctor.mjs",
+    "mcp:verify": "node scripts/test-plugin-install.mjs",
+    "mcp:chat-verify": "node scripts/test-mcp-chat.mjs",
+    "mcp:desktop": "node scripts/mcp-desktop.mjs",
+    "mcp:settings": "node scripts/mcp-settings.mjs",
+    "mcp:capital": "node packages/runtime/capital.mjs",
     "wallet:create": "node scripts/create-test-wallet.mjs"
   },
   "devDependencies": {

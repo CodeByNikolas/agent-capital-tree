@@ -76,6 +76,12 @@ async function boundedText(response: Response): Promise<string> {
   return Buffer.concat(parts).toString('utf8');
 }
 
+/**
+ * Vault-custodial x402: EIP-3009 authorizations spend from the node vault and are
+ * gated by CapitalController.checkPayment and CapitalVault ERC-1271 checks.
+ * The current USDC deployment supports this path; the historical ACT-A/ACT-B
+ * deployment does not. A compatible Ethereum Sepolia facilitator is required.
+ */
 export function paymentHandler(config: PaymentConfig): ToolHandler {
   for (const service of config.services) validateService(service);
   if (new Set(config.services.map(s => s.id)).size !== config.services.length) throw new Error('Duplicate service ID');

@@ -1,12 +1,36 @@
 # Agent Capital Tree
 
-Give agents capital, delegate smaller amounts to sub-agents, and enforce narrower permissions down the tree.
+**Give AI agents capital without giving them the whole wallet.** A human funds a root vault, then agents delegate smaller amounts into separate child vaults. ENSv2 roles and contract-enforced ancestor policies narrow what each child can do. The owner retains an independent recovery path.
 
 **ENSv2 Enhanced Access Control** supplies the roles. Separate vaults bound each agent’s available funds. **Uniswap v4** enables bounded swaps and liquidity positions; **x402** enables service purchases with official Circle **USDC**. **Curvegrid MultiBaas** indexes the controller’s capital and strategy events.
 
-[Dashboard](https://agent-capital-tree.vercel.app) · [Live USDC tree](https://agent-capital-tree.vercel.app/tree?vault=capital.agentcapitalvault.eth) · [Local companion and MCP setup](docs/local-setup.md) · [Current status](STATUS.md) · [Jury walkthrough](docs/jury-demo.md)
+![Animated illustration of owner authorization, capital delegation, narrower child permissions, and owner recovery](assets/agent-capital-tree-flow.gif)
 
-The prototype targets **Ethereum Sepolia, chain 11155111**. The current release switches directly to the USDC deployment: no legacy deployment selector, old-link support or migration layer. Public contract addresses and deployment progress are recorded in [usdc-sepolia.json](deployments/usdc-sepolia.json). This is an unaudited hackathon prototype using testnet assets.
+*Illustrative flow. The dashboard and MCP read current Ethereum Sepolia state independently.*
+
+[Live dashboard](https://agent-capital-tree.vercel.app) · [Live Sepolia tree](https://agent-capital-tree.vercel.app/tree?vault=capital.agentcapitalvault.eth) · [MCP guide](https://agent-capital-tree.vercel.app/mcp) · [Local setup](docs/local-setup.md) · [Jury walkthrough](docs/jury-demo.md) · [Current status](STATUS.md)
+
+The prototype runs on **Ethereum Sepolia (chain 11155111)** with official Circle **Test-USDC**. **Uniswap v4** supports bounded swaps and vault-owned liquidity positions. **x402** supports scoped service purchases. **Curvegrid MultiBaas** indexes controller capital and strategy events. Public contract addresses are in [usdc-sepolia.json](deployments/usdc-sepolia.json). This is an unaudited hackathon prototype using testnet assets.
+
+## Try the live tree and local MCP
+
+Open the [live root vault](https://agent-capital-tree.vercel.app/tree?vault=capital.agentcapitalvault.eth) to inspect a real Sepolia tree without a wallet. Explicit preview mode contains illustrative balances and names. The dashboard shows wallet controls, but viewing a vault does not start a worker or authorize a transaction.
+
+To check the keyless local MCP from the current checkout, use Node 22+, pnpm and Codex CLI. From an existing checkout, start at `pnpm install`; clone only when you need a new checkout:
+
+```sh
+git clone https://github.com/CodeByNikolas/agent-capital-tree.git
+cd agent-capital-tree
+pnpm install --frozen-lockfile --ignore-scripts
+pnpm --filter @agent-capital-tree/sdk build
+pnpm --filter @agent-capital-tree/plugin build
+pnpm mcp:doctor
+pnpm mcp:verify
+pnpm mcp:chat-verify
+
+```
+
+These checks need internet access for the public app and Sepolia RPC. They use a disposable Codex profile or a keyless local STDIO server and send no transaction. The [setup guide](docs/local-setup.md) explains how to register that server in Codex or Claude and ask for the live tree image. Wallet and companion writes have separate prerequisites and acceptance status in [STATUS.md](STATUS.md).
 
 ## How it works
 
@@ -22,7 +46,7 @@ Vaults are **non-upgradeable EIP-1167 proxies**: every root and child has a sepa
 
 The public researcher spawn used **3,556,781 gas**, down from **5,914,316** for its full-vault predecessor (**39.86% less**), including the ENS registry and capital allocation. [Both receipts](deployments/usdc-proxy-gas.json) document the comparison.
 
-Native Codex subagents do not automatically become capital workers. Agents use our MCP `spawnChild` workflow; no automatic Codex hooks are enabled.
+Native Codex subagents do not automatically become capital workers. For the short demo, use `createChildVault`: the current chat manages a real ENS/vault/budget without Docker or another model process. `spawnChild` is the separate autonomous-worker option. No automatic Codex hooks are enabled.
 
 ## Applications
 
@@ -34,7 +58,8 @@ The x402 facilitator submits the signed authorization and pays settlement gas. U
 
 **Uniswap:** typed swaps and vault-owned LP positions use one fixed v4 pool. Management, fee collection and exit are separate permissions. The quote token is **DEMO-USD**, a clearly valueless six-decimal demo asset. Its pool price is not a real USD valuation. Agents cannot supply arbitrary router commands or redirect outputs.
 
-**Future work:** policy-checked generic contract transactions, cumulative/rolling spending budgets and cross-currency valuation are not implemented. A child cannot spend more tokens than its vault currently owns; "cumulative budget" here means a separate lifetime or rolling counter that would remain binding even after top-ups or trading proceeds.
+**Future work:** policy-checked generic contract transactions, cumulative/rolling spending budgets cross-currency valuation, and an owner wallet embedded directly inside chat are not implemented. A child cannot spend more tokens than its vault currently owns; "cumulative budget" here means a separate lifetime or rolling counter that would remain binding even after top-ups or trading proceeds.
+The keyless MCP renders the live ENS agent tree as PNG with a Mermaid fallback.
 
 ## Dashboard
 
@@ -56,17 +81,20 @@ ENS roles are actual authorization, not descriptive text metadata. MultiBaas is 
 
 ## Run and test
 
-Use Node22, pnpm11.13.1, Docker and Foundry1.8.3. Follow the [complete setup guide](docs/local-setup.md) for wallet/operator separation, a private companion configuration, OpenAI API-key setup (preferred) and MCP registration. The default native worker path uses an OpenAI API key held by the host app-server, with ChatGPT/Codex login as an alternative; HomeBox CLIProxyAPI remains an optional explicit configuration. Docker workers remain network isolated and receive scoped finance tools, while the host owns inference authentication.
+For a fast local read-only check on Node 22+ hosts, run `pnpm mcp:doctor`, `pnpm mcp:verify` and `pnpm mcp:chat-verify` after installing dependencies and building the SDK and plugin. These use no wallet or signing key. The three-tool keyless server can be registered in Codex or Claude to view a live Sepolia tree and open the normal wallet browser for root setup. Its tool responses include dashboard-style PNGs with Mermaid fallback. See the [local setup guide](docs/local-setup.md).
+
+For chat-managed vaults on Linux or WSL2, build SDK, MultiBaas, plugin and runtime, then use `pnpm mcp:capital settings <your-root-ENS-name> --enable-sepolia-writes`. The capital MCP exposes 21 tools and starts its local signing companion without Docker, a model API key, a manual private JSON config or bearer copying. Your wallet still authorizes the local operator and funds the root; the operator needs Sepolia ETH for gas. `createChildVault` creates a funded child vault without a new model process. A new external-user write E2E in this mode remains open.
+
+For autonomous workers, use Node 22, pnpm 11.13.1, Docker and Foundry 1.8.3. Follow the [complete setup guide](docs/local-setup.md) for wallet/operator separation, a private companion configuration, OpenAI API-key setup (preferred) and MCP registration. The host app-server holds inference authentication; Docker workers stay network isolated and receive scoped finance tools. ChatGPT/Codex login is an alternative, and HomeBox CLIProxyAPI remains an optional explicit configuration.
 
 ```sh
-git clone --recurse-submodules https://github.com/CodeByNikolas/agent-capital-tree.git
-cd agent-capital-tree
 pnpm install --frozen-lockfile --ignore-scripts
 pnpm build
 pnpm typecheck
 pnpm test
 bash contracts/scripts/test-contracts.sh
 node scripts/test-usdc-fork.mjs --payments
+
 ```
 
 The fork test uses the actual Circle proxy and deployed Uniswap contracts on a disposable local Sepolia fork. It checks delegation, signatures, inherited restrictions, revocation, x402 settlement, retry behavior, LP opening/closure and recovery. It does not send public transactions or override token balances. See [fork evidence](deployments/usdc-x402-fork.json) and [STATUS.md](STATUS.md) for the exact completed checks and current public acceptance.
@@ -75,7 +103,7 @@ Deployment runners require an Etherscan key in `ETHERSCAN_API_KEY` or the privat
 
 The controlled x402 seller is loopback-only, charges 0.01 USDC, and uses the test owner as recipient. It demonstrates the real protocol; it is not an independent commercial merchant. The companion’s service allowlist is a runtime restriction, not an onchain merchant allowlist. Service content remains untrusted.
 
-Earlier browser-wallet and real-model evidence is retained in [ACCEPTANCE.md](ACCEPTANCE.md) as historical verification, not as a supported legacy product. Native OpenAI API-key inference with `gpt-6-luna` / `high` passed funded MCP spawn, x402 payment and Uniswap swap on Sepolia ([evidence](deployments/jury-openai-native.json)). ChatGPT-login financial E2E, independent external-machine onboarding and native-marketplace financial writes remain unproven. The current USDC/x402 flow has its own evidence and should not be conflated with those earlier runs.
+Historical browser-wallet evidence and the current native financial proof are recorded in [ACCEPTANCE.md](ACCEPTANCE.md). Native OpenAI API-key inference with `gpt-6-luna` / `high` passed funded MCP spawn, x402 payment and Uniswap swap on Sepolia ([evidence](deployments/jury-openai-native.json)). ChatGPT-login financial E2E, independent external-machine onboarding and native-marketplace financial writes remain unproven. The controlled seller and testnet token scope is stated in the evidence.
 
 [PLAN.md](PLAN.md) records product decisions. [STATUS.md](STATUS.md) tracks completed deployment/tests and remaining work. [Submission requirements](docs/ethglobal-requirements.md) and [AI-use provenance](docs/ai-use.md) are documented for the team. The Uniswap feedback form and ETHGlobal submission still require team details and an explicit submission instruction.
 

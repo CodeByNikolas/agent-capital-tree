@@ -14,7 +14,7 @@ Scope: same Linux host and existing root/operator, fresh root CLI profile, contr
 
 ## OpenAI API-key setup — 26 September 2026
 
-The preferred local setup now uses `openaiApiKeyFile` with ephemeral host app-server authentication. ChatGPT login remains an alternative. All 26 runtime tests passed, and the real pinned Codex/Docker protocol fixture passed in both authentication modes. The API-key mode uses a synthetic credential and simulated Responses output; it verifies routing, credential isolation, no auth.json persistence and expiry, not real API authentication or inference. **Real API-key inference and native financial E2E remain open.** API billing is separate from onchain allowances.
+At that earlier protocol-test stage, the preferred local setup added `openaiApiKeyFile` with ephemeral host app-server authentication. ChatGPT login remains an alternative. All 26 runtime tests passed, and the real pinned Codex/Docker protocol fixture passed in both authentication modes. The API-key mode uses a synthetic credential and simulated Responses output; it verifies routing, credential isolation, no auth.json persistence and expiry, not real API authentication or inference. **The real API-key inference and native financial E2E were subsequently completed above.** API billing is separate from onchain allowances.
 
 ## Native Codex runtime — 26 September 2026
 
@@ -46,8 +46,11 @@ At that stage the product used controller `0x17a932987f3cAcFec067c4C1bbE6946963d
 - Seven capital/strategy events retrieved from MultiBaas and verified against canonical receipts: [history proof](deployments/usdc-multibaas.json). Direct USDC payment events are outside this controller index.
 - Two isolated live-worker checks passed with image `sha256:4904e2fcc68d25374fffb15e933f4638719748562fac4156856f1710395edb07`.
 - New USDC frontend is deployed from b2332da; production build and CI passed. Public read-only browser tests passed across all five pages, desktop/light and mobile/dark, ENS/address lookup and retired-link404 checks: [UI report](artifacts/ui/usdc-ui-report.json), [lookup report](artifacts/ui/vault-lookup-report.json), [deployment and API evidence](deployments/usdc-web.json). The earlier full browser-wallet/model lifecycle below is not a repeated USDC onboarding test.
-
-## Historical pre-USDC acceptance
+- Keyless MCP install/read proof on Windows: `pnpm mcp:doctor` passed with Node v24.18.0, pnpm 11.13.1 and host Codex CLI 0.157.0. `pnpm mcp:verify` installed into a fresh temporary profile, registered exactly one `capital-tree` server, discovered all 16 tools, rejected a write endpoint and read USDC root1/two nodes from Sepolia block11785724. No private config, wallet, team host or transaction was involved. [Runner](scripts/test-plugin-install.mjs). This is not a finance-write or independent-laptop E2E proof.
+- Separate [read-only Codex chat server](scripts/mcp-readonly-server.mjs) tested over STDIO with `pnpm mcp:chat-verify`: one `getTree` tool, live USDC root1/two nodes at block11785887, invalid root rejected. Its Codex registration was tested in a temporary profile. Manual ChatGPT-desktop chat use remains to be verified by a user; no dashboard-local-connection claim is made.
+- Updated [public MCP guide](https://agent-capital-tree-silk.vercel.app/mcp) deployed as `dpl_2YAGsD77UKgUocrZeqhKsMq6J5tT` (READY). Public no-vault route returned HTTP200 with the connection diagram, one-tool Codex registration/prompt and explicit non-observability of the local session; desktop/mobile screenshots showed no horizontal overflow. This is a documentation/visualization acceptance, not a remote observation of Codex.
+- [Rami's published MCP guide](https://agent-capital-tree-silk.vercel.app/mcp) is publicly accessible without selecting a vault (HTTP 200), from production deployment `dpl_3Bzf15EMwUUJTqCtc9yXBz8qVAcv`. The verified public deployment API still points to the current USDC Sepolia controller. This is distinct from the project's main Vercel URL.
+- ## Historical pre-USDC acceptance
 
 Reviewed on 26 September 2026 (Europe/Berlin), against [PLAN.md](PLAN.md). **The full acceptance gate remains open.** ENSv2, Uniswap, isolated agent execution and owner recovery have real deployment evidence. Live MultiBaas indexing and an actual Sol master task based on verified history are now demonstrated on Root9, including full owner recovery. Independent external-user onboarding and the specifically listed failure-mode boundaries remain open.
 
@@ -121,6 +124,7 @@ bash contracts/scripts/test-contracts.sh
 ACT_TEST_APP_URL=https://agent-capital-tree.vercel.app node scripts/test-web-smoke.mjs
 ACT_TEST_APP_URL=https://agent-capital-tree.vercel.app node scripts/test-web-guardrails.mjs
 node scripts/test-sepolia-negative-calls.mjs
+
 ```
 
 The last command needs historical Sepolia RPC access, not a wallet. Do not rerun setup/spawn/funding/recovery scripts on completed public roots just to refresh a report. Their journals and receipts are deliberate safeguards against duplicate spending.

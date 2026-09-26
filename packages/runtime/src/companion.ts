@@ -92,17 +92,19 @@ export type CompanionConfig = Readonly<{
   rootId: string;
   rpcUrl: string;
   controller: Address;
+  writesEnabled: boolean;
+  monitorIntervalMs?: number;
+  paymentServices?: readonly PaymentService[];
+  multibaas?: { deploymentUrl: string; controllerLabel: string; apiKey: string };
+} & ({ mode: 'capital' } | {
+  mode?: 'workers';
   imageId: string;
   models: readonly string[];
   workerUid: number;
   workerGid: number;
   childGasWei: bigint;
-  writesEnabled: boolean;
-  monitorIntervalMs?: number;
-  paymentServices?: readonly PaymentService[];
-  multibaas?: { deploymentUrl: string; controllerLabel: string; apiKey: string };
 } & ({ inference: 'cliproxyapi'; upstream: string; upstreamKey: string } |
-  { inference?: 'codex'; codexBinary: string; codexHome: string; openaiApiKeyFile?: string; reasoningEffort?: 'high' })>;
+  { inference?: 'codex'; codexBinary: string; codexHome: string; openaiApiKeyFile?: string; reasoningEffort?: 'high' }))>;
 
 type Grant = { context: WorkerContext; brokerToken: string | undefined; mcpToken: string; keyFile: string };
 
@@ -112,7 +114,7 @@ export class RuntimeCompanion {
   readonly identities: WorkerIdentities;
   readonly sessions = new WorkerSessions();
   readonly broker?: InferenceBroker;
-  readonly launcher: DockerWorkerLauncher | NativeCodexLauncher;
+  readonly launcher?: DockerWorkerLauncher | NativeCodexLauncher;
   readonly gas: ChildGasFunding;
   readonly chain: OnchainSpawnChain;
   readonly coordinator: SpawnCoordinator;
@@ -124,26 +126,29 @@ export class RuntimeCompanion {
   #timer?: NodeJS.Timeout;
   #monitoring = false;
   #queues = new Map<string, Promise<unknown>>();
-  #brokerOrigin?: string;
+  #brokerOrigin: string | undefined;
   #toolsOrigin?: string;
   #lockPath?: string;
 
   constructor(readonly config: CompanionConfig) {
-    if (!/^[1-9]\d*$/.test(config.rootId) || !/^0x[a-fA-F0-9]{40}$/.test(config.controller) ||
+    if (!/^[1-9]\d*$/.test(config.rootId) || !/^0x[a-fA-F0-9]{40}$/.test(config.controller)) throw new Error('invalid companion domain');
+    if (config.mode !== 'capital' && (
       !/^sha256:[a-f0-9]{64}$/.test(config.imageId) || !Array.isArray(config.models) || !config.models.length ||
       !config.models.every(model => typeof model === 'string' && /^[\w.-]+$/.test(model)) ||
       !Number.isSafeInteger(config.workerUid) || config.workerUid < 1 ||
       !Number.isSafeInteger(config.workerGid) || config.workerGid < 1 ||
-      config.childGasWei < 0n || config.childGasWei > MAX_CHILD_GAS_WEI) throw new Error('invalid companion configuration');
+      config.childGasWei < 0n || config.childGasWei > MAX_CHILD_GAS_WEI)) throw new Error('invalid companion configuration');
     this.keys = new WorkerKeyStore(join(config.runtimeRoot, 'keys'));
     this.identities = new WorkerIdentities(join(config.runtimeRoot, 'identities'));
-    if (config.inference === 'cliproxyapi') {
-      this.broker = new InferenceBroker({ upstream: config.upstream, upstreamKey: config.upstreamKey, maxBodyBytes: 1_000_000 });
-      this.launcher = new DockerWorkerLauncher();
-    } else {
-      this.launcher = new NativeCodexLauncher({ codexBinary: config.codexBinary, codexHome: config.codexHome,
-        ...(config.reasoningEffort === undefined ? {} : { reasoningEffort: config.reasoningEffort }),
-        ...(config.openaiApiKeyFile === undefined ? {} : { openaiApiKeyFile: config.openaiApiKeyFile }) });
+    if (config.mode !== 'capital') {
+      if (config.inference === 'cliproxyapi') {
+        this.broker = new InferenceBroker({ upstream: config.upstream, upstreamKey: config.upstreamKey, maxBodyBytes: 1_000_000 });
+        this.launcher = new DockerWorkerLauncher();
+      } else {
+        this.launcher = new NativeCodexLauncher({ codexBinary: config.codexBinary, codexHome: config.codexHome,
+          ...(config.reasoningEffort === undefined ? {} : { reasoningEffort: config.reasoningEffort }),
+          ...(config.openaiApiKeyFile === undefined ? {} : { openaiApiKeyFile: config.openaiApiKeyFile }) });
+      }
     }
     this.gas = new ChildGasFunding(config.rpcUrl, join(config.runtimeRoot, 'gas'));
     this.chain = new OnchainSpawnChain({ rpcUrl: config.rpcUrl, controller: config.controller, keys: this.keys,
@@ -164,6 +169,8 @@ export class RuntimeCompanion {
     }
     wrapped.spawnChild = async (context, args) => {
       if (!config.writesEnabled) throw new Error('Sepolia writes are disabled');
+      if (config.mode === 'capital') throw new Error('Autonomous workers are not configured; use createChildVault for chat-managed capital');
+      if (!this.launcher) throw new Error('Background workers are not configured');
       if (!config.models.includes(String(args.model))) throw new Error('worker model is not approved');
       const request: SpawnRequest = { operationKey: String(args.operationKey) as `0x${string}`,
         task: String(args.task), model: String(args.model), token: String(args.asset) as `0x${string}`,
@@ -172,6 +179,14 @@ export class RuntimeCompanion {
       if (this.launcher instanceof NativeCodexLauncher) await this.launcher.ensureAvailable(request.model);
       else await this.launcher.ensureAvailable();
       return this.coordinator.spawn(context, request);
+    };
+    wrapped.createChildVault = async (context, args) => {
+      if (!config.writesEnabled) throw new Error('Sepolia writes are disabled');
+      return this.coordinator.spawn(context, {
+        operationKey: String(args.operationKey) as `0x${string}`, name: String(args.name),
+        task: '', model: '', execution: 'vault-only', token: String(args.asset) as Address,
+        amount: String(args.amount), restrictions: args.restrictions
+      });
     };
     wrapped.getOperationStatus = async (context, args) => {
       const operation = await this.chain.client.controller.read.getOperation([
@@ -182,7 +197,8 @@ export class RuntimeCompanion {
       const record = await this.journal.get(scope);
       return { childId: operation.nodeId.toString(), recordedOnchain: operation.nodeId !== 0n,
         dispatchStatus: operation.nodeId === 0n ? 'not_allocated' : record?.started && record.childId === operation.nodeId.toString()
-          ? 'started' : 'allocation_confirmed_dispatch_unknown' };
+          ? 'started' : record?.execution === 'vault-only' && record.childId === operation.nodeId.toString()
+            ? 'not_requested' : 'allocation_confirmed_dispatch_unknown' };
     };
     if (config.multibaas) {
       const history = createMultiBaasHistoryClient({ ...config.multibaas, controllerAddress: config.controller,
@@ -228,6 +244,7 @@ export class RuntimeCompanion {
     const domain = createHash('sha256').update(this.config.controller.toLowerCase()).digest('hex').slice(0, 12);
     for (const entry of entries) {
       if (!entry.isDirectory() || !entry.name.startsWith(`node-${domain}-`)) continue;
+      if (!this.launcher) throw new Error('Previous worker state exists. Stop/reconcile workers in worker mode before using capital mode with this profile.');
       await this.launcher.stop(entry.name);
       await rm(join(workers, entry.name, 'key'), { force: true });
     }
@@ -260,10 +277,16 @@ export class RuntimeCompanion {
     await this.identities.bind(context, `root-${this.config.rootId}`);
     await this.acquireLock();
     try {
-    await this.launcher.ensureAvailable();
+    await this.launcher?.ensureAvailable();
     await this.stopOrphans();
     if (this.config.writesEnabled) {
-      await this.gas.recoverPending(); // No signer writes start while a previous gas nonce is unresolved.
+      if (this.config.mode === 'capital') {
+        const entries = await readdir(join(this.config.runtimeRoot, 'gas')).catch(error => {
+          if ((error as NodeJS.ErrnoException).code === 'ENOENT') return [];
+          throw error;
+        });
+        if (entries.length) throw new Error('Previous worker gas journal exists; reconcile in worker mode before using capital mode.');
+      } else await this.gas.recoverPending(); // No signer writes start while a previous gas nonce is unresolved.
     }
     await Promise.all([
       new Promise<void>((ok, fail) => { this.tools.once('error', fail); this.tools.listen(0, '127.0.0.1', ok); }),
@@ -276,6 +299,11 @@ export class RuntimeCompanion {
     const temp = `${tokenFile}.${randomBytes(8).toString('hex')}.tmp`;
     await writeFile(temp, token, { mode: 0o600, flag: 'wx' });
     await rename(temp, tokenFile);
+    const readyFile = join(this.config.runtimeRoot, 'mcp-ready.json');
+    const readyTemp = `${readyFile}.${randomBytes(8).toString('hex')}.tmp`;
+    await writeFile(readyTemp, JSON.stringify({ chainId: 11155111, controller: this.config.controller.toLowerCase(), rootId: this.config.rootId,
+      toolsOrigin: this.#toolsOrigin, writesEnabled: this.config.writesEnabled, mode: this.config.mode ?? 'workers' }), { mode: 0o600, flag: 'wx' });
+    await rename(readyTemp, readyFile);
     this.#rootSession = { token, context };
     const interval = this.config.monitorIntervalMs ?? 10_000;
     if (!Number.isSafeInteger(interval) || interval < 1000 || interval > 60_000) throw new Error('invalid monitor interval');
@@ -332,7 +360,7 @@ export class RuntimeCompanion {
     if (grant.brokerToken) this.broker?.revoke(grant.brokerToken);
     this.sessions.revoke(grant.mcpToken);
     this.#grants.delete(worker);
-    try { await this.launcher.stop(worker); }
+    try { await this.launcher?.stop(worker); }
     finally { await rm(grant.keyFile, { force: true }); }
   }
 
@@ -342,6 +370,7 @@ export class RuntimeCompanion {
   }
 
   async prepareChild(parent: WorkerContext, childId: string, request: SpawnRequest): Promise<void> {
+    if (this.config.mode === 'capital') throw new Error('Background workers are disabled in capital mode');
     const context = await this.#childContext(parent, childId);
     const keyId = childKeyId(parent, request.operationKey, this.config.controller);
     const child = await this.keys.account(keyId); // No replacement key after a confirmed allocation.
@@ -356,6 +385,7 @@ export class RuntimeCompanion {
   }
 
   async launchChild(parent: WorkerContext, childId: string, request: SpawnRequest): Promise<void> {
+    if (this.config.mode === 'capital' || !this.launcher) throw new Error('Background workers are disabled in capital mode');
     if (!this.#toolsOrigin) throw new Error('companion is not listening');
     const context = await this.#childContext(parent, childId);
     const keyId = await this.identities.keyId(context);
@@ -397,9 +427,10 @@ export class RuntimeCompanion {
   async close(): Promise<void> {
     if (this.#timer) clearInterval(this.#timer);
     await Promise.all([...this.#grants.keys()].map(id => this.stopGrant(id)));
-    await this.launcher.close();
+    await this.launcher?.close();
     if (this.#rootSession) this.sessions.revoke(this.#rootSession.token);
     await rm(join(this.config.runtimeRoot, 'root-session.token'), { force: true });
+    await rm(join(this.config.runtimeRoot, 'mcp-ready.json'), { force: true });
     if (this.#lockPath) await rm(this.#lockPath, { force: true });
     await Promise.all([new Promise<void>(resolve => this.tools.close(() => resolve())),
       this.brokerServer ? new Promise<void>(resolve => this.brokerServer!.close(() => resolve())) : Promise.resolve()]);
