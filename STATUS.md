@@ -6,6 +6,7 @@ As of 26 September 2026. Read this together with PLAN.md after context compactio
 
 - Moved the ENS/address vault lookup, sample link, live Sepolia read status, and refresh control from the content area into the existing sidebar on all six dashboard routes. The separate no-vault onboarding lookup remains in its onboarding card.
 - Web typecheck and production build passed. Local read-only browser checks confirmed the sidebar on desktop and in the mobile drawer, no horizontal overflow, and the live read notice and refresh control in the sidebar. No wallet transaction was sent.
+- Source commit `4e492cf` is pushed. Vercel production deployment `dpl_8jbLXuzNRnMFnmfiDEuMecVWyKqi` is ready at the public URL; read-only browser checks confirmed sidebar lookup visibility and no horizontal overflow at 1440px and 390px.
 
 ## Current UI clarification
 
