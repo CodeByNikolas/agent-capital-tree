@@ -2,7 +2,7 @@ import { Dashboard } from "@/components/dashboard";
 import { getPublicDeployment } from "@/lib/deployment";
 import { previewDashboard } from "@/lib/preview-data";
 
-export type DashboardView = "overview" | "tree" | "activity" | "applications" | "setup";
+export type DashboardView = "overview" | "tree" | "activity" | "applications" | "mcp" | "setup";
 export type DashboardSearchParams = Promise<{ root?: string | string[]; preview?: string | string[]; node?: string | string[]; action?: string | string[]; tour?: string | string[]; step?: string | string[] }>;
 
 export async function renderDashboard(view: DashboardView, searchParams: DashboardSearchParams) {

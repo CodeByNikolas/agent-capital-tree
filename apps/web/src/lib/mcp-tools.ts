@@ -1,0 +1,97 @@
+// Display mirror of packages/plugin/src/tools.ts for the /mcp dashboard section.
+// This is presentation-only data; the authoritative schemas (zod, strict) live in
+// the plugin package and cannot be imported here. Keep this list in sync when the
+// plugin's tool set or read/write classification changes.
+
+export interface McpTool {
+  name: string;
+  description: string;
+  readOnly: boolean;
+}
+
+export const mcpTools: readonly McpTool[] = [
+  // Read-only (4)
+  {
+    name: "getTree",
+    description:
+      "Read a capital tree at one current RPC block: each node's named authorizedActions, the authorizedCapabilities bitmask, balances and LP state.",
+    readOnly: true,
+  },
+  {
+    name: "getEffectivePolicy",
+    description: "Read a node mandate including the limits inherited from every ancestor.",
+    readOnly: true,
+  },
+  {
+    name: "getCapitalActivity",
+    description:
+      "Read paginated MultiBaas-indexed activity, each entry independently re-checked against the canonical Sepolia receipt.",
+    readOnly: true,
+  },
+  {
+    name: "getOperationStatus",
+    description: "Reconcile a submitted operation against runtime and chain state.",
+    readOnly: true,
+  },
+  // Write (10)
+  {
+    name: "spawnChild",
+    description: "Request an on-chain child vault and a bounded capital allocation, keyed by an idempotency key.",
+    readOnly: false,
+  },
+  {
+    name: "allocateCapital",
+    description: "Allocate free capital from the authenticated parent to an existing direct child (needs the delegate capability).",
+    readOnly: false,
+  },
+  {
+    name: "tightenPolicy",
+    description: "Tighten a node mandate without ever expanding its rights.",
+    readOnly: false,
+  },
+  {
+    name: "swap",
+    description: "Request a bounded exact-input swap from a node vault.",
+    readOnly: false,
+  },
+  {
+    name: "openPosition",
+    description: "Open the fixed Uniswap position with exact liquidity and bounded token inputs.",
+    readOnly: false,
+  },
+  {
+    name: "increasePosition",
+    description: "Add exact liquidity to the fixed Uniswap position with bounded token inputs.",
+    readOnly: false,
+  },
+  {
+    name: "collectFees",
+    description: "Collect earned fees to the bound vault.",
+    readOnly: false,
+  },
+  {
+    name: "closePosition",
+    description: "Close the existing position to the bound vault.",
+    readOnly: false,
+  },
+  {
+    name: "revokeSubtree",
+    description: "Permanently revoke a node and all of its descendants.",
+    readOnly: false,
+  },
+  {
+    name: "reclaimAssets",
+    description: "Recover a direct child's remaining free assets to the parent vault, revoking the child (needs the reclaim capability).",
+    readOnly: false,
+  },
+] as const;
+
+export const mcpServerMeta = {
+  name: "capital-tree",
+  transport: "stdio · node ./bundle/server.mjs",
+  endpoint: "POST <ACT_RUNTIME_URL>/v1/tools/<tool>",
+  auth: "Authorization: Bearer <ACT_MCP_TOKEN>",
+  readTimeout: "30 s (reads)",
+  writeTimeout: "300 s (writes)",
+  codexVerified: "Codex CLI 0.154.0",
+} as const;

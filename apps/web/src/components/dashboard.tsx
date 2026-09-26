@@ -19,6 +19,7 @@ import {
   LockKeyhole,
   MoreHorizontal,
   Network,
+  Plug,
   Plus,
   Shield,
   ShieldAlert,
@@ -47,6 +48,7 @@ import { InfoHint } from "@/components/info-hint";
 import { GuidedTour } from "@/components/guided-tour";
 import { OnboardingHero, ONBOARDING_OPEN_EVENT } from "@/components/onboarding-hero";
 import { ViewerStatusBar } from "@/components/viewer-status";
+import { McpPanel } from "@/components/mcp-panel";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import type { GlossaryTerm } from "@/lib/glossary";
 import { useWalletActions } from "@/lib/use-wallet-actions";
@@ -85,7 +87,7 @@ interface DashboardProps {
   rootQuery: string | null;
   nodeQuery?: string | null;
   actionQuery?: WalletActionMode;
-  view: "overview" | "tree" | "activity" | "applications" | "setup";
+  view: "overview" | "tree" | "activity" | "applications" | "mcp" | "setup";
   tour?: boolean;
   step?: number;
 }
@@ -456,6 +458,7 @@ const views = [
   { id: "tree", title: "Agent tree", path: "/tree", icon: GitBranch },
   { id: "activity", title: "Activity", path: "/activity", icon: ActivityIcon },
   { id: "applications", title: "Applications", path: "/applications", icon: Coins },
+  { id: "mcp", title: "MCP", path: "/mcp", icon: Plug },
   { id: "setup", title: "Setup & control", path: "/setup", icon: ShieldCheck },
 ] as const;
 
@@ -1192,7 +1195,7 @@ function ContractSetupPanel({ data, deployment, actions, wallet, liveStateReady,
         <div className={walletStepReady ? "setup-step setup-step-complete" : "setup-step setup-step-pending"}><span>{walletStepReady ? <Check size={12} /> : "1"}</span><div><strong>{walletStepReady ? "Wallet connected" : wallet.address ? "Switch to Sepolia" : "Connect wallet"}</strong><small>{walletStepReady ? shortAddress(wallet.address ?? "") : wallet.address ? "Connected on another network" : "Injected wallet · Sepolia"}</small></div></div>
         <div className={contractsConfigured ? "setup-step setup-step-complete" : "setup-step setup-step-pending"}><span>{contractsConfigured ? <Check size={12} /> : "2"}</span><div><strong>Controller deploy</strong><small>{contractsConfigured ? "Address configuration present" : "Contract address pending"}</small></div></div>
         <div className={indexerConnected ? "setup-step setup-step-complete" : "setup-step setup-step-pending"}><span>{indexerConnected ? <Check size={12} /> : "3"}</span><div><strong>Indexer connect</strong><small>{historyError && data.activitySource === "multi-baas" ? "Last indexed data retained; history refresh unavailable" : indexerConnected ? "MultiBaas activity source active" : "MultiBaas activity source pending"}</small></div></div>
-        <div className="setup-step setup-step-pending"><span>4</span><div><strong>Codex plugin</strong><small>Independent setup pending</small></div></div>
+        <a className="setup-step setup-step-link" href={routeHref("/mcp", data.source === "preview" ? null : data.rootId)}><span><Plug size={12} /></span><div><strong>Codex plugin (MCP)</strong><small>Open the MCP integration guide →</small></div></a>
       </div>
       <div className="setup-border" aria-hidden="true" />
     </section>
@@ -1468,6 +1471,7 @@ export function Dashboard({ data: initialData, deployment, rootQuery, nodeQuery,
               <details className="future-module"><summary><span>Currency conversion & valuation</span><Badge variant="outline" className="future-module-badge">Future work</Badge></summary><p>Not implemented. Display supported assets in a chosen currency using verified price sources. Current ACT-A and ACT-B balances are valueless demo tokens, not USDC or dollar balances.</p></details>
             </CardContent></Card>
           </>}
+          {view === "mcp" && <McpPanel deployment={deployment} selectedNode={selectedNode} runtimeLabel={runtimeLabel} />}
           {view === "setup" && <>
             <div className="page-heading"><span className="page-kicker">Wallet & integration</span><h1>Setup & control</h1><p>Connect the recorded owner or an authorized agent to manage the selected vault. Each available action is simulated before signing.</p></div>
             <div className="setup-selected"><label htmlFor="setup-node">Selected vault</label><select id="setup-node" value={selectedNode.id} onChange={(event) => setSelectedId(event.target.value)}>{data.nodes.map((node) => <option key={node.id} value={node.id}>{node.ensName}</option>)}</select><span>{sourceLabel(data.source)}</span></div>

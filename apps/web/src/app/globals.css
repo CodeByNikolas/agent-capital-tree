@@ -471,3 +471,64 @@ button:disabled { cursor: not-allowed; opacity: .55; }
 .onboarding-links a:focus-visible { outline: 2px solid var(--ring); outline-offset: 3px; }
 .onboarding-page .onboarding-links + p { margin-top: 16px; }
 @media (max-width: 600px) { .onboarding-links a { width: 100%; } .onboarding-links a span { flex: 1; } }
+
+/* MCP integration section (/mcp) */
+.mcp-panel { margin-top: 18px; }
+.mcp-panel .panel-heading h2 { display: inline-flex; align-items: center; gap: 8px; }
+.mcp-lede { margin: 4px 0 14px; max-width: 72ch; color: var(--quiet); font-size: 14px; line-height: 1.55; }
+.mcp-lede code { font-family: var(--font-mono); font-size: 0.85em; }
+
+.mcp-status { display: inline-flex; align-items: center; gap: 8px; margin: 4px 0 16px; padding: 8px 13px; border: 1px solid var(--border); border-radius: 999px; font-size: 14px; font-weight: 600; }
+.mcp-status-icon { flex: 0 0 auto; }
+.mcp-status-ok { border-color: var(--ring); }
+.mcp-status-ok .mcp-status-icon { color: var(--brand); }
+.mcp-status-warn { border-color: var(--destructive); }
+.mcp-status-warn .mcp-status-icon { color: var(--destructive); }
+.mcp-status-idle { color: var(--quiet); }
+.mcp-status .info-hint { margin-left: 2px; }
+
+.mcp-facts-groups { display: grid; grid-template-columns: 1fr 1fr; gap: 22px; }
+.mcp-facts { display: flex; flex-direction: column; gap: 10px; margin: 0; }
+.mcp-fact { display: grid; grid-template-columns: 120px minmax(0, 1fr); gap: 12px; align-items: baseline; }
+.mcp-fact dt { color: var(--quiet); font-size: 13px; }
+.mcp-fact dd { margin: 0; min-width: 0; }
+.mcp-fact dd code { font-family: var(--font-mono); font-size: 13px; overflow-wrap: anywhere; }
+
+.mcp-tools { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+.mcp-tool { border: 1px solid var(--border); border-radius: 10px; padding: 12px 14px; background: var(--soft); }
+.mcp-tool-head { display: flex; align-items: center; gap: 8px; }
+.mcp-tool-head code { font-family: var(--font-mono); font-size: 14px; font-weight: 700; }
+.mcp-tool p { margin: 6px 0 0; color: var(--quiet); font-size: 13px; line-height: 1.5; }
+.mcp-tag { margin-left: auto; padding: 2px 8px; border-radius: 999px; border: 1px solid var(--border); font-size: 11px; font-weight: 700; letter-spacing: .02em; text-transform: uppercase; white-space: nowrap; }
+.mcp-tag-read { color: var(--quiet); }
+.mcp-tag-write { color: var(--brand); border-color: var(--brand); }
+
+.mcp-steps { margin-top: 8px; gap: 20px; }
+.mcp-steps .setup-step > div { flex: 1; min-width: 0; }
+.mcp-steps .setup-step small { line-height: 1.55; }
+.mcp-steps code { font-family: var(--font-mono); font-size: 0.85em; }
+.mcp-path { margin-top: 12px; }
+.mcp-path > summary { font-size: 14px; }
+.mcp-path small { display: block; margin: 8px 0 0; color: var(--quiet); font-size: 13px; line-height: 1.5; }
+
+.mcp-security-list { margin: 4px 0 0; padding-left: 18px; display: flex; flex-direction: column; gap: 8px; color: var(--quiet); font-size: 14px; line-height: 1.55; }
+.mcp-security-list code { font-family: var(--font-mono); font-size: 0.85em; }
+
+/* Code block with copy button (CopyBlock component) */
+.code-block { position: relative; margin: 10px 0 0; }
+.code-block pre { margin: 0; padding: 12px 42px 12px 12px; border: 1px solid var(--border); border-radius: 8px; background: var(--muted, rgba(127,127,127,0.08)); overflow-x: auto; font-family: var(--font-mono); font-size: 0.8rem; line-height: 1.55; white-space: pre; }
+.code-copy { position: absolute; top: 8px; right: 8px; display: grid; place-items: center; width: 28px; height: 28px; border: 1px solid var(--border); border-radius: 6px; background: var(--surface); color: var(--quiet); cursor: pointer; }
+.code-copy:hover { color: var(--brand); border-color: var(--ring); }
+.code-copy:focus-visible { outline: 2px solid var(--ring); outline-offset: 2px; }
+
+/* Linked setup step that opens the MCP guide */
+.setup-step-link { text-decoration: none; color: inherit; cursor: pointer; }
+.setup-step-link:hover strong { color: var(--brand); }
+.setup-step-link small { color: var(--brand); }
+.setup-step-link:focus-visible { outline: 2px solid var(--ring); outline-offset: 3px; border-radius: 8px; }
+
+@media (max-width: 720px) {
+  .mcp-facts-groups { grid-template-columns: 1fr; }
+  .mcp-fact { grid-template-columns: 110px minmax(0, 1fr); }
+  .mcp-tools { grid-template-columns: 1fr; }
+}
