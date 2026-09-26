@@ -64,7 +64,10 @@ export class CapitalSession {
     Object.assign(this, { rootId, runtimeRoot, query });
     return this.inspect('100000', resolved.tree);
   }
-  async initialize() { if (!this.rootId) await this.select(this.query); }
+  async initialize() {
+    if (!this.rootId && !this.query) throw new SetupError('ROOT_NOT_SELECTED', 'Select an active root with selectCapitalRoot, or prepare a new root with prepareRootSetup and confirm it in your wallet first.');
+    if (!this.rootId) await this.select(this.query);
+  }
   async policy(nodeId) {
     if (!/^[1-9]\d*$/.test(String(nodeId))) throw new SetupError('INVALID_NODE', 'Use a positive numeric nodeId from getTree.');
     await this.initialize();
@@ -82,6 +85,10 @@ export class CapitalSession {
     return (await new WorkerKeyStore(join(path, 'keys')).account(`root-${rootId}`, false)).address;
   }
   async inspect(budgetRaw = '100000', tree) {
+    if (!this.rootId && !this.query) return { status: 'unavailable', mode: 'capital', activeMcpRootId: null,
+      controller: this.controller, namespace: this.namespace, writesEnabled: this.writesEnabled, writeReady: false,
+      localOperator: null, backgroundWorker: 'not_requested', transactionSubmitted: false,
+      next: 'ROOT_NOT_SELECTED: Full capital tools are available. Use selectCapitalRoot for an existing active root, or prepareRootSetup to create one through your wallet. No private key is created until explicit setup.' };
     await this.initialize();
     tree ??= await this.client.getTree(BigInt(this.rootId));
     const local = await this.localOperator();
@@ -94,6 +101,13 @@ export class CapitalSession {
       budgetMeaning: 'Shared tree capital, not a per-child allowance. Internal delegations are not deposits. The demo input cap is not an onchain balance cap.' };
   }
   async tree(query) {
+    if (!this.rootId && !this.query) {
+      const resolved = await this.client.resolveTree(query);
+      return { ...resolved.tree, selectedNodeId: resolved.selectedNodeId, mcp: {
+        activeMcpRootId: null, viewedRootId: String(resolved.tree.rootId), controller: this.controller,
+        targetMatches: false, writeReady: false, localOperator: null,
+        next: 'Reading a root does not select it. Use selectCapitalRoot before setup or writes.' } };
+    }
     await this.initialize();
     const resolved = await this.client.resolveTree(query);
     const matches = String(resolved.tree.rootId) === this.rootId;

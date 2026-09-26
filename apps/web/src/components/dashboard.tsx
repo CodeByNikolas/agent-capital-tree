@@ -553,8 +553,18 @@ function AppSidebar({ view, vaultQuery, selectedId, rootLabel, data, readError, 
 function Topbar({ wallet, view, vaultQuery, selectedId }: { view: DashboardProps["view"]; source?: DataSource; wallet: InjectedWalletState; vaultQuery: string | null; selectedId: string }) {
   return <header className="app-topbar">
     <div className="app-topbar-title"><SidebarTrigger /><span>{views.find(item => item.id === view)?.title}</span></div>
-    <div className="app-topbar-actions">{view === "overview" && <Button variant="ghost" onClick={() => window.dispatchEvent(new Event(ONBOARDING_OPEN_EVENT))}>How it works</Button>}<ThemeControl /><WalletControl wallet={wallet} /></div>
+    <div className="app-topbar-actions"><ThemeControl /><WalletControl wallet={wallet} /></div>
   </header>;
+}
+
+function HelpLinks({ vaultQuery, preview = false }: { vaultQuery: string | null; preview?: boolean }) {
+  return <nav className="help-links" aria-label="Guides">
+    <Link href={(vaultQuery || preview ? routeHref("/", vaultQuery) : "/") + "#how-it-works"} onClick={() => {
+      try { window.localStorage.removeItem("act.onboarding.dismissed"); } catch { /* Optional preference. */ }
+      window.dispatchEvent(new Event(ONBOARDING_OPEN_EVENT));
+    }}>How it works</Link>
+    <Link href={routeHref("/mcp", vaultQuery)}>MCP guide</Link>
+  </nav>;
 }
 
 function PreviewNotice({ data }: { data: DashboardData }) {
@@ -1292,6 +1302,7 @@ export function Dashboard({ data: initialData, deployment, vaultQuery, nodeQuery
       <main className="onboarding-page">
         <header className="app-topbar"><Link href="/" aria-label="Kanoki overview"><Brand /></Link><div className="app-topbar-actions"><ThemeControl /><WalletControl wallet={wallet} /></div></header>
         <div className="dashboard-content">
+          <HelpLinks vaultQuery={vaultQuery} />
           <div className="page-heading">
             <h1>Create your root vault.</h1>
             <p>Create a Sepolia USDC vault for your agent team, or open an existing vault by its ENS name or contract address.</p>
@@ -1306,6 +1317,7 @@ export function Dashboard({ data: initialData, deployment, vaultQuery, nodeQuery
               <p className="onboarding-create-help">Connect your wallet, choose a name and permissions, then confirm in your wallet. Creation uses Sepolia ETH for gas. You can add USDC after your vault is ready.</p>
             </CardContent>
           </Card>
+          <OnboardingHero context={{ vault: `capital.${deployment.namespaceName}` }} />
           <RootAccessBar vault={null} path="/setup" walletAddress={wallet.address} />
           {walletActionMode === "create-root" && <WalletControlsPanel
             creationOnly
@@ -1337,7 +1349,7 @@ export function Dashboard({ data: initialData, deployment, vaultQuery, nodeQuery
     return <TooltipProvider delay={150}><SidebarProvider>
       <AppSidebar view={view} vaultQuery={vaultQuery} selectedId="" rootLabel={currentSnapshot?.data.nodes[0]?.label ?? "Loading vault…"} data={data} readError={currentReadState.error} walletAddress={wallet.address} />
       <SidebarInset className="main-shell"><Topbar view={view} wallet={wallet} vaultQuery={vaultQuery} selectedId="" />
-        <div className="dashboard-content"><DashboardLoading view={view} error={currentReadState.error} onRetry={() => setTreeRetry((value) => value + 1)} /></div>
+        <div className="dashboard-content"><HelpLinks vaultQuery={vaultQuery} /><DashboardLoading view={view} error={currentReadState.error} onRetry={() => setTreeRetry((value) => value + 1)} /></div>
       </SidebarInset>
     </SidebarProvider></TooltipProvider>;
   }
@@ -1351,12 +1363,13 @@ export function Dashboard({ data: initialData, deployment, vaultQuery, nodeQuery
         <div className="dashboard-content">
           {currentReadState.status === "loading" && <DashboardLoading view={view} error={null} onRetry={() => setTreeRetry(value => value + 1)} />}
           <div className="dashboard-loaded-content" hidden={currentReadState.status === "loading"}>
+          <HelpLinks vaultQuery={vaultQuery} preview={data.source === "preview" && view !== "mcp"} />
           {view === "overview" && <div className="page-heading"><h1>Overview</h1><p>Balances and authority across your vaults.</p></div>}
           {view === "tree" && <div className="page-heading"><h1>Capital tree</h1><p>Select a node to inspect its balance, capabilities and limits.</p></div>}
           {view === "activity" && <div className="page-heading"><h1>Activity</h1><p>Indexed capital movements and changes to node authority.</p></div>}
           {view === "applications" && <div className="page-heading"><h1>Applications</h1><p>Uniswap positions and services within the selected node’s capabilities.</p></div>}
           {view === "setup" && <div className="page-heading"><h1>Setup</h1><p>Fund the root, authorize an operator and manage owner recovery.</p></div>}
-          <GuidedTour active={tour} step={step} />
+          <GuidedTour active={tour} step={step} context={{ vault: vaultQuery ?? `capital.${deployment.namespaceName}`, preview: data.source === "preview" }} />
           {!(view === "mcp" && !vaultQuery) && <PreviewNotice data={data} />}
           {data.source !== "preview" && (
             <ViewerStatusBar
@@ -1375,7 +1388,7 @@ export function Dashboard({ data: initialData, deployment, vaultQuery, nodeQuery
           {view === "overview" && <>
 
 
-            {!tour && <OnboardingHero />}
+            {!tour && <OnboardingHero context={{ vault: vaultQuery ?? `capital.${deployment.namespaceName}`, preview: data.source === "preview" }} />}
             <SummaryMetrics data={data} />
             <VaultRegister data={data} vaultQuery={vaultQuery} />
             <div className="overview-lower">

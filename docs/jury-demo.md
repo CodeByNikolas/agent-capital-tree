@@ -1,6 +1,6 @@
 # Kanoki
 
-Kanoki
+Agent Capital Tree
 
 Use the current USDC deployment in `deployments/usdc-sepolia.json` and the public dashboard. Old root links are intentionally unsupported. The exact public acceptance state is recorded in `STATUS.md`.
 
@@ -10,7 +10,7 @@ Use the current USDC deployment in `deployments/usdc-sepolia.json` and the publi
 4. **Uniswap:** open Uniswap and inspect the vault-owned LP NFT and action history. Swapping, managing liquidity, collecting fees and exiting are distinct capabilities. The fixed pool uses USDC and a valueless quote; it is not a reliable dollar valuation. Revocation stops future management but does not itself close a market position.
 5. **Activity:** show actual MultiBaas-indexed capital and strategy events, their coverage boundary and canonical receipt verification. Direct USDC payment events are outside the controller-only index; use their separate verified payment receipt.
 6. **Setup:** show the owner recovery controls and the local companion/MCP guide. The human wallet stays separate from the companion operator for personal setups. Native Codex subagents do not automatically inherit capital; explicit delegation creates a separate ENS node and vault; an autonomous worker is optional.
-7. **MCP live proof:** open [the public MCP guide](https://kanoki-app.vercel.app/mcp). In Codex, call `getTree` with `capital.kanoki.eth`: show the dashboard-style PNG and report the current block, balance and authorized actions from the result. Its state can change; do not rehearse a fixed balance. Every tool returns a graphic and real local image links, including action/error cards. `prepareRootSetup` opens the bounded setup link in the user's normal wallet-enabled system browser; it does not sign. For writes, create a new small root, fund at most 0.100000 USDC, bind the local operator, start the WSL2 companion with writes enabled, then use typed `createChildVault`/revoke/reclaim tools. Do not claim this public E2E succeeded without receipts. `pnpm mcp:verify` proves 17-tool discovery with writes disabled.
+7. **MCP live proof:** open [the public MCP guide](https://kanoki-app.vercel.app/mcp). In Codex, call `getTree` with `capital.kanoki.eth`: show the dashboard-style PNG and report the current block, balance and authorized actions from the result. Its state can change; do not rehearse a fixed balance. Every tool returns a graphic and real local image links, including action/error cards. `prepareRootSetup` opens the bounded setup link in the user's normal wallet-enabled system browser; it does not sign. For writes, prepare a new small root for explicit owner approval, fund at most 0.100000 USDC, bind the local operator, start the WSL2 companion with writes enabled, then use typed `createChildVault`/revoke/reclaim tools. Do not claim this public E2E succeeded without receipts. `pnpm mcp:verify` proves 17-tool discovery with writes disabled. The config-free capital connection exposes 23 tools; indexed history, paid services and autonomous workers are unavailable until separately configured in worker mode. Historical `root-agent.agentcapitalusdc.eth` is permanently revoked and must not be funded again.
 
 Source entry points:
 

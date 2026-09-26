@@ -7,19 +7,20 @@ import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const args = process.argv.slice(2);
-const [command, query] = args;
+const command = args[0];
+const query = args[1] && !args[1].startsWith('--') ? args[1] : undefined;
 const packageBase = new URL(import.meta.url.endsWith('/bundle/capital.mjs') ? '../' : './', import.meta.url);
 const script = fileURLToPath(new URL('capital.mjs', packageBase));
 const repo = fileURLToPath(new URL('../..', packageBase));
-const usage = 'node packages/runtime/capital.mjs prepare|check|settings|stdio <ENS-name|vault-address|root-id> [--runtime-root /private/linux/path] [--enable-sepolia-writes]';
-if (!['prepare', 'check', 'settings', 'stdio'].includes(command) || !query) throw new Error(usage);
+const usage = 'node packages/runtime/capital.mjs prepare|check|settings|stdio [ENS-name|vault-address|root-id] [--runtime-root /private/linux/path] [--enable-sepolia-writes]';
+if (!['prepare', 'check', 'settings', 'stdio'].includes(command) || (command === 'prepare' && !query)) throw new Error(usage);
 let explicitRoot, writesEnabled = false;
-for (let i = 2; i < args.length; i++) {
+for (let i = query ? 2 : 1; i < args.length; i++) {
   if (args[i] === '--runtime-root' && args[i + 1] && !explicitRoot) explicitRoot = args[++i];
   else if (args[i] === '--enable-sepolia-writes' && !writesEnabled) writesEnabled = true;
   else throw new Error(usage);
 }
-const launchArgs = [script, 'stdio', query, ...(explicitRoot ? ['--runtime-root', explicitRoot] : []), ...(writesEnabled ? ['--enable-sepolia-writes'] : [])];
+const launchArgs = [script, 'stdio', ...(query ? [query] : []), ...(explicitRoot ? ['--runtime-root', explicitRoot] : []), ...(writesEnabled ? ['--enable-sepolia-writes'] : [])];
 try {
 if (command === 'settings') {
   console.log(JSON.stringify({ kanoki: { command: process.execPath, args: launchArgs } }, null, 2));

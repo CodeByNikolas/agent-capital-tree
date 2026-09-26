@@ -1,5 +1,7 @@
 # Current release: kanoki.eth and sidebar repair
 
+Concurrent main updates are integrated: unbound capital-MCP startup, help links on all pages, onboarding explanation, and tour context preservation.
+
 - Registered `kanoki.eth` on ENSv2 Sepolia (not Ethereum mainnet); current controller `0xeB2041B486D66aB91140FFcF54B66513D8eC40c8`, ProjectRegistry `0x5bbCfab760376d2E419FC42DA63fA4C5e434DBF6`.
 - Current `deployments/usdc-sepolia.json` now points exclusively to Kanoki. The retired manifest is preserved at `deployments/history/agentcapitalvault-prototype-sepolia.json`. Web and capital MCP no longer offer the previous recovery deployment flag. Earlier evidence below is historical, not proof of current-controller transactions.
 - Registered the MultiBaas contract/alias `capitalcontrollerkanoki` at block 11788886 before demo activity. Production controller-label configuration updated; the five new indexed events were verified against receipts.
@@ -8,7 +10,27 @@
 - Restored Overview How it works with hide/reopen and repaired the obsolete numeric-root tour: all six steps use the current ENS name. Sidebar lookup, action button and owned-root suggestions stack vertically on desktop and mobile. The regression reproduced a 26px-wide input after discovery; the fixed production test checks width and non-overlap after wallet changes.
 - Current setup docs, demo links, MCP prompts and seller ENS identity use Kanoki. Namespace ownership and its administrative dependency are explained in `docs/ens-namespace.md`.
 - Signing-profile discovery now skips unrelated directories without a domain file; existing signing-profile permission checks remain strict (regression included).
-- Checks: 38 contract tests; 34 runtime tests; 22 plugin tests; six-step live tour; production web build/TypeScript; nine-route skeleton/layout suite; owner-filtering/sidebar regression; live Curvegrid report; live MCP catalog (23 tools), current-root reads and disabled-write guard using an isolated temporary profile. No autonomous model worker or new x402 settlement was run for this cutover.
+- Checks: 38 contract tests; 35 runtime tests; 22 plugin tests; six-step live tour; production web build/TypeScript; nine-route skeleton/layout suite; owner-filtering/sidebar regression; live Curvegrid report; live MCP catalog (23 tools), current-root reads and disabled-write guard using an isolated temporary profile. No autonomous model worker or new x402 settlement was run for this cutover.
+
+## Release consolidation audit — 26 September
+
+- Confirmed remote main at `fc7c63c` after fetch; its GitHub CI passed both jobs: https://github.com/CodeByNikolas/agent-capital-tree/actions/runs/36273240439. Local workspace typecheck passed; plugin 22/22, SDK 2/2 and MultiBaas 11/11 tests passed. Windows is not the Linux runtime acceptance environment. A WSL run passed 33/34 runtime tests; the CLI-native test hit its 10-second startup timeout and did so again in isolation. This local run is not a full green acceptance claim; concurrent onboarding edits were present.
+- Replaced the obsolete cleanup/deploy handoff and added `docs/release-checklist.md`. Corrected stale team-detail and mandatory-proxy statements in ACCEPTANCE.md. The user assigned kanoki.eth onboarding to another agent and canonical Vercel publication to the project owner; this audit sends no financial transaction or submission.
+- Verified canonical app HTTP 200 and Kanoki title, but not deployed source SHA. Vercel account `ramiezze` lists only `raglibol`; the target project is inaccessible to this CLI. The owner must record exact deployment/SHA and final public smoke evidence.
+- Removed only the obsolete local `defer/merge-main-into-rami` branch after proving it is an ancestor of main. Preserved both older worktrees (staged changes/untracked captures) and non-equivalent WIP refs. The primary checkout continues to receive another agent's onboarding changes; they were not staged or discarded by this audit.
+
+## How it works and MCP guide restored — 26 September
+
+- Restored the explanatory five-step presentation on the start page and Overview, with persistent guide links and hide/reopen behavior. Preserved the latest main sidebar, partner navigation, root launch flow and rounded displays.
+- Replaced obsolete numeric-root tour URLs with the current vault or explicit preview context. The tour covers separate assets, inherited capabilities, indexed coverage, applications and owner recovery without initiating wallet actions.
+- MCP and jury instructions now describe capital-mode availability and permanent revocation accurately. README navigation and its recorded GIF reflect the current UI.
+- Production build and TypeScript passed. The guide browser test passed at 1280px and 380px: hide/reopen, reachable MCP setup, all five tour steps and exit, preserved context, no horizontal overflow or browser errors. GIF: four decoded 1280×720 frames, 195,528 bytes. No financial transaction or deployment was performed.
+
+## Unbound Kanoki MCP and cleanup — 26 September
+
+- User explicitly authorized deleting the historical revoked root-4 local profile, including its encrypted key and master password. Verified controller/root domain before deletion. Other profiles and chain state were preserved. The integrated MCP worktree/branch and local pnpm cache were removed; older worktrees with uncommitted or unmerged work were preserved.
+- Kanoki now starts with `stdio --enable-sepolia-writes` on the current deployment, without a preselected root. All 23 capital tools remain available, including wallet root setup and child-vault creation after explicit root selection/authorization. No root-4 binding or profile recreation. Autonomous workers still require separate worker configuration.
+- Added unbound startup, explicit ROOT_NOT_SELECTED guards and public tree reads that never implicitly select a root. Build, real 23-tool STDIO handshake and 15/15 Linux runtime tests passed. No financial transaction was submitted. Reconnect existing desktop MCP sessions to load the new configuration.
 
 ## Kanoki MCP repair — 26 September, 20:58 UTC
 

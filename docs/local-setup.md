@@ -388,3 +388,7 @@ The agent calls `getPaymentServices`, then `purchaseService` with the service ID
 The companion’s service allowlist is a runtime restriction. A compromised operator key can sign payments to other recipients allowed by the onchain PAY policy; this release does not provide an onchain merchant allowlist. Each amount ceiling is per payment, not a cumulative spending budget. The vault’s actual allocated balance remains the total financial exposure. Service responses are untrusted data; neither a valid payment nor this demonstration proves their quality.
 
 For a runnable controlled seller using your own Sepolia wallet, follow [Local x402 demo seller](x402-demo-seller.md). Its shared `scripts/lib/x402-demo-service.mjs` provides a loopback-only 0.01-USDC research endpoint, explicit payer allowlist, official facilitator integration and durable response caching. An interrupted ambiguous settlement fails closed and requires reconciliation instead of charging again. It is not a production merchant platform.
+
+### Start Kanoki without an existing root
+
+`node packages/runtime/capital.mjs settings --enable-sepolia-writes` prints a full 23-tool Kanoki registration with no initial root binding. Use `prepareRootSetup` for an owner-reviewed wallet creation, then `selectCapitalRoot` with the confirmed ENS name. Alternatively select an existing active root. Public tree reads do not select a root; setup and writes require explicit selection. A child vault does not start an autonomous worker.
