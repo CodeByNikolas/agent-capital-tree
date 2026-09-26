@@ -113,7 +113,8 @@ test('builds a root-filtered Event Query from the canonical event names', () => 
   ]);
   assert.ok(query.events.every(({ filter }) =>
     filter.rule === 'and' && filter.children[0].value === '7' && filter.children[1].fieldType === 'contract_address' && filter.children[1].value === controllerAddress));
-  assert.equal(query.orderBy, 'block_number');
+  assert.equal(query.orderBy, 'blockNumber');
+  assert.ok(query.events.every(event => event.select.some(field => field.alias === query.orderBy)));
   assert.equal(query.order, 'ASC');
 });
 

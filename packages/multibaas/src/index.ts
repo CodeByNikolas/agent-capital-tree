@@ -38,7 +38,7 @@ export type MultiBaasEventQuery = {
     }>;
     filter: { rule: 'and'; children: Array<{ fieldType: 'input' | 'contract_address'; inputIndex?: 0; operator: 'equal'; value: string }> };
   }>;
-  orderBy: 'block_number';
+  orderBy: 'blockNumber';
   order: 'ASC';
 };
 
@@ -167,7 +167,8 @@ export function buildCapitalActivityQuery(rootId: string, controllerAddress: str
         { fieldType: 'contract_address', operator: 'equal', value: normalizeAddress(controllerAddress, 'controllerAddress') },
       ] },
     })),
-    orderBy: 'block_number',
+    // MultiBaas orders by the selected column alias, not the wire field type.
+    orderBy: 'blockNumber',
     order: 'ASC',
   };
 }
