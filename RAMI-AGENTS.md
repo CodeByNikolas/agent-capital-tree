@@ -27,6 +27,8 @@
 
 ## Web-Konventionen
 - Vaults werden über **`?vault=<ENS-Name|Contract-Adresse>`** adressiert. `?root=` ist **stillgelegt** (führt zu `notFound()`). Neue Links/Features müssen das Vault-Modell nutzen.
+- **Root-Verzeichnis (aus der Kette, kein Hardcode):** `GET /api/roots` zählt alle Roots direkt von Sepolia auf (`nextNodeId` → `getNode` → `rootOwner`; Label = ENS-Leaf, owner-/ENS-konsistent). Der Client-Hook **`apps/web/src/lib/use-roots.ts`** (`useDiscoveredRoots`, cached) liefert sie an den **`RootAccessBar`** (in `dashboard.tsx`), der daraus Ein-Klick-Chips rendert (Navigation per `?vault=<adresse>`) und die Roots der verbundenen Wallet als **„Your vault"** markiert. Für neue Root-/Vault-Listen **diese Bausteine wiederverwenden**, keine ID-Listen hardcoden.
+- **Onboarding-Erklärung:** `apps/web/src/components/onboarding-hero.tsx` trägt den „How it works"-Narrativ; die geführte Tour steckt in `guided-tour.tsx` + `lib/tour-steps.ts` (URL-getrieben via `?tour=1&step=N`). Fachbegriffe über `<InfoHint term="…">` (`info-hint.tsx` + `lib/glossary.ts`) erklären, nicht über natives `title=`.
 
 ## Deploy (Ramis eigenes Vercel)
 - Ziel: **Ramis** Vercel-Team **`raglibol`**, Projekt `agent-capital-tree`, Root Directory `apps/web`. (Der Haupt-/andere Tree nutzt ein **anderes** Vercel-Konto — nicht verwechseln.)
