@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { mkdtemp, rm, readdir, readFile } from 'node:fs/promises';
+import { mkdtemp, rm, readdir, readFile, mkdir, writeFile, chmod } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { CapitalSession, safeCapitalError } from '../capital-session.mjs';
@@ -97,4 +97,18 @@ test('explicit root selection, owner-bound recovery, no refund, snapshot and sig
     assert.ok(fresh.localOperator); assert.equal(fresh.transactionSubmitted,false);
     assert.notEqual(fresh.localOperator,recovery.localOperator);
   } finally { await rm(base,{recursive:true,force:true}); }
+});
+
+
+test('profile discovery ignores unrelated directories but rejects an unsafe signing profile', async () => {
+  const base = await mkdtemp(join(tmpdir(), 'kanoki-profile-discovery-'));
+  const unrelated = join(base, 'tools');
+  try {
+    await mkdir(unrelated);
+    await chmod(unrelated, 0o755);
+    const session = new CapitalSession({ base, controller, repo: '/not-this-directory' });
+    assert.equal(await session.profile('1'), join(base, `capital-${controller}-1`));
+    await writeFile(join(unrelated, 'domain.json'), JSON.stringify({chainId:11155111,rootId:'1',controller}), {mode:0o600});
+    await assert.rejects(session.profile('1'), /UNSAFE_PROFILE/);
+  } finally { await rm(base, {recursive:true,force:true}); }
 });

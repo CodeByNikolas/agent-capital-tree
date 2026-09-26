@@ -36,7 +36,7 @@ try {
   await expect(page.locator('.wallet-permission-fields input').first()).not.toBeChecked();
   await expect(page.getByLabel('Maximum USDC per action',{exact:true})).toHaveValue('10');
   await name.fill('my-custom-vault');
-  await expect(page.locator('.root-name-preview')).toHaveText('my-custom-vault.agentcapitalvault.eth');
+  await expect(page.locator('.root-name-preview')).toHaveText('my-custom-vault.kanoki.eth');
   const gap=await page.evaluate(()=>document.querySelector('#wallet-controls').getBoundingClientRect().top-document.querySelector('.root-access-bar').getBoundingClientRect().bottom);
   assert(gap>=24,`card gap ${gap}`);
   assert(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth));

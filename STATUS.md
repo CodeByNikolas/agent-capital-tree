@@ -1,3 +1,15 @@
+# Current release: kanoki.eth and sidebar repair
+
+- Registered `kanoki.eth` on ENSv2 Sepolia (not Ethereum mainnet); current controller `0xeB2041B486D66aB91140FFcF54B66513D8eC40c8`, ProjectRegistry `0x5bbCfab760376d2E419FC42DA63fA4C5e434DBF6`.
+- Current `deployments/usdc-sepolia.json` now points exclusively to Kanoki. The retired manifest is preserved at `deployments/history/agentcapitalvault-prototype-sepolia.json`. Web and capital MCP no longer offer the previous recovery deployment flag. Earlier evidence below is historical, not proof of current-controller transactions.
+- Registered the MultiBaas contract/alias `capitalcontrollerkanoki` at block 11788886 before demo activity. Production controller-label configuration updated; the five new indexed events were verified against receipts.
+- Created `capital.kanoki.eth`, root 1, vault `0x42d383397ad51B56f0Fa55c3Aa29b85659D279cB`, funded with 2 Test-USDC and 2 DEMO-USD, and opened Uniswap LP NFT 39889. Existing pool/token contracts are reused; old vault balances were neither recovered nor migrated. New x402 history is empty; prior payment receipts remain historical evidence.
+- All new contracts and the root registry are source-verified; the vault's EIP-1167 implementation association is verified. Public registration/deployment/funding/LP receipts are in the current manifest. An independent wallet's root creation was successfully simulated without a deployment signature.
+- Restored Overview How it works with hide/reopen and repaired the obsolete numeric-root tour: all six steps use the current ENS name. Sidebar lookup, action button and owned-root suggestions stack vertically on desktop and mobile. The regression reproduced a 26px-wide input after discovery; the fixed production test checks width and non-overlap after wallet changes.
+- Current setup docs, demo links, MCP prompts and seller ENS identity use Kanoki. Namespace ownership and its administrative dependency are explained in `docs/ens-namespace.md`.
+- Signing-profile discovery now skips unrelated directories without a domain file; existing signing-profile permission checks remain strict (regression included).
+- Checks: 38 contract tests; 34 runtime tests; 22 plugin tests; six-step live tour; production web build/TypeScript; nine-route skeleton/layout suite; owner-filtering/sidebar regression; live Curvegrid report; live MCP catalog (23 tools), current-root reads and disabled-write guard using an isolated temporary profile. No autonomous model worker or new x402 settlement was run for this cutover.
+
 ## Kanoki MCP repair — 26 September, 20:58 UTC
 
 ## Partner navigation and onboarding restoration (26 September)

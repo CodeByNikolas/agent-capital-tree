@@ -1,8 +1,8 @@
 import assert from 'node:assert/strict';
 import { chromium, expect } from '@playwright/test';
 const base = process.env.ACT_TEST_APP_URL ?? 'http://localhost:3098';
-const publicBase = 'https://kanoki-app.vercel.app';
-const [tree, activity, lookup] = await Promise.all(['/api/tree?root=1', '/api/activity?root=1', '/api/resolve-root?q=capital.agentcapitalvault.eth'].map(async path => { const r = await fetch(publicBase + path); assert.ok(r.ok); return r.json(); }));
+const publicBase = process.env.ACT_TEST_DATA_URL ?? 'https://kanoki-app.vercel.app';
+const [tree, activity, lookup] = await Promise.all(['/api/tree?root=1', '/api/activity?root=1', '/api/resolve-root?q=capital.kanoki.eth'].map(async path => { const r = await fetch(publicBase + path); assert.ok(r.ok); return r.json(); }));
 const browser = await chromium.launch();
 try {
   const page = await browser.newPage({ viewport: { width: 1440, height: 1000 } });
@@ -19,7 +19,7 @@ try {
   });
   for (const route of ['/', '/tree', '/activity', '/agent-activity', '/uniswap', '/payments', '/applications', '/setup', '/mcp']) {
     releaseTree = undefined; releaseHistory = undefined;
-    await page.goto(base + route + '?vault=capital.agentcapitalvault.eth');
+    await page.goto(base + route + '?vault=capital.kanoki.eth');
     await expect(page.getByLabel('Loading vault data', { exact: true })).toBeVisible();
     const box = await page.locator('.loading-value').first().boundingBox(); assert.ok(box.height >= 20);
     await expect(page.locator('.summary-ledger')).toHaveCount(0);

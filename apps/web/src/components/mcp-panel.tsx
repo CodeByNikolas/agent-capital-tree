@@ -36,14 +36,13 @@ export function McpPanel({
   selectedNode: VaultNode | undefined;
   runtimeLabel: string;
 }) {
-  const demoRoot = deployment.recoveryOnly ? 'root-agent.agentcapitalusdc.eth' : `capital.${deployment.namespaceName}`;
-  const deploymentFlag = deployment.recoveryOnly ? ' --deployment usdc-full-vaults' : '';
+  const demoRoot = `capital.${deployment.namespaceName}`;
   // The separate keyless server always uses the canonical current deployment.
-  const chatPrompt = 'Call kanoki.getTree with query "capital.agentcapitalvault.eth". Show the returned tree image in this chat and report its Sepolia block, observed time, Test-USDC balance and actual authorized actions. Do not use shell or web.';
+  const chatPrompt = 'Call kanoki.getTree with query "capital.kanoki.eth". Show the returned tree image in this chat and report its Sepolia block, observed time, Test-USDC balance and actual authorized actions. Do not use shell or web.';
   const capitalSnippet = `pnpm --filter @agent-capital-tree/multibaas build
 pnpm --filter @agent-capital-tree/runtime build
-pnpm mcp:capital check ${demoRoot}${deploymentFlag}
-pnpm mcp:capital settings ${demoRoot}${deploymentFlag} --enable-sepolia-writes`;
+pnpm mcp:capital check ${demoRoot}
+pnpm mcp:capital settings ${demoRoot} --enable-sepolia-writes`;
   const serverFacts: [string, string][] = [
     ["Server name", mcpServerMeta.name],
     ["Transport", mcpServerMeta.transport],
@@ -74,7 +73,6 @@ pnpm mcp:capital settings ${demoRoot}${deploymentFlag} --enable-sepolia-writes`;
 
       <section className="panel mcp-panel" aria-labelledby="mcp-capital-title">
         <div className="panel-heading"><span className="panel-overline">Recommended demo</span><h2 id="mcp-capital-title">Authorize once. Manage capital in chat.</h2></div>
-        {deployment.recoveryOnly && <p><strong>Existing-vault recovery:</strong> this site and the capital command below target the funded historical root, not an equally numbered root on the current controller. Use <code>kanoki.getTree</code> with <code>root-agent.agentcapitalusdc.eth</code> after registration. The separate keyless examples below use the current deployment. New roots belong on <a href="https://agent-capital-tree.vercel.app/setup?action=create-root">the canonical setup page</a>, not this recovery site.</p>}
         <p>Build the SDK and plugin with the commands below first, then use capital mode. It starts the local signing companion automatically. No private JSON configuration, CLIProxyAPI account or separate companion terminal.</p>
         <CopyBlock code={capitalSnippet} label="Capital demo setup — Linux or Windows with WSL2 and Node 22+" />
         <p>Add the printed STDIO entry in Codex or Claude settings and restart that MCP once after updating its code. The capital connection exposes 23 tools. Use <code>selectCapitalRoot</code> to choose a confirmed root inside the same session; a tree read never changes the write target. No restart is needed for that selection.</p>

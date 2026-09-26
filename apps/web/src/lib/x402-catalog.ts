@@ -4,6 +4,7 @@
 // and tests can share it. The browser never imports this; it fetches GET /api/x402/services.
 
 import { getAddress, isAddress, type Address } from "viem";
+import manifest from "../../../../deployments/usdc-sepolia.json";
 import {
   SEPOLIA_NETWORK,
   USDC_SEPOLIA,
@@ -12,10 +13,10 @@ import {
   type X402PaymentRequirements,
 } from "@/lib/x402";
 
-// Default recipient: the project deployment wallet (deployments/sepolia.json `deployer`).
+// Default recipient and seller ENS identity come from the current deployment.
 // Override per-environment with X402_PAY_TO. Payments are real USDC transfers verifiable on
 // sepolia.etherscan.io, so the recipient must be a wallet the operator controls.
-const DEFAULT_PAY_TO = "0x280Ca099242D7164cD001E4479D59f13CD0ea7c9" as Address;
+const DEFAULT_PAY_TO = getAddress(manifest.deployer);
 
 function resolvePayTo(): Address {
   const configured = process.env.X402_PAY_TO?.trim();
@@ -27,7 +28,7 @@ function resolvePayTo(): Address {
 const SERVICES: ReadonlyArray<Omit<ServiceListing, "payTo">> = [
   {
     id: "market-oracle",
-    ensName: "market-oracle.agentcapitaltree.eth",
+    ensName: manifest.ensNamespace.name,
     name: "Market oracle snapshot",
     description: "A signed Sepolia market snapshot an agent can buy per call within its mandate.",
     priceRaw: "100000", // 0.10 USDC
@@ -36,7 +37,7 @@ const SERVICES: ReadonlyArray<Omit<ServiceListing, "payTo">> = [
   },
   {
     id: "tree-audit",
-    ensName: "tree-audit.agentcapitaltree.eth",
+    ensName: manifest.ensNamespace.name,
     name: "Capital-tree risk audit",
     description: "An automated review of a vault subtree's exposure and policy headroom.",
     priceRaw: "250000", // 0.25 USDC
@@ -45,7 +46,7 @@ const SERVICES: ReadonlyArray<Omit<ServiceListing, "payTo">> = [
   },
   {
     id: "alpha-feed",
-    ensName: "alpha-feed.agentcapitaltree.eth",
+    ensName: manifest.ensNamespace.name,
     name: "Alpha research feed",
     description: "A premium research note delivered to the paying agent identity.",
     priceRaw: "500000", // 0.50 USDC

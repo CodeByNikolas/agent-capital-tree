@@ -1,14 +1,17 @@
 #!/usr/bin/env node
 // Read-only live proof. The spawned server has NO --enable-sepolia-writes flag.
 import assert from 'node:assert/strict';
-import { writeFile } from 'node:fs/promises';
+import { writeFile, mkdtemp, rm } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { Client } from '../packages/plugin/node_modules/@modelcontextprotocol/sdk/dist/esm/client/index.js';
 import { StdioClientTransport } from '../packages/plugin/node_modules/@modelcontextprotocol/sdk/dist/esm/client/stdio.js';
 
+const runtimeRoot = await mkdtemp(join(tmpdir(), 'kanoki-read-check-'));
 const client = new Client({ name: 'capital-mode-read-proof', version: '1' });
 const transport = new StdioClientTransport({ command: process.execPath,
-  args: [fileURLToPath(new URL('../packages/runtime/capital.mjs', import.meta.url)), 'stdio', 'capital.agentcapitalvault.eth'], stderr: 'pipe' });
+  args: [fileURLToPath(new URL('../packages/runtime/capital.mjs', import.meta.url)), 'stdio', 'capital.kanoki.eth', '--runtime-root', runtimeRoot], stderr: 'pipe' });
 const timer = setTimeout(() => { console.error('Capital MCP test exceeded 120 seconds'); process.exit(1); }, 120000);
 async function call(name, args) {
   const result = await client.callTool({ name, arguments: args }, undefined, { timeout: 60000 });
@@ -32,11 +35,11 @@ try {
     asset: '0x1c7D4B196Cb0C7B01d743Fbc6116a902379C7238', amount: '50000', restrictions: {} });
   assert.equal(blocked.data.status, 'blocked');
   assert.equal(blocked.data.transactionSubmitted, false);
-  const tree = await call('getTree', { query: 'capital.agentcapitalvault.eth' });
+  const tree = await call('getTree', { query: 'capital.kanoki.eth' });
   assert.equal(tree.data.rootId, '1');
   await writeFile(new URL('../artifacts/ui/merge-mcp-capital-readiness.png', import.meta.url), setup.png);
   await writeFile(new URL('../artifacts/ui/merge-mcp-capital-tree.png', import.meta.url), tree.png);
   console.log(JSON.stringify({ mode: 'capital', tools: listed.tools.length, chainId: setup.data.chainId,
     rootId: tree.data.rootId, blockNumber: tree.data.source.blockNumber, missing: setup.data.missing,
     writes: 'disabled', images: 'PNG', backgroundWorker: 'not-requested' }));
-} finally { clearTimeout(timer); await client.close(); }
+} finally { clearTimeout(timer); await client.close(); await rm(runtimeRoot, { recursive: true, force: true }); }

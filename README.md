@@ -10,13 +10,13 @@ Kanoki
 
 *Read-only preview recording. Balances, nodes and activity in the GIF are illustrative. The live dashboard and MCP read Ethereum Sepolia independently.*
 
-[Live dashboard](https://kanoki-app.vercel.app) · [Live Sepolia tree](https://kanoki-app.vercel.app/tree?vault=capital.agentcapitalvault.eth) · [MCP guide](https://kanoki-app.vercel.app/mcp) · [Local setup](docs/local-setup.md) · [Jury walkthrough](docs/jury-demo.md) · [Current status](STATUS.md)
+[Live dashboard](https://kanoki-app.vercel.app) · [Live Sepolia tree](https://kanoki-app.vercel.app/tree?vault=capital.kanoki.eth) · [MCP guide](https://kanoki-app.vercel.app/mcp) · [Local setup](docs/local-setup.md) · [Jury walkthrough](docs/jury-demo.md) · [Current status](STATUS.md)
 
 The prototype runs on **Ethereum Sepolia (chain 11155111)** with official Circle **Test-USDC**. **Uniswap v4** supports bounded swaps and vault-owned liquidity positions. **x402** supports scoped service purchases. **Curvegrid MultiBaas** indexes controller capital and strategy events. Public contract addresses are in [usdc-sepolia.json](deployments/usdc-sepolia.json). This is an unaudited hackathon prototype using testnet assets.
 
 ## Try the live tree and local MCP
 
-Open the [live root vault](https://kanoki-app.vercel.app/tree?vault=capital.agentcapitalvault.eth) to inspect a real Sepolia tree without a wallet. Explicit preview mode contains illustrative balances and names. The dashboard shows wallet controls, but viewing a vault does not start a worker or authorize a transaction.
+Open the [live root vault](https://kanoki-app.vercel.app/tree?vault=capital.kanoki.eth) to inspect a real Sepolia tree without a wallet. Explicit preview mode contains illustrative balances and names. The dashboard shows wallet controls, but viewing a vault does not start a worker or authorize a transaction.
 
 To check the keyless local MCP from the current checkout, use Node 22+, pnpm and Codex CLI. From an existing checkout, start at `pnpm install`; clone only when you need a new checkout:
 
@@ -65,9 +65,11 @@ The keyless MCP renders the live ENS agent tree as PNG with a Mermaid fallback.
 
 ## Dashboard
 
-The overview is a balance ledger and node register. Five header items separate Overview, Tree, Applications, Activity and Setup. Applications includes Uniswap and payment history; Activity includes the per-agent report. Fraunces and IBM Plex, explicit dark/light themes and the supplied logo follow [the corrected Kanoki design scope](KANOKI_DESIGN.md). USDC and DEMO-USD stay separate. Selecting a node opens its balance, capabilities and limits. A zero-USDC root links to Circle's faucet; funding uses the owner wallet.
+The Overview includes a dismissible How it works introduction, a balance ledger and a vault register. A shadcn sidebar provides separate pages for Agent tree, Activity, Uniswap, x402 Pay, Curvegrid, Applications, MCP and Setup & control. Curvegrid contains the per-agent MultiBaas report. Fraunces and IBM Plex, explicit dark/light themes and the supplied logo follow [the corrected Kanoki design scope](KANOKI_DESIGN.md). USDC and DEMO-USD stay separate. Selecting a node opens its balance, capabilities and limits. A zero-USDC root links to Circle's faucet; funding uses the owner wallet.
 
-Enter a vault contract address or a registered name under **`agentcapitalvault.eth`** in **Open vault**. Internal numeric IDs are not accepted in this field. Without a selected vault, the app shows onboarding; illustrative data requires explicit preview mode. The preview root **Main agent** at `main.preview`, its addresses, and its small **USDC** sample balances are invented UI examples, not contracts or funds. Historical ACT-A/ACT-B vaults from an earlier controller still exist on Sepolia but are not supported by this USDC dashboard. An active mandate does not imply an agent process is running.
+See [ENS ownership and namespace permissions](docs/ens-namespace.md) for how users receive names without a server-side signing key.
+
+Enter a vault contract address or a registered name under **`kanoki.eth`** in **Open vault**. Internal numeric IDs are not accepted in this field. Without a selected vault, the app shows onboarding; illustrative data requires explicit preview mode. The preview root **Main agent** at `main.preview`, its addresses, and its small **USDC** sample balances are invented UI examples, not contracts or funds. All earlier prototype vaults still exist on Sepolia but are outside the current Kanoki dashboard and MCP deployment. An active mandate does not imply an agent process is running.
 
 Current balances and permissions come directly from Sepolia. MultiBaas history covers controller-emitted capital/strategy events. The Payments page independently scans Circle USDC `AuthorizationUsed` events for this tree's vaults and verifies same-transaction transfers in successful receipts. It shows the scanned block range and explicitly flags truncated coverage. This proves token settlement, but chain receipts alone cannot prove x402 merchant intent or service delivery. Indexing delay and the actual controller-history coverage boundary remain visible.
 
@@ -85,7 +87,7 @@ ENS roles are actual authorization, not descriptive text metadata. MultiBaas is 
 
 **Use case:** make delegated agent capital movements inspectable by the human owner and queryable through MCP. MultiBaas Event Queries supply controller history filtered by root; our adapter decodes allocations, recovery, policy changes, swaps and LP events. We independently check returned events against canonical RPC receipts before displaying them.
 
-The [Agent activity report](https://kanoki-app.vercel.app/agent-activity?vault=capital.agentcapitalvault.eth) lets reviewers select a vault, inspect its receipt-linked events, and compare allocations received, onward delegations, returns and swap input/output totals per token. These are totals from loaded events, not current balances, profit or lifetime expenditure. Source: [MultiBaas adapter](packages/multibaas/src/index.ts), [activity API](apps/web/src/app/api/activity/route.ts), [agent report](apps/web/src/components/agent-activity.tsx).
+The [Agent activity report](https://kanoki-app.vercel.app/agent-activity?vault=capital.kanoki.eth) lets reviewers select a vault, inspect its receipt-linked events, and compare allocations received, onward delegations, returns and swap input/output totals per token. These are totals from loaded events, not current balances, profit or lifetime expenditure. Source: [MultiBaas adapter](packages/multibaas/src/index.ts), [activity API](apps/web/src/app/api/activity/route.ts), [agent report](apps/web/src/components/agent-activity.tsx).
 
 **What worked:** indexed, decoded contract events give the dashboard and MCP a common history interface. Root-filtered queries and receipt links make delegated capital flows explainable without relying on the agent's own account of what it did. Indexing was configured before the current demo's transactions.
 

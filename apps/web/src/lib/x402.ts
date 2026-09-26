@@ -5,7 +5,7 @@
 //    USDC-native, so an agent pays a service directly in USDC and the server verifies the
 //    transfer on-chain before serving the resource.
 //  - Every payment is bound to the paying agent's ENS identity in the capital tree
-//    (`<label>.…​.agentcapitaltree.eth`) and is only accepted when the agent's on-chain
+//    (`<label>.…​.kanoki.eth`) and is only accepted when the agent's on-chain
 //    mandate (EAC authority + policy) covers the spend. ENS is the payer identity; the
 //    mandate is the spend gate; USDC is the rail.
 //
@@ -33,7 +33,7 @@ export const ERC20_TRANSFER_TOPIC =
 /** One entry the server is willing to sell for USDC over x402. */
 export interface ServiceListing {
   id: string;
-  /** The service's ENS name — its identity/branding in the agentcapitaltree namespace. */
+  /** The service's ENS name — its identity/branding in the Kanoki catalog. */
   ensName: string;
   name: string;
   description: string;

@@ -1,0 +1,295 @@
+{
+  "chainId": 11155111,
+  "network": "Ethereum Sepolia",
+  "status": "deployed",
+  "token": {
+    "address": "0x1c7D4B196Cb0C7B01d743Fbc6116a902379C7238",
+    "symbol": "USDC",
+    "decimals": 6,
+    "issuerAddressSource": "https://developers.circle.com/stablecoins/usdc-contract-addresses",
+    "testnetOnly": true
+  },
+  "funding": {
+    "owner": "0xbCea84Ed1DaFbb59AaF9797Cb4170394db688d34",
+    "verifiedAtBlock": 11784860,
+    "balanceRaw": "20000000",
+    "balanceUSDC": "20.0"
+  },
+  "limitations": [
+    "Testnet assets only; DEMO-USD is valueless and pool price is not a real USD valuation.",
+    "x402 service purchases require an explicitly configured Sepolia-capable seller and PAY mandate."
+  ],
+  "deployer": "0xbCea84Ed1DaFbb59AaF9797Cb4170394db688d34",
+  "tokens": [
+    {
+      "address": "0x1c7D4B196Cb0C7B01d743Fbc6116a902379C7238",
+      "symbol": "USDC",
+      "decimals": 6,
+      "issuerAddressSource": "https://developers.circle.com/stablecoins/usdc-contract-addresses",
+      "testnetOnly": true,
+      "status": "confirmed"
+    },
+    {
+      "address": "0x892e744064E80211d4a69A9cc0f98FE6815157Cf",
+      "symbol": "DEMO-USD",
+      "name": "Valueless Demo Quote",
+      "decimals": 6,
+      "status": "confirmed",
+      "testnetOnly": true,
+      "valueless": true,
+      "transactionHash": "0x8145768b6f02006613931f5ed81ebc1bc842b5d117a039882ce46af1291159f2",
+      "blockNumber": 11785024
+    }
+  ],
+  "contracts": {
+    "VaultFactory": {
+      "address": "0xAF9A748e45913457cA205e7d29cb380e9aCbCb44",
+      "transactionHash": "0xbce00196121ee125d756af53a1ed743aa19c13eba892880ed4531741ed62c17c",
+      "blockNumber": 11785758,
+      "codeHash": "0x0fc9e88ed28dbe8ebbf089e1120cf948b97fa359883da50591f9f31b18ef31fd"
+    },
+    "CapitalVaultImplementation": {
+      "address": "0xD07abdd852FD41844d393d5a183535654A8B275B",
+      "codeHash": "0x4db455e92649df9d5785414aea001c3ed19045123539f48b46ae9a6575812600"
+    },
+    "NodeFactory": {
+      "address": "0xf6895DD52517bdd37C16C2f1fF830465F3e096E4",
+      "transactionHash": "0xd02019d25a57b9b5934acff2f48ff07a6730e8ec21acdb8c74d0f11b70abc4f8",
+      "blockNumber": 11785760,
+      "codeHash": "0x4eb8565d82ebb4c1c5888e5e975ab1fc93c7c7857b5b70907305ef4230ceff3e"
+    },
+    "CapitalController": {
+      "address": "0x7eDFa3D484d64b6bA3b5b2bcef51147E57133FFB",
+      "transactionHash": "0xc74852ea459e46c81b84138ed3e0e8c3c32d8ab5b8d374f9a4a08bf608020189",
+      "blockNumber": 11785762,
+      "codeHash": "0xa5eb9a97c11abf62491498918dd77ff72d8fc6ec4d0258047beb9d3c738eca64"
+    },
+    "ProjectRegistry": {
+      "address": "0x67Ab85dB5d4f319e7AcDcceA757D0a2541CDfD3c"
+    }
+  },
+  "ensNamespace": {
+    "name": "agentcapitalvault.eth",
+    "registry": "0x67b728a792e789a8978b30cf1b3b641f19354b43",
+    "registrar": "0xa4449a0dd2b83007553d9b1d28b583a46a805a30",
+    "transactions": {
+      "commit": {
+        "hash": "0x8789a3d113f455fbb74e7c7c416d48451ea66a0ddc724ba11412e445e7743ce6",
+        "block": 11785742
+      },
+      "mint": {
+        "hash": "0x2e23baf8d2512c9bae90c6af56655db016c38ed5aa07f9a6d89cd448e88c0d09",
+        "block": 11785744
+      },
+      "approve": {
+        "hash": "0xe3f084f562b0f7c8c4c5d1406126d10d365001e6e2c5fef0bad7c378fc6620a9",
+        "block": 11785746
+      },
+      "register": {
+        "hash": "0xb618dfb5f2015472e6501cedc1bd34fa83ac6c8f73e1a3a84425e50c587ee527",
+        "block": 11785753
+      },
+      "attach": {
+        "hash": "0xb272a660e1643d8542170dbfa727bb9f98d52362266f4e954afd950669ba999a",
+        "block": 11785765
+      }
+    },
+    "resource": "6567213703719786339245037509976515699004843506858035598718335938612640612352",
+    "expiry": "1821955788",
+    "subregistry": "0x67Ab85dB5d4f319e7AcDcceA757D0a2541CDfD3c"
+  },
+  "uniswap": {
+    "poolManager": "0xE03A1074c86CFeDd5C142C4F04F1a1536e203543",
+    "positionManager": "0x429ba70129df741B2Ca2a85BC3A2a3328e5c09b4",
+    "permit2": "0x000000000022D473030F116dDEE9F6B43aC78BA3",
+    "poolId": "0x93f85c1b3f22eb51728013413c04d3598bcae49836626358d766fc3db3b54c10",
+    "fee": 3000,
+    "tickSpacing": 60,
+    "tickLower": -600,
+    "tickUpper": 600,
+    "codeHashes": {
+      "poolManager": "0x09930125a49f5b95caf8052991cc14d1240dca8b43f42b899115b86867e4bce1",
+      "positionManager": "0xcffd746f78c2b50aafd19076bbe9c48f14446e5248fc5d76b9b4896610e51aab",
+      "permit2": "0x96d9f5c3f0fb0423426b7f970186235b7347027f4e5c19c40c412b7d97fc3751"
+    },
+    "initialization": {
+      "transactionHash": "0x4a9de834cc241ab6ba8eb45cd43be2e1068d31abf4044b2fce9406758002a4e6",
+      "blockNumber": 11785124
+    },
+    "seeded": {
+      "transactionHash": "0x9c9d6a709c7adafb9c96adf9c7d9020d3293d442cc2374934a5e3ea61d666d1c",
+      "blockNumber": 11785813,
+      "rootId": "1",
+      "vault": "0x4E2c19976f8ecf94f62587Ca3B5AB3457f8ee271",
+      "tokenId": "39866",
+      "liquidity": "30000000"
+    }
+  },
+  "multibaas": {
+    "label": "capitalcontrollerproxy",
+    "indexingStartBlock": 11785767,
+    "status": {
+      "isProcessingPastLogs": false,
+      "latestBlockNumber": 11785767,
+      "latestBlockHash": "0x51bf2de2ecc321d55191d69d4aaeff430c6668226253d207111e0327034e173b",
+      "startBlockNumber": 11785767,
+      "startBlockHash": "0x51bf2de2ecc321d55191d69d4aaeff430c6668226253d207111e0327034e173b",
+      "updatedAt": "2026-09-26T10:52:49.389857Z"
+    },
+    "configuredAt": "2026-09-26T10:52:49.771Z"
+  },
+  "vaultArchitecture": "eip1167",
+  "verification": {
+    "checkedAt": "2026-09-26T14:15:23.701Z",
+    "chainId": 11155111,
+    "nodeCount": "6",
+    "records": [
+      {
+        "address": "0xD07abdd852FD41844d393d5a183535654A8B275B",
+        "contract": "src/CapitalVault.sol:CapitalVault",
+        "status": "source-verified",
+        "explorer": "https://sepolia.etherscan.io/address/0xD07abdd852FD41844d393d5a183535654A8B275B#code"
+      },
+      {
+        "address": "0xAF9A748e45913457cA205e7d29cb380e9aCbCb44",
+        "contract": "src/VaultFactory.sol:VaultFactory",
+        "status": "source-verified",
+        "explorer": "https://sepolia.etherscan.io/address/0xAF9A748e45913457cA205e7d29cb380e9aCbCb44#code"
+      },
+      {
+        "address": "0xf6895DD52517bdd37C16C2f1fF830465F3e096E4",
+        "contract": "src/NodeFactory.sol:NodeFactory",
+        "status": "source-verified",
+        "explorer": "https://sepolia.etherscan.io/address/0xf6895DD52517bdd37C16C2f1fF830465F3e096E4#code"
+      },
+      {
+        "address": "0x7eDFa3D484d64b6bA3b5b2bcef51147E57133FFB",
+        "contract": "src/CapitalController.sol:CapitalController",
+        "status": "source-verified",
+        "explorer": "https://sepolia.etherscan.io/address/0x7eDFa3D484d64b6bA3b5b2bcef51147E57133FFB#code"
+      },
+      {
+        "address": "0x67Ab85dB5d4f319e7AcDcceA757D0a2541CDfD3c",
+        "contract": "src/ens/ManagedRegistry.sol:ManagedRegistry",
+        "status": "source-verified",
+        "explorer": "https://sepolia.etherscan.io/address/0x67Ab85dB5d4f319e7AcDcceA757D0a2541CDfD3c#code"
+      },
+      {
+        "address": "0x892e744064E80211d4a69A9cc0f98FE6815157Cf",
+        "contract": "src/DemoQuote.sol:DemoQuote",
+        "status": "source-verified",
+        "explorer": "https://sepolia.etherscan.io/address/0x892e744064E80211d4a69A9cc0f98FE6815157Cf#code"
+      },
+      {
+        "address": "0x8bF2d2ae515813fa8f01a05b04ad84488915dF08",
+        "contract": "src/ens/ManagedRegistry.sol:ManagedRegistry",
+        "status": "source-verified",
+        "explorer": "https://sepolia.etherscan.io/address/0x8bF2d2ae515813fa8f01a05b04ad84488915dF08#code"
+      },
+      {
+        "address": "0x4E2c19976f8ecf94f62587Ca3B5AB3457f8ee271",
+        "implementation": "0xD07abdd852FD41844d393d5a183535654A8B275B",
+        "status": "proxy-verified",
+        "runtimeBytes": 45,
+        "explorer": "https://sepolia.etherscan.io/address/0x4E2c19976f8ecf94f62587Ca3B5AB3457f8ee271#code"
+      },
+      {
+        "address": "0x689C6F26Ae78D868b2Cd252401388364c4F93fB8",
+        "contract": "src/ens/ManagedRegistry.sol:ManagedRegistry",
+        "status": "source-verified",
+        "explorer": "https://sepolia.etherscan.io/address/0x689C6F26Ae78D868b2Cd252401388364c4F93fB8#code"
+      },
+      {
+        "address": "0x68Ae8719e64f643fE4a7b80a631c5A1BD90F757e",
+        "implementation": "0xD07abdd852FD41844d393d5a183535654A8B275B",
+        "status": "proxy-verified",
+        "runtimeBytes": 45,
+        "explorer": "https://sepolia.etherscan.io/address/0x68Ae8719e64f643fE4a7b80a631c5A1BD90F757e#code"
+      },
+      {
+        "address": "0x8F097adA2851599B04C4DEb00732d7cfda455213",
+        "contract": "src/ens/ManagedRegistry.sol:ManagedRegistry",
+        "status": "source-verified",
+        "explorer": "https://sepolia.etherscan.io/address/0x8F097adA2851599B04C4DEb00732d7cfda455213#code"
+      },
+      {
+        "address": "0x1A82649796e7C7A59860e66540eB8cD04C5814C0",
+        "implementation": "0xD07abdd852FD41844d393d5a183535654A8B275B",
+        "status": "proxy-verified",
+        "runtimeBytes": 45,
+        "explorer": "https://sepolia.etherscan.io/address/0x1A82649796e7C7A59860e66540eB8cD04C5814C0#code"
+      },
+      {
+        "address": "0xcD03C28D7ae222a9C1403181b9d8e2a594965FC7",
+        "contract": "src/ens/ManagedRegistry.sol:ManagedRegistry",
+        "status": "source-verified",
+        "explorer": "https://sepolia.etherscan.io/address/0xcD03C28D7ae222a9C1403181b9d8e2a594965FC7#code"
+      },
+      {
+        "address": "0x1bF85187F1De3CF86ea3aED9632F02fE2CB07600",
+        "implementation": "0xD07abdd852FD41844d393d5a183535654A8B275B",
+        "status": "proxy-verified",
+        "runtimeBytes": 45,
+        "explorer": "https://sepolia.etherscan.io/address/0x1bF85187F1De3CF86ea3aED9632F02fE2CB07600#code"
+      },
+      {
+        "address": "0x9978c5d6A37f45CB10d5552bEBDeF2711a34EC0a",
+        "contract": "src/ens/ManagedRegistry.sol:ManagedRegistry",
+        "status": "source-verified",
+        "explorer": "https://sepolia.etherscan.io/address/0x9978c5d6A37f45CB10d5552bEBDeF2711a34EC0a#code"
+      },
+      {
+        "address": "0x0143bCdD259cE1AaAFC678d873197DC87A38726C",
+        "implementation": "0xD07abdd852FD41844d393d5a183535654A8B275B",
+        "status": "proxy-verified",
+        "runtimeBytes": 45,
+        "explorer": "https://sepolia.etherscan.io/address/0x0143bCdD259cE1AaAFC678d873197DC87A38726C#code"
+      },
+      {
+        "address": "0x68dC36909EDC20b1DC8Ea4A14Cf98b2E10B7Ac88",
+        "contract": "src/ens/ManagedRegistry.sol:ManagedRegistry",
+        "status": "source-verified",
+        "explorer": "https://sepolia.etherscan.io/address/0x68dC36909EDC20b1DC8Ea4A14Cf98b2E10B7Ac88#code"
+      },
+      {
+        "address": "0xBcA98635bD5975A2eF43d9dd9Fcc5ff5aF82fcA5",
+        "implementation": "0xD07abdd852FD41844d393d5a183535654A8B275B",
+        "status": "proxy-verified",
+        "runtimeBytes": 45,
+        "explorer": "https://sepolia.etherscan.io/address/0xBcA98635bD5975A2eF43d9dd9Fcc5ff5aF82fcA5#code"
+      }
+    ]
+  },
+  "bootstrap": {
+    "purpose": "USDC capital demo with optional LP liquidity; owner and root operator are the test-owner wallet.",
+    "policyExpiry": "1805972280",
+    "deadline": "1790427480",
+    "transactions": {
+      "create-seed-root": {
+        "transactionHash": "0xb6981a04507954fd325ed60e01e70f7db8acbbee7bc849b660ba750394c36386",
+        "blockNumber": 11785795
+      },
+      "authorize-seed-operator": {
+        "transactionHash": "0xd9ea36405a65be56f1e9f9ea98cbd9afa13a7e327228411ffce9a6a803ca1091",
+        "blockNumber": 11785798
+      },
+      "approve-token-0": {
+        "transactionHash": "0x746023c11e34c11e8a4c20c599d519d65cca477e0b98b447b280b5560ee7ec92",
+        "blockNumber": 11785800
+      },
+      "approve-token-1": {
+        "transactionHash": "0x9f284bb3f453e938ae23c0ccd5a4ae0774dc8b97bd719ed4738677977a992a78",
+        "blockNumber": 11785808
+      },
+      "fund-seed-root": {
+        "transactionHash": "0x58b3aff3b88a664bfc0ada870a84c93a45d58514b6c94944ab91f9966b4351ff",
+        "blockNumber": 11785810
+      },
+      "open-seed-position": {
+        "transactionHash": "0x9c9d6a709c7adafb9c96adf9c7d9020d3293d442cc2374934a5e3ea61d666d1c",
+        "blockNumber": 11785813
+      }
+    },
+    "rootId": "1"
+  }
+}

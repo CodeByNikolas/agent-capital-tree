@@ -2,23 +2,6 @@
   "chainId": 11155111,
   "network": "Ethereum Sepolia",
   "status": "deployed",
-  "token": {
-    "address": "0x1c7D4B196Cb0C7B01d743Fbc6116a902379C7238",
-    "symbol": "USDC",
-    "decimals": 6,
-    "issuerAddressSource": "https://developers.circle.com/stablecoins/usdc-contract-addresses",
-    "testnetOnly": true
-  },
-  "funding": {
-    "owner": "0xbCea84Ed1DaFbb59AaF9797Cb4170394db688d34",
-    "verifiedAtBlock": 11784860,
-    "balanceRaw": "20000000",
-    "balanceUSDC": "20.0"
-  },
-  "limitations": [
-    "Testnet assets only; DEMO-USD is valueless and pool price is not a real USD valuation.",
-    "x402 service purchases require an explicitly configured Sepolia-capable seller and PAY mandate."
-  ],
   "deployer": "0xbCea84Ed1DaFbb59AaF9797Cb4170394db688d34",
   "tokens": [
     {
@@ -43,60 +26,56 @@
   ],
   "contracts": {
     "VaultFactory": {
-      "address": "0xAF9A748e45913457cA205e7d29cb380e9aCbCb44",
-      "transactionHash": "0xbce00196121ee125d756af53a1ed743aa19c13eba892880ed4531741ed62c17c",
-      "blockNumber": 11785758,
-      "codeHash": "0x0fc9e88ed28dbe8ebbf089e1120cf948b97fa359883da50591f9f31b18ef31fd"
+      "address": "0x2D2a54F76D962B0547CC4b5be05A922c9313173C",
+      "transactionHash": "0x60a00e65ea63552d58f5ec0d570d35a60c80eee996083467a9ecd0f40add3679",
+      "blockNumber": 11788873,
+      "codeHash": "0x74bb41a212b2aec608c23be41765f3b54acb75836a9fff7e5a380fa04c2e1e4f"
     },
     "CapitalVaultImplementation": {
-      "address": "0xD07abdd852FD41844d393d5a183535654A8B275B",
-      "codeHash": "0x4db455e92649df9d5785414aea001c3ed19045123539f48b46ae9a6575812600"
+      "address": "0xD1f801BeccF97efF6AAd63EE90688B660F30E522",
+      "codeHash": "0x20f580b93c493742eaa565a561b7074ae991a182125f719fe6ad4aa259a2b47a"
     },
     "NodeFactory": {
-      "address": "0xf6895DD52517bdd37C16C2f1fF830465F3e096E4",
-      "transactionHash": "0xd02019d25a57b9b5934acff2f48ff07a6730e8ec21acdb8c74d0f11b70abc4f8",
-      "blockNumber": 11785760,
-      "codeHash": "0x4eb8565d82ebb4c1c5888e5e975ab1fc93c7c7857b5b70907305ef4230ceff3e"
+      "address": "0x71a68eFD9B9FB02cEF78723C399c95a52475334A",
+      "transactionHash": "0x348e1cce3c19e5ab442e9ec7e55177ddb695812d3e93b5e4643eac256dd93ab9",
+      "blockNumber": 11788876,
+      "codeHash": "0x5f811894b96e33503c9edde7116ce7f389d20ae50d6d53ff6ce2771abf6bdb14"
     },
     "CapitalController": {
-      "address": "0x7eDFa3D484d64b6bA3b5b2bcef51147E57133FFB",
-      "transactionHash": "0xc74852ea459e46c81b84138ed3e0e8c3c32d8ab5b8d374f9a4a08bf608020189",
-      "blockNumber": 11785762,
-      "codeHash": "0xa5eb9a97c11abf62491498918dd77ff72d8fc6ec4d0258047beb9d3c738eca64"
+      "address": "0xeB2041B486D66aB91140FFcF54B66513D8eC40c8",
+      "transactionHash": "0x98a9901447d8201365cb7fa49647c964b2643acf2598d4212d59956f4a8f4fb1",
+      "blockNumber": 11788879,
+      "codeHash": "0x80dd11ba34208ddeb2cd29fa0098b8fd976d31064ec2e0a91d155fbb63421ef2"
     },
     "ProjectRegistry": {
-      "address": "0x67Ab85dB5d4f319e7AcDcceA757D0a2541CDfD3c"
+      "address": "0x5bbCfab760376d2E419FC42DA63fA4C5e434DBF6"
     }
   },
   "ensNamespace": {
-    "name": "agentcapitalvault.eth",
+    "name": "kanoki.eth",
     "registry": "0x67b728a792e789a8978b30cf1b3b641f19354b43",
     "registrar": "0xa4449a0dd2b83007553d9b1d28b583a46a805a30",
     "transactions": {
       "commit": {
-        "hash": "0x8789a3d113f455fbb74e7c7c416d48451ea66a0ddc724ba11412e445e7743ce6",
-        "block": 11785742
-      },
-      "mint": {
-        "hash": "0x2e23baf8d2512c9bae90c6af56655db016c38ed5aa07f9a6d89cd448e88c0d09",
-        "block": 11785744
+        "hash": "0x034a73a24c006b79bd3eeaf5dbcf204c55eea5b2c10f6fcecfa0c7fd438fcc59",
+        "block": 11788857
       },
       "approve": {
-        "hash": "0xe3f084f562b0f7c8c4c5d1406126d10d365001e6e2c5fef0bad7c378fc6620a9",
-        "block": 11785746
+        "hash": "0xca9df23abd2dfa20ecf9fa329917038512861f8622cca6e4e4f2a081c9475594",
+        "block": 11788859
       },
       "register": {
-        "hash": "0xb618dfb5f2015472e6501cedc1bd34fa83ac6c8f73e1a3a84425e50c587ee527",
-        "block": 11785753
+        "hash": "0x2f7410e06f0fc2247f1cb6d08280203caac52177e29a0cfb2e14c399ab6b912b",
+        "block": 11788867
       },
       "attach": {
-        "hash": "0xb272a660e1643d8542170dbfa727bb9f98d52362266f4e954afd950669ba999a",
-        "block": 11785765
+        "hash": "0xb6470e4ca56b110a73bcbba954da7b3f17614f5a3a74acb5a1baa49fff2fd5d8",
+        "block": 11788882
       }
     },
-    "resource": "6567213703719786339245037509976515699004843506858035598718335938612640612352",
-    "expiry": "1821955788",
-    "subregistry": "0x67Ab85dB5d4f319e7AcDcceA757D0a2541CDfD3c"
+    "resource": "9001658945062219668565763690822852730689056096190603632284384292547894181888",
+    "expiry": "1821994284",
+    "subregistry": "0x5bbCfab760376d2E419FC42DA63fA4C5e434DBF6"
   },
   "uniswap": {
     "poolManager": "0xE03A1074c86CFeDd5C142C4F04F1a1536e203543",
@@ -117,62 +96,62 @@
       "blockNumber": 11785124
     },
     "seeded": {
-      "transactionHash": "0x9c9d6a709c7adafb9c96adf9c7d9020d3293d442cc2374934a5e3ea61d666d1c",
-      "blockNumber": 11785813,
+      "transactionHash": "0xaccc63e609b8d0d70dcec2020802c100b3f9a11fa739f479ebca66fae87587df",
+      "blockNumber": 11788900,
       "rootId": "1",
-      "vault": "0x4E2c19976f8ecf94f62587Ca3B5AB3457f8ee271",
-      "tokenId": "39866",
+      "vault": "0x42d383397ad51B56f0Fa55c3Aa29b85659D279cB",
+      "tokenId": "39889",
       "liquidity": "30000000"
     }
   },
   "multibaas": {
-    "label": "capitalcontrollerproxy",
-    "indexingStartBlock": 11785767,
+    "label": "capitalcontrollerkanoki",
+    "indexingStartBlock": 11788886,
     "status": {
       "isProcessingPastLogs": false,
-      "latestBlockNumber": 11785767,
-      "latestBlockHash": "0x51bf2de2ecc321d55191d69d4aaeff430c6668226253d207111e0327034e173b",
-      "startBlockNumber": 11785767,
-      "startBlockHash": "0x51bf2de2ecc321d55191d69d4aaeff430c6668226253d207111e0327034e173b",
-      "updatedAt": "2026-09-26T10:52:49.389857Z"
+      "latestBlockNumber": 11788886,
+      "latestBlockHash": "0xc53a63b9649366701f8f6782471ad201694d834c207914afeee9e2c924f4c9d0",
+      "startBlockNumber": 11788886,
+      "startBlockHash": "0xc53a63b9649366701f8f6782471ad201694d834c207914afeee9e2c924f4c9d0",
+      "updatedAt": "2026-09-26T21:35:12.914206Z"
     },
-    "configuredAt": "2026-09-26T10:52:49.771Z"
+    "configuredAt": "2026-09-26T21:35:13.316Z"
   },
   "vaultArchitecture": "eip1167",
   "verification": {
-    "checkedAt": "2026-09-26T14:15:23.701Z",
+    "checkedAt": "2026-09-26T21:38:26.919Z",
     "chainId": 11155111,
-    "nodeCount": "6",
+    "nodeCount": "1",
     "records": [
       {
-        "address": "0xD07abdd852FD41844d393d5a183535654A8B275B",
+        "address": "0xD1f801BeccF97efF6AAd63EE90688B660F30E522",
         "contract": "src/CapitalVault.sol:CapitalVault",
         "status": "source-verified",
-        "explorer": "https://sepolia.etherscan.io/address/0xD07abdd852FD41844d393d5a183535654A8B275B#code"
+        "explorer": "https://sepolia.etherscan.io/address/0xD1f801BeccF97efF6AAd63EE90688B660F30E522#code"
       },
       {
-        "address": "0xAF9A748e45913457cA205e7d29cb380e9aCbCb44",
+        "address": "0x2D2a54F76D962B0547CC4b5be05A922c9313173C",
         "contract": "src/VaultFactory.sol:VaultFactory",
         "status": "source-verified",
-        "explorer": "https://sepolia.etherscan.io/address/0xAF9A748e45913457cA205e7d29cb380e9aCbCb44#code"
+        "explorer": "https://sepolia.etherscan.io/address/0x2D2a54F76D962B0547CC4b5be05A922c9313173C#code"
       },
       {
-        "address": "0xf6895DD52517bdd37C16C2f1fF830465F3e096E4",
+        "address": "0x71a68eFD9B9FB02cEF78723C399c95a52475334A",
         "contract": "src/NodeFactory.sol:NodeFactory",
         "status": "source-verified",
-        "explorer": "https://sepolia.etherscan.io/address/0xf6895DD52517bdd37C16C2f1fF830465F3e096E4#code"
+        "explorer": "https://sepolia.etherscan.io/address/0x71a68eFD9B9FB02cEF78723C399c95a52475334A#code"
       },
       {
-        "address": "0x7eDFa3D484d64b6bA3b5b2bcef51147E57133FFB",
+        "address": "0xeB2041B486D66aB91140FFcF54B66513D8eC40c8",
         "contract": "src/CapitalController.sol:CapitalController",
         "status": "source-verified",
-        "explorer": "https://sepolia.etherscan.io/address/0x7eDFa3D484d64b6bA3b5b2bcef51147E57133FFB#code"
+        "explorer": "https://sepolia.etherscan.io/address/0xeB2041B486D66aB91140FFcF54B66513D8eC40c8#code"
       },
       {
-        "address": "0x67Ab85dB5d4f319e7AcDcceA757D0a2541CDfD3c",
+        "address": "0x5bbCfab760376d2E419FC42DA63fA4C5e434DBF6",
         "contract": "src/ens/ManagedRegistry.sol:ManagedRegistry",
         "status": "source-verified",
-        "explorer": "https://sepolia.etherscan.io/address/0x67Ab85dB5d4f319e7AcDcceA757D0a2541CDfD3c#code"
+        "explorer": "https://sepolia.etherscan.io/address/0x5bbCfab760376d2E419FC42DA63fA4C5e434DBF6#code"
       },
       {
         "address": "0x892e744064E80211d4a69A9cc0f98FE6815157Cf",
@@ -181,115 +160,54 @@
         "explorer": "https://sepolia.etherscan.io/address/0x892e744064E80211d4a69A9cc0f98FE6815157Cf#code"
       },
       {
-        "address": "0x8bF2d2ae515813fa8f01a05b04ad84488915dF08",
+        "address": "0x8c1332368b9cDe6eCa83024D084D4De456aBd26D",
         "contract": "src/ens/ManagedRegistry.sol:ManagedRegistry",
         "status": "source-verified",
-        "explorer": "https://sepolia.etherscan.io/address/0x8bF2d2ae515813fa8f01a05b04ad84488915dF08#code"
+        "explorer": "https://sepolia.etherscan.io/address/0x8c1332368b9cDe6eCa83024D084D4De456aBd26D#code"
       },
       {
-        "address": "0x4E2c19976f8ecf94f62587Ca3B5AB3457f8ee271",
-        "implementation": "0xD07abdd852FD41844d393d5a183535654A8B275B",
+        "address": "0x42d383397ad51B56f0Fa55c3Aa29b85659D279cB",
+        "implementation": "0xD1f801BeccF97efF6AAd63EE90688B660F30E522",
         "status": "proxy-verified",
         "runtimeBytes": 45,
-        "explorer": "https://sepolia.etherscan.io/address/0x4E2c19976f8ecf94f62587Ca3B5AB3457f8ee271#code"
-      },
-      {
-        "address": "0x689C6F26Ae78D868b2Cd252401388364c4F93fB8",
-        "contract": "src/ens/ManagedRegistry.sol:ManagedRegistry",
-        "status": "source-verified",
-        "explorer": "https://sepolia.etherscan.io/address/0x689C6F26Ae78D868b2Cd252401388364c4F93fB8#code"
-      },
-      {
-        "address": "0x68Ae8719e64f643fE4a7b80a631c5A1BD90F757e",
-        "implementation": "0xD07abdd852FD41844d393d5a183535654A8B275B",
-        "status": "proxy-verified",
-        "runtimeBytes": 45,
-        "explorer": "https://sepolia.etherscan.io/address/0x68Ae8719e64f643fE4a7b80a631c5A1BD90F757e#code"
-      },
-      {
-        "address": "0x8F097adA2851599B04C4DEb00732d7cfda455213",
-        "contract": "src/ens/ManagedRegistry.sol:ManagedRegistry",
-        "status": "source-verified",
-        "explorer": "https://sepolia.etherscan.io/address/0x8F097adA2851599B04C4DEb00732d7cfda455213#code"
-      },
-      {
-        "address": "0x1A82649796e7C7A59860e66540eB8cD04C5814C0",
-        "implementation": "0xD07abdd852FD41844d393d5a183535654A8B275B",
-        "status": "proxy-verified",
-        "runtimeBytes": 45,
-        "explorer": "https://sepolia.etherscan.io/address/0x1A82649796e7C7A59860e66540eB8cD04C5814C0#code"
-      },
-      {
-        "address": "0xcD03C28D7ae222a9C1403181b9d8e2a594965FC7",
-        "contract": "src/ens/ManagedRegistry.sol:ManagedRegistry",
-        "status": "source-verified",
-        "explorer": "https://sepolia.etherscan.io/address/0xcD03C28D7ae222a9C1403181b9d8e2a594965FC7#code"
-      },
-      {
-        "address": "0x1bF85187F1De3CF86ea3aED9632F02fE2CB07600",
-        "implementation": "0xD07abdd852FD41844d393d5a183535654A8B275B",
-        "status": "proxy-verified",
-        "runtimeBytes": 45,
-        "explorer": "https://sepolia.etherscan.io/address/0x1bF85187F1De3CF86ea3aED9632F02fE2CB07600#code"
-      },
-      {
-        "address": "0x9978c5d6A37f45CB10d5552bEBDeF2711a34EC0a",
-        "contract": "src/ens/ManagedRegistry.sol:ManagedRegistry",
-        "status": "source-verified",
-        "explorer": "https://sepolia.etherscan.io/address/0x9978c5d6A37f45CB10d5552bEBDeF2711a34EC0a#code"
-      },
-      {
-        "address": "0x0143bCdD259cE1AaAFC678d873197DC87A38726C",
-        "implementation": "0xD07abdd852FD41844d393d5a183535654A8B275B",
-        "status": "proxy-verified",
-        "runtimeBytes": 45,
-        "explorer": "https://sepolia.etherscan.io/address/0x0143bCdD259cE1AaAFC678d873197DC87A38726C#code"
-      },
-      {
-        "address": "0x68dC36909EDC20b1DC8Ea4A14Cf98b2E10B7Ac88",
-        "contract": "src/ens/ManagedRegistry.sol:ManagedRegistry",
-        "status": "source-verified",
-        "explorer": "https://sepolia.etherscan.io/address/0x68dC36909EDC20b1DC8Ea4A14Cf98b2E10B7Ac88#code"
-      },
-      {
-        "address": "0xBcA98635bD5975A2eF43d9dd9Fcc5ff5aF82fcA5",
-        "implementation": "0xD07abdd852FD41844d393d5a183535654A8B275B",
-        "status": "proxy-verified",
-        "runtimeBytes": 45,
-        "explorer": "https://sepolia.etherscan.io/address/0xBcA98635bD5975A2eF43d9dd9Fcc5ff5aF82fcA5#code"
+        "explorer": "https://sepolia.etherscan.io/address/0x42d383397ad51B56f0Fa55c3Aa29b85659D279cB#code"
       }
     ]
   },
   "bootstrap": {
     "purpose": "USDC capital demo with optional LP liquidity; owner and root operator are the test-owner wallet.",
-    "policyExpiry": "1805972280",
-    "deadline": "1790427480",
+    "policyExpiry": "1806010524",
+    "deadline": "1790465724",
     "transactions": {
       "create-seed-root": {
-        "transactionHash": "0xb6981a04507954fd325ed60e01e70f7db8acbbee7bc849b660ba750394c36386",
-        "blockNumber": 11785795
+        "transactionHash": "0xf8f42887fac32178bdb6835bc1e939c4d469c2767cf10a0ca0f62272a7c1b725",
+        "blockNumber": 11788888
       },
       "authorize-seed-operator": {
-        "transactionHash": "0xd9ea36405a65be56f1e9f9ea98cbd9afa13a7e327228411ffce9a6a803ca1091",
-        "blockNumber": 11785798
+        "transactionHash": "0xeb3392befbacc46aee517f3856b9b25e0e01df7632818a8f89583dd8fcfa8e42",
+        "blockNumber": 11788891
       },
       "approve-token-0": {
-        "transactionHash": "0x746023c11e34c11e8a4c20c599d519d65cca477e0b98b447b280b5560ee7ec92",
-        "blockNumber": 11785800
+        "transactionHash": "0x47f70e614d7c005eccfa5a8b80757b63f6b67ea01e9d880a9325c9bf58e02c2a",
+        "blockNumber": 11788893
       },
       "approve-token-1": {
-        "transactionHash": "0x9f284bb3f453e938ae23c0ccd5a4ae0774dc8b97bd719ed4738677977a992a78",
-        "blockNumber": 11785808
+        "transactionHash": "0x816be4e5e2409884d412b7ec534fe55587ab5cd90afc9f98e1b193d4c68e722f",
+        "blockNumber": 11788895
       },
       "fund-seed-root": {
-        "transactionHash": "0x58b3aff3b88a664bfc0ada870a84c93a45d58514b6c94944ab91f9966b4351ff",
-        "blockNumber": 11785810
+        "transactionHash": "0x222fe2639d4d85f20a8a6dd5a2f63ad5fb8ad2f315a0c7eff3e823f45d15633b",
+        "blockNumber": 11788897
       },
       "open-seed-position": {
-        "transactionHash": "0x9c9d6a709c7adafb9c96adf9c7d9020d3293d442cc2374934a5e3ea61d666d1c",
-        "blockNumber": 11785813
+        "transactionHash": "0xaccc63e609b8d0d70dcec2020802c100b3f9a11fa739f479ebca66fae87587df",
+        "blockNumber": 11788900
       }
     },
     "rootId": "1"
-  }
+  },
+  "limitations": [
+    "Testnet assets only; DEMO-USD is valueless and pool price is not a real USD valuation.",
+    "x402 service purchases require an explicitly configured Sepolia-capable seller and PAY mandate."
+  ]
 }

@@ -1,5 +1,9 @@
 # Kanoki — Binding implementation plan
 
+## Kanoki namespace cutover — current user decision
+
+Use ENSv2 Sepolia `kanoki.eth` exclusively for new roots and the current web/MCP deployment. Register a new namespace and deploy its controller/registry; preserve historical manifests only as evidence, with no current-app legacy selector or automatic migration of old balances. The user explicitly retires earlier prototypes. Restore the Overview How it works section with hide/reopen controls.
+
 As of 26 September 2026. Product decisions are fixed; implementation is in progress, and actual acceptance status is in STATUS.md. This plan supersedes earlier brainstorming. Read it with STATUS.md after context compaction.
 
 ## Aktuelle Gestaltung und Veröffentlichung

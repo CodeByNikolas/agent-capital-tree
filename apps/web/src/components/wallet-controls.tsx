@@ -292,7 +292,7 @@ export function WalletControlsPanel({
     ? parentAgentConnected
     : ownerConnected;
   const selectedAgentConnected = Boolean(liveStateReady && walletAddress && walletOnSepolia && selectedNode.agentAddress.toLowerCase() === walletAddress.toLowerCase());
-  const canCreateRoot = !deployment.recoveryOnly && deployment.contractsConfigured && walletOnSepolia && walletAddress !== null && Boolean(actions.createRoot);
+  const canCreateRoot = deployment.contractsConfigured && walletOnSepolia && walletAddress !== null && Boolean(actions.createRoot);
   const canManageRoot = ownerConnected && Boolean(actions.fundRoot && actions.setRootOperator);
   const treeUsdcRaw = data.nodes.reduce((total, node) => total + BigInt(node.tokenHoldings[0]?.rawAmount ?? "0"), 0n);
   const demoAlreadyFunded = Boolean(demoBudget && liveStateReady && data.source === "direct-rpc" && treeUsdcRaw >= BigInt(demoBudget));
@@ -354,7 +354,6 @@ export function WalletControlsPanel({
         </span>}
       </div>
       {creationOnly ? <p className="wallet-controls-intro">Your connected wallet will own this vault. Choose its public name and the limits for your agents, then confirm creation in your wallet. You only need Sepolia ETH for the network fee now. Add USDC and authorize an agent from the dashboard afterwards.</p> : <p className="wallet-controls-intro">Every action is simulated before your wallet is asked to sign. Get USDC from Circle’s faucet; this dashboard never mints USDC. DEMO-USD is valueless.</p>}
-      {deployment.recoveryOnly && <p className="wallet-controls-pending">Existing-vault recovery deployment · {deployment.namespaceName} · Controller {deployment.controllerAddress}. This is NOT the newer agentcapitalvault.eth controller. New root creation is disabled here; existing funds are not migrated.</p>}
       {demoBudget && <div className="wallet-action-notice" role="status">
         <strong>Chat demo · {budgetUSDC} Test-USDC shared across the entire tree</strong>
         <span>{demoAlreadyFunded ? "USDC funding is complete. No additional deposit is needed, including after child allocation." : "Fund only the remaining difference after root creation. Child budgets come from this same capital."}</span>

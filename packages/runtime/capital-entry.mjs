@@ -11,16 +11,15 @@ const [command, query] = args;
 const packageBase = new URL(import.meta.url.endsWith('/bundle/capital.mjs') ? '../' : './', import.meta.url);
 const script = fileURLToPath(new URL('capital.mjs', packageBase));
 const repo = fileURLToPath(new URL('../..', packageBase));
-const usage = 'node packages/runtime/capital.mjs prepare|check|settings|stdio <ENS-name|vault-address|root-id> [--runtime-root /private/linux/path] [--deployment usdc-full-vaults] [--enable-sepolia-writes]';
+const usage = 'node packages/runtime/capital.mjs prepare|check|settings|stdio <ENS-name|vault-address|root-id> [--runtime-root /private/linux/path] [--enable-sepolia-writes]';
 if (!['prepare', 'check', 'settings', 'stdio'].includes(command) || !query) throw new Error(usage);
-let explicitRoot, writesEnabled = false, recoveryDeployment = false;
+let explicitRoot, writesEnabled = false;
 for (let i = 2; i < args.length; i++) {
   if (args[i] === '--runtime-root' && args[i + 1] && !explicitRoot) explicitRoot = args[++i];
   else if (args[i] === '--enable-sepolia-writes' && !writesEnabled) writesEnabled = true;
-  else if (args[i] === '--deployment' && args[i + 1] === 'usdc-full-vaults' && !recoveryDeployment) { recoveryDeployment = true; i++; }
   else throw new Error(usage);
 }
-const launchArgs = [script, 'stdio', query, ...(explicitRoot ? ['--runtime-root', explicitRoot] : []), ...(recoveryDeployment ? ['--deployment', 'usdc-full-vaults'] : []), ...(writesEnabled ? ['--enable-sepolia-writes'] : [])];
+const launchArgs = [script, 'stdio', query, ...(explicitRoot ? ['--runtime-root', explicitRoot] : []), ...(writesEnabled ? ['--enable-sepolia-writes'] : [])];
 try {
 if (command === 'settings') {
   console.log(JSON.stringify({ kanoki: { command: process.execPath, args: launchArgs } }, null, 2));
@@ -35,14 +34,14 @@ if (command === 'settings') {
   const { RuntimeCompanion } = await import('./dist/index.js');
   const { CapitalSession, SetupError, privatePath, safeCapitalError } = await import('./capital-session.mjs');
   const { capitalClient } = await import('../sdk/dist/index.js');
-  const manifest = JSON.parse(await readFile(new URL(recoveryDeployment ? '../../deployments/history/usdc-full-vaults-sepolia.json' : '../../deployments/usdc-sepolia.json', packageBase), 'utf8'));
+  const manifest = JSON.parse(await readFile(new URL('../../deployments/usdc-sepolia.json', packageBase), 'utf8'));
   if (manifest.chainId !== 11155111) throw new Error('Expected Ethereum Sepolia manifest');
   const controller = manifest.contracts.CapitalController.address;
   const rpcUrl = process.env.ACT_SEPOLIA_RPC_URL ?? 'https://ethereum-sepolia.publicnode.com';
   const client = capitalClient(rpcUrl, controller);
   let companion, bridge;
   const session = new CapitalSession({ client, controller, base: join(homedir(), '.agent-capital-tree'),
-    namespace: manifest.ensNamespace.name, walletOrigin: recoveryDeployment ? 'https://agent-capital-tree-silk.vercel.app' : 'https://agent-capital-tree.vercel.app',
+    namespace: manifest.ensNamespace.name, walletOrigin: 'https://kanoki-app.vercel.app',
     repo, query, explicitRoot, writesEnabled, closeRuntime: async () => { await companion?.close(); companion = undefined; bridge = undefined; } });
   const serialize = value => JSON.stringify(value, (_, v) => typeof v === 'bigint' ? v.toString() : v, 2);
   if (command === 'check') console.log(serialize(await session.inspect()));
@@ -96,7 +95,6 @@ if (command === 'settings') {
         if (name === 'getEffectivePolicy') return session.policy(input.nodeId);
         if (name === 'selectCapitalRoot') return session.select(input.query);
         if (name === 'prepareRootSetup') {
-          if (recoveryDeployment) return { status: 'unavailable', transactionSubmitted: false, next: 'This connection explicitly targets the historical USDC controller for existing-vault recovery. Create new roots with the normal current-deployment capital MCP; never confuse equally numbered roots across controllers.' };
           return prepareRootSetup(input);
         }
         if (name === 'prepareCapitalSetup' || name === 'prepareOperatorRecovery') {

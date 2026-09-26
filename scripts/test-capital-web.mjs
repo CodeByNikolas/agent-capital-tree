@@ -5,7 +5,7 @@ import { writeFile } from 'node:fs/promises';
 
 const base = process.env.ACT_TEST_APP_URL ?? 'http://127.0.0.1:3095';
 const recovery = process.env.ACT_TEST_RECOVERY === '1';
-const root = recovery ? 'root-agent.agentcapitalusdc.eth' : 'capital.agentcapitalvault.eth';
+const root = recovery ? 'root-agent.agentcapitalusdc.eth' : 'capital.kanoki.eth';
 const address = '0x91B0BeF8a75fE1C958Cf30714152e66E396e2aF4';
 const browser = await chromium.launch();
 const checks = [];

@@ -329,7 +329,6 @@ export function useWalletActions({
     },
 
     async createRoot(label, draft) {
-      if (deployment.recoveryOnly) throw new Error("This deployment is only for existing-vault recovery. Create new roots on the current canonical app.");
       const normalizedLabel = label.trim().toLowerCase();
       if (!/^[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?$/.test(normalizedLabel)) {
         throw new Error("Use a lowercase ENS label with letters, numbers, or interior hyphens.");

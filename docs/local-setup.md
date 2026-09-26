@@ -17,12 +17,12 @@ pnpm --filter @agent-capital-tree/sdk build
 pnpm --filter @agent-capital-tree/multibaas build
 pnpm --filter @agent-capital-tree/plugin build
 pnpm --filter @agent-capital-tree/runtime build
-pnpm mcp:capital check capital.agentcapitalvault.eth
+pnpm mcp:capital check capital.kanoki.eth
 pnpm mcp:capital settings YOUR_INTENDED_ROOT_ENS_NAME --enable-sepolia-writes
 
 ```
 
-First choose a new lowercase root label and derive its ENS name under `agentcapitalvault.eth`. `settings` only prints the registration; the MCP catalog loads before this root exists. After registration, call `prepareRootSetup`, sign creation, then **`selectCapitalRoot({query: "your-label.agentcapitalvault.eth"})`**, `getCapitalSetup`, and `prepareCapitalSetup` with the reported `expectedRootId`. Selection changes the current session only and does not require a restart. Reads never change the write target. `settings` prints the real command/argument list for Codex STDIO or a Claude `mcpServers` entry. Preserve unrelated servers. Register in PowerShell:
+First choose a new lowercase root label and derive its ENS name under `kanoki.eth`. `settings` only prints the registration; the MCP catalog loads before this root exists. After registration, call `prepareRootSetup`, sign creation, then **`selectCapitalRoot({query: "your-label.kanoki.eth"})`**, `getCapitalSetup`, and `prepareCapitalSetup` with the reported `expectedRootId`. Selection changes the current session only and does not require a restart. Reads never change the write target. `settings` prints the real command/argument list for Codex STDIO or a Claude `mcpServers` entry. Preserve unrelated servers. Register in PowerShell:
 
 ```powershell
 $actScript = (Resolve-Path -LiteralPath 'packages/runtime/capital.mjs').Path
@@ -50,15 +50,6 @@ If the bound operator is your wallet but no matching private local signer exists
 
 The demo budget maximum is **100000 raw units = 0.10 Test-USDC across the whole tree**, not per child or an onchain balance cap. Two `createChildVault` calls with `amount: "20000"`, distinct stable operation keys and narrower rights leave 60000 raw at the root. Retrying each exact key/arguments returns the same child. Never use `allocateCapital` as a retry: that tool is a separate additional transfer, not child-creation reconciliation.
 
-The user's funded historical root is `root-agent.agentcapitalusdc.eth`, vault `0xC9c7926191b7928F838579D74CdA380A66A8CD9A`, **controller `0x17a932987f3cAcFec067c4C1bbE6946963d87F13`**, root 4. It is NOT root 4 on the current `agentcapitalvault.eth` deployment. Its explicit recovery registration adds `--deployment usdc-full-vaults`:
-
-On the current Windows machine the repaired, registered checkout is `.main-onboarding` on **main**. The outer checkout contains another contributor's in-progress changes and is not the MCP source. Run commands below from the repaired checkout. The recovery wallet UI is deployed at `https://agent-capital-tree-silk.vercel.app`; it preserves the historical controller and disables new-root creation. Use the canonical current deployment for a genuinely new root, not this recovery connection. A host restart is only needed to load an updated server/catalog; `selectCapitalRoot` switches roots within an already-running capital session.
-
-```powershell
-codex mcp add kanoki -- $actNode $actScript stdio root-agent.agentcapitalusdc.eth --deployment usdc-full-vaults --enable-sepolia-writes
-```
-
-This recovery connection uses the preserved historical manifest and the separate recovery site, does not migrate funds and cannot create new roots. The canonical app stays on the current deployment. `node scripts/test-capital-onboarding.mjs` checks this exact historical root without writes. `--prepare-recovery` prepares a private local key only; `--execute-demo` sends the two authorized 0.02-USDC allocations only after all checks pass and reuses fixed operation keys on repeats. Do not run it before owner authorization and gas are confirmed. Public evidence is written under `artifacts/ui/root-4-*`; no secret is exported.
 
 ## Fast jury check: read-only MCP on Windows, macOS or Linux
 
@@ -113,7 +104,7 @@ The resulting configuration contains only the Node executable and an absolute pa
 
 Open a **new Codex chat** in the ChatGPT desktop app, select this project, type `/mcp` and confirm `kanoki` is enabled. Then ask:
 
-> Use `kanoki.getTree` with `query: "capital.agentcapitalvault.eth"`. Show its graph and report its Sepolia block, observation time, root vault, balances and current authorized actions. Do not use shell or another source.
+> Use `kanoki.getTree` with `query: "capital.kanoki.eth"`. Show its graph and report its Sepolia block, observation time, root vault, balances and current authorized actions. Do not use shell or another source.
 
 The answer should name Sepolia chain `11155111`, the current root ID and a recent block. Always read the current funding and rights from that snapshot: `capital` changed externally from empty to 0.10 Test-USDC with active rights during development. Do not assume an old balance or reuse it for a write test without checking its owner/operator. You can also pass a vault address or numeric root ID. The dashboard cannot inspect the local STDIO session.
 
@@ -235,7 +226,7 @@ Use absolute paths for `codexBinary`, `codexHome`, and the CLI commands below. S
   "runtimeRoot": "/absolute/private/runtime",
   "rootId": "YOUR_NEW_ROOT_ID",
   "rpcUrl": "https://your-sepolia-rpc.example",
-  "controller": "0x7eDFa3D484d64b6bA3b5b2bcef51147E57133FFB",
+  "controller": "0xeB2041B486D66aB91140FFcF54B66513D8eC40c8",
   "inference": "codex",
   "codexBinary": "/absolute/path/to/linux-codex",
   "codexHome": "/absolute/private/codex-home",
