@@ -10,5 +10,7 @@ library FinanceRoles {
     uint256 internal constant EXIT_LP = 1 << 56;
     uint256 internal constant RESTRICT = 1 << 60;
     uint256 internal constant RECLAIM = 1 << 64;
+    uint256 internal constant PAY = 1 << 68;
     uint256 internal constant ALL = DELEGATE | SWAP | MANAGE_LP | COLLECT_FEES | EXIT_LP | RESTRICT | RECLAIM;
+    uint256 internal constant KNOWN = ALL | PAY;
 }

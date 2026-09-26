@@ -4,6 +4,7 @@ pragma solidity ^0.8.26;
 import {Test} from "forge-std/Test.sol";
 import {ERC20} from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import {IERC1271} from "@openzeppelin/contracts/interfaces/IERC1271.sol";
 import {IPermissionedRegistry} from "ens-v2/registry/interfaces/IPermissionedRegistry.sol";
 import {IRegistry} from "ens-v2/registry/interfaces/IRegistry.sol";
 import {PermissionedRegistry} from "ens-v2/registry/PermissionedRegistry.sol";
@@ -28,14 +29,75 @@ contract TestLabelStore is ILabelStore {
 }
 
 contract TestToken is ERC20 {
-    constructor(string memory name_, string memory symbol_) ERC20(name_, symbol_) {}
+    bytes32 private constant DOMAIN_TYPEHASH =
+        keccak256("EIP712Domain(string name,string version,uint256 chainId,address verifyingContract)");
+    bytes32 private constant TRANSFER_WITH_AUTHORIZATION_TYPEHASH = keccak256(
+        "TransferWithAuthorization(address from,address to,uint256 value,uint256 validAfter,uint256 validBefore,bytes32 nonce)"
+    );
+
+    bytes32 public immutable DOMAIN_SEPARATOR;
+    mapping(address => mapping(bytes32 => bool)) public authorizationState;
+
+    constructor(string memory name_, string memory symbol_) ERC20(name_, symbol_) {
+        DOMAIN_SEPARATOR = keccak256(
+            abi.encode(DOMAIN_TYPEHASH, keccak256(bytes(name_)), keccak256(bytes("2")), block.chainid, address(this))
+        );
+    }
 
     function mint(address to, uint256 amount) external {
         _mint(to, amount);
     }
+
+    function authorizationDigest(
+        address from,
+        address to,
+        uint256 value,
+        uint256 validAfter,
+        uint256 validBefore,
+        bytes32 nonce
+    ) public view returns (bytes32) {
+        bytes32 structHash = keccak256(
+            abi.encode(TRANSFER_WITH_AUTHORIZATION_TYPEHASH, from, to, value, validAfter, validBefore, nonce)
+        );
+        return keccak256(abi.encodePacked("\x19\x01", DOMAIN_SEPARATOR, structHash));
+    }
+
+    function transferWithAuthorization(
+        address from,
+        address to,
+        uint256 value,
+        uint256 validAfter,
+        uint256 validBefore,
+        bytes32 nonce,
+        bytes calldata signature
+    ) external {
+        require(block.timestamp > validAfter, "not yet valid");
+        require(block.timestamp < validBefore, "expired");
+        require(!authorizationState[from][nonce], "authorization used");
+        bytes32 digest = authorizationDigest(from, to, value, validAfter, validBefore, nonce);
+        (bool success, bytes memory result) =
+            from.staticcall(abi.encodeCall(IERC1271.isValidSignature, (digest, signature)));
+        require(
+            success && result.length >= 32
+                && abi.decode(result, (bytes32)) == bytes32(IERC1271.isValidSignature.selector),
+            "invalid signature"
+        );
+        authorizationState[from][nonce] = true;
+        _transfer(from, to, value);
+    }
 }
 
 contract CapitalControllerTest is Test {
+    struct TestAuthorization {
+        address token;
+        address recipient;
+        uint256 value;
+        uint256 validAfter;
+        uint256 validBefore;
+        bytes32 nonce;
+        bytes agentSignature;
+    }
+
     CapitalController internal controller;
     PermissionedRegistry internal ethRegistry;
     TestToken internal token0;
@@ -268,6 +330,166 @@ contract CapitalControllerTest is Test {
         controller.allocateCapital(rootId, childId, [uint256(1), uint256(0)]);
     }
 
+    function testEIP3009VaultPaymentAndReplayProtection() public {
+        _setPayOperator(0xA11CE);
+        CapitalController.Node memory root = controller.getNode(rootId);
+        (bytes32 digest, bytes memory signature) = _signedNodePayment(root, 1, 0xA11CE);
+        TestAuthorization memory payment = _decodePayment(signature);
+
+        // x402 facilitator signature verification is a direct ERC-1271 eth_call, before settlement.
+        vm.prank(address(0xFACADE));
+        assertTrue(root.vault.isValidSignature(digest, signature) == IERC1271.isValidSignature.selector);
+
+        token0.transferWithAuthorization(
+            address(root.vault),
+            payment.recipient,
+            payment.value,
+            payment.validAfter,
+            payment.validBefore,
+            payment.nonce,
+            signature
+        );
+        assertEq(token0.balanceOf(address(root.vault)), 490);
+        assertEq(token0.balanceOf(payment.recipient), payment.value);
+        assertTrue(token0.authorizationState(address(root.vault), payment.nonce));
+
+        vm.expectRevert("authorization used");
+        token0.transferWithAuthorization(
+            address(root.vault),
+            payment.recipient,
+            payment.value,
+            payment.validAfter,
+            payment.validBefore,
+            payment.nonce,
+            signature
+        );
+    }
+
+    function testEIP3009RejectsMalformedAndMismatchedDigest() public {
+        _setPayOperator(0xA11CE);
+        CapitalController.Node memory root = controller.getNode(rootId);
+        (bytes32 digest, bytes memory signature) = _signedNodePayment(root, 2, 0xA11CE);
+
+        assertTrue(_verifyPayment(token0, root.vault, digest, bytes("malformed")) != IERC1271.isValidSignature.selector);
+        assertTrue(
+            _verifyPayment(token0, root.vault, bytes32(uint256(digest) ^ 1), signature)
+                != IERC1271.isValidSignature.selector
+        );
+    }
+
+    function testEIP3009RejectsWrongTokenAndFields() public {
+        _setPayOperator(0xA11CE);
+        CapitalController.Node memory root = controller.getNode(rootId);
+        (bytes32 digest, bytes memory signature) = _signedNodePayment(root, 3, 0xA11CE);
+        TestAuthorization memory payment = _decodePayment(signature);
+
+        payment.token = address(token1);
+        assertTrue(
+            _verifyPayment(token0, root.vault, digest, _encodePayment(payment)) != IERC1271.isValidSignature.selector
+        );
+        payment = _decodePayment(signature);
+        payment.value += 1;
+        assertTrue(
+            _verifyPayment(token0, root.vault, digest, _encodePayment(payment)) != IERC1271.isValidSignature.selector
+        );
+        payment = _decodePayment(signature);
+        payment.recipient = address(0xBAD);
+        assertTrue(
+            _verifyPayment(token0, root.vault, digest, _encodePayment(payment)) != IERC1271.isValidSignature.selector
+        );
+        payment.recipient = address(root.vault);
+        assertTrue(
+            _verifyPayment(token0, root.vault, digest, _encodePayment(payment)) != IERC1271.isValidSignature.selector
+        );
+    }
+
+    function testEIP3009RejectsWrongSignerAndWrongAuthorizationType() public {
+        _setPayOperator(0xA11CE);
+        CapitalController.Node memory root = controller.getNode(rootId);
+        (bytes32 digest, bytes memory signature) = _signedNodePayment(root, 4, 0xA11CE);
+        bytes memory wrongSigner = _resignPayment(signature, digest, 0xBAD);
+        assertTrue(_verifyPayment(token0, root.vault, digest, wrongSigner) != IERC1271.isValidSignature.selector);
+
+        bytes32 wrongTypeDigest = keccak256(abi.encode("not TransferWithAuthorization", digest));
+        bytes memory wrongType = _resignPayment(signature, wrongTypeDigest, 0xA11CE);
+        assertTrue(_verifyPayment(token0, root.vault, digest, wrongType) != IERC1271.isValidSignature.selector);
+    }
+
+    function testEIP3009RejectsPaymentAboveLimit() public {
+        _setPayOperator(0xA11CE);
+        CapitalController.Node memory root = controller.getNode(rootId);
+        (bytes32 digest, bytes memory signature) =
+            _signedNodePaymentWithExpiry(root, 101, block.timestamp + 1 days, 3, 0xA11CE);
+        assertTrue(_verifyPayment(token0, root.vault, digest, signature) != IERC1271.isValidSignature.selector);
+    }
+
+    function testEIP3009RejectsAuthorizationPastMandateExpiry() public {
+        _setPayOperator(0xA11CE);
+        CapitalController.Node memory root = controller.getNode(rootId);
+        uint64 expiry = controller.getEffectivePolicy(rootId).expiry;
+        (bytes32 digest, bytes memory signature) =
+            _signedNodePaymentWithExpiry(root, 10, uint256(expiry) + 1, 4, 0xA11CE);
+        assertTrue(_verifyPayment(token0, root.vault, digest, signature) != IERC1271.isValidSignature.selector);
+    }
+
+    function testEIP3009RejectsExpiredMandate() public {
+        _setPayOperator(0xA11CE);
+        CapitalController.Node memory root = controller.getNode(rootId);
+        uint64 expiry = controller.getEffectivePolicy(rootId).expiry;
+        vm.warp(uint256(expiry) + 1);
+        (bytes32 digest, bytes memory signature) =
+            _signedNodePaymentWithExpiry(root, 10, uint256(expiry) + 10, 5, 0xA11CE);
+        assertTrue(_verifyPayment(token0, root.vault, digest, signature) != IERC1271.isValidSignature.selector);
+    }
+
+    function testEIP3009RevocationBlocksExistingChildAuthorization() public {
+        uint256 childKey = 0xB01;
+        _setPayOperator(0xA11CE);
+        uint256 childId = _spawn(rootId, "revoked", vm.addr(childKey), _policy(FinanceRoles.PAY, 1, 50), 40);
+        CapitalController.Node memory child = controller.getNode(childId);
+        (bytes32 digest, bytes memory signature) = _signedNodePayment(child, 6, childKey);
+        assertTrue(_verifyPayment(token0, child.vault, digest, signature) == IERC1271.isValidSignature.selector);
+
+        vm.prank(rootAgent);
+        controller.revokeSubtree(childId);
+        assertTrue(_verifyPayment(token0, child.vault, digest, signature) != IERC1271.isValidSignature.selector);
+    }
+
+    function testEIP3009AncestorPolicyRemovalBlocksExistingChildAuthorization() public {
+        uint256 childKey = 0xB02;
+        _setPayOperator(0xA11CE);
+        uint256 childId = _spawn(rootId, "restricted", vm.addr(childKey), _policy(FinanceRoles.PAY, 1, 50), 40);
+        CapitalController.Node memory child = controller.getNode(childId);
+        (bytes32 digest, bytes memory signature) = _signedNodePayment(child, 7, childKey);
+        assertTrue(_verifyPayment(token0, child.vault, digest, signature) == IERC1271.isValidSignature.selector);
+
+        vm.prank(owner);
+        controller.tightenPolicy(rootId, _policy(FinanceRoles.ALL, 3, 100));
+        assertTrue(_verifyPayment(token0, child.vault, digest, signature) != IERC1271.isValidSignature.selector);
+    }
+
+    function testEIP3009RebindingInvalidatesOldAuthorization() public {
+        _setPayOperator(0xA11CE);
+        CapitalController.Node memory root = controller.getNode(rootId);
+        (bytes32 oldDigest, bytes memory oldSignature) = _signedNodePayment(root, 8, 0xA11CE);
+        assertTrue(_verifyPayment(token0, root.vault, oldDigest, oldSignature) == IERC1271.isValidSignature.selector);
+
+        vm.prank(owner);
+        controller.setRootOperator(rootId, rootAgent, _policy(FinanceRoles.ALL | FinanceRoles.PAY, 3, 100));
+        assertTrue(_verifyPayment(token0, root.vault, oldDigest, oldSignature) != IERC1271.isValidSignature.selector);
+    }
+
+    function testEIP3009NewGenerationAcceptsFreshAuthorization() public {
+        _setPayOperator(0xA11CE);
+        CapitalController.Node memory root = controller.getNode(rootId);
+        vm.prank(owner);
+        controller.setRootOperator(rootId, rootAgent, _policy(FinanceRoles.ALL | FinanceRoles.PAY, 3, 100));
+
+        root = controller.getNode(rootId);
+        (bytes32 newDigest, bytes memory newSignature) = _signedNodePayment(root, 9, 0xA11CE);
+        assertTrue(_verifyPayment(token0, root.vault, newDigest, newSignature) == IERC1271.isValidSignature.selector);
+    }
+
     function testTighteningRemovesEacRoleWithoutChangingSibling() public {
         uint256 childId = _spawn(rootId, "child", childAgent, _policy(FinanceRoles.ALL, 1, 50), 40);
         uint256 siblingId = _spawn(rootId, "sibling", address(0xA07), _policy(FinanceRoles.ALL, 3, 50), 40);
@@ -317,6 +539,109 @@ contract CapitalControllerTest is Test {
         controller.reclaimAssets(rootId, childId);
         assertEq(token0.balanceOf(address(root.vault)), 500);
         assertEq(token0.balanceOf(address(child.vault)), 0);
+    }
+
+    function _setPayOperator(uint256 privateKey) internal returns (address agent) {
+        agent = vm.addr(privateKey);
+        rootAgent = agent;
+        vm.prank(owner);
+        controller.setRootOperator(rootId, agent, _policy(FinanceRoles.ALL | FinanceRoles.PAY, 3, 100));
+    }
+
+    function _paymentNonce(uint64 generation, uint192 salt) internal pure returns (bytes32) {
+        return bytes32((uint256(generation) << 192) | uint256(salt));
+    }
+
+    function _signedPayment(
+        TestToken token,
+        CapitalVault vault,
+        address signedToken,
+        address recipient,
+        uint256 value,
+        uint256 validAfter,
+        uint256 validBefore,
+        bytes32 nonce,
+        uint256 agentKey
+    ) internal returns (bytes32 digest, bytes memory signature) {
+        digest = token.authorizationDigest(address(vault), recipient, value, validAfter, validBefore, nonce);
+        (uint8 v, bytes32 r, bytes32 s) = vm.sign(agentKey, digest);
+        signature = abi.encode(signedToken, recipient, value, validAfter, validBefore, nonce, abi.encodePacked(r, s, v));
+    }
+
+    function _signedNodePayment(CapitalController.Node memory node, uint192 salt, uint256 agentKey)
+        internal
+        returns (bytes32 digest, bytes memory signature)
+    {
+        return _signedPayment(
+            token0,
+            node.vault,
+            address(token0),
+            address(0xFEE),
+            10,
+            block.timestamp - 1,
+            block.timestamp + 1 days,
+            _paymentNonce(node.generation, salt),
+            agentKey
+        );
+    }
+
+    function _signedNodePaymentWithExpiry(
+        CapitalController.Node memory node,
+        uint256 value,
+        uint256 validBefore,
+        uint192 salt,
+        uint256 agentKey
+    ) internal returns (bytes32 digest, bytes memory signature) {
+        return _signedPayment(
+            token0,
+            node.vault,
+            address(token0),
+            address(0xFEE),
+            value,
+            block.timestamp - 1,
+            validBefore,
+            _paymentNonce(node.generation, salt),
+            agentKey
+        );
+    }
+
+    function _decodePayment(bytes memory signature) internal pure returns (TestAuthorization memory payment) {
+        (
+            payment.token,
+            payment.recipient,
+            payment.value,
+            payment.validAfter,
+            payment.validBefore,
+            payment.nonce,
+            payment.agentSignature
+        ) = abi.decode(signature, (address, address, uint256, uint256, uint256, bytes32, bytes));
+    }
+
+    function _encodePayment(TestAuthorization memory payment) internal pure returns (bytes memory) {
+        return abi.encode(
+            payment.token,
+            payment.recipient,
+            payment.value,
+            payment.validAfter,
+            payment.validBefore,
+            payment.nonce,
+            payment.agentSignature
+        );
+    }
+
+    function _resignPayment(bytes memory signature, bytes32 digest, uint256 agentKey) internal returns (bytes memory) {
+        TestAuthorization memory payment = _decodePayment(signature);
+        (uint8 v, bytes32 r, bytes32 s) = vm.sign(agentKey, digest);
+        payment.agentSignature = abi.encodePacked(r, s, v);
+        return _encodePayment(payment);
+    }
+
+    function _verifyPayment(TestToken token, CapitalVault vault, bytes32 digest, bytes memory signature)
+        internal
+        returns (bytes4)
+    {
+        vm.prank(address(0xFACADE));
+        return vault.isValidSignature(digest, signature);
     }
 
     function _spawn(
