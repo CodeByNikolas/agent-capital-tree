@@ -1,3 +1,10 @@
+## How it works and MCP guide restored — 26 September
+
+- Restored the explanatory five-step presentation on the start page and Overview, with persistent guide links and hide/reopen behavior. Preserved the latest main sidebar, partner navigation, root launch flow and rounded displays.
+- Replaced obsolete numeric-root tour URLs with the current vault or explicit preview context. The tour covers separate assets, inherited capabilities, indexed coverage, applications and owner recovery without initiating wallet actions.
+- MCP and jury instructions now describe capital-mode availability and permanent revocation accurately. README navigation and its recorded GIF reflect the current UI.
+- Production build and TypeScript passed. The guide browser test passed at 1280px and 380px: hide/reopen, reachable MCP setup, all five tour steps and exit, preserved context, no horizontal overflow or browser errors. GIF: four decoded 1280×720 frames, 195,528 bytes. No financial transaction or deployment was performed.
+
 ## Unbound Kanoki MCP and cleanup — 26 September
 
 - User explicitly authorized deleting the historical revoked root-4 local profile, including its encrypted key and master password. Verified controller/root domain before deletion. Other profiles and chain state were preserved. The integrated MCP worktree/branch and local pnpm cache were removed; older worktrees with uncommitted or unmerged work were preserved.

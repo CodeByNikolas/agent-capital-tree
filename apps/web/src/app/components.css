@@ -291,3 +291,7 @@ input[type="checkbox"] { accent-color: var(--moss); }
 /* Dark navigation frames the lighter workspace in both Kanoki themes. */
 [data-slot="sidebar-container"], [data-slot="sidebar"][data-mobile="true"] { background: var(--surface); }
 .main-shell { --surface: var(--surface-raised); }
+
+.help-links { display: flex; flex-wrap: wrap; gap: var(--space-4); margin-bottom: var(--space-6); font: 400 13px/20px var(--font-sans); color: var(--moss); }
+.help-links a:hover { text-decoration: underline; text-underline-offset: var(--space-1); }
+.onboarding-hero { margin-top: var(--space-6); margin-bottom: var(--space-6); scroll-margin-top: var(--space-12); }

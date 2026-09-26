@@ -6,6 +6,7 @@ import {
   tourStepCount,
   tourStepHref,
   tourSteps,
+  type TourContext,
 } from "@/lib/tour-steps";
 
 /**
@@ -13,7 +14,7 @@ import {
  * Rendered on every view; visible only when ?tour=1 is present. All navigation
  * is <Link>-based and URL-driven, so it persists across route changes.
  */
-export function GuidedTour({ active, step }: { active: boolean; step: number }) {
+export function GuidedTour({ active, step, context }: { active: boolean; step: number; context: TourContext }) {
   if (!active) return null;
 
   const current = clampStep(step);
@@ -33,20 +34,20 @@ export function GuidedTour({ active, step }: { active: boolean; step: number }) 
       </div>
       <div className="guided-tour-actions">
         {!isFirst && (
-          <Link className="button button-secondary button-small" href={tourStepHref(current - 1)}>
+          <Link className="button button-secondary button-small" href={tourStepHref(current - 1, context)}>
             <ArrowLeft size={14} aria-hidden="true" /> Back
           </Link>
         )}
         {!isLast ? (
-          <Link className="button button-primary button-small" href={tourStepHref(current + 1)}>
+          <Link className="button button-primary button-small" href={tourStepHref(current + 1, context)}>
             Next <ArrowRight size={14} aria-hidden="true" />
           </Link>
         ) : (
-          <Link className="button button-primary button-small" href={tourExitHref(current)}>
+          <Link className="button button-primary button-small" href={tourExitHref(current, context)}>
             Finish tour
           </Link>
         )}
-        <Link className="guided-tour-exit" href={tourExitHref(current)} aria-label="Exit guided tour">
+        <Link className="guided-tour-exit" href={tourExitHref(current, context)} aria-label="Exit guided tour">
           <X size={15} aria-hidden="true" /> Exit
         </Link>
       </div>
