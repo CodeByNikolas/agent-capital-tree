@@ -18,9 +18,9 @@ Nutzerentscheidung: Rapid Prototyping, keine Abwärtskompatibilität, kein Legac
 
 1. Öffentlicher x402-Nachweis bestanden: `deployments/usdc-payment.json`, Tx `0xf91a8d6619bc3f36f33c4dad8855c777c8e96bbcd451d76eba31d131155e55eb`. Child researcher mit PAY-only,0,25USDC Allokation und0,24USDC Rest. Wiederholung ohne Doppelzahlung. Kontrollierter Loopback-Seller; kein autonomer Modellkauf. Runner abgeschlossen, nicht erneut mit neuen Schlüsseln ausführen. MultiBaas sieben Ereignisse gegen kanonische Receipts bestätigt: `deployments/usdc-multibaas.json`.
 2. Staged Contract-Suite bestanden:37 Tests in8 Suites, einschließlich256 Fuzz-Läufen. ARM-solc-js kann bei kaltem Gesamtbuild OOM erzeugen, deshalb `contracts/scripts/test-contracts.sh` verwenden.
-3. Frontend-Agent `/root/curvegrid_free_tier`, Worktree `agent-capital-tree-web-usdc`, auf aktuellen SDK-PAY-Stand bringen, Review/Integration/Build/Browsertests.
+3. Frontend integriert (b7b10a7), Typecheck/Produktionsbuild grün. Lokaler Browser: fünf Seiten, ENS/Adresssuche, Root/Child, mobile/desktop, light/dark, Circle-Faucet/PAY, keine Überbreite, alter root-Parameter404, Onboarding ohne Demobalances. Berichte artifacts/ui/usdc-local-*.json. Keine Walletsignaturen in diesen Tests.
 4. Payment-Review abgeschlossen: explizite Fehlermeldung für abgelaufene, ungenutzte Autorisierungen, keine automatische Neusignatur. Drei fokussierte Zahlungstests und erneuter vollständiger Circle/x402-Fork11785184 bestanden. Kein bestätigter Sicherheitsbypass im Review.
-5. Workspace-Tests bestanden:19 Runtime,11 MultiBaas,7 Plugin,2 SDK. UI lokal/öffentlich noch prüfen, README/Abnahme aktualisieren, kohärent committen, pushen und Vercel deployen.
+5. Workspace-Tests bestanden:19 Runtime,11 MultiBaas,7 Plugin,2 SDK. UI öffentlich noch prüfen, README/Abnahme aktualisieren, kohärent committen, pushen und Vercel deployen.
 
 ## Produktgrenzen
 
