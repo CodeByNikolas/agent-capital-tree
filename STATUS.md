@@ -2,6 +2,12 @@
 
 As of 26 September 2026. Read this together with PLAN.md after context compaction. Older sections below retain the evidence and acceptance limits known at the time; the newest E2E status is first.
 
+## Curvegrid submission documentation
+
+- README now explains actual MultiBaas usage, the agent report, observed checkpoint lag, pagination/availability, and Default-plan backfill, rate, API-call and retention limits. The 100-block limit is explicitly historical backfill, not a rolling query visibility limit. Setup/tests and the separately sourced x402 history are linked.
+- Added the verified public project contact and existing two-person-team description. Preferred member introductions and the second public social link still await team input; submission readiness is not claimed.
+- README relative links and git diff whitespace checks passed. Documentation-only change; no contract or application behavior changed.
+
 ## Agent activity report
 
 - Added /agent-activity to the dashboard navigation with a vault selector, exact per-token totals for allocations, delegation, reclaim/recovery and swap inputs/outputs, and the existing receipt-linked event log filtered to that vault. Uses the existing MultiBaas API; x402 remains a separate source.

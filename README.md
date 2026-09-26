@@ -63,7 +63,7 @@ The keyless MCP renders the live ENS agent tree as PNG with a Mermaid fallback.
 
 ## Dashboard
 
-Six pages separate overview, agent tree, activity, Uniswap, payments and setup. A shadcn/ui sidebar, readable typography, mobile layouts and system light/dark themes keep navigation focused. Selecting a node opens its capital, ENS name and inherited permissions. A zero-USDC root links to Circle's faucet; funding still uses the owner wallet.
+The dashboard separates overview, agent tree, root activity, agent activity, Uniswap, x402 payments, applications, MCP and setup. A shadcn/ui sidebar, readable typography, mobile layouts and system light/dark themes keep navigation focused. Selecting a node opens its capital, ENS name and inherited permissions. A zero-USDC root links to Circle's faucet; funding still uses the owner wallet.
 
 Enter a vault contract address or a registered name under **`agentcapitalvault.eth`** in **Open vault**. Internal numeric IDs are not accepted in this field. Without a selected vault, the app shows onboarding; illustrative data requires explicit preview mode. The preview root **Main agent** at `main.preview`, its addresses, and its small **USDC** sample balances are invented UI examples, not contracts or funds. Historical ACT-A/ACT-B vaults from an earlier controller still exist on Sepolia but are not supported by this USDC dashboard. An active mandate does not imply an agent process is running.
 
@@ -78,6 +78,32 @@ Current balances and permissions come directly from Sepolia. MultiBaas history c
 | Curvegrid | MultiBaas event queries, receipt enrichment and canonical RPC verification for UI and MCP | [Adapter](packages/multibaas), [plan limits](docs/multibaas-plan-limits.md) |
 
 ENS roles are actual authorization, not descriptive text metadata. MultiBaas is an indexer, not an authorization service. Its free plan allows only a 100-block backfill; indexing is configured before new demo activity.
+
+## Curvegrid MultiBaas: usage, experience and limitations
+
+**Use case:** make delegated agent capital movements inspectable by the human owner and queryable through MCP. MultiBaas Event Queries supply controller history filtered by root; our adapter decodes allocations, recovery, policy changes, swaps and LP events. We independently check returned events against canonical RPC receipts before displaying them.
+
+The [Agent activity report](https://kanoki-app.vercel.app/agent-activity?vault=capital.agentcapitalvault.eth) lets reviewers select a vault, inspect its receipt-linked events, and compare allocations received, onward delegations, returns and swap input/output totals per token. These are totals from loaded events, not current balances, profit or lifetime expenditure. Source: [MultiBaas adapter](packages/multibaas/src/index.ts), [activity API](apps/web/src/app/api/activity/route.ts), [agent report](apps/web/src/components/agent-activity.tsx).
+
+**What worked:** indexed, decoded contract events give the dashboard and MCP a common history interface. Root-filtered queries and receipt links make delegated capital flows explainable without relying on the agent's own account of what it did. Indexing was configured before the current demo's transactions.
+
+**Limits and challenges we encountered:**
+
+- **100-block historical backfill:** our Default/free plan permits starting event indexing at most 100 blocks behind the chain head. This is a limit on backfilling previously unindexed events, not a statement that every query can only see the latest 100 blocks. Starting the indexer late cannot reconstruct older activity on this plan. We configured indexing before new demo activity and expose its starting block. Retention is a separate limit.
+- **Plan ceilings:** the instance reported 2 indexed events/second, 30,000 API calls/month and 72 hours of event-log retention. These are this plan's reported limits, not universal MultiBaas limits or a guarantee that our history is complete. Historical contract calls were also disabled; that flag is separate from event backfill. See the [recorded plan findings and sources](docs/multibaas-plan-limits.md).
+- **Index status and returned events can differ:** the reported checkpoint lagged behind some events already returned by queries. The UI therefore shows the reported checkpoint, actual loaded event blocks, lag and canonical receipt verification separately. A valid receipt establishes an event's contents, not completeness of the index.
+- **Pagination and availability:** summaries cover only loaded pages. More pages, missing older history or an unavailable indexer must not look like zero spending. The agent report shows loading skeletons and hides totals on history errors. Current balances, permissions and owner recovery use direct contract access independently of MultiBaas.
+- **Scope:** this integration indexes our controller events. x402 USDC settlements have their own RPC-based history and are not attributed to MultiBaas. We do not claim an intentionally induced provider-outage E2E; controlled UI error responses test the display behavior only.
+
+**Developer feedback:** clearer onboarding around backfill versus retention, explicit warnings when a requested start block exceeds the plan, and clearer checkpoint semantics relative to query results would help teams build reliable historical views. A documented example combining pagination, index coverage and reorg handling would also help.
+
+**Setup and tests:** follow [local setup](docs/local-setup.md) and the commands below. The [MultiBaas package](packages/multibaas) contains adapter and verification tests. `node --experimental-strip-types scripts/test-agent-activity.mjs` checks exact totals and attribution; `ACT_TEST_APP_URL=https://kanoki-app.vercel.app node scripts/test-agent-activity-browser.mjs` checks the live report plus controlled loading/error states without sending transactions.
+
+## Team
+
+We are a two-person hackathon team building scoped capital delegation for AI agents. The team defined the product, permission model and user flows, and reviewed AI-assisted implementation; see [AI-use disclosure](docs/ai-use.md).
+
+Public project contact: [CodeByNikolas on GitHub](https://github.com/CodeByNikolas). The second member's preferred public name/social link and individual introductions are awaiting team confirmation; this part of the submission checklist remains open.
 
 ## Run and test
 
