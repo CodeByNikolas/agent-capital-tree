@@ -1,45 +1,34 @@
-# HANDOFF — Aufräum-/Konsolidierungsauftrag
+# Kanoki — release handoff
 
-**Datum:** 2026-09-26 · **Für:** den nächsten Agenten, der den Git-/Deploy-Zustand glättet.
+Updated 26 September 2026. Read PLAN.md and the latest STATUS.md entries first. Older entries retain historical evidence.
 
-> ⚠️ Dieses Repo wird von **mehreren Agenten gleichzeitig im SELBEN Working Tree** bearbeitet.
-> Der Stand **driftet ständig** — alle SHAs unten sind Momentaufnahmen. Vor jedem Schritt
-> `git fetch` + `git worktree list` + `git status` frisch prüfen.
+## Ownership and baseline
 
-## Status (gut)
-- **Production ist LIVE** auf dem korrekten main-Stand: **https://agent-capital-tree-silk.vercel.app**
-  (deployt aus `origin/main`; zuletzt `cc19c27` „Merge Kanoki design…", raglibol-Vercel).
-- `main` == `origin/main` (das Kanoki-Redesign ist in main gemergt).
-- **Nichts ist verloren** — alle WIP ist auf Branches gesichert (siehe unten).
+- Publish from `main` to **https://kanoki-app.vercel.app/**. The user assigned deployment to the project owner. This machine's Vercel account (`ramiezze`) sees only `raglibol`; do not deploy this release to the old silk alias.
+- The user selected **kanoki.eth** for onboarding and confirmed another agent owns its implementation. Leave that agent's runtime, wallet, namespace and UI work intact. A requested name is not proof of an active root, deployed controller or wallet authorization.
+- `fc7c63c` includes restored guides; `4da1bc7` includes unbound 23-tool MCP startup. Both are on remote main. [CI for fc7c63c passed](https://github.com/CodeByNikolas/agent-capital-tree/actions/runs/36273240439).
+- The canonical website returned HTTP 200 and the Kanoki title. This does not establish its deployed source commit.
+- Other agents still edit the primary checkout. Use a separate worktree; never stage, reset or discard their files.
 
-## Was aufzuräumen ist
+## Remaining sequence
 
-### 1) Verstreute WIP-Branches — prüfen ob in `main`, sonst integrieren, dann löschen
-- `origin/backup/main-wip-2` (`e29ff96`) — Snapshot des gestagten **Kanoki/Script**-Stands vor dem main-Alignment. Kanoki ist inzwischen in main → vermutlich **redundant**; verifizieren, dann löschen.
-- `origin/work/rami` (`e24702c`) — ältere rami-WIP (**MCP/runtime/plugin** + neue Quelldateien). Prüfen, ob vollständig in main; fehlende Teile integrieren.
-- `origin/wip/mcp-inflight` (`1fc3a00`) — erster MCP-WIP-Checkpoint (überlappt mit `work/rami`).
-- `defer/merge-main-into-rami` (nur lokal, `accae4c`) — alter manueller Merge, **überholt** (der echte Merge ist erledigt). Löschbar.
-- **Bekannte Konfliktdateien** beim Integrieren: `apps/web/src/components/wallet-controls.tsx`, `packages/runtime/capital-entry.mjs`, `packages/plugin/tool-visual.mjs`, `packages/plugin/visual-server.mjs`.
+1. Finish and review the kanoki.eth implementation. Preserve explicit root selection, controller/root domain checks, wallet approval, revocation guards and private journals. Run Linux tests and a production build on the final commit.
+2. The project owner deploys that exact main commit. Record source SHA, deployment ID and alias in STATUS.md; follow [the release checklist](docs/release-checklist.md).
+3. Check the published routes, desktop/mobile, both themes, guides, ENS lookup, separate asset balances, receipts and index coverage. Preview GIFs are illustrative only.
+4. The onboarding owner coordinates real wallet and capital MCP acceptance against the confirmed active root. Do not repeat completed seed/payment/worker transactions. No extra deposit or migration is authorized by this handoff.
+5. Complete independent jury installation and marketplace financial writes. Desktop/Claude Code financial flows, native macOS signing, ChatGPT-login worker E2E and an intentionally induced live MultiBaas outage remain unverified. Native API-key worker payment/swap evidence is complete within its documented same-host scope.
+6. Finish ETHGlobal and Uniswap feedback submissions once final release links are ready. Team details are complete in TEAM.md and README.md. Record actual submission receipts.
 
-### 2) Lokale Worktrees & Junk
-- Aktive Worktrees (`git worktree list`): `.kanoki-main` [work/kanoki-main], `.kanoki-release` [work/kanoki], `.kanoki-mcp-name` [fix/kanoki-mcp-name]. Wenn fertig: **`git worktree remove <dir>`** (nicht `rm` — sonst tote Refs).
-- `.pnpm-store/` = Junk (löschen). Bereits entfernt: der verschachtelte Klon `agent-capital-tree/` und der Worktree `.main-onboarding`.
-- Diese Ordner sind lokal via **`.git/info/exclude`** aus `git status` ausgeblendet (nicht committet). Beim echten Aufräumen ggf. dort wieder entfernen.
-- **Windows-Falle:** tief verschachtelte `node_modules` → `rm -rf`/robocopy scheitern mit „Filename too long". Für Worktrees `git worktree remove`; für Streuordner robocopy-Mirror-auf-leer-Trick.
+## Cleanup audit
 
-### 3) git-Fenster nie dauerhaft sauber
-Solange mehrere Agenten im selben Verzeichnis schreiben, tauchen laufend geänderte Dateien auf (aktuell u. a. `dashboard.tsx`, `x402-panel.tsx`, `agent-activity.tsx`, `scripts/*`). **Diese Änderungen NICHT blind verwerfen** — es ist laufende Arbeit anderer Agenten.
+- Removed local `defer/merge-main-into-rami` after confirming `accae4c` is an ancestor of main.
+- `.kanoki-main` contains staged changes. `.kanoki-release` contains untracked image artifacts. Neither may be discarded merely because a redesign was merged.
+- `backup/main-wip-2`, `work/rami`, `wip/mcp-inflight` and `work/kanoki` retain commits not patch-equivalent to main. Some changes were integrated with later edits; full redundancy is not proven. Preserve these refs until content review resolves the remaining differences.
+- The MCP owner already removed the previous MCP worktree and local pnpm cache, as recorded in STATUS.md. Do not repeat obsolete cleanup instructions.
+- Remove worktrees with `git worktree remove` only after unique work is preserved and no agent uses them. No forced removal is needed for release.
 
-### 4) MCP ist noch WIP
-Wird noch angepasst — vor einem Merge mit dem MCP-Owner koordinieren.
+## Boundaries
 
-## Deploy (Ramis eigenes Vercel — `raglibol`)
-- Projekt `agent-capital-tree`, rootDirectory `apps/web`, Team `raglibol`. Prod-Alias: `agent-capital-tree-silk.vercel.app`.
-- **Keine** Git-Integration → `git push` deployt **nicht**. Deploy aus Repo-Root (besser: aus isoliertem `git archive`-Snapshot, um den churn zu umgehen):
-  ```
-  vercel deploy --prod --yes --scope raglibol
-  ```
-- Build braucht **`allowBuilds`** in `pnpm-workspace.yaml` (`esbuild`, `@tailwindcss/oxide`, `lightningcss`, `sharp`) und `sdk`+`multibaas` **vor** `next build` (`apps/web/vercel.json`). Details: **`RAMI-AGENTS.md`**.
+Historical `root-agent.agentcapitalusdc.eth` (old controller, root 4) is permanently revoked according to the last recorded chain read. Its local profile was separately deleted by its owner. It is not the next demo target. Numeric root IDs never identify a controller by themselves.
 
-## Goldene Regel (Ursache des Chaos)
-**Nicht** mehrere Agenten im **selben** Working Tree auf demselben Branch laufen lassen — ein Agent pro Worktree/Branch. Merges/riskante Git-Ops **nur aus isoliertem Snapshot** (`git archive <sha>` / separater Worktree), nie im geteilten Tree.
+Keep keys, credentials, private profiles and transcripts outside Git. Capital-mode child creation does not launch an autonomous worker. Show every MCP dashboard image using its exact returned Markdown link, or its supplied Mermaid fallback if the host cannot render it.

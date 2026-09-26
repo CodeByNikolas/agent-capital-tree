@@ -1,3 +1,10 @@
+## Release consolidation audit — 26 September
+
+- Confirmed remote main at `fc7c63c` after fetch; its GitHub CI passed both jobs: https://github.com/CodeByNikolas/agent-capital-tree/actions/runs/36273240439. Local workspace typecheck passed; plugin 22/22, SDK 2/2 and MultiBaas 11/11 tests passed. Windows is not the Linux runtime acceptance environment. A WSL run passed 33/34 runtime tests; the CLI-native test hit its 10-second startup timeout and did so again in isolation. This local run is not a full green acceptance claim; concurrent onboarding edits were present.
+- Replaced the obsolete cleanup/deploy handoff and added `docs/release-checklist.md`. Corrected stale team-detail and mandatory-proxy statements in ACCEPTANCE.md. The user assigned kanoki.eth onboarding to another agent and canonical Vercel publication to the project owner; this audit sends no financial transaction or submission.
+- Verified canonical app HTTP 200 and Kanoki title, but not deployed source SHA. Vercel account `ramiezze` lists only `raglibol`; the target project is inaccessible to this CLI. The owner must record exact deployment/SHA and final public smoke evidence.
+- Removed only the obsolete local `defer/merge-main-into-rami` branch after proving it is an ancestor of main. Preserved both older worktrees (staged changes/untracked captures) and non-equivalent WIP refs. The primary checkout continues to receive another agent's onboarding changes; they were not staged or discarded by this audit.
+
 ## How it works and MCP guide restored — 26 September
 
 - Restored the explanatory five-step presentation on the start page and Overview, with persistent guide links and hide/reopen behavior. Preserved the latest main sidebar, partner navigation, root launch flow and rounded displays.

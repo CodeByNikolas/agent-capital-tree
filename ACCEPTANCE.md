@@ -1,5 +1,11 @@
 # Acceptance evidence — Agent Capital Tree
 
+## Current release gate — 26 September 2026
+
+The project owner will deploy to https://kanoki-app.vercel.app/. The user selected kanoki.eth for onboarding and assigned implementation to another agent. That workstream must verify the active root, controller, wallet approval and financial E2E. Historical root-agent.agentcapitalusdc.eth is revoked. See [the handoff](HANDOFF.md) and [release checklist](docs/release-checklist.md).
+
+Team names and public profiles are complete in TEAM.md and README.md. Actual ETHGlobal and Uniswap feedback confirmations remain open. Older statements about missing team details or mandatory CLIProxyAPI are superseded: native API-key workers are the preferred, already tested setup; independent-machine acceptance remains open.
+
 ## Real native OpenAI API-key financial flow — 26 September 2026
 
 **Passed:** real `gpt-6-luna` / `high` inference through the official OpenAI API, native Codex and isolated Docker execution. A fresh root Codex profile chose MCP spawn with 10 Sepolia test USDC; child 7 then autonomously paid 0.01 USDC through x402 and swapped 0.01 USDC through Uniswap. Its final balances were 9.98 USDC and 0.009965 valueless DEMO-USD. Canonical receipts, exact parameters, separate custody, narrower rights and over-limit rejection passed. No model-response fixture or inference proxy was used.
@@ -131,4 +137,4 @@ The last command needs historical Sepolia RPC access, not a wallet. Do not rerun
 
 ## Required external input
 
-MultiBaas is configured with a server-only runtime key, and Sepolia funding has been received. No additional key or paid plan is needed for the completed Root9 proof. Historical Root5 backfill exceeds the free plan’s100-block allowance and is explicitly excluded from complete history claims. Independent external-user installation still needs a genuinely separate user/environment with its own CLIProxyAPI access; existing same-host tests do not establish that. Team/contact details and explicit authorization to send the sponsor form/ETHGlobal submission remain absent.
+MultiBaas is configured with a server-only runtime key, and Sepolia funding has been received. No additional key or paid plan is needed for the completed Root9 proof. Historical Root5 backfill exceeds the free plan's 100-block allowance and is excluded from complete history claims. Independent external-user installation needs a separate user/environment with its own native API-key setup or dedicated ChatGPT login; CLIProxyAPI is optional. Same-host tests do not establish independent onboarding. Team details are complete. Canonical deployment requires the project owner's access, and actual submission receipts remain open.
