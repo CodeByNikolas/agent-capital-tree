@@ -1,0 +1,313 @@
+{
+  "checkedAt": "2026-09-26T05:57:12.152Z",
+  "url": "https://agent-capital-tree.vercel.app/api/activity?root=9",
+  "source": "multi-baas",
+  "page": {
+    "rootId": "9",
+    "items": [
+      {
+        "id": "11155111:0xc6f6f74efe0e22f697a3a73741dc2fdfc748632c3a2d3821dc7a69f9a5dfec4a:236",
+        "rootId": "9",
+        "eventName": "NodeCreated",
+        "provenance": {
+          "chainId": 11155111,
+          "transactionHash": "0xc6f6f74efe0e22f697a3a73741dc2fdfc748632c3a2d3821dc7a69f9a5dfec4a",
+          "logIndex": 236,
+          "blockNumber": 11784100,
+          "transactionIndex": 187,
+          "blockHash": "0x813cf945293c04121a95854ac0dd489ea862cc14807acba7465113d8914d49f9",
+          "source": "multibaas",
+          "indexed": true,
+          "finality": "finalized"
+        },
+        "kind": "node_created",
+        "nodeId": "9",
+        "parentId": "0",
+        "agent": "0x0000000000000000000000000000000000000000",
+        "vault": "0x0320d2e500b06c873f6cab7e1c30b04df964e612"
+      },
+      {
+        "id": "11155111:0x821490418ac6bec6eb6ef3a165dc93b82b51c8f6026c59c967b2d2cbcf43e1a5:135",
+        "rootId": "9",
+        "eventName": "OperatorChanged",
+        "provenance": {
+          "chainId": 11155111,
+          "transactionHash": "0x821490418ac6bec6eb6ef3a165dc93b82b51c8f6026c59c967b2d2cbcf43e1a5",
+          "logIndex": 135,
+          "blockNumber": 11784103,
+          "transactionIndex": 89,
+          "blockHash": "0xcb003032cd9a412ada76eba14fc084c3e2bb0f63798dd4cb354048a9021c730b",
+          "source": "multibaas",
+          "indexed": true,
+          "finality": "finalized"
+        },
+        "kind": "operator_changed",
+        "operator": "0x984874ae49e62b16662b34d7565770be49d24a09",
+        "generation": "1"
+      },
+      {
+        "id": "11155111:0xb69094c00c855d9d84f6b4ef7adb51f97ac8126f015fbc15374c625138675d08:169",
+        "rootId": "9",
+        "eventName": "RootFunded",
+        "provenance": {
+          "chainId": 11155111,
+          "transactionHash": "0xb69094c00c855d9d84f6b4ef7adb51f97ac8126f015fbc15374c625138675d08",
+          "logIndex": 169,
+          "blockNumber": 11784109,
+          "transactionIndex": 124,
+          "blockHash": "0x3b4abcba56cb3edd090c84a65b5cc709c21f7bb4dbf9c049125d536885f366ed",
+          "source": "multibaas",
+          "indexed": true,
+          "finality": "finalized"
+        },
+        "kind": "root_funded",
+        "token": "0x4338d78b1c2425ab89976e026c2e56bcaf1d50df",
+        "amount": "4000000000000000000"
+      },
+      {
+        "id": "11155111:0x5ad45785c1a068cb8d2bd6d8ffd1752846b37749e361b53a226ae73797bef6d6:251",
+        "rootId": "9",
+        "eventName": "NodeCreated",
+        "provenance": {
+          "chainId": 11155111,
+          "transactionHash": "0x5ad45785c1a068cb8d2bd6d8ffd1752846b37749e361b53a226ae73797bef6d6",
+          "logIndex": 251,
+          "blockNumber": 11784118,
+          "transactionIndex": 146,
+          "blockHash": "0xdf4268a3cbd263e4123ca12b90e9ce3448822c7a26f1f68db62c112bb2bf0036",
+          "source": "multibaas",
+          "indexed": true,
+          "finality": "finalized"
+        },
+        "kind": "node_created",
+        "nodeId": "10",
+        "parentId": "9",
+        "agent": "0xaaab2fe8aea96c91af55b8048ee9399b8a9abe36",
+        "vault": "0xd6f430814cf54a6271939232121fe60802e93fde"
+      },
+      {
+        "id": "11155111:0x5ad45785c1a068cb8d2bd6d8ffd1752846b37749e361b53a226ae73797bef6d6:253",
+        "rootId": "9",
+        "eventName": "CapitalAllocated",
+        "provenance": {
+          "chainId": 11155111,
+          "transactionHash": "0x5ad45785c1a068cb8d2bd6d8ffd1752846b37749e361b53a226ae73797bef6d6",
+          "logIndex": 253,
+          "blockNumber": 11784118,
+          "transactionIndex": 146,
+          "blockHash": "0xdf4268a3cbd263e4123ca12b90e9ce3448822c7a26f1f68db62c112bb2bf0036",
+          "source": "multibaas",
+          "indexed": true,
+          "finality": "finalized"
+        },
+        "kind": "capital_allocated",
+        "parentId": "9",
+        "childId": "10",
+        "token": "0x4338d78b1c2425ab89976e026c2e56bcaf1d50df",
+        "amount": "1000000000000000000"
+      },
+      {
+        "id": "11155111:0x0d0434dd8f85881f7166a0590a739c342b1ff4ad390184c9959bf81272a9ec77:100",
+        "rootId": "9",
+        "eventName": "NodeCreated",
+        "provenance": {
+          "chainId": 11155111,
+          "transactionHash": "0x0d0434dd8f85881f7166a0590a739c342b1ff4ad390184c9959bf81272a9ec77",
+          "logIndex": 100,
+          "blockNumber": 11784120,
+          "transactionIndex": 90,
+          "blockHash": "0x21be872f4a5050dd1be105d66f67a7c1d639e45a36f7fcb22bb49e80712c1bb0",
+          "source": "multibaas",
+          "indexed": true,
+          "finality": "finalized"
+        },
+        "kind": "node_created",
+        "nodeId": "11",
+        "parentId": "9",
+        "agent": "0xbb2fc40ceee87a9f7db97a5d0898b512b0674a4d",
+        "vault": "0x5fe327fa6fe6903daca2fa854adcef9d0ab276a2"
+      },
+      {
+        "id": "11155111:0x0d0434dd8f85881f7166a0590a739c342b1ff4ad390184c9959bf81272a9ec77:102",
+        "rootId": "9",
+        "eventName": "CapitalAllocated",
+        "provenance": {
+          "chainId": 11155111,
+          "transactionHash": "0x0d0434dd8f85881f7166a0590a739c342b1ff4ad390184c9959bf81272a9ec77",
+          "logIndex": 102,
+          "blockNumber": 11784120,
+          "transactionIndex": 90,
+          "blockHash": "0x21be872f4a5050dd1be105d66f67a7c1d639e45a36f7fcb22bb49e80712c1bb0",
+          "source": "multibaas",
+          "indexed": true,
+          "finality": "finalized"
+        },
+        "kind": "capital_allocated",
+        "parentId": "9",
+        "childId": "11",
+        "token": "0x4338d78b1c2425ab89976e026c2e56bcaf1d50df",
+        "amount": "1000000000000000000"
+      },
+      {
+        "id": "11155111:0x8ddc5364c1787243d0183faac4d510306cf715cde6e06c2786d3d13ee8404b83:141",
+        "rootId": "9",
+        "eventName": "NodeRevoked",
+        "provenance": {
+          "chainId": 11155111,
+          "transactionHash": "0x8ddc5364c1787243d0183faac4d510306cf715cde6e06c2786d3d13ee8404b83",
+          "logIndex": 141,
+          "blockNumber": 11784238,
+          "transactionIndex": 116,
+          "blockHash": "0x81267aa97ee7651e6921bd4988d84466cf6ef0d7fcbf18d50150d1b8aaf52d8d",
+          "source": "multibaas",
+          "indexed": true,
+          "finality": "confirmed"
+        },
+        "kind": "node_revoked",
+        "nodeId": "10"
+      },
+      {
+        "id": "11155111:0x8ddc5364c1787243d0183faac4d510306cf715cde6e06c2786d3d13ee8404b83:143",
+        "rootId": "9",
+        "eventName": "CapitalReclaimed",
+        "provenance": {
+          "chainId": 11155111,
+          "transactionHash": "0x8ddc5364c1787243d0183faac4d510306cf715cde6e06c2786d3d13ee8404b83",
+          "logIndex": 143,
+          "blockNumber": 11784238,
+          "transactionIndex": 116,
+          "blockHash": "0x81267aa97ee7651e6921bd4988d84466cf6ef0d7fcbf18d50150d1b8aaf52d8d",
+          "source": "multibaas",
+          "indexed": true,
+          "finality": "confirmed"
+        },
+        "kind": "capital_reclaimed",
+        "parentId": "9",
+        "childId": "10",
+        "token": "0x4338d78b1c2425ab89976e026c2e56bcaf1d50df",
+        "amount": "1000000000000000000"
+      },
+      {
+        "id": "11155111:0x77f73fde805736998ece20d9efa3cf7d2e38f45d9b9fb3adffb9b8e4edf31882:274",
+        "rootId": "9",
+        "eventName": "CapitalAllocated",
+        "provenance": {
+          "chainId": 11155111,
+          "transactionHash": "0x77f73fde805736998ece20d9efa3cf7d2e38f45d9b9fb3adffb9b8e4edf31882",
+          "logIndex": 274,
+          "blockNumber": 11784240,
+          "transactionIndex": 123,
+          "blockHash": "0x3cf1f1bc084213a5fb78853f48152ea44e642e70e0e21255cea73ef3b4219e42",
+          "source": "multibaas",
+          "indexed": true,
+          "finality": "confirmed"
+        },
+        "kind": "capital_allocated",
+        "parentId": "9",
+        "childId": "11",
+        "token": "0x4338d78b1c2425ab89976e026c2e56bcaf1d50df",
+        "amount": "500000000000000000"
+      },
+      {
+        "id": "11155111:0x73ceac941a63384e193ac308762c77659092fdbbe6c391dea22442cb3fec73ab:304",
+        "rootId": "9",
+        "eventName": "NodeRevoked",
+        "provenance": {
+          "chainId": 11155111,
+          "transactionHash": "0x73ceac941a63384e193ac308762c77659092fdbbe6c391dea22442cb3fec73ab",
+          "logIndex": 304,
+          "blockNumber": 11784274,
+          "transactionIndex": 118,
+          "blockHash": "0xbac8b0855887a60d212a951eb850cceed9e78dd39cc08ce1c863923397328219",
+          "source": "multibaas",
+          "indexed": true,
+          "finality": "confirmed"
+        },
+        "kind": "node_revoked",
+        "nodeId": "11"
+      },
+      {
+        "id": "11155111:0x73ceac941a63384e193ac308762c77659092fdbbe6c391dea22442cb3fec73ab:306",
+        "rootId": "9",
+        "eventName": "EmergencyRecovered",
+        "provenance": {
+          "chainId": 11155111,
+          "transactionHash": "0x73ceac941a63384e193ac308762c77659092fdbbe6c391dea22442cb3fec73ab",
+          "logIndex": 306,
+          "blockNumber": 11784274,
+          "transactionIndex": 118,
+          "blockHash": "0xbac8b0855887a60d212a951eb850cceed9e78dd39cc08ce1c863923397328219",
+          "source": "multibaas",
+          "indexed": true,
+          "finality": "confirmed"
+        },
+        "kind": "emergency_recovered",
+        "nodeId": "11",
+        "token": "0x4338d78b1c2425ab89976e026c2e56bcaf1d50df",
+        "amount": "1500000000000000000",
+        "recipient": "0x0320d2e500b06c873f6cab7e1c30b04df964e612"
+      },
+      {
+        "id": "11155111:0x110c5efa74a7cd236b33f7cacefda2add6e2854f07537ded3f9c2cd0dc82d885:122",
+        "rootId": "9",
+        "eventName": "NodeRevoked",
+        "provenance": {
+          "chainId": 11155111,
+          "transactionHash": "0x110c5efa74a7cd236b33f7cacefda2add6e2854f07537ded3f9c2cd0dc82d885",
+          "logIndex": 122,
+          "blockNumber": 11784279,
+          "transactionIndex": 97,
+          "blockHash": "0x2664c9e707511216d77905ff392ae8a902a8bc78548d43363eb9cd425fa96795",
+          "source": "multibaas",
+          "indexed": true,
+          "finality": "confirmed"
+        },
+        "kind": "node_revoked",
+        "nodeId": "9"
+      },
+      {
+        "id": "11155111:0x110c5efa74a7cd236b33f7cacefda2add6e2854f07537ded3f9c2cd0dc82d885:124",
+        "rootId": "9",
+        "eventName": "EmergencyRecovered",
+        "provenance": {
+          "chainId": 11155111,
+          "transactionHash": "0x110c5efa74a7cd236b33f7cacefda2add6e2854f07537ded3f9c2cd0dc82d885",
+          "logIndex": 124,
+          "blockNumber": 11784279,
+          "transactionIndex": 97,
+          "blockHash": "0x2664c9e707511216d77905ff392ae8a902a8bc78548d43363eb9cd425fa96795",
+          "source": "multibaas",
+          "indexed": true,
+          "finality": "confirmed"
+        },
+        "kind": "emergency_recovered",
+        "nodeId": "9",
+        "token": "0x4338d78b1c2425ab89976e026c2e56bcaf1d50df",
+        "amount": "4000000000000000000",
+        "recipient": "0xbcea84ed1dafbb59aaf9797cb4170394db688d34"
+      }
+    ],
+    "nextCursor": null,
+    "hasMore": false,
+    "indexing": {
+      "state": "lagging",
+      "latestIndexedBlock": 11783994,
+      "indexingStartBlock": 11783944,
+      "chainHeadBlock": 11784291,
+      "indexGapBlocks": 297,
+      "updatedAt": "2026-09-26T04:57:11.152138Z"
+    },
+    "verification": {
+      "source": "rpc",
+      "checks": [
+        "canonical_block",
+        "successful_receipt",
+        "event_identity",
+        "decoded_values"
+      ],
+      "checkedAtBlock": "11784291",
+      "finalizedBlock": "11784210",
+      "orphanedItems": 0
+    }
+  }
+}

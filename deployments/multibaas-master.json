@@ -1,0 +1,162 @@
+{
+  "status": "passed",
+  "chainId": 11155111,
+  "runId": "mb20260926a",
+  "controller": "0x55caFFf719B5FA70c0e8942eEe2C7EE6B8c7Db6b",
+  "rootId": "9",
+  "idleId": "10",
+  "siblingId": "11",
+  "owner": "0xbCea84Ed1DaFbb59AaF9797Cb4170394db688d34",
+  "operator": "0x984874AE49e62b16662B34D7565770BE49D24A09",
+  "startedAt": "2026-09-26T05:18:22.807Z",
+  "finishedAt": "2026-09-26T05:55:26.664Z",
+  "model": {
+    "name": "gpt-6-sol",
+    "reasoning": "medium",
+    "previousTranscriptSha256": "83e8278b9001d22c52183de7bb3ce8d45475bd3de1d797a3656909725bb2d9e2",
+    "transcriptSha256": "f73f3ed48118feeb62b4a82cbff5019d889680f2c003dd84547d42e8efdf4f61",
+    "calls": [
+      "getCapitalActivity",
+      "getTree",
+      "reclaimAssets",
+      "getTree",
+      "allocateCapital"
+    ]
+  },
+  "setupTransactions": {
+    "create-root": {
+      "transactionHash": "0xc6f6f74efe0e22f697a3a73741dc2fdfc748632c3a2d3821dc7a69f9a5dfec4a",
+      "blockNumber": 11784100,
+      "blockHash": "0x813cf945293c04121a95854ac0dd489ea862cc14807acba7465113d8914d49f9",
+      "status": 1,
+      "gasUsed": "5348062"
+    },
+    "bind-operator": {
+      "transactionHash": "0x821490418ac6bec6eb6ef3a165dc93b82b51c8f6026c59c967b2d2cbcf43e1a5",
+      "blockNumber": 11784103,
+      "blockHash": "0xcb003032cd9a412ada76eba14fc084c3e2bb0f63798dd4cb354048a9021c730b",
+      "status": 1,
+      "gasUsed": "249374"
+    },
+    "approve-act-a": {
+      "transactionHash": "0xbd64a73afec67d0ad85411a10b460b16d1764991c1e9cd2d8f5787c3f2da606b",
+      "blockNumber": 11784106,
+      "blockHash": "0x945f44ecd4d43311e2fd596b39e4a462710cc766868ec538cdf079eecb2eacae",
+      "status": 1,
+      "gasUsed": "46367"
+    },
+    "fund-root": {
+      "transactionHash": "0xb69094c00c855d9d84f6b4ef7adb51f97ac8126f015fbc15374c625138675d08",
+      "blockNumber": 11784109,
+      "blockHash": "0x3b4abcba56cb3edd090c84a65b5cc709c21f7bb4dbf9c049125d536885f366ed",
+      "status": 1,
+      "gasUsed": "73752"
+    },
+    "operator-gas-0": {
+      "transactionHash": "0xaa698c8df4d1ad5aa8ba33b101b73d45caa5e76bc2017e0af1be7767144780c4",
+      "blockNumber": 11784111,
+      "blockHash": "0xcbac5bf173c92f4278ce7a8788bfac926971c2b319f8694d9977d2a368ba0d5e",
+      "status": 1,
+      "gasUsed": "21000"
+    },
+    "operator-gas-1": {
+      "transactionHash": "0x9f3f004725df50fdabb79b851173d564c8c45135f1b7d209349261a5d3429c85",
+      "blockNumber": 11784113,
+      "blockHash": "0x0645adba9302d00a727556d5570e5f9a167bf4aee292aaf08e1971bcee27c2ae",
+      "status": 1,
+      "gasUsed": "21000"
+    },
+    "operator-gas-2": {
+      "transactionHash": "0xcd20565bba3314971abc69af2ac35726dbd9ea86c701af67cdc4d4857ef84b3d",
+      "blockNumber": 11784115,
+      "blockHash": "0xb79a548c1950a24a945443b2e0743a30ad907304d617187fc6be056b74323c48",
+      "status": 1,
+      "gasUsed": "21000"
+    },
+    "spawn-idle": {
+      "transactionHash": "0x5ad45785c1a068cb8d2bd6d8ffd1752846b37749e361b53a226ae73797bef6d6",
+      "blockNumber": 11784118,
+      "blockHash": "0xdf4268a3cbd263e4123ca12b90e9ce3448822c7a26f1f68db62c112bb2bf0036",
+      "status": 1,
+      "gasUsed": "5440041"
+    },
+    "spawn-sibling": {
+      "transactionHash": "0x0d0434dd8f85881f7166a0590a739c342b1ff4ad390184c9959bf81272a9ec77",
+      "blockNumber": 11784120,
+      "blockHash": "0x21be872f4a5050dd1be105d66f67a7c1d639e45a36f7fcb22bb49e80712c1bb0",
+      "status": 1,
+      "gasUsed": "5440077"
+    }
+  },
+  "modelReceipts": [
+    {
+      "transactionHash": "0x8ddc5364c1787243d0183faac4d510306cf715cde6e06c2786d3d13ee8404b83",
+      "blockNumber": 11784238,
+      "blockHash": "0x81267aa97ee7651e6921bd4988d84466cf6ef0d7fcbf18d50150d1b8aaf52d8d",
+      "status": 1,
+      "gasUsed": "166028"
+    },
+    {
+      "transactionHash": "0x77f73fde805736998ece20d9efa3cf7d2e38f45d9b9fb3adffb9b8e4edf31882",
+      "blockNumber": 11784240,
+      "blockHash": "0x3cf1f1bc084213a5fb78853f48152ea44e642e70e0e21255cea73ef3b4219e42",
+      "status": 1,
+      "gasUsed": "202361"
+    }
+  ],
+  "recoveryReceipts": {
+    "owner-recover-sibling": {
+      "transactionHash": "0x73ceac941a63384e193ac308762c77659092fdbbe6c391dea22442cb3fec73ab",
+      "blockNumber": 11784274,
+      "blockHash": "0xbac8b0855887a60d212a951eb850cceed9e78dd39cc08ce1c863923397328219",
+      "status": 1,
+      "gasUsed": "74979"
+    },
+    "owner-recover-idle": {
+      "transactionHash": "0xa4885124165401085a15e477e4d0a230a5a7c7e6da76d526e1a9fc2d6492bbd7",
+      "blockNumber": 11784277,
+      "blockHash": "0xb3512720ab34915d53950e9e4d0c546501e2756abffe5576c7bcd3e11a085c47",
+      "status": 1,
+      "gasUsed": "55988"
+    },
+    "owner-recover-root": {
+      "transactionHash": "0x110c5efa74a7cd236b33f7cacefda2add6e2854f07537ded3f9c2cd0dc82d885",
+      "blockNumber": 11784279,
+      "blockHash": "0x2664c9e707511216d77905ff392ae8a902a8bc78548d43363eb9cd425fa96795",
+      "status": 1,
+      "gasUsed": "72670"
+    }
+  },
+  "spentOwnerGasWei": "6310914138824718",
+  "spentOperatorGasWei": "11998528815636511",
+  "operatorGrantWei": "30000000000000000",
+  "checks": {
+    "indexedSetup": {
+      "itemCount": 7,
+      "latestIndexedBlock": 11783994,
+      "source": "multibaas",
+      "coverageFromBlock": 11783944,
+      "newestVerifiedEventBlock": 11784120,
+      "checkpointBehindVerifiedEvents": true
+    },
+    "model": {
+      "indexedHistoryRead": true,
+      "currentAuthorityRead": true,
+      "oneReclaimAndAllocation": true,
+      "canonicalReceipts": true,
+      "indexedModelWrites": 2
+    },
+    "ownerRecovery": {
+      "emptyRevokedVaults": true,
+      "returnedTokenAmount": "4000000000000000000",
+      "recipient": "0xbCea84Ed1DaFbb59AaF9797Cb4170394db688d34"
+    },
+    "seedPreserved": true
+  },
+  "limitations": [
+    "Owner setup and recovery are programmatic; the separate Root5 report covers real browser wallet actions.",
+    "A directed conditional master task, not autonomous strategy discovery.",
+    "Index status checkpoint trails actual indexed events; no absent-history inference or full-head coverage claim.",
+    "Setup paused for API-format corrections; first model attempt stayed read-only. The successful model writes were not repeated after a subsequent read timeout; the finalizer verified them and recovered remaining funds."
+  ]
+}

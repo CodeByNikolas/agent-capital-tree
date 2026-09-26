@@ -1,0 +1,167 @@
+{
+  "checkedAt": "2026-09-26T05:55:26.668Z",
+  "tree": {
+    "rootId": "9",
+    "owner": "0xbCea84Ed1DaFbb59AaF9797Cb4170394db688d34",
+    "operator": "0x984874AE49e62b16662B34D7565770BE49D24A09",
+    "generation": "1",
+    "tokens": [
+      "0x4338d78B1c2425ab89976e026c2E56bCAf1D50df",
+      "0xB09844F53E5ba103a1cF721626c759a394C7d423"
+    ],
+    "nodes": [
+      {
+        "id": "9",
+        "parentId": "0",
+        "rootId": "9",
+        "generation": "1",
+        "depth": 1,
+        "revoked": true,
+        "agent": "0x984874AE49e62b16662B34D7565770BE49D24A09",
+        "vault": "0x0320D2E500b06C873F6cAb7e1C30B04Df964e612",
+        "registry": "0x72D923aaBc7b1deD019A25577C46D6Fb1Ff67Fb3",
+        "childRegistry": "0xFb5E057A3f355e1f150225a957bAcd92Dc7F32c3",
+        "resource": "104494674583616441005250526079633716883151461469512593462755488151549060841472",
+        "label": "mmmb20260926a",
+        "policy": {
+          "capabilities": "18446745173221179392",
+          "maxAmounts": [
+            "4000000000000000000",
+            "0"
+          ],
+          "expiry": "1790486292",
+          "tokenMask": 1,
+          "poolId": "0x80e34634349a395620aa17ea88c88f61b1bc1631cbb5737b2a8445bba27b563d"
+        },
+        "effectivePolicy": {
+          "capabilities": "18446745173221179392",
+          "maxAmounts": [
+            "4000000000000000000",
+            "0"
+          ],
+          "expiry": "1790486292",
+          "tokenMask": 1,
+          "poolId": "0x80e34634349a395620aa17ea88c88f61b1bc1631cbb5737b2a8445bba27b563d"
+        },
+        "balances": [
+          "0",
+          "0"
+        ],
+        "position": {
+          "tokenId": "0",
+          "liquidity": "0"
+        },
+        "authorizedCapabilities": "0",
+        "authorizedActions": [],
+        "ensName": "mmmb20260926a.agentcapitaltree.eth"
+      },
+      {
+        "id": "10",
+        "parentId": "9",
+        "rootId": "9",
+        "generation": "1",
+        "depth": 2,
+        "revoked": true,
+        "agent": "0xAaaB2fe8AEa96c91aF55b8048eE9399b8A9abE36",
+        "vault": "0xd6F430814cf54A6271939232121Fe60802e93FDE",
+        "registry": "0xFb5E057A3f355e1f150225a957bAcd92Dc7F32c3",
+        "childRegistry": "0xd0A1443AFBAd8C1969C4A691E4aCD43089f0a399",
+        "resource": "11013094911568145883354038184115000614215832302749152178364794690550259253248",
+        "label": "idlemb20260926a",
+        "policy": {
+          "capabilities": "0",
+          "maxAmounts": [
+            "0",
+            "0"
+          ],
+          "expiry": "1790486292",
+          "tokenMask": 1,
+          "poolId": "0x80e34634349a395620aa17ea88c88f61b1bc1631cbb5737b2a8445bba27b563d"
+        },
+        "effectivePolicy": {
+          "capabilities": "0",
+          "maxAmounts": [
+            "0",
+            "0"
+          ],
+          "expiry": "1790486292",
+          "tokenMask": 1,
+          "poolId": "0x80e34634349a395620aa17ea88c88f61b1bc1631cbb5737b2a8445bba27b563d"
+        },
+        "balances": [
+          "0",
+          "0"
+        ],
+        "position": {
+          "tokenId": "0",
+          "liquidity": "0"
+        },
+        "authorizedCapabilities": "0",
+        "authorizedActions": [],
+        "ensName": "idlemb20260926a.mmmb20260926a.agentcapitaltree.eth"
+      },
+      {
+        "id": "11",
+        "parentId": "9",
+        "rootId": "9",
+        "generation": "1",
+        "depth": 2,
+        "revoked": true,
+        "agent": "0xbB2FC40cEeE87a9f7db97A5D0898B512B0674a4d",
+        "vault": "0x5fE327FA6Fe6903dacA2FA854ADCEF9D0aB276a2",
+        "registry": "0xFb5E057A3f355e1f150225a957bAcd92Dc7F32c3",
+        "childRegistry": "0x8E65C261546c718399Ff21dB776E44AF1d598b22",
+        "resource": "60107180016931758810211150396490095135929839567239530484475513807954872631296",
+        "label": "siblingmb20260926a",
+        "policy": {
+          "capabilities": "0",
+          "maxAmounts": [
+            "0",
+            "0"
+          ],
+          "expiry": "1790486292",
+          "tokenMask": 1,
+          "poolId": "0x80e34634349a395620aa17ea88c88f61b1bc1631cbb5737b2a8445bba27b563d"
+        },
+        "effectivePolicy": {
+          "capabilities": "0",
+          "maxAmounts": [
+            "0",
+            "0"
+          ],
+          "expiry": "1790486292",
+          "tokenMask": 1,
+          "poolId": "0x80e34634349a395620aa17ea88c88f61b1bc1631cbb5737b2a8445bba27b563d"
+        },
+        "balances": [
+          "0",
+          "0"
+        ],
+        "position": {
+          "tokenId": "0",
+          "liquidity": "0"
+        },
+        "authorizedCapabilities": "0",
+        "authorizedActions": [],
+        "ensName": "siblingmb20260926a.mmmb20260926a.agentcapitaltree.eth"
+      }
+    ],
+    "totalBalances": [
+      "0",
+      "0"
+    ],
+    "source": {
+      "kind": "rpc",
+      "chainId": 11155111,
+      "blockNumber": "11784283",
+      "blockHash": "0xa5c3d59b43cf24ddecee861cbd3e801f60cb81bb3322226d5f6820ab0760c0b9",
+      "timestamp": "1790402124",
+      "observedAt": "2026-09-26T05:55:26.355Z"
+    }
+  },
+  "seedPosition": {
+    "tokenId": "39811",
+    "liquidity": "5000000000000000000000"
+  },
+  "ownerRecoveryTransaction": "0x110c5efa74a7cd236b33f7cacefda2add6e2854f07537ded3f9c2cd0dc82d885"
+}

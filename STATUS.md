@@ -5,9 +5,9 @@ Stand: 26. September 2026 (Europe/Berlin). Nach Kontextkomprimierung zusammen mi
 ## Aktueller Stand
 
 - Public Repository: https://github.com/CodeByNikolas/agent-capital-tree.
-- Live-Dashboard: https://agent-capital-tree.vercel.app. Aktuelles Deployment `dpl_FSm7AjHv2b2iXQffYoS9pCRYiZkn`, https://agent-capital-tree-cxe55uaub-tumblockchains-projects.vercel.app (Source24aa5a1, MultiBaas-Adapter960ab0c). Frontend einschließlich Coverage-Anzeige3214df6, mit frontend-design/impeccable geprüft. Exakte Beträge bleiben zugänglich; kompakte Übersicht und mobile Reihenfolge Root→Child→Grandchild→Sibling. Build, Typecheck, fokussierte Tests und veröffentlichter Desktop-/Mobil-/API-Smoke bestanden.
-- ENSv2/Uniswap und der echte Browser→Codex→Child→Grandchild-Ablauf sind nachgewiesen. Vollständige Gesamtabnahme bleibt wegen Live-MultiBaas/Master-Historie offen. Die letzte echte Browser-Owner-Rückholung ist bestanden.
-- Root1 ist der finanzierte Seed und bleibt unberührt. Root2 ist widerrufen und leer. Root5 ist der vollständig widerrufene und geleerte Browser-/Modell-Testbaum; nicht erneut als Runtime starten. Abgeschlossene Finanzrunner niemals blind wiederholen.
+- Live-Dashboard: https://agent-capital-tree.vercel.app. Aktuelles Deployment `dpl_3ERiRiD21fvoAvtCgAKBhwRJWoMx`, https://agent-capital-tree-8nxdkkoo6-tumblockchains-projects.vercel.app (Source72fcc42). Frontend einschließlich Coverage-Anzeige3214df6, mit frontend-design/impeccable geprüft. Exakte Beträge bleiben zugänglich; kompakte Übersicht und mobile Reihenfolge Root→Child→Grandchild→Sibling. Build, Typecheck, fokussierte Tests und veröffentlichter Desktop-/Mobil-/API-Smoke bestanden.
+- ENSv2/Uniswap und der echte Browser→Codex→Child→Grandchild-Ablauf sind nachgewiesen. Live-MultiBaas, tatsächlicher Master-Modell-Ablauf und vollständige Root9-Rückholung sind ebenfalls nachgewiesen. Gesamtabnahme bleibt für unabhängiges Fremdnutzer-Onboarding und die unten genannten Grenzen offen. Die letzte echte Browser-Owner-Rückholung ist bestanden.
+- Root1 ist der finanzierte Seed und bleibt unberührt. Root2 ist widerrufen und leer. Root5 ist der vollständig widerrufene und geleerte Browser-/Modell-Testbaum; nicht erneut als Runtime starten. Root9 mit Child10/11 ist ebenfalls widerrufen und leer. Abgeschlossene Finanzrunner niemals blind wiederholen.
 
 ## Browser und echte Modelle: Root5
 
@@ -71,12 +71,24 @@ Manifest: `deployments/sepolia.json`, Controller-Deploymentblock11781260.
 
 Pool `0x80e34634349a395620aa17ea88c88f61b1bc1631cbb5737b2a8445bba27b563d`, fee3000, ticks−600/+600, spacing60, kein Hook. Beide Tokens wertlos,18 Dezimalstellen. Seed1-NFT39811/Liquidity5000e18 bleibt erhalten.
 
+## MultiBaas und Master: Root9 abgeschlossen
+
+- Free-Plan ohne Upgrade: ABI/Bytecode1.0 verknüpft, Indexierung ab11783944. Eingeschränkter Laufzeit-Key (DApp User + View-Only Administrators), kein Edit/Web3-Zugriff. Setup-Admin-Key bleibt privat lokal. Root5 liegt vor der Indexierungsgrenze; keine erfundene Althistorie.
+- Lokaler Sepolia-Fork11784078 bestand vor den öffentlichen Writes: [Fork-Nachweis](deployments/multibaas-master-fork.json). Die neuen öffentlichen Vaults erhielten4ACT-A, verteilt auf2/1/1.
+- Live-API-Korrekturen: Sortieralias blockNumber, sichere Dezimalstring-Blocknummern und Receipt-API statt separatem leerem /events-Logstore. Indexierte Auswahl wird gegen kanonische RPC-Receipts geprüft;11 Adaptertests bestanden. Gemeldeter Index-Checkpoint liegt hinter bereits abrufbaren Ereignissen; keine Behauptung vollständiger Head-Abdeckung.
+- Tatsächlicher Sol Medium las MultiBaas-Historie und aktuellen Baum, holte1ACT-A aus Child10 zurück, las erneut und wies Sibling11 genau0,5ACT-A zu. Benannte authorizedActions und explizite Receipt-Prüfschritte machten die Werkzeugantworten verständlich. [Modell-/Transaktionsnachweis](deployments/multibaas-master.json).
+- Reclaim: 0x8ddc5364c1787243d0183faac4d510306cf715cde6e06c2786d3d13ee8404b83; Allocation: 0x77f73fde805736998ece20d9efa3cf7d2e38f45d9b9fb3adffb9b8e4edf31882. Beide von MultiBaas indexiert und gegen kanonische Receipts geprüft.
+- Owner-Rückholung11→9,10→9,9→Owner abgeschlossen. Letzte Transaktion: 0x110c5efa74a7cd236b33f7cacefda2add6e2854f07537ded3f9c2cd0dc82d885.4ACT-A beim gebundenen Owner; alle3Vaults widerrufen, beide Tokenbestände0, keine LP. Seed1-NFT39811/Liquidity5000e18 erhalten. [Unabhängiger finaler Zustand](deployments/multibaas-master-final-state.json).
+- Unterbrechungen sind dokumentiert: Setup-Parserfehler vor Modellstart; erster Modellversuch ausschließlich lesend; erfolgreicher zweiter Versuch; danach vorübergehender MultiBaas-Lesetimeout. Signierte Journale, unveränderte Nonces und private Transkripte wurden vor jeder Fortsetzung abgeglichen. Keine Modellzahlung wiederholt. Originale Fehlerberichte bleiben privat erhalten; finalizer-result.json dokumentiert die abgeschlossene Rückholung.
+- Root9-Setup/Recovery waren programmatisch. Der Browser-/Wallet-Nachweis bleibt der separate Root5-Lauf. Die Modellaufgabe war eine angeleitete bedingte Neuallokation, keine autonome Strategieentdeckung.
+- Lokaler Runtime-Gesamttest bestanden einschließlich benannter Rechte nach Widerruf, Kapitalerhalt, Restart/Idempotenz und8ungültigen Providerdateien ohne Helper-Fallback. Der CLI-Ablehnungstest brauchte bei gemessenen3,1Sekunden Kaltstart dasselbe15Sekunden-Limit wie der erfolgreiche Start. Produktions-Smoke zeigt echte Root9-Historie auf Desktop/Mobil; Berichte in artifacts/ui.
+
 ## Tatsächlich offene Arbeit
 
-1. MultiBaas ist jetzt eingerichtet: Controller-ABI/Bytecode1.0 registriert, Adresse verknüpft, Indexierung ab11783944. Der Nutzer lieferte den temporären Admin-Key und autorisierte seine geschützte lokale Speicherung. Separater Laufzeit-Key mit DApp User plus View-Only Administrators liegt in `~/.agent-capital-tree/multibaas.env`; Admin-Key bleibt getrennt lokal. DApp User allein bekommt403 beim Indexierungsstatus. Free-Tier erlaubt nur100 Blöcke Rückblick; Nutzer möchte kein Upgrade. Deshalb neuer Abnahme-Root; Root5-Historie bleibt lückenhaft. Nachweis: `deployments/multibaas-setup.json`.
-2. Produktions-MultiBaas-Key/Label und Adapter sind deployt. Live-Probleme behoben: Sortierung braucht Alias blockNumber; Query-Blocknummern kommen als Dezimalstrings; /events liefert leer, während Query und Receipt-API funktionieren.11 Adaptertests sowie kompletter Build/Typecheck bestanden. Sieben Root9-Events gegen kanonische RPC-Receipts bestätigt. Status-Checkpoint bleibt hinter tatsächlich gelieferten Events; nicht als vollständige Head-Abdeckung interpretieren.
-3. Funding eingegangen. Lokaler Sepolia-Fork11784078 vor öffentlichen Writes bestanden (deployments/multibaas-master-fork.json). Öffentlicher Root9 mit Child10/11 angelegt,4ACT-A auf2/1/1verteilt. Ursprünglicher Lauf bei indexed-history ohne Modell-Writes gestoppt. Wiederaufnahme prüfte9signierte Setup-Receipts, kanonischen Zustand, Pending-Nonce und fehlende Modellartefakte. Fortsetzung mit frischem Sol Medium läuft; nicht erneut starten. Privates Journal: ~/.agent-capital-tree/multibaas-master-mb20260926a. Model/Reallocation/Recovery und neuer Live-UI-Smoke noch nicht als bestanden melden.
-4. Uniswap `FEEDBACK.md` existiert; Feedback-Formular und ETHGlobal-Abgabe wurden nicht gesendet. Fehlende Teamangaben/ausdrückliche Sendeanweisung nicht erfinden.
+1. Unabhängiges Fremdnutzer-/Fremdmaschinen-Onboarding bleibt ungeprüft. Frisches lokales Profil, native Marketplace-Installation mit Read und gelieferte Provider-Datei sind belegt; Native Marketplace-Finanzaktionen bleiben ungeprüft; Finanzaktionen sind über den dokumentierten direkten MCP-Pfad mit300Sekunden-Timeout belegt.
+2. Kein absichtlich herbeigeführter echter Curvegrid-Ausfall. Adapter-Fehlerpfade sind getestet; Owner-Exit funktionierte im Root5-Lauf ohne konfigurierte Historie. Dies ist kein Nachweis eines realen Anbieter-Ausfalls während eines laufenden Nutzerablaufs.
+3. Letzte bestätigte vollständige CI für Sourcef144c68: https://github.com/CodeByNikolas/agent-capital-tree/actions/runs/36222115594. Finale Nachweiscommits werden zusätzlich gepusht.
+4. Uniswap FEEDBACK.md existiert; Feedback-Formular und ETHGlobal-Abgabe wurden nicht gesendet. Teamangaben und eine ausdrückliche Sendeanweisung fehlen.
 
 ## Arbeitsgrenzen
 
