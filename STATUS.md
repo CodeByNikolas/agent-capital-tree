@@ -2,6 +2,11 @@
 
 As of 26 September 2026. Read this together with PLAN.md after context compaction.
 
+## Overview card alignment and runtime copy
+
+- The Overview's two lower actions now share the Connect wallet button's theme colors and align at the bottom of equal-height cards on desktop. Both cards use the same border, radius, and surface as the metric cards. The public runtime metric now shows an unknown value when node runtime status is unknown, with an explanation that local companion status is unavailable onchain; it no longer reports a false zero for live trees.
+- Web typecheck and production build passed. A local browser check on the explicit fictional preview verified equal action bottom coordinates, exact computed button/background/text colors against Connect wallet, matching card borders/radii in light and dark, and no mobile horizontal overflow. The layout detector returned no findings. The local live-root read did not complete during the browser smoke, so the new live unknown-state copy was checked against the mapper and component logic, not a loaded live page. No wallet write or deployment was performed.
+
 ## Website app icon
 
 - Added matching branch artwork in `apps/web/src/app/icon.svg`, a multi-size `favicon.ico` (16, 32, 48, 256 px), and an opaque 180 px `apple-icon.png`. The artwork follows the existing green dashboard brand mark. Next.js file-based metadata supplies the icon links; no duplicate manual icon metadata or PWA manifest was added.

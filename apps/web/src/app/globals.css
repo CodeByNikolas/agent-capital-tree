@@ -169,9 +169,10 @@ button:disabled { cursor: not-allowed; opacity: .55; }
 .metric-value > span { color: var(--quiet); font-size: 16px; font-weight: 600; letter-spacing: 0; }
 .metric-detail { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; margin-top: 10px; color: var(--quiet); font-size: 14px; }
 .overview-lower { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; margin-top: 16px; }
-.overview-lower [data-slot="card"] { min-width: 0; }
+.overview-lower [data-slot="card"] { min-width: 0; border: 1px solid var(--border); border-radius: 12px; background: var(--surface); box-shadow: none; }
 .overview-lower [data-slot="card-title"] { font-size: 22px; }
-.overview-lower [data-slot="card-content"] { display: flex; flex-direction: column; align-items: flex-start; gap: 18px; font-size: 15px; }
+.overview-lower [data-slot="card-content"] { display: flex; flex: 1; flex-direction: column; align-items: flex-start; gap: 18px; font-size: 15px; }
+.overview-lower [data-slot="button"] { min-height: 39px; margin-top: auto; color: var(--primary-foreground); }
 .overview-lower p { margin: 0; color: var(--quiet); }
 .dashboard-loading { min-height: 60vh; }
 .loading-heading { width: min(520px, 80%); height: 46px; margin-top: 12px; }

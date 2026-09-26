@@ -628,6 +628,7 @@ function MetricCard({
 function SummaryMetrics({ data }: { data: DashboardData }) {
   const activeVaults = data.nodes.filter((node) => node.state === "active").length;
   const totalVaults = data.nodes.length;
+  const runtimeKnown = data.nodes.every((node) => node.runtime !== "unknown");
   const assets = uniqueAssets(data.nodes.flatMap((node) => node.tokenHoldings));
   const allHoldings = data.nodes.flatMap((node) => node.tokenHoldings);
   const primaryAsset = assets[0] ? sumAsset(allHoldings, assets[0]) : { rawAmount: "0", decimals: 0, symbol: "" };
@@ -663,10 +664,10 @@ function SummaryMetrics({ data }: { data: DashboardData }) {
         source={data.source}
       />
       <MetricCard
-        label="Runtime links"
-        value={String(data.nodes.filter((node) => node.runtime === "connected").length).padStart(2, "0")}
-        unit=" connected"
-        detail="No agent process implied"
+        label="Runtime connections"
+        value={runtimeKnown ? String(data.nodes.filter((node) => node.runtime === "connected").length).padStart(2, "0") : "—"}
+        unit={runtimeKnown ? " connected" : ""}
+        detail={runtimeKnown ? "Local companion connections" : "Local companion status is not available onchain"}
         icon={<Zap size={17} aria-hidden="true" />}
         source={data.source}
       />
@@ -1514,8 +1515,8 @@ export function Dashboard({ data: initialData, deployment, vaultQuery, nodeQuery
             <div className="page-heading"><span className="page-kicker">Delegated capital · Sepolia</span><h1>Capital under clear authority.</h1><p>See what each vault holds, which mandates are active, and where owner control stands.</p></div>
             <SummaryMetrics data={data} />
             <div className="overview-lower">
-              <Card><CardHeader><CardTitle>Agent tree</CardTitle><CardDescription>Explore each vault’s capital, permissions, and place in the delegation tree.</CardDescription></CardHeader><CardContent><Button render={<Link href={routeHref("/tree", vaultQuery, selectedNode.id)} />} variant="outline">Explore agent tree <ArrowRight data-icon="inline-end" /></Button></CardContent></Card>
-              <Card><CardHeader><CardTitle>Owner control</CardTitle><CardDescription>Owner recovery is separate from ENS agent roles.</CardDescription></CardHeader><CardContent><p>{data.rootOwner ? `Recorded owner ${shortAddress(data.rootOwner)}` : "Connect a wallet and open a vault to review its recorded owner."}</p><p>Recovery may require a separate LP close, then one or more explicit transactions.</p><Button render={<Link href={routeHref("/setup", vaultQuery, selectedNode.id)} />} variant="outline">Review setup & control <ArrowRight data-icon="inline-end" /></Button></CardContent></Card>
+              <Card><CardHeader><CardTitle>Agent tree</CardTitle><CardDescription>Explore each vault’s capital, permissions, and place in the delegation tree.</CardDescription></CardHeader><CardContent><Button render={<Link href={routeHref("/tree", vaultQuery, selectedNode.id)} />}>Explore agent tree <ArrowRight data-icon="inline-end" /></Button></CardContent></Card>
+              <Card><CardHeader><CardTitle>Owner control</CardTitle><CardDescription>Owner recovery is separate from ENS agent roles.</CardDescription></CardHeader><CardContent><p>{data.rootOwner ? `Recorded owner ${shortAddress(data.rootOwner)}` : "Connect a wallet and open a vault to review its recorded owner."}</p><p>Recovery may require a separate LP close, then one or more explicit transactions.</p><Button render={<Link href={routeHref("/setup", vaultQuery, selectedNode.id)} />}>Review setup & control <ArrowRight data-icon="inline-end" /></Button></CardContent></Card>
             </div>
           </>}
           {view === "tree" && <>
