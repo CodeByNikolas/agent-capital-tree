@@ -1,10 +1,12 @@
 import { notFound } from "next/navigation";
-import { renderDashboard, type DashboardSearchParams, type DashboardView } from "@/lib/dashboard-page";
+import { type DashboardSearchParams, type DashboardView } from "@/lib/dashboard-page";
 
 const sections: readonly DashboardView[] = ["tree", "activity", "agent-activity", "uniswap", "payments", "applications", "mcp", "setup"];
 
 export default async function SectionPage({ params, searchParams }: { params: Promise<{ section: string }>; searchParams: DashboardSearchParams }) {
   const { section } = await params;
   if (!sections.includes(section as DashboardView)) notFound();
-  return renderDashboard(section as DashboardView, searchParams);
+  const query = await searchParams;
+  if (query.root !== undefined || Array.isArray(query.vault)) notFound();
+  return null;
 }

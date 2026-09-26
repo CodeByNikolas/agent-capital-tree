@@ -18,7 +18,6 @@ export async function GET(request: Request) {
   const root = new URL(request.url).searchParams.get("root") ?? "";
   if (!/^[1-9]\d{0,77}$/.test(root)) return reply({ error: "Enter a valid root ID." }, 400);
   const deployment = getPublicDeployment();
-  if (deployment.recoveryOnly) return reply({ error: "Payment history is unavailable on the existing-vault recovery site. Use canonical receipts for this controller." }, 503);
   const rpcUrl = process.env.SEPOLIA_RPC_URL;
   const startBlock = BigInt(manifest.contracts.CapitalController.blockNumber);
   const usdc = deployment.tokenAddresses?.[0];

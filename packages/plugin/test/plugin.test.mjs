@@ -113,7 +113,7 @@ test('spawn accepts readable ENS labels but rejects paths and invalid labels', (
 test('tree lookup retains an object tool schema for native workers and validates one selector', () => {
   for (const spec of Object.values(toolSpecs)) assert.equal(z.toJSONSchema(spec.schema).type, 'object');
   assert.deepEqual(toolSpecs.getTree.schema.parse({ rootId: '1' }), { rootId: '1' });
-  assert.deepEqual(toolSpecs.getTree.schema.parse({ query: 'capital.agentcapitalvault.eth' }), { query: 'capital.agentcapitalvault.eth' });
+  assert.deepEqual(toolSpecs.getTree.schema.parse({ query: 'capital.kanoki.eth' }), { query: 'capital.kanoki.eth' });
   assert.throws(() => toolSpecs.getTree.schema.parse({}));
-  assert.throws(() => toolSpecs.getTree.schema.parse({ rootId: '1', query: 'capital.agentcapitalvault.eth' }));
+  assert.throws(() => toolSpecs.getTree.schema.parse({ rootId: '1', query: 'capital.kanoki.eth' }));
 });

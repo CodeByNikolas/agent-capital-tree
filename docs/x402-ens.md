@@ -1,5 +1,7 @@
 # x402 × ENS: mandate-bound agent payments
 
+> Historical design proposal, superseded by the shipped PAY/ERC-1271 integration. Statements below about a missing controller redeploy or wallet-only payment describe the earlier prototype. Current implementation and receipts: [README](../README.md), [Kanoki x402 proof](../deployments/kanoki-payment.json), [acceptance](../ACCEPTANCE.md).
+
 This module lets an agent in the capital tree **buy services over HTTP with x402**, settled in
 real **Circle USDC on Sepolia**, where **ENS is both the payer's identity and the spend gate**.
 

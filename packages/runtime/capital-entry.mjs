@@ -6,7 +6,6 @@ import { homedir } from 'node:os';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import currentManifest from '../../deployments/usdc-sepolia.json' with { type: 'json' };
-import recoveryManifest from '../../deployments/history/usdc-full-vaults-sepolia.json' with { type: 'json' };
 
 const args = process.argv.slice(2);
 const command = args[0];
@@ -14,16 +13,15 @@ const query = args[1] && !args[1].startsWith('--') ? args[1] : undefined;
 const packageBase = new URL(import.meta.url.endsWith('/bundle/capital.mjs') ? '../' : './', import.meta.url);
 const script = fileURLToPath(new URL('capital.mjs', packageBase));
 const repo = fileURLToPath(new URL('../..', packageBase));
-const usage = 'node packages/runtime/capital.mjs prepare|check|settings|stdio [ENS-name|vault-address|root-id] [--runtime-root /private/linux/path] [--deployment usdc-full-vaults] [--enable-sepolia-writes]';
+const usage = 'node packages/runtime/capital.mjs prepare|check|settings|stdio [ENS-name|vault-address|root-id] [--runtime-root /absolute/private/path] [--enable-sepolia-writes]';
 if (!['prepare', 'check', 'settings', 'stdio'].includes(command) || (command === 'prepare' && !query)) throw new Error(usage);
-let explicitRoot, writesEnabled = false, recoveryDeployment = false;
+let explicitRoot, writesEnabled = false;
 for (let i = query ? 2 : 1; i < args.length; i++) {
   if (args[i] === '--runtime-root' && args[i + 1] && !explicitRoot) explicitRoot = args[++i];
   else if (args[i] === '--enable-sepolia-writes' && !writesEnabled) writesEnabled = true;
-  else if (args[i] === '--deployment' && args[i + 1] === 'usdc-full-vaults' && !recoveryDeployment) { recoveryDeployment = true; i++; }
   else throw new Error(usage);
 }
-const launchArgs = [script, 'stdio', ...(query ? [query] : []), ...(explicitRoot ? ['--runtime-root', explicitRoot] : []), ...(recoveryDeployment ? ['--deployment', 'usdc-full-vaults'] : []), ...(writesEnabled ? ['--enable-sepolia-writes'] : [])];
+const launchArgs = [script, 'stdio', ...(query ? [query] : []), ...(explicitRoot ? ['--runtime-root', explicitRoot] : []), ...(writesEnabled ? ['--enable-sepolia-writes'] : [])];
 try {
 if (command === 'settings') {
   console.log(JSON.stringify({ kanoki: { command: process.execPath, args: launchArgs } }, null, 2));
@@ -34,18 +32,18 @@ if (command === 'settings') {
   child.on('error', () => { process.stderr.write('WSL/Node unavailable. Install Node 22+ in your default WSL distribution. Docker is not needed.\n'); process.exitCode = 1; });
   child.on('exit', code => { process.exitCode = code ?? 1; });
 } else {
-  if (process.platform !== 'linux') throw new Error('Capital signing currently requires Linux or WSL2; private Unix storage checks are not disabled.');
+  if (!['linux', 'darwin'].includes(process.platform)) throw new Error('Capital signing requires macOS, Linux or WSL2; private Unix storage checks are not disabled.');
   const { RuntimeCompanion } = await import('./dist/index.js');
   const { CapitalSession, SetupError, privatePath, safeCapitalError } = await import('./capital-session.mjs');
   const { capitalClient } = await import('../sdk/dist/index.js');
-  const manifest = recoveryDeployment ? recoveryManifest : currentManifest;
+  const manifest = currentManifest;
   if (manifest.chainId !== 11155111) throw new Error('Expected Ethereum Sepolia manifest');
   const controller = manifest.contracts.CapitalController.address;
   const rpcUrl = process.env.ACT_SEPOLIA_RPC_URL ?? 'https://ethereum-sepolia.publicnode.com';
   const client = capitalClient(rpcUrl, controller);
   let companion, bridge;
   const session = new CapitalSession({ client, controller, base: join(homedir(), '.agent-capital-tree'),
-    namespace: manifest.ensNamespace.name, walletOrigin: recoveryDeployment ? 'https://agent-capital-tree-silk.vercel.app' : 'https://kanoki-app.vercel.app',
+    namespace: manifest.ensNamespace.name, walletOrigin: 'https://kanoki-app.vercel.app',
     repo, query, explicitRoot, writesEnabled, closeRuntime: async () => { await companion?.close(); companion = undefined; bridge = undefined; } });
   const {loadWorkerHost,checkWorkerHost} = await import('./worker-host.mjs');
   let workerHost,workerHostInvalid=false;
@@ -110,7 +108,6 @@ if (command === 'settings') {
         if (name === 'getEffectivePolicy') return session.policy(input.nodeId);
         if (name === 'selectCapitalRoot') return session.select(input.query);
         if (name === 'prepareRootSetup') {
-          if (recoveryDeployment) return { status: 'unavailable', transactionSubmitted: false, next: 'This connection explicitly targets the historical USDC controller for existing-vault recovery. Create new roots with the normal current-deployment capital MCP; never confuse equally numbered roots across controllers.' };
           const previous = await session.onboarding.read();
           const test = input.test ?? previous?.test;
           if (test?.model) {
@@ -171,7 +168,7 @@ if (command === 'settings') {
 } catch (error) {
   // RPC errors may embed provider URLs. Never print raw errors, stacks or credentials.
   const safe = ['Expected Ethereum Sepolia manifest', 'Multiple matching private profiles.', 'Use a private Linux directory',
-    'Private profile domain does not match', 'Unsafe private capital profile', 'An operator is already bound', 'Capital signing currently requires'];
-  process.stderr.write(`${safe.some(prefix => String(error.message).startsWith(prefix)) ? error.message : 'Capital setup unavailable. Check the root identifier, Sepolia RPC and private Linux profile. No success was confirmed.'}\n`);
+    'Private profile domain does not match', 'Unsafe private capital profile', 'An operator is already bound', 'Capital signing requires'];
+  process.stderr.write(`${safe.some(prefix => String(error.message).startsWith(prefix)) ? error.message : 'Capital setup unavailable. Check the root identifier, Sepolia RPC and private Unix profile. No success was confirmed.'}\n`);
   process.exitCode = 1;
 }

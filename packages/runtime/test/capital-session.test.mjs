@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { mkdtemp, rm, readdir, readFile } from 'node:fs/promises';
+import { realpath, mkdtemp, rm, readdir, readFile, mkdir, writeFile, chmod } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { CapitalSession, safeCapitalError } from '../capital-session.mjs';
@@ -74,8 +74,8 @@ test('budget errors explain units without an arbitrary demo cap', () => {
   assert.doesNotMatch(safeCapitalError(new Error('https://provider/SECRET')), /SECRET/);
 });
 
-test('one-time setup preserves its signer and restores the authorized root after restart', { skip: process.platform !== 'linux' }, async () => {
-  const base = await mkdtemp(join(tmpdir(), 'kanoki-onboarding-'));
+test('one-time setup preserves its signer and restores the authorized root after restart', { skip: !['linux', 'darwin'].includes(process.platform) }, async () => {
+  const base = await mkdtemp(join(await realpath(tmpdir()), 'kanoki-onboarding-'));
   let chainTree;
   const client = { resolveTree: async () => {
     if (!chainTree) throw new Error('No vault in this Sepolia deployment matches that name or address');
@@ -113,8 +113,8 @@ test('one-time setup preserves its signer and restores the authorized root after
   } finally { await rm(base,{recursive:true,force:true}); }
 });
 
-test('explicit root selection, owner-bound recovery, no refund, snapshot and signer/gas guards', { skip: process.platform !== 'linux' }, async () => {
-  const base = await mkdtemp(join(tmpdir(), 'act-onboarding-'));
+test('explicit root selection, owner-bound recovery, no refund, snapshot and signer/gas guards', { skip: !['linux', 'darwin'].includes(process.platform) }, async () => {
+  const base = await mkdtemp(join(await realpath(tmpdir()), 'act-onboarding-'));
   const roots = new Map([['3',tree(3)],['4',tree(4)],['5',tree(5)]]);
   let gas = 0n, gasCalls = 0, closed = 0;
   const client = { resolveTree: async query => {
@@ -186,4 +186,18 @@ test('explicit root selection, owner-bound recovery, no refund, snapshot and sig
     assert.ok(fresh.localOperator); assert.equal(fresh.transactionSubmitted,false);
     assert.notEqual(fresh.localOperator,recovery.localOperator);
   } finally { await rm(base,{recursive:true,force:true}); }
+});
+
+
+test('profile discovery ignores unrelated directories but rejects an unsafe signing profile', async () => {
+  const base = await mkdtemp(join(await realpath(tmpdir()), 'kanoki-profile-discovery-'));
+  const unrelated = join(base, 'tools');
+  try {
+    await mkdir(unrelated);
+    await chmod(unrelated, 0o755);
+    const session = new CapitalSession({ base, controller, repo: '/not-this-directory' });
+    assert.equal(await session.profile('1'), join(base, `capital-${controller}-1`));
+    await writeFile(join(unrelated, 'domain.json'), JSON.stringify({chainId:11155111,rootId:'1',controller}), {mode:0o600});
+    await assert.rejects(session.profile('1'), /UNSAFE_PROFILE/);
+  } finally { await rm(base, {recursive:true,force:true}); }
 });

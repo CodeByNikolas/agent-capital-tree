@@ -6,10 +6,11 @@ export async function continueCapitalSetup(session, execute, waitSeconds = 20) {
   const {client,controller} = session;
   let setup = await session.inspect();
   const end = Date.now() + waitSeconds * 1000;
-  while (!setup.writeReady && Date.now() < end) {
+  while (!setup.writeReady && setup.status !== 'blocked' && Date.now() < end) {
     await new Promise(resolve => setTimeout(resolve, Math.min(3000, end-Date.now())));
     setup = await session.inspect();
   }
+  if (!setup.writeReady && setup.status === 'blocked') return setup;
   if (!setup.writeReady) return {...setup,status:setup.writesEnabled === false ? 'blocked' : 'awaiting_wallet',next:setup.writesEnabled === false ? 'Enable the authorized write connection before continuation.' : (setup.next ?? 'Continue polling this same setup automatically. Only the missing wallet steps need user interaction.')};
   const state = await session.onboarding.read();
   if (!state?.test) return {...setup,status:'ready',next:'No child test was saved. Continue only the test explicitly authorized in the current user request.'};

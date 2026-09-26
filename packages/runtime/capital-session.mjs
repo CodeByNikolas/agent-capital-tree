@@ -15,19 +15,19 @@ export function safeCapitalError(error) {
   if (error?.message?.startsWith('ROOT_REVOKED:')) return 'ROOT_REVOKED: Your saved vault is permanently revoked. No replacement, key change or funding was requested.';
   if (error?.code === 'INSUFFICIENT_GAS') return 'INSUFFICIENT_GAS: Local signer has insufficient native Sepolia ETH for the simulated child transaction. No transaction was submitted. Fund native gas, not USDC.';
   if (/^No vault in this Sepolia deployment|^Root not found/.test(error?.message ?? '')) return 'ROOT_NOT_FOUND: No confirmed root matches this identifier at the observed block. If you just signed creation, wait for its receipt; pending status is not known to this MCP.';
-  if (/^Enter a positive root ID/.test(error?.message ?? '')) return 'INVALID_ROOT: Use a positive root ID, full agentcapitalusdc.eth name or vault address.';
+  if (/^Enter a positive root ID/.test(error?.message ?? '')) return 'INVALID_ROOT: Use a positive root ID, full kanoki.eth name or vault address.';
   if (/^Expected Ethereum Sepolia/.test(error?.message ?? '')) return 'WRONG_CHAIN: Only Ethereum Sepolia (11155111) is supported.';
   return 'RPC_OR_RUNTIME_UNAVAILABLE: No confirmed result. The provider or local runtime could not complete the request. For a write, reconcile the SAME operationKey before retrying; never assume a timeout means failure.';
 }
 export async function privatePath(path, mode, directory = false) {
   const info = await lstat(path);
   if (info.isSymbolicLink() || info.uid !== process.getuid() || (info.mode & 0o777) !== mode ||
-    (directory ? !info.isDirectory() : !info.isFile())) throw new SetupError('UNSAFE_PROFILE', 'Private Linux profile permissions or ownership are invalid. No key was replaced.');
+    (directory ? !info.isDirectory() : !info.isFile())) throw new SetupError('UNSAFE_PROFILE', 'Private Unix profile permissions or ownership are invalid. No key was replaced.');
   return path;
 }
 
 export class CapitalSession {
-  constructor({ client, controller, base, repo, query, explicitRoot, writesEnabled, namespace = 'agentcapitalvault.eth', walletOrigin = 'https://agent-capital-tree.vercel.app', closeRuntime = async () => {} }) {
+  constructor({ client, controller, base, repo, query, explicitRoot, writesEnabled, namespace = 'kanoki.eth', walletOrigin = 'https://kanoki-app.vercel.app', closeRuntime = async () => {} }) {
     Object.assign(this, { client, controller, base, repo, query, explicitRoot, writesEnabled, namespace, walletOrigin, closeRuntime });
     this.onboarding = new CapitalOnboarding(this);
   }
@@ -42,12 +42,17 @@ export class CapitalSession {
     const candidates = [];
     if (!this.explicitRoot) {
       for (const entry of await readdir(this.base, { withFileTypes: true }).catch(error => { if (error.code === 'ENOENT') return []; throw error; })) {
-        if (entry.isDirectory() && await this.matchingDomain(join(this.base, entry.name), rootId)) candidates.push(join(this.base, entry.name));
+        if (!entry.isDirectory()) continue;
+        const candidate = join(this.base, entry.name);
+        // Tool downloads and deployment journals are not signing profiles.
+        try { await lstat(join(candidate, 'domain.json')); }
+        catch (error) { if (error.code === 'ENOENT') continue; throw error; }
+        if (await this.matchingDomain(candidate, rootId)) candidates.push(candidate);
       }
       if (candidates.length > 1) throw new SetupError('AMBIGUOUS_PROFILE', 'Multiple matching profiles. Select the existing profile with --runtime-root; no key was replaced.');
     }
     const path = this.explicitRoot ?? candidates[0] ?? join(this.base, `capital-${this.controller.toLowerCase()}-${rootId}`);
-    if (!isAbsolute(path) || !relative(this.repo, resolve(path)).startsWith('..') || path.startsWith('/mnt/')) throw new SetupError('UNSAFE_PROFILE', 'Use private Linux storage outside the repository and Windows mounts.');
+    if (!isAbsolute(path) || !relative(this.repo, resolve(path)).startsWith('..') || path.startsWith('/mnt/')) throw new SetupError('UNSAFE_PROFILE', 'Use private Unix storage outside the repository and Windows mounts.');
     if (this.explicitRoot && !await this.matchingDomain(path, rootId)) {
       // A brand new explicit profile is allowed; an existing domain is never repurposed.
       try { await access(join(path, 'domain.json')); throw new SetupError('PROFILE_MISMATCH', 'Explicit profile belongs to another root. Preserve it and select the matching profile.'); }

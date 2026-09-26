@@ -34,7 +34,7 @@ The wallet's pending hashes are saved before receipt polling. Child hashes now s
 
 ## Deployment handoff — required before public E2E
 
-The user assigned contract deployment, namespace attachment, Etherscan verification and web publication to the project responsible person. No deployer credential was present locally. The current immutable controller **does not** implement the new limit. New setup therefore returns `CAPITAL_LIMIT_UNSUPPORTED` and opens no funding link.
+The user assigned contract deployment, namespace attachment, Etherscan verification and web publication to the project responsible person. No deployer credential was present locally. After integrating remote main, the current immutable kanoki.eth controller is `0xeB2041B486D66aB91140FFcF54B66513D8eC40c8`. The new limit has not been deployed there. The earlier gas-only enrollment remains under the old `0x7eDFa3D484d64b6bA3b5b2bcef51147E57133FFB` domain and is preserved. New setup therefore returns `CAPITAL_LIMIT_UNSUPPORTED` and opens no funding link.
 
 1. Deploy the reviewed artifacts with the existing `scripts/deploy-capital-system.mjs` and a separate staged manifest/private journal. Use a free authorized ENS namespace; never repoint the existing live namespace or migrate existing funds. Verify bytecode, namespace and explorer sources before promoting the manifest.
 2. Before switching this machine's current deployment, preserve and reattach the pending setup's existing operator key and saved intent to the new deployment domain through a reviewed local migration. This release deliberately does not silently copy keys between controller domains. That migration remains an integration gate; preserve the already funded operator and never ask for its gas again merely because the controller changed.
@@ -48,8 +48,8 @@ The user assigned contract deployment, namespace attachment, Etherscan verificat
 ## Evidence and remaining gates
 
 - 39 contract tests passed with Foundry 1.8.3 / Solidity 0.8.26, including limit, donation guard, owner-only changes, idempotency and existing custody tests.
-- 22 plugin tests passed. Focused Linux runtime tests cover no-default setup, gas-only diagnostics, signer persistence, mismatch/revocation, limit immutability and the saved continuation path.
+- 22 plugin tests and 19 focused Linux runtime tests passed. Runtime tests cover no-default setup, gas-only diagnostics, signer persistence, mismatch/revocation, limit immutability and the saved continuation path.
 - Web production build and typecheck passed. Guided wallet adapter tests and desktop/mobile browser checks passed with 10-USDC disclosure.
-- Public gas-only state was read through the actual MCP. No onchain write was submitted in this implementation run. Signed public setup, new-controller namespace integration, receipt transfer across deployment domains, and the final 0.02-USDC child E2E are **open**, not passed.
+- Fresh installed Kanoki plugin: 22 tools, five-node kanoki.eth root 1, block 11789344; no writes. Actual worker preflight: unavailable, workerStarted false. Earlier public gas-only state was read through the actual MCP. No onchain write was submitted in this implementation run. Signed public setup, new-controller namespace integration, receipt transfer across deployment domains, and the final 0.02-USDC child E2E are **open**, not passed.
 
 The user-supplied successful gas transaction remains `0x3b8d346dd89f5f43ff6bd86243ce485f92103c3f7b3c5105ff79a26f1858767e`; it proves neither root creation nor USDC funding. No new transaction hash is invented for this release.

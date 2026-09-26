@@ -5,7 +5,7 @@ import { spawn } from 'node:child_process';
 import { access, writeFile } from 'node:fs/promises';
 
 const server='kanoki';
-const query=process.env.ACT_TREE_QUERY??'capital.agentcapitalvault.eth';
+const query=process.env.ACT_TREE_QUERY??'capital.kanoki.eth';
 assert.match(query,/^[a-z0-9.-]+$/,'Expected a public ENS name');
 const prompt=`Use only ${server}.getTree with query ${query}. What is this vault’s current state? Follow the server’s graphical response instructions. No shell, web, browser or write actions.`;
 const child=spawn(process.env.ACT_CODEX_BIN??'codex',['exec','--ephemeral','--json','-s','read-only',prompt],{stdio:['pipe','pipe','pipe'],windowsHide:true});

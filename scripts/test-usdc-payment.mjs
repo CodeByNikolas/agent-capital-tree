@@ -17,6 +17,8 @@ const {ExactEvmScheme}=require('@x402/evm/exact/facilitator');
 const {toFacilitatorEvmSigner}=require('@x402/evm');
 const manifestPath=process.env.ACT_DEPLOYMENT_MANIFEST ?? new URL('../deployments/usdc-sepolia.json',import.meta.url);
 const manifest=JSON.parse(await readFile(manifestPath,'utf8'));
+const usdc=manifest.tokens.find(token=>token.symbol==='USDC');
+assert.equal(usdc?.address.toLowerCase(),'0x1c7d4b196cb0c7b01d743fbc6116a902379c7238');
 const reportPath=process.env.ACT_PAYMENT_REPORT ?? new URL('../deployments/usdc-payment.json',import.meta.url);
 const directory=join(homedir(),'.agent-capital-tree/usdc-payment',manifest.contracts.CapitalController.address);
 const rpcUrl='https://ethereum-sepolia.publicnode.com';
@@ -44,7 +46,7 @@ try {
   const generation=await controller.rootGeneration(rootId);
   assert.equal(root.agent.toLowerCase(),owner.address.toLowerCase());
   const policy={capabilities:1n<<68n,maxAmounts:[250000n,0n],expiry:BigInt(manifest.bootstrap.policyExpiry),tokenMask:1,poolId:ZeroHash};
-  assert.equal(manifest.tokens[0].address.toLowerCase(),manifest.token.address.toLowerCase());
+  assert.equal(manifest.tokens[0].address.toLowerCase(),usdc.address.toLowerCase());
   const operationKey=id('usdc-demo-researcher');
   const {receipt:spawnReceipt}=await journaledTransaction({rpc,signer:owner,directory,name:'spawn-researcher',request:await controller.spawnChild.populateTransaction(rootId,'researcher',childAccount.address,policy,[250000n,0n],operationKey)});
   const operation=await controller.getOperation(rootId,rootId,generation,operationKey);
@@ -55,10 +57,10 @@ try {
   assert.equal(await childVault.CONTROLLER(),await controller.getAddress());
   await assert.rejects(childVault.initialize.staticCall(owner.address));
   assert.equal(child.agent.toLowerCase(),childAccount.address.toLowerCase());
-  const token=new Contract(manifest.token.address,['function balanceOf(address) view returns(uint256)'],rpc);
+  const token=new Contract(usdc.address,['function balanceOf(address) view returns(uint256)'],rpc);
   const combined=createWalletClient({account:privateKeyToAccount(owner.privateKey),chain:sepolia,transport:http(rpcUrl)}).extend(publicActions);
   const boundedSigner=toFacilitatorEvmSigner({...combined,address:owner.address,writeContract:async args=>{
-    assert.equal(args.address.toLowerCase(),manifest.token.address.toLowerCase());
+    assert.equal(args.address.toLowerCase(),usdc.address.toLowerCase());
     assert.equal(args.functionName,'transferWithAuthorization');
     const data=encodeFunctionData({abi:args.abi,functionName:args.functionName,args:args.args});
     const {transaction}=await journaledTransaction({rpc,signer:owner,directory,name:`settle-${keccak256(data).slice(2,50)}`,request:{to:args.address,data},maxGasCostWei:1_000_000_000_000_000n});

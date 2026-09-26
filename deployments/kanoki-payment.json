@@ -1,0 +1,46 @@
+{
+  "status": "confirmed",
+  "checkedAt": "2026-09-26T22:14:51.025Z",
+  "chainId": 11155111,
+  "controller": "0xeB2041B486D66aB91140FFcF54B66513D8eC40c8",
+  "rootId": "1",
+  "rootVault": "0x42d383397ad51B56f0Fa55c3Aa29b85659D279cB",
+  "childId": "3",
+  "childVault": "0xD98d7938D740F5115bb95151F7B0c2d929939BE8",
+  "childName": "researcher.capital.kanoki.eth",
+  "spawn": {
+    "hash": "0x5d089fbbc07156522805b4f8650d78fd1b251b38d9d5e605235ed5b88da5074c",
+    "block": 11789081,
+    "gasUsed": "3556781",
+    "vaultRuntimeBytes": 45
+  },
+  "payment": {
+    "transactionHash": "0x85b2089295d1e61473c29459dfc596db83028efd7bd0977278b119dc0b3ec467",
+    "amountRaw": "10000",
+    "amountUSDC": "0.01",
+    "asset": "0x1c7D4B196Cb0C7B01d743Fbc6116a902379C7238",
+    "recipient": "0xbCea84Ed1DaFbb59AaF9797Cb4170394db688d34"
+  },
+  "childBalanceRaw": "240000",
+  "retryChargedAgain": false,
+  "checks": [
+    "Root and child are exact EIP-1167 proxies; child controller binding is correct and cannot be reinitialized",
+    "Official x402 SDK exact scheme verifies ERC1271 vault and settles Circle USDC on public Sepolia",
+    "HTTP402 payment-required → signed request → paid research response",
+    "Companion independently checks canonical Transfer and AuthorizationUsed receipt events",
+    "Recreated purchase handler returns cached result without another charge"
+  ],
+  "limitations": [
+    "Controlled loopback research seller with the test owner as recipient, not an independent commercial merchant",
+    "PAY ceilings are per payment; service allowlist is enforced by companion, not an onchain recipient allowlist",
+    "USDC Transfer events are not part of the controller-only MultiBaas history; payment receipt is the separate evidence",
+    "Root and researcher retain remaining demo capital for UI inspection"
+  ],
+  "vaultArchitecture": "eip1167",
+  "implementation": "0xD1f801BeccF97efF6AAd63EE90688B660F30E522",
+  "gas": {
+    "childOperator": "0xdf03a64De0bAdE75F6635Ee892f0D12611D2B28e",
+    "childOperatorEthBalanceWei": "0",
+    "facilitator": "0xbCea84Ed1DaFbb59AaF9797Cb4170394db688d34"
+  }
+}

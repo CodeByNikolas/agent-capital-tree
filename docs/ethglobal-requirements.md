@@ -68,26 +68,28 @@ Both tiers have the same qualification requirements:
    of code. The prize page says missing requirements may be reviewed and
    audited before winners are finalized.
 
-The current Uniswap form asks for the participant’s first name, email, Telegram
+The form inspected during the original research asked for the participant’s first name, email, Telegram
 handle, hackathon, project completion, project description, whether it is
 AI-powered/agentic, whether Uniswap was integrated, time to first integration,
 documentation/support ratings, continuation plans, support used, and legal
 consent. The team must supply these personal and experience fields; they are
 not repository evidence.
 
-## Static repository compliance audit
+The user subsequently reported submitting the form and that no URL field was requested. Keep FEEDBACK.md public; the prize brief and the form experienced by the user differ on this field. We have not independently verified a submission receipt.
+
+## Static repository compliance audit — updated 27 September 2026
 
 This is a repository-only check; it cannot prove an authenticated dashboard
 submission or an external form delivery.
 
 | Requirement | Evidence in this checkout | Status / gap |
 | --- | --- | --- |
-| Public open-source GitHub repository | `README.md:56` points to `https://github.com/CodeByNikolas/agent-capital-tree`; the remote is public and the `main` branch is published. | Pass on the checked public repository. |
-| Uniswap integration | `README.md:29`, `README.md:46`, `FEEDBACK.md:5-31`, and the linked contracts/evidence describe the fixed v4 pool, swaps, LP lifecycle, and vault custody. | Static evidence present; partner judges still decide eligibility. |
+| Public open-source GitHub repository | `README.md` points to `https://github.com/CodeByNikolas/agent-capital-tree`; the remote is public and the `main` branch is published. | Pass on the checked public repository. |
+| Uniswap integration | `README.md`, `README.md`, `FEEDBACK.md`, and the linked contracts/evidence describe the fixed v4 pool, swaps, LP lifecycle, and vault custody. | Static evidence present; partner judges still decide eligibility. |
 | `FEEDBACK.md` exists | `FEEDBACK.md` is tracked and contains integration findings and validation evidence. | Pass. |
-| Uniswap feedback form completed with `FEEDBACK.md` link | `FEEDBACK.md:3` and `FEEDBACK.md:37` explicitly say the form has not been submitted; `STATUS.md:33` confirms this. | **Open external action.** Submit the form and include the public `FEEDBACK.md` URL. |
+| Uniswap feedback form | The user reported completing the form; no URL field was requested. Public feedback is in `FEEDBACK.md`. | User-reported complete; no independent submission receipt recorded. |
 | README points to relevant contracts and exact lines | The Uniswap row in `README.md` links to the controller swap gate and vault swap/LP implementations with GitHub line anchors. | Pass for the Uniswap integration; verify anchors after later contract edits. |
-| ETHGlobal project entry | `README.md:72` and `STATUS.md:33` explicitly say the ETHGlobal entry has not been submitted. | **Open external action.** Submit title, description, repository, selected partners, and required integration feedback in the Hacker Dashboard. |
+| ETHGlobal project entry | Current deployment, README, TEAM.md and integration evidence are ready. No authenticated entry confirmation is recorded here. | External status unverified; confirm the entry and selected partners in the Hacker Dashboard. |
 | Partner selection and integration explanation | The repository explains the Uniswap integration, but no dashboard submission record exists in the checkout. | **Unverified until the ETHGlobal form is submitted.** Select Uniswap as one of at most three partners and provide its requested explanation/comments. |
 | AI-use attribution | `docs/ai-use.md` maps AI assistance to contracts, packages, frontend, scripts, tests and documentation. | Repository disclosure present; repeat or link it in the ETHGlobal form. |
 | Spec-driven artifact disclosure | `PLAN.md` and `docs/ai-use.md` identify tracked planning work, but private prompts/transcripts are not public. | **Needs a final submission audit.** Include any additional secret-free prompts/spec artifacts required by the form. |

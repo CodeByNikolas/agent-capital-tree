@@ -1,12 +1,20 @@
 // The walkthrough keeps the selected vault or explicit illustrative preview.
 export interface TourContext { vault: string; preview?: boolean; }
 export const tourSteps = [
-  { path: "/", title: "Read the balances", caption: "USDC and the valueless DEMO-USD test asset are separate. A node's authority does not prove that an agent process is running." },
-  { path: "/tree", title: "Inspect a node", caption: "Select a node to inspect its balance, capabilities and inherited limits. The tree has at most three levels." },
-  { path: "/activity", title: "Check indexed activity", caption: "MultiBaas indexes capital and policy events. Read the coverage and index status before following a transaction receipt. Preview records are illustrative." },
-  { path: "/applications", title: "Review applications", caption: "Uniswap positions and x402 services require the relevant capability. DEMO-USD has no monetary value. Payment receipts are separate from controller history." },
-  { path: "/setup", title: "Review owner controls", caption: "The owner funds the root and authorizes a local operator. Revocation stops management; funds remain in the vault until a separate recovery action." },
+  { path: "/", title: "Overview of a real vault",
+    caption: "Read current Sepolia balances and permissions. A valid mandate does not prove that an agent process is running." },
+  { path: "/tree", title: "Inspect the capital tree",
+    caption: "Select a vault to inspect its ENS name, capital and permissions. New children receive separate custody and may only narrow their parent's mandate." },
+  { path: "/agent-activity", title: "Curvegrid indexed activity",
+    caption: "MultiBaas indexes this controller's events. Totals cover loaded events only; follow the receipt links and check the coverage boundary." },
+  { path: "/uniswap", title: "Bounded Uniswap v4",
+    caption: "Inspect this vault's LP positions. USDC and valueless DEMO-USD are separate assets; their test pool price is not a dollar valuation." },
+  { path: "/payments", title: "x402 payment receipts",
+    caption: "This page shows settlements from the current deployment. Earlier prototype receipts are not imported; preview records are illustrative." },
+  { path: "/setup", title: "Owner control and runtime",
+    caption: "The owner funds the vault and authorizes an operator. Owner recovery is independent of ENS and the indexer. Viewing the demo neither starts an agent nor signs a transaction." },
 ] as const;
+
 export const tourStepCount = tourSteps.length;
 export function clampStep(step: number | null | undefined): number {
   if (!step || !Number.isFinite(step)) return 1;

@@ -1,10 +1,77 @@
+## Shared capital limit and real-worker onboarding � 27 September 2026
+
+- Implemented explicit shared-limit/funding consent, persistent setup/test identity, automatic continuation, root/generation binding, receipt/event verification and separate gas diagnostics. Confirmed request: 10 Test-USDC shared across the tree, up to 10 Test-USDC new funding, 0.02 Test-USDC child test. Existing private keys and gas were preserved.
+- Added contract-enforced limited roots. Internal transfers do not multiply capital; external token donations above the cap block delegation. Limited roots currently support delegate/restrict/reclaim only; trading/payment accounting is not included.
+- The default Kanoki MCP now exposes 22 tools including native worker preflight and real spawnChild through the existing isolated runtime. No per-child owner signature is needed within granted authority; actual worker startup requires the project-provisioned host. A vault allocation is never reported as a started worker.
+- Validation: 39 contract tests, 22 plugin tests, 19 focused Linux runtime tests, controlled wallet adapter checks, and merged production web build passed. Fresh installed plugin read the five-vault current kanoki.eth tree at Sepolia block 11789344. Actual getWorkerSetup returned unavailable/workerStarted false. No financial transaction or inference run was submitted.
+- Integrated current remote main including kanoki.eth and native macOS capital signing; regenerated the distributed bundle. Old pending agentcapitalvault.eth enrollment remains preserved in its original private controller domain, not silently migrated.
+- OPEN: deploy/verify the new limited controller and authorized namespace, publish its aligned web/MCP manifest, provision the isolated native worker host, safely reattach the existing funded operator if continuing the old enrollment, then obtain wallet signatures and complete the real child/worker E2E. The project responsible person accepted deployment ownership. See [release handoff](docs/shared-capital-limit-release.md).
+
+## Overview vault ENS — 27 September 2026
+
+- The Overview/Setup funding section now displays the full vault ENS name alongside its contract address. Both have independent copy buttons.
+- Production build/TypeScript and the background-refresh browser regression passed locally, including ENS/address clipboard checks and mobile overflow. Frontend source `7b7d9d1` is live at https://kanoki-app.vercel.app in READY deployment `dpl_9YZCtpvvNpd8R5AgZFi8ro8ic14a`. Public background-refresh/clipboard, wallet-session, persistent-shell and live demo tests passed. Later release-note commits do not change the deployed frontend.
+
+## Native macOS capital signing — 27 September 2026
+
+- The standalone capital MCP now accepts macOS alongside Linux/WSL. Private owner/mode/symlink checks remain enforced; the separate autonomous Docker-worker stack is not included in this support claim. The existing system-browser adapter uses /usr/bin/open on macOS.
+- Reused the encrypted operator keystore and signing implementation. New tests exercise actual EIP-1559 transaction and USDC typed-data signatures, signer recovery after reload, and startup of the packaged capital MCP without provider credentials. Existing onboarding/recovery and private-permission tests now run on Darwin too, using canonical temporary paths to account for macOS filesystem aliases.
+- Local validation: 13 focused runtime tests and 22 plugin tests passed on Linux. Native macOS CI passed on Apple Silicon (macos-15-arm64) and Intel (macos-15-intel): each ran 13 runtime tests and 22 plugin tests with no failures or skipped tests. Evidence: https://github.com/CodeByNikolas/agent-capital-tree/actions/runs/36277933910, source `1675b18`. Fresh macOS browser-wallet/onchain financial E2E remains a separate open acceptance gate.
+
 ## MCP validation and concurrent onboarding review — 27 September
+
+## Funding address, pending operator and quiet refresh — 27 September 2026
+
+- Overview and Setup show the full, copyable root-vault contract address and explain direct Circle Sepolia faucet funding. Root 7 was independently read at block 11789217: all eight policy capabilities are stored, its operator is still zero, authorized capabilities are zero, and its vault holds 20 Test-USDC. No wallet transaction was submitted. UI now distinguishes policy limits from executable authority and links to operator authorization.
+- Routine tree/history/payment polling keeps loaded content visible. Initial reads and vault switches retain skeletons; read failures remain visible and disable wallet actions. The former whole-page loading transition reproduced in the browser before the fix. History pagination no longer replaces existing rows with skeletons.
+- MultiBaas name, checkpoint lag and detailed provenance are displayed on Curvegrid. Other activity pages retain a coverage/status link and an explicit error if history cannot refresh.
+- Checks: production build/TypeScript; new background-refresh regression on Overview, Activity, Uniswap, x402 and Curvegrid; full-address clipboard and mobile overflow checks; pending-operator setup/deep-link and mandate checks; persistent-shell desktop/mobile regression; nine-route initial skeleton/layout regression. Tests replay current public read responses with controlled latency, without financial writes or inference.
+- Published frontend source `86ec1ef`: Vercel `dpl_zyfj48iEM8KrKij6MLZ7Qwpxgpf6` is READY at https://kanoki-app.vercel.app. Production background-refresh/funding/authority, wallet-session, persistent-shell and real five-vault demo browser checks passed. Subsequent release-note commits do not change the deployed frontend.
+
 
 - Connected MCP validation and live tree read passed at Sepolia block 11789135. The session was unselected with no local signer and correctly reported not ready for writes. Plugin tests passed 22/22; keyless STDIO lookup/error/image tests passed at block 11789139; controlled wallet onboarding tests and plugin/runtime builds passed before concurrent onboarding edits.
 - The subsequent WSL runtime run saw concurrent source changes: 31/35 passed. Failures were obsolete budget/consent fixtures, a source/build mismatch, and the existing 10-second CLI startup timeout. This is not acceptance of the new onboarding implementation.
 - Reproduced a new continuation target-binding issue: readiness can report true for selected root 5 while the saved setup identifies root 4. Review also calls for generation-bound completion, terminal polling states, consistent snapshots and verified deployment compatibility. Findings and acceptance gates: [MCP onboarding review](docs/mcp-onboarding-review-2026-09-27.md).
 - Follow-up: workspace typecheck failed in the web package because the new capital-limit functions are absent from its ABI. Live block 11789212 confirmed a local-MCP/public-app controller mismatch (`0x7eDFa3D484d64b6bA3b5b2bcef51147E57133FFB` versus `0xeB2041B486D66aB91140FFcF54B66513D8eC40c8`); the local controller's new limit read did not succeed. Both block public onboarding acceptance.
+- Fetch clarified the mismatch: remote main `a9594c7` already uses the public app's Kanoki controller; this checkout and connected MCP are stale. The evidence above applies to the older local baseline plus concurrent edits, not the latest release. Integrate current main and reconnect/retest the MCP without replacing private profiles.
 - No live financial transaction, owner signature, root selection or private-profile replacement was performed. Concurrent implementation and documentation edits were preserved; public signed onboarding/test acceptance remains open.
+
+# Current release: Kanoki live demo and wallet controls
+
+## Documentation audit — 27 September 2026
+
+- Updated README, local setup, package guides, product/design plan, handoff, release/onboarding checklists, acceptance and partner feedback to the current Kanoki namespace and five-vault demo. Marked pre-cutover x402/ENS proposals and financial proofs as historical; current native-worker evidence remains distinct from current demo evidence. Recorded the user's Uniswap-form submission report without inventing an independent receipt or ETHGlobal submission.
+- Production frontend source remains 8e50f9f, deployment dpl_9ZT2SeFt6FmSPjM7o3XhyE7KjtGF (READY), alias https://kanoki-app.vercel.app. Public wallet-session, shell and five-vault demo browser checks passed on that deployment. These documentation/test-runner updates do not change the web app.
+- Exercising the setup commands found obsolete manifest.token reads in the install/chat verifiers and a hard-coded child ID from a retired tree. The verifiers now compare the full current token pair and resolve the selected child from the live tree. They do not request financial writes.
+- Validation passed: mcp:doctor; fresh temporary-profile marketplace install with 19 tools and five live nodes (Codex CLI 0.154.0); three-tool keyless chat verification including ENS/vault resolution, setup/error graphics and live reads. Local Markdown link checks and git diff --check also passed. No financial transaction or inference request was made.
+
+## Public multi-vault demo and wallet sign-out — 27 September 2026
+
+- Wallet address now opens a dialog with Sign out and a separate explorer link. App disconnection survives provider account events and reloads until an explicit Connect. Removed the normal Sepolia badge; the actionable wrong-network switch remains. How it works is shown only in the dashboard, with the live-demo entry retained on onboarding.
+- Extended the existing capital.kanoki.eth demo using its existing test tokens: Researcher (node 3), Trader (4), Liquidity (5), and Risk check (6, under Trader). Independent operator keys remain outside Git. No extra token funding or root re-authorization was performed.
+- Real public Sepolia proof: Researcher paid 0.010 Test-USDC through HTTP402/ERC-1271; retry returned the same receipt without another charge. Trader swapped 0.010 USDC; Liquidity opened LP NFT 39890 and collected fees; Risk check's per-action ceilings were narrowed to 0.020. Over-budget, wrong-capability and wrong-operator calls were rejected. Public receipts and checks: deployments/kanoki-payment.json and deployments/kanoki-demo-e2e.json. Existing root LP NFT 39889 is retained.
+- All new ENS registries and vault proxies are explorer-verified. MultiBaas returns the new controller transactions with canonical receipt verification; USDC payment evidence remains separate. The indexer's reported checkpoint can lag the events it returns; the UI preserves that coverage qualification.
+- Fixed the x402 financial test's obsolete manifest.token reference to use the current reviewed USDC entry in manifest.tokens. The new bounded demo runner journals signed transactions, reuses keys/operation IDs and accounts for gas transfers without double-counting their later consumption.
+- Verification: production web build/TypeScript; 38 contract tests plus 71 workspace tests (36 runtime, 22 plugin, 11 MultiBaas, 2 SDK); live 19-tool MCP reads/disabled-write guard; desktop/mobile wallet session, navigation, owner filtering, guided setup, guide and nine-route skeleton tests. The public API/browser demo journey verifies five vaults, two LP positions, x402 receipt and all new indexed transactions. Shell identity assertions wait for the connected wallet so they measure hydrated navigation.
+- Scope: real on-chain demo, protocol, indexer, MCP reads and dashboard. No autonomous model worker was launched; no fresh external jury-machine wallet onboarding was performed. The controlled research seller is local and is not left running. Vercel publication follows the checked main commits.
+
+## Dashboard shell and controls — 27 September 2026
+
+- Moved dashboard rendering into a shared App Router route-group layout. Client navigation preserves sidebar/header DOM, wallet/theme state and the loaded vault snapshot; URL actions still update the selected control mode. Existing query and section validation remains in place.
+- Kept the header sticky with a non-shrinking height. Root creation is right aligned and green; the wallet address is a green Sepolia explorer link; the theme toggle has an explicit border/background. Deployment and integration status is always expanded.
+- Verification: production build/TypeScript; new desktop/mobile shell regression (original version failed on header remount), live snapshot navigation with one tree read and browser Back; nine-route skeleton/layout regression; owner-only root suggestions; six-step tour; guided setup browser. No wallet transactions. Vercel publication follows the checked main commit.
+
+Concurrent main updates are integrated: unbound capital-MCP startup, help links on all pages, tour context preservation, restart-safe guided wallet setup and the standalone 19-tool plugin. The bundled manifest is rebuilt for Kanoki.
+
+- Registered `kanoki.eth` on ENSv2 Sepolia (not Ethereum mainnet); current controller `0xeB2041B486D66aB91140FFcF54B66513D8eC40c8`, ProjectRegistry `0x5bbCfab760376d2E419FC42DA63fA4C5e434DBF6`.
+- Current `deployments/usdc-sepolia.json` now points exclusively to Kanoki. The retired manifest is preserved at `deployments/history/agentcapitalvault-prototype-sepolia.json`. Web and capital MCP no longer offer the previous recovery deployment flag. Earlier evidence below is historical, not proof of current-controller transactions.
+- Registered the MultiBaas contract/alias `capitalcontrollerkanoki` at block 11788886 before demo activity. Production controller-label configuration updated; the five new indexed events were verified against receipts.
+- Created `capital.kanoki.eth`, root 1, vault `0x42d383397ad51B56f0Fa55c3Aa29b85659D279cB`, funded with 2 Test-USDC and 2 DEMO-USD, and opened Uniswap LP NFT 39889. Existing pool/token contracts are reused; old vault balances were neither recovered nor migrated. New x402 history is empty; prior payment receipts remain historical evidence.
+- All new contracts and the root registry are source-verified; the vault's EIP-1167 implementation association is verified. Public registration/deployment/funding/LP receipts are in the current manifest. An independent wallet's root creation was successfully simulated without a deployment signature.
+- Restored Overview How it works with hide/reopen and repaired the obsolete numeric-root tour: all six steps use the current ENS name. Sidebar lookup, action button and owned-root suggestions stack vertically on desktop and mobile. The regression reproduced a 26px-wide input after discovery; the fixed production test checks width and non-overlap after wallet changes.
+- Current setup docs, demo links, MCP prompts and seller ENS identity use Kanoki. Namespace ownership and its administrative dependency are explained in `docs/ens-namespace.md`.
+- Signing-profile discovery now skips unrelated directories without a domain file; existing signing-profile permission checks remain strict (regression included).
+- Checks: 38 contract tests; 36 runtime tests; 22 plugin tests; six-step live tour; production web build/TypeScript; nine-route skeleton/layout suite; owner-filtering/sidebar regression; live Curvegrid report; live MCP catalog (19 tools), current-root reads and disabled-write guard using an isolated temporary profile. No autonomous model worker or new x402 settlement was run for this cutover.
 
 ## Guided Kanoki onboarding — 26 September
 

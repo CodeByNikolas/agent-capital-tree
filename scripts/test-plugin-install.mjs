@@ -32,7 +32,7 @@ const deployment = await deploymentResponse.json();
 assert.equal(deployment.id, 'usdc');
 assert.equal(deployment.chainId, manifest.chainId);
 assert.equal(deployment.controllerAddress?.toLowerCase(), controller.toLowerCase());
-assert.equal(deployment.tokenAddresses?.[0]?.toLowerCase(), manifest.token.address.toLowerCase());
+assert.deepEqual(deployment.tokenAddresses?.map(address => address.toLowerCase()), manifest.tokens.map(token => token.address.toLowerCase()));
 await chain.verifyDeployment();
 
 const profile = await mkdtemp(join(tmpdir(), 'act-plugin-install-'));
@@ -102,7 +102,7 @@ try {
   assert.equal(tree.source.chainId, manifest.chainId);
   assert.ok(BigInt(tree.source.blockNumber) >= BigInt(manifest.contracts.CapitalController.blockNumber));
   assert.ok(tree.nodes.length > 0);
-  assert.equal(tree.tokens[0].toLowerCase(), manifest.token.address.toLowerCase());
+  assert.deepEqual(tree.tokens.map(address => address.toLowerCase()), manifest.tokens.map(token => token.address.toLowerCase()));
   assert.equal(result.content[2].type, 'image');
   assert.equal(result.content[2].mimeType, 'image/png');
   assert.match(result.content[1].text, /Mermaid fallback:/);

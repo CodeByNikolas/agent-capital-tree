@@ -1,34 +1,27 @@
 # Kanoki — release handoff
 
-Updated 26 September 2026. Read PLAN.md and the latest STATUS.md entries first. Older entries retain historical evidence.
+Updated 27 September 2026. Read [PLAN.md](PLAN.md) for current product decisions and the latest [STATUS.md](STATUS.md) entries for evidence. Earlier dated entries describe their original deployments.
 
-## Ownership and baseline
+## Published baseline
 
-- Publish from `main` to **https://kanoki-app.vercel.app/**. The user assigned deployment to the project owner. This machine's Vercel account (`ramiezze`) sees only `raglibol`; do not deploy this release to the old silk alias.
-- The user selected **kanoki.eth** for onboarding and confirmed another agent owns its implementation. Leave that agent's runtime, wallet, namespace and UI work intact. A requested name is not proof of an active root, deployed controller or wallet authorization.
-- `fc7c63c` includes restored guides; `4da1bc7` includes unbound 23-tool MCP startup. Both are on remote main. [CI for fc7c63c passed](https://github.com/CodeByNikolas/agent-capital-tree/actions/runs/36273240439).
-- The canonical website returned HTTP 200 and the Kanoki title. This does not establish its deployed source commit.
-- Other agents still edit the primary checkout. Use a separate worktree; never stage, reset or discard their files.
+- Work on `main`; preserve concurrent edits and unique worktree/branch history.
+- Production: **https://kanoki-app.vercel.app/**. Source `8e50f9f` is deployed as `dpl_9ZT2SeFt6FmSPjM7o3XhyE7KjtGF`, READY. Later documentation-only commits need not change the frontend build.
+- The local Vercel link was verified for project `agent-capital-tree`, team `tumblockchains-projects`. Deployment is possible from this checkout; Git push alone does not deploy. Use the [release checklist](docs/release-checklist.md).
+- Current ENSv2 Sepolia namespace: `kanoki.eth`. Controller: `0xeB2041B486D66aB91140FFcF54B66513D8eC40c8`. This is not ownership of the mainnet ENS name.
+- `capital.kanoki.eth`, root 1, contains five vaults: Capital, Researcher, Trader, Liquidity and Risk check (under Trader). Root and Liquidity own LP NFTs 39889 and 39890. Current proof: [demo E2E](deployments/kanoki-demo-e2e.json), [x402 settlement](deployments/kanoki-payment.json).
+- Default installed capital MCP: 19 tools and automatic persisted wallet onboarding. Separate modes: three-tool keyless reader and 17-tool configured worker bridge. Child vault creation does not launch an autonomous model worker.
+- Wallet address opens Sign out/explorer controls. App sign-out survives reloads. Onboarding links to the live demo; How it works is on Overview. Shared sidebar/header persist across navigation; header stays visible while scrolling.
 
-## Remaining sequence
+## Completed checks and remaining work
 
-1. Finish and review the kanoki.eth implementation. Preserve explicit root selection, controller/root domain checks, wallet approval, revocation guards and private journals. Run Linux tests and a production build on the final commit.
-2. The project owner deploys that exact main commit. Record source SHA, deployment ID and alias in STATUS.md; follow [the release checklist](docs/release-checklist.md).
-3. Check the published routes, desktop/mobile, both themes, guides, ENS lookup, separate asset balances, receipts and index coverage. Preview GIFs are illustrative only.
-4. The onboarding owner coordinates real wallet and capital MCP acceptance against the confirmed active root. Do not repeat completed seed/payment/worker transactions. No extra deposit or migration is authorized by this handoff.
-5. Complete independent jury installation and marketplace financial writes. Desktop/Claude Code financial flows, native macOS signing, ChatGPT-login worker E2E and an intentionally induced live MultiBaas outage remain unverified. Native API-key worker payment/swap evidence is complete within its documented same-host scope.
-6. Finish ETHGlobal and Uniswap feedback submissions once final release links are ready. Team details are complete in TEAM.md and README.md. Record actual submission receipts.
+The latest release passed 38 contract tests, 71 workspace tests, production build/TypeScript, live MCP reads and desktop/mobile browser checks on the published app. The real demo exercises nested allocation, x402 settlement and idempotent retry, Uniswap swap, LP opening/fee collection, tightened limits and rejected unauthorized calls. All new controller transactions appear in MultiBaas; USDC settlements use separate verified receipts.
 
-## Cleanup audit
+Remaining acceptance is scoped in [ACCEPTANCE.md](ACCEPTANCE.md): fresh external-machine wallet onboarding, marketplace-installed financial writes, desktop/Claude Code financial flows, native macOS signing and ChatGPT-login financial E2E. The earlier native API-key worker proof is historical, from another controller; no new autonomous worker was launched for the Kanoki demo. Controlled UI error tests do not prove a deliberately induced live MultiBaas outage.
 
-- Removed local `defer/merge-main-into-rami` after confirming `accae4c` is an ancestor of main.
-- `.kanoki-main` contains staged changes. `.kanoki-release` contains untracked image artifacts. Neither may be discarded merely because a redesign was merged.
-- `backup/main-wip-2`, `work/rami`, `wip/mcp-inflight` and `work/kanoki` retain commits not patch-equivalent to main. Some changes were integrated with later edits; full redundancy is not proven. Preserve these refs until content review resolves the remaining differences.
-- The MCP owner already removed the previous MCP worktree and local pnpm cache, as recorded in STATUS.md. Do not repeat obsolete cleanup instructions.
-- Remove worktrees with `git worktree remove` only after unique work is preserved and no agent uses them. No forced removal is needed for release.
+The user reported submitting the Uniswap feedback form and reported that it did not request a URL. Team details are in [TEAM.md](TEAM.md) and README. ETHGlobal entry, partner selection and submission receipts still need independent confirmation; deployment is not submission.
 
-## Boundaries
+## Continuation boundaries
 
-Historical `root-agent.agentcapitalusdc.eth` (old controller, root 4) is permanently revoked according to the last recorded chain read. Its local profile was separately deleted by its owner. It is not the next demo target. Numeric root IDs never identify a controller by themselves.
+Inspect live state and transaction journals before any new financial test. Completed seed, payment and demo runners are not presentation commands. Historical prototype roots, including revoked `root-agent.agentcapitalusdc.eth`, are excluded from the current dashboard/MCP; numeric root IDs alone do not identify a deployment.
 
-Keep keys, credentials, private profiles and transcripts outside Git. Capital-mode child creation does not launch an autonomous worker. Show every MCP dashboard image using its exact returned Markdown link, or its supplied Mermaid fallback if the host cannot render it.
+Keep private keys, credentials, profiles and transcripts outside Git. Preserve other contributors' files and worktrees. Show MCP graphics using their returned image links or supplied Mermaid fallback. For deployment steps and read-only verification commands, use the release checklist.

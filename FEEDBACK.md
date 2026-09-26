@@ -20,9 +20,9 @@ Source: [CapitalController](contracts/src/CapitalController.sol), [CapitalVault]
 
 ## Validation status
 
-The current vaults are non-upgradeable EIP-1167 clones. All 38 contract tests pass, including swaps and the full LP lifecycle through proxy custody. The Circle Sepolia fork additionally verifies x402 signatures and owner recovery through clones. The public root owns LP NFT 39866. Full child-spawn gas decreased from 5,914,316 to 3,556,781 (39.86%); ENS registries remain separate full deployments. [Gas receipts](deployments/usdc-proxy-gas.json) and the current manifest provide the onchain evidence and Etherscan verification links.
+The current vaults are non-upgradeable EIP-1167 clones. All 38 contract tests pass, including swaps and the full LP lifecycle through proxy custody. The Circle Sepolia fork additionally verifies x402 signatures and owner recovery through clones. The current Kanoki root owns LP NFT 39889; its Liquidity child owns NFT 39890. The five-vault demo also records a Trader swap and fee collection: [current E2E evidence](deployments/kanoki-demo-e2e.json). Full child-spawn gas decreased from 5,914,316 to 3,556,781 (39.86%); ENS registries remain separate full deployments. [Gas receipts](deployments/usdc-proxy-gas.json) and the current manifest provide the onchain evidence and Etherscan verification links.
 
-The new USDC/DEMO-USD version passed a local Sepolia fork with pool initialization, LP opening/closure, x402 payment and complete remaining-capital recovery. Closing the LP left1rawUSDC unit of rounding dust. [Current fork evidence](deployments/usdc-x402-fork.json) records exact outcomes; current public deployment status is in STATUS.md.
+An earlier USDC/DEMO-USD deployment passed a local Sepolia fork with pool initialization, LP opening/closure, x402 payment and complete remaining-capital recovery. Closing the LP left1rawUSDC unit of rounding dust. [Historical fork evidence](deployments/usdc-x402-fork.json) records exact outcomes; current public deployment status is in STATUS.md.
 
 The following reports document the earlier ACT-token implementation, not a compatibility mode in the current UI:
 
@@ -36,4 +36,4 @@ A separate real-model run created root 2, child 3 and grandchild 4 through the b
 
 The later [Root5 Codex run](deployments/root-codex-e2e.json) demonstrates swap, LP opening/increase, nonzero fee collection and delegated sub-agents. The published app and MetaMask then performed [owner LP closure](deployments/browser-owner-close.json) and [complete owner recovery](deployments/browser-owner-recovery.json). All four Root5 vaults are revoked and empty, with the seed pool preserved. These are separate real model and browser flows; independent external-user onboarding remains unproven. The [demo guide](docs/jury-demo.md) provides source-line links and a read-only walkthrough.
 
-The required [Uniswap Developer Feedback Form](https://developers.uniswap.org/hackathon-feedback) still needs to be submitted with this file's public GitHub URL after the implementation and feedback are final.
+The user reported submitting the [Uniswap Developer Feedback Form](https://developers.uniswap.org/hackathon-feedback); the form did not request a URL. This public FEEDBACK.md remains available for reviewers. Form submission is user-reported; ETHGlobal entry/partner selection are separate and still need confirmation.

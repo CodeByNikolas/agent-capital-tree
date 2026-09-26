@@ -34,7 +34,7 @@ try {
   assert.match(result.content[0].text, /```text\n/);
   assert.equal(tree.rootId, manifest.bootstrap.rootId);
   assert.equal(tree.source.chainId, manifest.chainId);
-  assert.equal(tree.tokens[0].toLowerCase(), manifest.token.address.toLowerCase());
+  assert.deepEqual(tree.tokens.map(address => address.toLowerCase()), manifest.tokens.map(token => token.address.toLowerCase()));
   assert.ok(tree.nodes.length > 0);
   assert.equal(result.content[2].type, 'image');
   assert.match(result.content[1].text, /Mermaid fallback:/);
@@ -43,11 +43,13 @@ try {
   const addressed = byAddress.structuredContent;
   assert.equal(addressed.selectedNodeId, tree.nodes[0].id);
   assert.equal(byAddress.content[2].type, 'image');
-  const byChildEns = await client.callTool({ name: 'getTree', arguments: { query: tree.nodes.find(node => node.id !== tree.rootId).ensName } });
+  const child = tree.nodes.find(node => node.id !== tree.rootId);
+  assert.ok(child, 'The public demo must contain a child vault');
+  const byChildEns = await client.callTool({ name: 'getTree', arguments: { query: child.ensName } });
   assert.equal(byChildEns.isError, undefined, byChildEns.content?.[0]?.text);
   const childTree = byChildEns.structuredContent;
-  assert.equal(childTree.rootId, '1');
-  assert.equal(childTree.selectedNodeId, '2');
+  assert.equal(childTree.rootId, tree.rootId);
+  assert.equal(childTree.selectedNodeId, child.id);
   assert.equal(byChildEns.content[2].type, 'image');
   const byEns = await client.callTool({ name: 'getTree', arguments: { query: tree.nodes[0].ensName } });
   assert.equal(byEns.isError, undefined, byEns.content?.[0]?.text);

@@ -25,7 +25,7 @@ export const mcpTools: readonly McpTool[] = [
   {
     name: "getCapitalActivity",
     description:
-      "Read paginated MultiBaas-indexed activity, each entry independently re-checked against the canonical Sepolia receipt.",
+      "Read paginated indexed activity, each entry independently re-checked against the canonical Sepolia receipt.",
     readOnly: true,
   },
   {

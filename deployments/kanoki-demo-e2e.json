@@ -1,0 +1,108 @@
+{
+  "status": "confirmed",
+  "controller": "0xeB2041B486D66aB91140FFcF54B66513D8eC40c8",
+  "rootId": "1",
+  "startedAt": "2026-09-26T22:15:09.831Z",
+  "deadline": "1790468100",
+  "transactions": {
+    "spawn-trader": {
+      "transactionHash": "0x1f8292fd1ca4754dff64b611c1741ec110c22226c42788fcd46a0eca6ca0f808",
+      "blockNumber": 11789092,
+      "gasCostWei": "3916021126814887",
+      "valueWei": "0"
+    },
+    "spawn-liquidity": {
+      "transactionHash": "0xf49e6e9d06816313e03ac382f9c53dbf6bb7524b0c3652147d9f2341c029764a",
+      "blockNumber": 11789095,
+      "gasCostWei": "3826116940926336",
+      "valueWei": "0"
+    },
+    "gas-trader": {
+      "transactionHash": "0x9dcdff5cc2afcc5614a4cba2d54a368963482fd2f438a9f106650f96c8a196e6",
+      "blockNumber": 11789097,
+      "gasCostWei": "23120617884000",
+      "valueWei": "9000000000000000"
+    },
+    "gas-liquidity": {
+      "transactionHash": "0x39151f74bc3cb5493aa74b9626130e114a0eca3ce3741da41f2de1979546f74d",
+      "blockNumber": 11789100,
+      "gasCostWei": "22539430347000",
+      "valueWei": "2000000000000000"
+    },
+    "spawn-risk-check": {
+      "transactionHash": "0xf66c7a64265b12193abbf401917d271bf53e4eaa34e4b4e356c9025ead5ef19f",
+      "blockNumber": 11789105,
+      "gasCostWei": "3784120939693563",
+      "valueWei": "0"
+    },
+    "open-liquidity": {
+      "transactionHash": "0x9914d45ee4867d42c044b9e77bc089e3db3e499657cbc64685dba3cfdc214a06",
+      "blockNumber": 11789107,
+      "gasCostWei": "614168023361580",
+      "valueWei": "0"
+    },
+    "swap-trader": {
+      "transactionHash": "0x934d129b2f9a06fa151b116f234bec09352eec69699fcf71c4a59ecb7c4749dc",
+      "blockNumber": 11789110,
+      "gasCostWei": "297942767398530",
+      "valueWei": "0"
+    },
+    "collect-liquidity-fees": {
+      "transactionHash": "0xaad64096d237e9f8fe7735a4395e3347c472865945458e3765ef7e34ea399bd1",
+      "blockNumber": 11789113,
+      "gasCostWei": "290438122701884",
+      "valueWei": "0"
+    },
+    "tighten-risk-policy": {
+      "transactionHash": "0xd90311f2023d899bbdd41fddc91bb9c3d648a866c7720e050859fe778e240568",
+      "blockNumber": 11789116,
+      "gasCostWei": "211698243748750",
+      "valueWei": "0"
+    }
+  },
+  "checks": {
+    "separateOperators": true,
+    "threeLevelTree": true,
+    "nodeCount": 5,
+    "swapConfirmed": true,
+    "lpTokenId": "39890",
+    "overBudgetRejected": true,
+    "wrongCapabilityRejected": true,
+    "wrongOperatorRejected": true,
+    "nestedPolicyTightened": true,
+    "x402PaymentConfirmed": true
+  },
+  "nodes": {
+    "trader": {
+      "id": "4",
+      "parentId": "1",
+      "vault": "0x698abA4a1BBA0CEA529C3289A1f95EC2920f2727",
+      "operator": "0x47A544aBdc59345E109C27CD66A0DF699C246091"
+    },
+    "liquidity": {
+      "id": "5",
+      "parentId": "1",
+      "vault": "0xA98A6f25682BdCb21E3f021795a73fBD7a15751e",
+      "operator": "0x128cb1F1699dC8Ea3F4fF839afF3bda0DA333181"
+    },
+    "risk-check": {
+      "id": "6",
+      "parentId": "4",
+      "vault": "0x77C1e3Ae32B29f7643cacC630c3211F5564a84Fa",
+      "operator": "0x2865D640E8FFA326cda47B002831D9fa3CEb1A1D"
+    }
+  },
+  "payment": {
+    "transactionHash": "0x85b2089295d1e61473c29459dfc596db83028efd7bd0977278b119dc0b3ec467",
+    "amountRaw": "10000",
+    "amountUSDC": "0.01",
+    "asset": "0x1c7D4B196Cb0C7B01d743Fbc6116a902379C7238",
+    "recipient": "0xbCea84Ed1DaFbb59AaF9797Cb4170394db688d34"
+  },
+  "limitations": [
+    "Real Sepolia test-token transactions; no real-dollar valuation.",
+    "Vault operators are separate local keys. This scenario does not launch autonomous model workers.",
+    "x402 uses a controlled local research seller; payments are verified from USDC receipts, separately from MultiBaas controller events."
+  ],
+  "checkedAt": "2026-09-26T22:21:28.466Z"
+}

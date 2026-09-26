@@ -1,10 +1,10 @@
 # Local companion and MCP setup
 
-This is the Linux/Codex CLI path for the current **Circle USDC deployment on Ethereum Sepolia**.
+Updated 27 September 2026 for **kanoki.eth**, the current Circle USDC deployment on Ethereum Sepolia. Start with the one-time capital setup below; autonomous workers are a separate advanced mode. The [public demo](https://kanoki-app.vercel.app/tree?vault=capital.kanoki.eth) needs no installation or wallet and contains five real vaults, two LP positions and a payment receipt. See [current acceptance](../ACCEPTANCE.md) for the exact tested scope.
 
-Desktop-app environment inheritance and a native macOS runtime have not been independently verified. Independent setup on another person's machine is still an acceptance gate; follow the checks below and report where your environment differs.
+The standalone capital MCP supports native macOS signing. Desktop-app environment inheritance and the full autonomous Docker-worker stack on macOS have not been independently verified. Independent setup on another person's machine is still an acceptance gate; follow the checks below and report where your environment differs.
 
-A same-host acceptance run using the earlier CLIProxyAPI path completed browser setup, funded MCP spawn, x402 payment and Uniswap swap after the fixes recorded in [the acceptance report](../ACCEPTANCE.md). A subsequent native OpenAI API-key run with real `gpt-6-luna` / `high` responses passed funded MCP spawn, x402 payment and Uniswap swap; see [native evidence](../deployments/jury-openai-native.json). ChatGPT-login financial E2E remains unverified. Keep the owner wallet separate from the runtime operator; never import your owner key into the companion.
+On the retired pre-Kanoki deployment, a same-host acceptance run using the earlier CLIProxyAPI path completed browser setup, funded MCP spawn, x402 payment and Uniswap swap after the fixes recorded in [the acceptance report](../ACCEPTANCE.md). A subsequent native OpenAI API-key run with real `gpt-6-luna` / `high` responses passed funded MCP spawn, x402 payment and Uniswap swap; see [native evidence](../deployments/jury-openai-native.json). ChatGPT-login financial E2E remains unverified. Keep the owner wallet separate from the runtime operator; never import your owner key into the companion.
 
 ## Recommended: one-time Kanoki wallet setup
 
@@ -16,9 +16,10 @@ The capital MCP exposes 22 tools. Unconfigured history and purchases are omitted
 
 ### Install once
 
-Supported signing hosts: Linux, or Windows with Node 22+ in the default WSL distribution. Native macOS/Windows signing and independent-laptop wallet E2E are not claimed. From the checkout:
+Supported capital-signing hosts: native macOS and Linux with Node 22+, or Windows with Node 22+ in the default WSL distribution. Native Windows signing and independent-laptop wallet E2E are not claimed. From the checkout (for a new clone, see [checkout commands](#fast-jury-check-read-only-mcp-on-windows-macos-or-linux)):
 
 ```sh
+pnpm install --frozen-lockfile --ignore-scripts
 pnpm --filter @agent-capital-tree/sdk build
 pnpm --filter @agent-capital-tree/multibaas build
 pnpm --filter @agent-capital-tree/plugin build
@@ -27,6 +28,18 @@ pnpm mcp:capital settings --enable-sepolia-writes
 ```
 
 Register the printed command as `kanoki`, or install the bundled `kanoki@kanoki` plugin. Both start the same automatic capital flow. Do not register both in one profile. Existing chats need one reconnect after upgrading the MCP.
+
+On macOS or Linux, register from the checkout with absolute paths (this also handles Homebrew Node not being on a desktop app's PATH):
+
+```sh
+codex mcp add kanoki -- "$(command -v node)" "$PWD/packages/runtime/capital.mjs" stdio --enable-sepolia-writes
+```
+
+macOS signing runs locally through Node.js: no WSL, Docker, CLIProxyAPI or model API key is required by the capital MCP. The encrypted operator key stays under `~/.agent-capital-tree` with owner-only directory/file permissions (0700/0600); the owner wallet stays in your browser. The setup link opens with macOS `/usr/bin/open`. Custom signing-profile paths must be outside the checkout on private local storage, without symlinks; avoid macOS's `/tmp` and `/var` aliases. Reconnect the MCP after updating the bundle. This does not enable the separate autonomous Docker-worker stack on macOS.
+
+Native signing, encrypted key persistence, recovery and packaged MCP tests passed on both Apple Silicon and Intel macOS runners; see [acceptance evidence](../ACCEPTANCE.md#native-macos-capital-signing). These are local-signing and controlled-protocol tests, not a claimed live browser-wallet financial E2E on a user Mac.
+
+On Windows:
 
 ```powershell
 $actScript = (Resolve-Path -LiteralPath 'packages/runtime/capital.mjs').Path
@@ -57,7 +70,9 @@ From the checkout root:
 ```sh
 pnpm install --frozen-lockfile --ignore-scripts
 pnpm --filter @agent-capital-tree/sdk build
+pnpm --filter @agent-capital-tree/multibaas build
 pnpm --filter @agent-capital-tree/plugin build
+pnpm --filter @agent-capital-tree/runtime build
 pnpm mcp:doctor
 pnpm mcp:verify
 pnpm mcp:chat-verify
@@ -65,7 +80,7 @@ pnpm mcp:settings
 
 ```
 
-`mcp:verify` creates a fresh temporary Codex profile, installs the local marketplace plugin, confirms exactly one enabled `capital-tree` MCP and all 17 tools, then calls its `getTree` with writes disabled. The profile is removed afterwards. `mcp:chat-verify` tests the permanent-use STDIO server's three keyless tools (`getTree`, `visualizeTree`, `prepareRootSetup`), including live ENS and vault resolution, data plus PNG from one block, and a bounded browser-wallet setup link. These tests do not send a transaction. `mcp:settings` prints the **actual absolute Node and script paths** for this checkout. `ACT_APP_URL` and `ACT_SEPOLIA_RPC_URL` optionally override public endpoints; neither is a secret.
+`mcp:verify` creates a fresh temporary Codex profile, installs the local marketplace plugin, confirms exactly one enabled `kanoki` MCP and all 19 capital tools, then calls its `getTree` without requesting or submitting financial writes. The profile is removed afterwards. `mcp:chat-verify` tests the permanent-use STDIO server's three keyless tools (`getTree`, `visualizeTree`, `prepareRootSetup`), including live ENS and vault resolution, data plus PNG from one block, and a bounded browser-wallet setup link. These tests do not send a transaction. `mcp:settings` prints the **actual absolute Node and script paths** for this checkout. `ACT_APP_URL` and `ACT_SEPOLIA_RPC_URL` optionally override public endpoints; neither is a secret.
 
 ## Use the read-only MCP in Codex inside the ChatGPT desktop app
 
@@ -93,7 +108,7 @@ The resulting configuration contains only the Node executable and an absolute pa
 
 Open a **new Codex chat** in the ChatGPT desktop app, select this project, type `/mcp` and confirm `kanoki` is enabled. Then ask:
 
-> Use `kanoki.getTree` with `query: "capital.agentcapitalvault.eth"`. Show its graph and report its Sepolia block, observation time, root vault, balances and current authorized actions. Do not use shell or another source.
+> Use `kanoki.getTree` with `query: "capital.kanoki.eth"`. Show its graph and report its Sepolia block, observation time, root vault, balances and current authorized actions. Do not use shell or another source.
 
 The answer should name Sepolia chain `11155111`, the current root ID and a recent block. Always read the current funding and rights from that snapshot: `capital` changed externally from empty to 0.10 Test-USDC with active rights during development. Do not assume an old balance or reuse it for a write test without checking its owner/operator. You can also pass a vault address or numeric root ID. The dashboard cannot inspect the local STDIO session.
 
@@ -127,7 +142,7 @@ This is a local Codex chat, not a normal chat at chatgpt.com. ChatGPT web does n
 
 ## Full agent actions: Linux companion only
 
-The remainder is the Linux/Codex CLI path. On Windows, use WSL2 with Linux-local paths and a working Docker integration; native PowerShell execution of `packages/runtime/cli.mjs` deliberately fails with a WSL2 message. Native macOS and cross-platform Docker-companion onboarding have not been independently verified. These instructions are not a claim that a fresh Judge laptop can already perform financial writes. Desktop-app environment inheritance is also unverified. The Docker worker uses a pinned Linux Codex binary. Keep the owner wallet separate from the runtime operator; never import your owner key into the companion.
+The remainder is the Linux/Codex CLI path. On Windows, use WSL2 with Linux-local paths and a working Docker integration; native PowerShell execution of `packages/runtime/cli.mjs` deliberately fails with a WSL2 message. The autonomous Docker-worker stack on macOS and cross-platform Docker-companion onboarding have not been independently verified. Use the standalone capital MCP above for native macOS signing. These instructions are not a claim that a fresh Judge laptop can already perform financial writes. Desktop-app environment inheritance is also unverified. The Docker worker uses a pinned Linux Codex binary. Keep the owner wallet separate from the runtime operator; never import your owner key into the companion.
 
 ## 1. Prepare the checkout and worker
 
@@ -192,9 +207,9 @@ Choose an exact model available to your account/API project, put it in `models` 
 
 ## 2. Create your root
 
-Open [Setup](https://agent-capital-tree.vercel.app/setup), connect your wallet on **Ethereum Sepolia (chain 11155111)**, and select **Launch a new root vault** (or **Create another root** if another vault is already open). Choose a unique lowercase ENS label and a mandate that includes only the actions and token limits your operator needs; an expiry cannot exceed the project namespace expiry shown by the form. The owner wallet needs Sepolia ETH for creation, funding, and operator binding. Get official test USDC from the [Circle faucet](https://faucet.circle.com/), then use **Fund root** with your owner wallet. DEMO-USD is a separate valueless pool quote; use **Get DEMO-USD** for its one-time faucet claim only if you want to test liquidity positions. Use your own new root for agent tasks; **Open live demo** is someone else's existing tree and is for inspection.
+Open [Setup](https://kanoki-app.vercel.app/setup), connect your wallet on **Ethereum Sepolia (chain 11155111)**, and select **Launch a new root vault** (or **Create another root** if another vault is already open). Choose a unique lowercase ENS label and a mandate that includes only the actions and token limits your operator needs; an expiry cannot exceed the project namespace expiry shown by the form. The owner wallet needs Sepolia ETH for creation, funding, and operator binding. Get official test USDC from the [Circle faucet](https://faucet.circle.com/), then use **Fund root** with your owner wallet. DEMO-USD is a separate valueless pool quote; use **Get DEMO-USD** for its one-time faucet claim only if you want to test liquidity positions. Use your own new root for agent tasks; **Open live demo** is someone else's existing tree and is for inspection.
 
-The browser navigates by ENS name or vault contract address, but the local companion still needs the controller's numeric `rootId`. After creating your root, copy its **root** ENS name or vault address from the dashboard and open `https://agent-capital-tree.vercel.app/api/resolve-root?q=YOUR_ENS_NAME` (URL-encode your value). The JSON response has `rootId`, `nodeId`, `vault`, and `rootVault`; for a root, `rootId` and `nodeId` match. Copy **`rootId`** into the config below. This is an internal onchain controller index, not another wallet or contract. Read the current controller address from [`deployments/usdc-sepolia.json`](../deployments/usdc-sepolia.json); do not use archived deployment manifests.
+The browser navigates by ENS name or vault contract address, but the local companion still needs the controller's numeric `rootId`. After creating your root, copy its **root** ENS name or vault address from the dashboard and open `https://kanoki-app.vercel.app/api/resolve-root?q=YOUR_ENS_NAME` (URL-encode your value). The JSON response has `rootId`, `nodeId`, `vault`, and `rootVault`; for a root, `rootId` and `nodeId` match. Copy **`rootId`** into the config below. This is an internal onchain controller index, not another wallet or contract. Read the current controller address from [`deployments/usdc-sepolia.json`](../deployments/usdc-sepolia.json); do not use archived deployment manifests.
 
 ## 3. Configure and prepare the operator
 
@@ -215,7 +230,7 @@ Use absolute paths for `codexBinary`, `codexHome`, and the CLI commands below. S
   "runtimeRoot": "/absolute/private/runtime",
   "rootId": "YOUR_NEW_ROOT_ID",
   "rpcUrl": "https://your-sepolia-rpc.example",
-  "controller": "0x7eDFa3D484d64b6bA3b5b2bcef51147E57133FFB",
+  "controller": "0xeB2041B486D66aB91140FFcF54B66513D8eC40c8",
   "inference": "codex",
   "codexBinary": "/absolute/path/to/linux-codex",
   "codexHome": "/absolute/private/codex-home",

@@ -47,23 +47,6 @@ var init_usdc_sepolia = __esm({
       chainId: 11155111,
       network: "Ethereum Sepolia",
       status: "deployed",
-      token: {
-        address: "0x1c7D4B196Cb0C7B01d743Fbc6116a902379C7238",
-        symbol: "USDC",
-        decimals: 6,
-        issuerAddressSource: "https://developers.circle.com/stablecoins/usdc-contract-addresses",
-        testnetOnly: true
-      },
-      funding: {
-        owner: "0xbCea84Ed1DaFbb59AaF9797Cb4170394db688d34",
-        verifiedAtBlock: 11784860,
-        balanceRaw: "20000000",
-        balanceUSDC: "20.0"
-      },
-      limitations: [
-        "Testnet assets only; DEMO-USD is valueless and pool price is not a real USD valuation.",
-        "x402 service purchases require an explicitly configured Sepolia-capable seller and PAY mandate."
-      ],
       deployer: "0xbCea84Ed1DaFbb59AaF9797Cb4170394db688d34",
       tokens: [
         {
@@ -88,60 +71,56 @@ var init_usdc_sepolia = __esm({
       ],
       contracts: {
         VaultFactory: {
-          address: "0xAF9A748e45913457cA205e7d29cb380e9aCbCb44",
-          transactionHash: "0xbce00196121ee125d756af53a1ed743aa19c13eba892880ed4531741ed62c17c",
-          blockNumber: 11785758,
-          codeHash: "0x0fc9e88ed28dbe8ebbf089e1120cf948b97fa359883da50591f9f31b18ef31fd"
+          address: "0x2D2a54F76D962B0547CC4b5be05A922c9313173C",
+          transactionHash: "0x60a00e65ea63552d58f5ec0d570d35a60c80eee996083467a9ecd0f40add3679",
+          blockNumber: 11788873,
+          codeHash: "0x74bb41a212b2aec608c23be41765f3b54acb75836a9fff7e5a380fa04c2e1e4f"
         },
         CapitalVaultImplementation: {
-          address: "0xD07abdd852FD41844d393d5a183535654A8B275B",
-          codeHash: "0x4db455e92649df9d5785414aea001c3ed19045123539f48b46ae9a6575812600"
+          address: "0xD1f801BeccF97efF6AAd63EE90688B660F30E522",
+          codeHash: "0x20f580b93c493742eaa565a561b7074ae991a182125f719fe6ad4aa259a2b47a"
         },
         NodeFactory: {
-          address: "0xf6895DD52517bdd37C16C2f1fF830465F3e096E4",
-          transactionHash: "0xd02019d25a57b9b5934acff2f48ff07a6730e8ec21acdb8c74d0f11b70abc4f8",
-          blockNumber: 11785760,
-          codeHash: "0x4eb8565d82ebb4c1c5888e5e975ab1fc93c7c7857b5b70907305ef4230ceff3e"
+          address: "0x71a68eFD9B9FB02cEF78723C399c95a52475334A",
+          transactionHash: "0x348e1cce3c19e5ab442e9ec7e55177ddb695812d3e93b5e4643eac256dd93ab9",
+          blockNumber: 11788876,
+          codeHash: "0x5f811894b96e33503c9edde7116ce7f389d20ae50d6d53ff6ce2771abf6bdb14"
         },
         CapitalController: {
-          address: "0x7eDFa3D484d64b6bA3b5b2bcef51147E57133FFB",
-          transactionHash: "0xc74852ea459e46c81b84138ed3e0e8c3c32d8ab5b8d374f9a4a08bf608020189",
-          blockNumber: 11785762,
-          codeHash: "0xa5eb9a97c11abf62491498918dd77ff72d8fc6ec4d0258047beb9d3c738eca64"
+          address: "0xeB2041B486D66aB91140FFcF54B66513D8eC40c8",
+          transactionHash: "0x98a9901447d8201365cb7fa49647c964b2643acf2598d4212d59956f4a8f4fb1",
+          blockNumber: 11788879,
+          codeHash: "0x80dd11ba34208ddeb2cd29fa0098b8fd976d31064ec2e0a91d155fbb63421ef2"
         },
         ProjectRegistry: {
-          address: "0x67Ab85dB5d4f319e7AcDcceA757D0a2541CDfD3c"
+          address: "0x5bbCfab760376d2E419FC42DA63fA4C5e434DBF6"
         }
       },
       ensNamespace: {
-        name: "agentcapitalvault.eth",
+        name: "kanoki.eth",
         registry: "0x67b728a792e789a8978b30cf1b3b641f19354b43",
         registrar: "0xa4449a0dd2b83007553d9b1d28b583a46a805a30",
         transactions: {
           commit: {
-            hash: "0x8789a3d113f455fbb74e7c7c416d48451ea66a0ddc724ba11412e445e7743ce6",
-            block: 11785742
-          },
-          mint: {
-            hash: "0x2e23baf8d2512c9bae90c6af56655db016c38ed5aa07f9a6d89cd448e88c0d09",
-            block: 11785744
+            hash: "0x034a73a24c006b79bd3eeaf5dbcf204c55eea5b2c10f6fcecfa0c7fd438fcc59",
+            block: 11788857
           },
           approve: {
-            hash: "0xe3f084f562b0f7c8c4c5d1406126d10d365001e6e2c5fef0bad7c378fc6620a9",
-            block: 11785746
+            hash: "0xca9df23abd2dfa20ecf9fa329917038512861f8622cca6e4e4f2a081c9475594",
+            block: 11788859
           },
           register: {
-            hash: "0xb618dfb5f2015472e6501cedc1bd34fa83ac6c8f73e1a3a84425e50c587ee527",
-            block: 11785753
+            hash: "0x2f7410e06f0fc2247f1cb6d08280203caac52177e29a0cfb2e14c399ab6b912b",
+            block: 11788867
           },
           attach: {
-            hash: "0xb272a660e1643d8542170dbfa727bb9f98d52362266f4e954afd950669ba999a",
-            block: 11785765
+            hash: "0xb6470e4ca56b110a73bcbba954da7b3f17614f5a3a74acb5a1baa49fff2fd5d8",
+            block: 11788882
           }
         },
-        resource: "6567213703719786339245037509976515699004843506858035598718335938612640612352",
-        expiry: "1821955788",
-        subregistry: "0x67Ab85dB5d4f319e7AcDcceA757D0a2541CDfD3c"
+        resource: "9001658945062219668565763690822852730689056096190603632284384292547894181888",
+        expiry: "1821994284",
+        subregistry: "0x5bbCfab760376d2E419FC42DA63fA4C5e434DBF6"
       },
       uniswap: {
         poolManager: "0xE03A1074c86CFeDd5C142C4F04F1a1536e203543",
@@ -162,62 +141,62 @@ var init_usdc_sepolia = __esm({
           blockNumber: 11785124
         },
         seeded: {
-          transactionHash: "0x9c9d6a709c7adafb9c96adf9c7d9020d3293d442cc2374934a5e3ea61d666d1c",
-          blockNumber: 11785813,
+          transactionHash: "0xaccc63e609b8d0d70dcec2020802c100b3f9a11fa739f479ebca66fae87587df",
+          blockNumber: 11788900,
           rootId: "1",
-          vault: "0x4E2c19976f8ecf94f62587Ca3B5AB3457f8ee271",
-          tokenId: "39866",
+          vault: "0x42d383397ad51B56f0Fa55c3Aa29b85659D279cB",
+          tokenId: "39889",
           liquidity: "30000000"
         }
       },
       multibaas: {
-        label: "capitalcontrollerproxy",
-        indexingStartBlock: 11785767,
+        label: "capitalcontrollerkanoki",
+        indexingStartBlock: 11788886,
         status: {
           isProcessingPastLogs: false,
-          latestBlockNumber: 11785767,
-          latestBlockHash: "0x51bf2de2ecc321d55191d69d4aaeff430c6668226253d207111e0327034e173b",
-          startBlockNumber: 11785767,
-          startBlockHash: "0x51bf2de2ecc321d55191d69d4aaeff430c6668226253d207111e0327034e173b",
-          updatedAt: "2026-09-26T10:52:49.389857Z"
+          latestBlockNumber: 11788886,
+          latestBlockHash: "0xc53a63b9649366701f8f6782471ad201694d834c207914afeee9e2c924f4c9d0",
+          startBlockNumber: 11788886,
+          startBlockHash: "0xc53a63b9649366701f8f6782471ad201694d834c207914afeee9e2c924f4c9d0",
+          updatedAt: "2026-09-26T21:35:12.914206Z"
         },
-        configuredAt: "2026-09-26T10:52:49.771Z"
+        configuredAt: "2026-09-26T21:35:13.316Z"
       },
       vaultArchitecture: "eip1167",
       verification: {
-        checkedAt: "2026-09-26T14:15:23.701Z",
+        checkedAt: "2026-09-26T22:21:36.552Z",
         chainId: 11155111,
         nodeCount: "6",
         records: [
           {
-            address: "0xD07abdd852FD41844d393d5a183535654A8B275B",
+            address: "0xD1f801BeccF97efF6AAd63EE90688B660F30E522",
             contract: "src/CapitalVault.sol:CapitalVault",
             status: "source-verified",
-            explorer: "https://sepolia.etherscan.io/address/0xD07abdd852FD41844d393d5a183535654A8B275B#code"
+            explorer: "https://sepolia.etherscan.io/address/0xD1f801BeccF97efF6AAd63EE90688B660F30E522#code"
           },
           {
-            address: "0xAF9A748e45913457cA205e7d29cb380e9aCbCb44",
+            address: "0x2D2a54F76D962B0547CC4b5be05A922c9313173C",
             contract: "src/VaultFactory.sol:VaultFactory",
             status: "source-verified",
-            explorer: "https://sepolia.etherscan.io/address/0xAF9A748e45913457cA205e7d29cb380e9aCbCb44#code"
+            explorer: "https://sepolia.etherscan.io/address/0x2D2a54F76D962B0547CC4b5be05A922c9313173C#code"
           },
           {
-            address: "0xf6895DD52517bdd37C16C2f1fF830465F3e096E4",
+            address: "0x71a68eFD9B9FB02cEF78723C399c95a52475334A",
             contract: "src/NodeFactory.sol:NodeFactory",
             status: "source-verified",
-            explorer: "https://sepolia.etherscan.io/address/0xf6895DD52517bdd37C16C2f1fF830465F3e096E4#code"
+            explorer: "https://sepolia.etherscan.io/address/0x71a68eFD9B9FB02cEF78723C399c95a52475334A#code"
           },
           {
-            address: "0x7eDFa3D484d64b6bA3b5b2bcef51147E57133FFB",
+            address: "0xeB2041B486D66aB91140FFcF54B66513D8eC40c8",
             contract: "src/CapitalController.sol:CapitalController",
             status: "source-verified",
-            explorer: "https://sepolia.etherscan.io/address/0x7eDFa3D484d64b6bA3b5b2bcef51147E57133FFB#code"
+            explorer: "https://sepolia.etherscan.io/address/0xeB2041B486D66aB91140FFcF54B66513D8eC40c8#code"
           },
           {
-            address: "0x67Ab85dB5d4f319e7AcDcceA757D0a2541CDfD3c",
+            address: "0x5bbCfab760376d2E419FC42DA63fA4C5e434DBF6",
             contract: "src/ens/ManagedRegistry.sol:ManagedRegistry",
             status: "source-verified",
-            explorer: "https://sepolia.etherscan.io/address/0x67Ab85dB5d4f319e7AcDcceA757D0a2541CDfD3c#code"
+            explorer: "https://sepolia.etherscan.io/address/0x5bbCfab760376d2E419FC42DA63fA4C5e434DBF6#code"
           },
           {
             address: "0x892e744064E80211d4a69A9cc0f98FE6815157Cf",
@@ -226,117 +205,121 @@ var init_usdc_sepolia = __esm({
             explorer: "https://sepolia.etherscan.io/address/0x892e744064E80211d4a69A9cc0f98FE6815157Cf#code"
           },
           {
-            address: "0x8bF2d2ae515813fa8f01a05b04ad84488915dF08",
+            address: "0x8c1332368b9cDe6eCa83024D084D4De456aBd26D",
             contract: "src/ens/ManagedRegistry.sol:ManagedRegistry",
             status: "source-verified",
-            explorer: "https://sepolia.etherscan.io/address/0x8bF2d2ae515813fa8f01a05b04ad84488915dF08#code"
+            explorer: "https://sepolia.etherscan.io/address/0x8c1332368b9cDe6eCa83024D084D4De456aBd26D#code"
           },
           {
-            address: "0x4E2c19976f8ecf94f62587Ca3B5AB3457f8ee271",
-            implementation: "0xD07abdd852FD41844d393d5a183535654A8B275B",
+            address: "0x42d383397ad51B56f0Fa55c3Aa29b85659D279cB",
+            implementation: "0xD1f801BeccF97efF6AAd63EE90688B660F30E522",
             status: "proxy-verified",
             runtimeBytes: 45,
-            explorer: "https://sepolia.etherscan.io/address/0x4E2c19976f8ecf94f62587Ca3B5AB3457f8ee271#code"
+            explorer: "https://sepolia.etherscan.io/address/0x42d383397ad51B56f0Fa55c3Aa29b85659D279cB#code"
           },
           {
-            address: "0x689C6F26Ae78D868b2Cd252401388364c4F93fB8",
+            address: "0xc4c62d210089e5a8e0b7Dca66F5124cd2266c4a9",
             contract: "src/ens/ManagedRegistry.sol:ManagedRegistry",
             status: "source-verified",
-            explorer: "https://sepolia.etherscan.io/address/0x689C6F26Ae78D868b2Cd252401388364c4F93fB8#code"
+            explorer: "https://sepolia.etherscan.io/address/0xc4c62d210089e5a8e0b7Dca66F5124cd2266c4a9#code"
           },
           {
-            address: "0x68Ae8719e64f643fE4a7b80a631c5A1BD90F757e",
-            implementation: "0xD07abdd852FD41844d393d5a183535654A8B275B",
+            address: "0x74bFD71cBbd608158f7598539AF42Ac0E00522A7",
+            implementation: "0xD1f801BeccF97efF6AAd63EE90688B660F30E522",
             status: "proxy-verified",
             runtimeBytes: 45,
-            explorer: "https://sepolia.etherscan.io/address/0x68Ae8719e64f643fE4a7b80a631c5A1BD90F757e#code"
+            explorer: "https://sepolia.etherscan.io/address/0x74bFD71cBbd608158f7598539AF42Ac0E00522A7#code"
           },
           {
-            address: "0x8F097adA2851599B04C4DEb00732d7cfda455213",
+            address: "0xbF349F13a31c6854c18f7f001160fb2a10605196",
             contract: "src/ens/ManagedRegistry.sol:ManagedRegistry",
             status: "source-verified",
-            explorer: "https://sepolia.etherscan.io/address/0x8F097adA2851599B04C4DEb00732d7cfda455213#code"
+            explorer: "https://sepolia.etherscan.io/address/0xbF349F13a31c6854c18f7f001160fb2a10605196#code"
           },
           {
-            address: "0x1A82649796e7C7A59860e66540eB8cD04C5814C0",
-            implementation: "0xD07abdd852FD41844d393d5a183535654A8B275B",
+            address: "0xD98d7938D740F5115bb95151F7B0c2d929939BE8",
+            implementation: "0xD1f801BeccF97efF6AAd63EE90688B660F30E522",
             status: "proxy-verified",
             runtimeBytes: 45,
-            explorer: "https://sepolia.etherscan.io/address/0x1A82649796e7C7A59860e66540eB8cD04C5814C0#code"
+            explorer: "https://sepolia.etherscan.io/address/0xD98d7938D740F5115bb95151F7B0c2d929939BE8#code"
           },
           {
-            address: "0xcD03C28D7ae222a9C1403181b9d8e2a594965FC7",
+            address: "0x849677A1c8C2D8B703db0b03438804a79117d410",
             contract: "src/ens/ManagedRegistry.sol:ManagedRegistry",
             status: "source-verified",
-            explorer: "https://sepolia.etherscan.io/address/0xcD03C28D7ae222a9C1403181b9d8e2a594965FC7#code"
+            explorer: "https://sepolia.etherscan.io/address/0x849677A1c8C2D8B703db0b03438804a79117d410#code"
           },
           {
-            address: "0x1bF85187F1De3CF86ea3aED9632F02fE2CB07600",
-            implementation: "0xD07abdd852FD41844d393d5a183535654A8B275B",
+            address: "0x698abA4a1BBA0CEA529C3289A1f95EC2920f2727",
+            implementation: "0xD1f801BeccF97efF6AAd63EE90688B660F30E522",
             status: "proxy-verified",
             runtimeBytes: 45,
-            explorer: "https://sepolia.etherscan.io/address/0x1bF85187F1De3CF86ea3aED9632F02fE2CB07600#code"
+            explorer: "https://sepolia.etherscan.io/address/0x698abA4a1BBA0CEA529C3289A1f95EC2920f2727#code"
           },
           {
-            address: "0x9978c5d6A37f45CB10d5552bEBDeF2711a34EC0a",
+            address: "0xfA9776dc6267DAb31a84F64e8C5388EC759d95Be",
             contract: "src/ens/ManagedRegistry.sol:ManagedRegistry",
             status: "source-verified",
-            explorer: "https://sepolia.etherscan.io/address/0x9978c5d6A37f45CB10d5552bEBDeF2711a34EC0a#code"
+            explorer: "https://sepolia.etherscan.io/address/0xfA9776dc6267DAb31a84F64e8C5388EC759d95Be#code"
           },
           {
-            address: "0x0143bCdD259cE1AaAFC678d873197DC87A38726C",
-            implementation: "0xD07abdd852FD41844d393d5a183535654A8B275B",
+            address: "0xA98A6f25682BdCb21E3f021795a73fBD7a15751e",
+            implementation: "0xD1f801BeccF97efF6AAd63EE90688B660F30E522",
             status: "proxy-verified",
             runtimeBytes: 45,
-            explorer: "https://sepolia.etherscan.io/address/0x0143bCdD259cE1AaAFC678d873197DC87A38726C#code"
+            explorer: "https://sepolia.etherscan.io/address/0xA98A6f25682BdCb21E3f021795a73fBD7a15751e#code"
           },
           {
-            address: "0x68dC36909EDC20b1DC8Ea4A14Cf98b2E10B7Ac88",
+            address: "0x764c6410C4C278651272884bED5ff3C997A9F2Dc",
             contract: "src/ens/ManagedRegistry.sol:ManagedRegistry",
             status: "source-verified",
-            explorer: "https://sepolia.etherscan.io/address/0x68dC36909EDC20b1DC8Ea4A14Cf98b2E10B7Ac88#code"
+            explorer: "https://sepolia.etherscan.io/address/0x764c6410C4C278651272884bED5ff3C997A9F2Dc#code"
           },
           {
-            address: "0xBcA98635bD5975A2eF43d9dd9Fcc5ff5aF82fcA5",
-            implementation: "0xD07abdd852FD41844d393d5a183535654A8B275B",
+            address: "0x77C1e3Ae32B29f7643cacC630c3211F5564a84Fa",
+            implementation: "0xD1f801BeccF97efF6AAd63EE90688B660F30E522",
             status: "proxy-verified",
             runtimeBytes: 45,
-            explorer: "https://sepolia.etherscan.io/address/0xBcA98635bD5975A2eF43d9dd9Fcc5ff5aF82fcA5#code"
+            explorer: "https://sepolia.etherscan.io/address/0x77C1e3Ae32B29f7643cacC630c3211F5564a84Fa#code"
           }
         ]
       },
       bootstrap: {
         purpose: "USDC capital demo with optional LP liquidity; owner and root operator are the test-owner wallet.",
-        policyExpiry: "1805972280",
-        deadline: "1790427480",
+        policyExpiry: "1806010524",
+        deadline: "1790465724",
         transactions: {
           "create-seed-root": {
-            transactionHash: "0xb6981a04507954fd325ed60e01e70f7db8acbbee7bc849b660ba750394c36386",
-            blockNumber: 11785795
+            transactionHash: "0xf8f42887fac32178bdb6835bc1e939c4d469c2767cf10a0ca0f62272a7c1b725",
+            blockNumber: 11788888
           },
           "authorize-seed-operator": {
-            transactionHash: "0xd9ea36405a65be56f1e9f9ea98cbd9afa13a7e327228411ffce9a6a803ca1091",
-            blockNumber: 11785798
+            transactionHash: "0xeb3392befbacc46aee517f3856b9b25e0e01df7632818a8f89583dd8fcfa8e42",
+            blockNumber: 11788891
           },
           "approve-token-0": {
-            transactionHash: "0x746023c11e34c11e8a4c20c599d519d65cca477e0b98b447b280b5560ee7ec92",
-            blockNumber: 11785800
+            transactionHash: "0x47f70e614d7c005eccfa5a8b80757b63f6b67ea01e9d880a9325c9bf58e02c2a",
+            blockNumber: 11788893
           },
           "approve-token-1": {
-            transactionHash: "0x9f284bb3f453e938ae23c0ccd5a4ae0774dc8b97bd719ed4738677977a992a78",
-            blockNumber: 11785808
+            transactionHash: "0x816be4e5e2409884d412b7ec534fe55587ab5cd90afc9f98e1b193d4c68e722f",
+            blockNumber: 11788895
           },
           "fund-seed-root": {
-            transactionHash: "0x58b3aff3b88a664bfc0ada870a84c93a45d58514b6c94944ab91f9966b4351ff",
-            blockNumber: 11785810
+            transactionHash: "0x222fe2639d4d85f20a8a6dd5a2f63ad5fb8ad2f315a0c7eff3e823f45d15633b",
+            blockNumber: 11788897
           },
           "open-seed-position": {
-            transactionHash: "0x9c9d6a709c7adafb9c96adf9c7d9020d3293d442cc2374934a5e3ea61d666d1c",
-            blockNumber: 11785813
+            transactionHash: "0xaccc63e609b8d0d70dcec2020802c100b3f9a11fa739f479ebca66fae87587df",
+            blockNumber: 11788900
           }
         },
         rootId: "1"
-      }
+      },
+      limitations: [
+        "Testnet assets only; DEMO-USD is valueless and pool price is not a real USD valuation.",
+        "x402 service purchases require an explicitly configured Sepolia-capable seller and PAY mandate."
+      ]
     };
   }
 });
@@ -68550,8 +68533,16 @@ var init_capital_onboarding = __esm({
         }
         let funded = 0n;
         if (tree && limit !== null) funded = await rpc.readContract({ address: this.session.controller, abi: [{ ...limitAbi[0], name: "rootCapitalFunded" }], functionName: "rootCapitalFunded", args: [tree.rootId], blockNumber: tree.source.blockNumber });
+        let supported = true;
+        if (!tree) {
+          try {
+            await rpc.readContract({ address: this.session.controller, abi: limitAbi, functionName: "rootCapitalLimit", args: [0n] });
+          } catch {
+            supported = false;
+          }
+        }
         const steps = { limit: state2.limitConfirmed && limit !== null && limit === BigInt(state2.budgetRaw) ? "confirmed" : "required", root: tree ? "confirmed" : "required", authorization: matched ? "confirmed" : "required", funding: tree && (funded > total ? funded : total) >= BigInt(state2.fundingRaw ?? state2.budgetRaw) ? "confirmed" : "required", gas: gas > 0n ? "confirmed" : "required" };
-        return { status: "awaiting_wallet", setupId: state2.setupId ?? null, chainId: 11155111, token: TOKEN, decimals: 6, ensName: `${state2.label}.${this.session.namespace}`, localOperator: state2.operator, operatorGasAddress: state2.operator, operatorGasWei: gas, viewedRootId: tree?.rootId ?? null, budgetRaw: state2.budgetRaw, fundingRaw: state2.fundingRaw ?? null, onchainCapitalLimitRaw: limit, cumulativeFundedRaw: funded, treeSource: tree?.source ?? null, totalUsdcBalanceRaw: total, steps, missing: Object.entries(steps).filter(([, v]) => v !== "confirmed").map(([k]) => k), source: { chainId: 11155111, blockNumber: block.number, timestamp: block.timestamp, observedAt: (/* @__PURE__ */ new Date()).toISOString() }, next: `${gas > 0n ? "Gas confirmed; " : ""}${!tree ? "root creation is not confirmed. " : "Continue the remaining wallet steps. "}Keep checking this saved setup automatically; no new user command or transaction hash is required.` };
+        return { status: supported ? "awaiting_wallet" : "blocked", blocker: supported ? null : "CAPITAL_LIMIT_UNSUPPORTED_OR_UNAVAILABLE", setupId: state2.setupId ?? null, chainId: 11155111, token: TOKEN, decimals: 6, ensName: `${state2.label}.${this.session.namespace}`, localOperator: state2.operator, operatorGasAddress: state2.operator, operatorGasWei: gas, viewedRootId: tree?.rootId ?? null, budgetRaw: state2.budgetRaw, fundingRaw: state2.fundingRaw ?? null, onchainCapitalLimitRaw: limit, cumulativeFundedRaw: funded, treeSource: tree?.source ?? null, totalUsdcBalanceRaw: total, steps, missing: Object.entries(steps).filter(([, v]) => v !== "confirmed").map(([k]) => k), source: { chainId: 11155111, blockNumber: block.number, timestamp: block.timestamp, observedAt: (/* @__PURE__ */ new Date()).toISOString() }, next: !supported ? "The controller could not prove shared-limit support. Project deployment or RPC repair is required; do not request funding or continue polling wallet signatures." : `${gas > 0n ? "Gas confirmed; " : ""}${!tree ? "root creation is not confirmed. " : "Continue the remaining wallet steps. "}Keep checking this saved setup automatically; no new user command or transaction hash is required.` };
       }
       async resume() {
         const state2 = await this.read();
@@ -68610,13 +68601,13 @@ function safeCapitalError(error62) {
   if (error62?.message?.startsWith("ROOT_REVOKED:")) return "ROOT_REVOKED: Your saved vault is permanently revoked. No replacement, key change or funding was requested.";
   if (error62?.code === "INSUFFICIENT_GAS") return "INSUFFICIENT_GAS: Local signer has insufficient native Sepolia ETH for the simulated child transaction. No transaction was submitted. Fund native gas, not USDC.";
   if (/^No vault in this Sepolia deployment|^Root not found/.test(error62?.message ?? "")) return "ROOT_NOT_FOUND: No confirmed root matches this identifier at the observed block. If you just signed creation, wait for its receipt; pending status is not known to this MCP.";
-  if (/^Enter a positive root ID/.test(error62?.message ?? "")) return "INVALID_ROOT: Use a positive root ID, full agentcapitalusdc.eth name or vault address.";
+  if (/^Enter a positive root ID/.test(error62?.message ?? "")) return "INVALID_ROOT: Use a positive root ID, full kanoki.eth name or vault address.";
   if (/^Expected Ethereum Sepolia/.test(error62?.message ?? "")) return "WRONG_CHAIN: Only Ethereum Sepolia (11155111) is supported.";
   return "RPC_OR_RUNTIME_UNAVAILABLE: No confirmed result. The provider or local runtime could not complete the request. For a write, reconcile the SAME operationKey before retrying; never assume a timeout means failure.";
 }
 async function privatePath(path, mode, directory = false) {
   const info = await lstat9(path);
-  if (info.isSymbolicLink() || info.uid !== process.getuid() || (info.mode & 511) !== mode || (directory ? !info.isDirectory() : !info.isFile())) throw new SetupError("UNSAFE_PROFILE", "Private Linux profile permissions or ownership are invalid. No key was replaced.");
+  if (info.isSymbolicLink() || info.uid !== process.getuid() || (info.mode & 511) !== mode || (directory ? !info.isDirectory() : !info.isFile())) throw new SetupError("UNSAFE_PROFILE", "Private Unix profile permissions or ownership are invalid. No key was replaced.");
   return path;
 }
 var ZERO, SetupError, CapitalSession;
@@ -68634,7 +68625,7 @@ var init_capital_session = __esm({
       }
     };
     CapitalSession = class {
-      constructor({ client, controller, base, repo: repo2, query: query2, explicitRoot: explicitRoot2, writesEnabled: writesEnabled2, namespace = "agentcapitalvault.eth", walletOrigin = "https://agent-capital-tree.vercel.app", closeRuntime = async () => {
+      constructor({ client, controller, base, repo: repo2, query: query2, explicitRoot: explicitRoot2, writesEnabled: writesEnabled2, namespace = "kanoki.eth", walletOrigin = "https://kanoki-app.vercel.app", closeRuntime = async () => {
       } }) {
         Object.assign(this, { client, controller, base, repo: repo2, query: query2, explicitRoot: explicitRoot2, writesEnabled: writesEnabled2, namespace, walletOrigin, closeRuntime });
         this.onboarding = new CapitalOnboarding(this);
@@ -68656,12 +68647,20 @@ var init_capital_session = __esm({
             if (error62.code === "ENOENT") return [];
             throw error62;
           })) {
-            if (entry.isDirectory() && await this.matchingDomain(join9(this.base, entry.name), rootId)) candidates.push(join9(this.base, entry.name));
+            if (!entry.isDirectory()) continue;
+            const candidate = join9(this.base, entry.name);
+            try {
+              await lstat9(join9(candidate, "domain.json"));
+            } catch (error62) {
+              if (error62.code === "ENOENT") continue;
+              throw error62;
+            }
+            if (await this.matchingDomain(candidate, rootId)) candidates.push(candidate);
           }
           if (candidates.length > 1) throw new SetupError("AMBIGUOUS_PROFILE", "Multiple matching profiles. Select the existing profile with --runtime-root; no key was replaced.");
         }
         const path = this.explicitRoot ?? candidates[0] ?? join9(this.base, `capital-${this.controller.toLowerCase()}-${rootId}`);
-        if (!isAbsolute4(path) || !relative(this.repo, resolve6(path)).startsWith("..") || path.startsWith("/mnt/")) throw new SetupError("UNSAFE_PROFILE", "Use private Linux storage outside the repository and Windows mounts.");
+        if (!isAbsolute4(path) || !relative(this.repo, resolve6(path)).startsWith("..") || path.startsWith("/mnt/")) throw new SetupError("UNSAFE_PROFILE", "Use private Unix storage outside the repository and Windows mounts.");
         if (this.explicitRoot && !await this.matchingDomain(path, rootId)) {
           try {
             await access(join9(path, "domain.json"));
@@ -81182,10 +81181,11 @@ async function continueCapitalSetup(session, execute, waitSeconds = 20) {
   const { client, controller } = session;
   let setup = await session.inspect();
   const end = Date.now() + waitSeconds * 1e3;
-  while (!setup.writeReady && Date.now() < end) {
+  while (!setup.writeReady && setup.status !== "blocked" && Date.now() < end) {
     await new Promise((resolve7) => setTimeout(resolve7, Math.min(3e3, end - Date.now())));
     setup = await session.inspect();
   }
+  if (!setup.writeReady && setup.status === "blocked") return setup;
   if (!setup.writeReady) return { ...setup, status: setup.writesEnabled === false ? "blocked" : "awaiting_wallet", next: setup.writesEnabled === false ? "Enable the authorized write connection before continuation." : setup.next ?? "Continue polling this same setup automatically. Only the missing wallet steps need user interaction." };
   const state2 = await session.onboarding.read();
   if (!state2?.test) return { ...setup, status: "ready", next: "No child test was saved. Continue only the test explicitly authorized in the current user request." };
@@ -81274,207 +81274,22 @@ import { readFile as readFile12 } from "node:fs/promises";
 import { homedir } from "node:os";
 import { join as join12 } from "node:path";
 import { fileURLToPath } from "node:url";
-
-// ../../deployments/history/usdc-full-vaults-sepolia.json
-var usdc_full_vaults_sepolia_default = {
-  chainId: 11155111,
-  network: "Ethereum Sepolia",
-  status: "deployed",
-  token: {
-    address: "0x1c7D4B196Cb0C7B01d743Fbc6116a902379C7238",
-    symbol: "USDC",
-    decimals: 6,
-    issuerAddressSource: "https://developers.circle.com/stablecoins/usdc-contract-addresses",
-    testnetOnly: true
-  },
-  funding: {
-    owner: "0xbCea84Ed1DaFbb59AaF9797Cb4170394db688d34",
-    verifiedAtBlock: 11784860,
-    balanceRaw: "20000000",
-    balanceUSDC: "20.0"
-  },
-  limitations: [
-    "Testnet assets only; DEMO-USD is valueless and pool price is not a real USD valuation.",
-    "x402 service purchases require an explicitly configured Sepolia-capable seller and PAY mandate."
-  ],
-  deployer: "0xbCea84Ed1DaFbb59AaF9797Cb4170394db688d34",
-  tokens: [
-    {
-      address: "0x1c7D4B196Cb0C7B01d743Fbc6116a902379C7238",
-      symbol: "USDC",
-      decimals: 6,
-      issuerAddressSource: "https://developers.circle.com/stablecoins/usdc-contract-addresses",
-      testnetOnly: true,
-      status: "confirmed"
-    },
-    {
-      address: "0x892e744064E80211d4a69A9cc0f98FE6815157Cf",
-      symbol: "DEMO-USD",
-      name: "Valueless Demo Quote",
-      decimals: 6,
-      status: "confirmed",
-      testnetOnly: true,
-      valueless: true,
-      transactionHash: "0x8145768b6f02006613931f5ed81ebc1bc842b5d117a039882ce46af1291159f2",
-      blockNumber: 11785024
-    }
-  ],
-  contracts: {
-    VaultFactory: {
-      address: "0xC3AB17b344C167bD70623489BBb45FA549Afa1A1",
-      transactionHash: "0xa88c61e97e101b33e8c7b9ca68a87e6da7b8e7d452353b044dc45a2566384b07",
-      blockNumber: 11785104,
-      codeHash: "0xff52eed77c33e67ffbe0d430e8d928efd2889a8cab740a56a4be5126615952c1"
-    },
-    NodeFactory: {
-      address: "0xB83c344E03918500c995FE8fF5e7685c55BcD24E",
-      transactionHash: "0xd3b5308bcc541dd76f1b422265db852c8372e4ffe6bebe81d198b876afc1e6a4",
-      blockNumber: 11785107,
-      codeHash: "0xf5bc2e3aaa5caef8d18048e20931fcbe90128dc0bba2c102a4cc4cf1fee3af82"
-    },
-    CapitalController: {
-      address: "0x17a932987f3cAcFec067c4C1bbE6946963d87F13",
-      transactionHash: "0x2463c59f6b4b1049c2220422c23f88a8db78c5994cf9d19a9a2da2c4669c32e5",
-      blockNumber: 11785110,
-      codeHash: "0xf6306bb5d4062322f0579f27e64750e875323e50e17e2a750f1d2920a41fef98"
-    },
-    ProjectRegistry: {
-      address: "0xE4E51fd9bEB12B77441740F4dfd1274829b5Ddf6"
-    }
-  },
-  ensNamespace: {
-    name: "agentcapitalusdc.eth",
-    registry: "0x67b728a792e789a8978b30cf1b3b641f19354b43",
-    registrar: "0xa4449a0dd2b83007553d9b1d28b583a46a805a30",
-    transactions: {
-      commit: {
-        hash: "0x812f783a4bc201d8a856747a47ffd18f158d8b84b640fb2b23f2fcc5c69dc0a3",
-        block: 11785011
-      },
-      mint: {
-        hash: "0x898ad5335ed79ac8a035279a2d309f284ceebe8003e7cf48a5ed1ab16b0e29e6",
-        block: 11785013
-      },
-      approve: {
-        hash: "0xf0e6f7b735e3ea711903b2db39893637f4c95b842ae53360f6a93fb8a02482a7",
-        block: 11785015
-      },
-      register: {
-        hash: "0x387d16b5cc11093c7a4ed5b3da69b3d43fe095e4e9c4c5dc6cdc97dde7794f88",
-        block: 11785020
-      },
-      attach: {
-        hash: "0xaf172cc061344ea90c109b8c1cc5f33c5cced4fab90cecd09e0317422025fe0f",
-        block: 11785113
-      }
-    },
-    resource: "34706045413701427428164669263883747271233185103135947683781482824803209445376",
-    expiry: "1821946980",
-    subregistry: "0xE4E51fd9bEB12B77441740F4dfd1274829b5Ddf6"
-  },
-  uniswap: {
-    poolManager: "0xE03A1074c86CFeDd5C142C4F04F1a1536e203543",
-    positionManager: "0x429ba70129df741B2Ca2a85BC3A2a3328e5c09b4",
-    permit2: "0x000000000022D473030F116dDEE9F6B43aC78BA3",
-    poolId: "0x93f85c1b3f22eb51728013413c04d3598bcae49836626358d766fc3db3b54c10",
-    fee: 3e3,
-    tickSpacing: 60,
-    tickLower: -600,
-    tickUpper: 600,
-    codeHashes: {
-      poolManager: "0x09930125a49f5b95caf8052991cc14d1240dca8b43f42b899115b86867e4bce1",
-      positionManager: "0xcffd746f78c2b50aafd19076bbe9c48f14446e5248fc5d76b9b4896610e51aab",
-      permit2: "0x96d9f5c3f0fb0423426b7f970186235b7347027f4e5c19c40c412b7d97fc3751"
-    },
-    initialization: {
-      transactionHash: "0x4a9de834cc241ab6ba8eb45cd43be2e1068d31abf4044b2fce9406758002a4e6",
-      blockNumber: 11785124
-    },
-    seeded: {
-      transactionHash: "0xd24940ab30aa7cef1e4a50e7355411710648afa3ad3706d92435fb5abdc3749b",
-      blockNumber: 11785140,
-      rootId: "1",
-      vault: "0xAc5378EdA34f38A7fd34BB808B1b5492aF499bcf",
-      tokenId: "39858",
-      liquidity: "30000000"
-    }
-  },
-  multibaas: {
-    label: "capitalcontrollerusdc",
-    indexingStartBlock: 11785117,
-    status: {
-      isProcessingPastLogs: false,
-      latestBlockNumber: 11785117,
-      latestBlockHash: "0x3dc6e377aefeb0837f7a7620021c18a6c274a0f272c7f6b62fd348ad82e6d1fd",
-      startBlockNumber: 11785117,
-      startBlockHash: "0x3dc6e377aefeb0837f7a7620021c18a6c274a0f272c7f6b62fd348ad82e6d1fd",
-      updatedAt: "2026-09-26T08:42:32.297645Z"
-    },
-    configuredAt: "2026-09-26T08:42:32.680Z"
-  },
-  bootstrap: {
-    purpose: "USDC capital demo with optional LP liquidity; owner and root operator are the test-owner wallet.",
-    policyExpiry: "1805964204",
-    deadline: "1790419404",
-    transactions: {
-      "initialize-pool": {
-        transactionHash: "0x4a9de834cc241ab6ba8eb45cd43be2e1068d31abf4044b2fce9406758002a4e6",
-        blockNumber: 11785124
-      },
-      "create-seed-root": {
-        transactionHash: "0xfa675de8ea9a6d31677344a07a2ebc77b33c70f136884887fafcc9ea528c3b9f",
-        blockNumber: 11785127
-      },
-      "authorize-seed-operator": {
-        transactionHash: "0xa11bca549dcc90c96f6ac40574f6cf33de749c1a2acb96fbdd21a2796b4250fb",
-        blockNumber: 11785130
-      },
-      "approve-token-0": {
-        transactionHash: "0xb357c1ea95b23a53e50c89d71c3cc97c0f9569dc020d066f067f70017e1e5cdc",
-        blockNumber: 11785132
-      },
-      "claim-token-1": {
-        transactionHash: "0xe8a27a453baa60e58758c3835c8a420cb4b9743a58736db5ce61769751674555",
-        blockNumber: 11785134
-      },
-      "approve-token-1": {
-        transactionHash: "0x63e9bfa47931fc7b6dbf0504280b4e8f9461f70e9d0acf6fdc23906770e2c904",
-        blockNumber: 11785136
-      },
-      "fund-seed-root": {
-        transactionHash: "0x73c6a02a039978d0d94e212269b5052023cccbf4fea813b716668eab3a90073b",
-        blockNumber: 11785138
-      },
-      "open-seed-position": {
-        transactionHash: "0xd24940ab30aa7cef1e4a50e7355411710648afa3ad3706d92435fb5abdc3749b",
-        blockNumber: 11785140
-      }
-    },
-    rootId: "1"
-  }
-};
-
-// capital-entry.mjs
 var args = process.argv.slice(2);
 var command = args[0];
 var query = args[1] && !args[1].startsWith("--") ? args[1] : void 0;
 var packageBase = new URL(import.meta.url.endsWith("/bundle/capital.mjs") ? "../" : "./", import.meta.url);
 var script = fileURLToPath(new URL("capital.mjs", packageBase));
 var repo = fileURLToPath(new URL("../..", packageBase));
-var usage = "node packages/runtime/capital.mjs prepare|check|settings|stdio [ENS-name|vault-address|root-id] [--runtime-root /private/linux/path] [--deployment usdc-full-vaults] [--enable-sepolia-writes]";
+var usage = "node packages/runtime/capital.mjs prepare|check|settings|stdio [ENS-name|vault-address|root-id] [--runtime-root /absolute/private/path] [--enable-sepolia-writes]";
 if (!["prepare", "check", "settings", "stdio"].includes(command) || command === "prepare" && !query) throw new Error(usage);
 var explicitRoot;
 var writesEnabled = false;
-var recoveryDeployment = false;
 for (let i = query ? 2 : 1; i < args.length; i++) {
   if (args[i] === "--runtime-root" && args[i + 1] && !explicitRoot) explicitRoot = args[++i];
   else if (args[i] === "--enable-sepolia-writes" && !writesEnabled) writesEnabled = true;
-  else if (args[i] === "--deployment" && args[i + 1] === "usdc-full-vaults" && !recoveryDeployment) {
-    recoveryDeployment = true;
-    i++;
-  } else throw new Error(usage);
+  else throw new Error(usage);
 }
-var launchArgs = [script, "stdio", ...query ? [query] : [], ...explicitRoot ? ["--runtime-root", explicitRoot] : [], ...recoveryDeployment ? ["--deployment", "usdc-full-vaults"] : [], ...writesEnabled ? ["--enable-sepolia-writes"] : []];
+var launchArgs = [script, "stdio", ...query ? [query] : [], ...explicitRoot ? ["--runtime-root", explicitRoot] : [], ...writesEnabled ? ["--enable-sepolia-writes"] : []];
 try {
   if (command === "settings") {
     console.log(JSON.stringify({ kanoki: { command: process.execPath, args: launchArgs } }, null, 2));
@@ -81489,11 +81304,11 @@ try {
       process.exitCode = code2 ?? 1;
     });
   } else {
-    if (process.platform !== "linux") throw new Error("Capital signing currently requires Linux or WSL2; private Unix storage checks are not disabled.");
+    if (!["linux", "darwin"].includes(process.platform)) throw new Error("Capital signing requires macOS, Linux or WSL2; private Unix storage checks are not disabled.");
     const { RuntimeCompanion: RuntimeCompanion2 } = await Promise.resolve().then(() => (init_dist3(), dist_exports2));
     const { CapitalSession: CapitalSession2, SetupError: SetupError2, privatePath: privatePath2, safeCapitalError: safeCapitalError2 } = await Promise.resolve().then(() => (init_capital_session(), capital_session_exports));
     const { capitalClient: capitalClient2 } = await Promise.resolve().then(() => (init_dist(), dist_exports));
-    const manifest = recoveryDeployment ? usdc_full_vaults_sepolia_default : usdc_sepolia_default;
+    const manifest = usdc_sepolia_default;
     if (manifest.chainId !== 11155111) throw new Error("Expected Ethereum Sepolia manifest");
     const controller = manifest.contracts.CapitalController.address;
     const rpcUrl = process.env.ACT_SEPOLIA_RPC_URL ?? "https://ethereum-sepolia.publicnode.com";
@@ -81504,7 +81319,7 @@ try {
       controller,
       base: join12(homedir(), ".agent-capital-tree"),
       namespace: manifest.ensNamespace.name,
-      walletOrigin: recoveryDeployment ? "https://agent-capital-tree-silk.vercel.app" : "https://kanoki-app.vercel.app",
+      walletOrigin: "https://kanoki-app.vercel.app",
       repo,
       query,
       explicitRoot,
@@ -81594,7 +81409,6 @@ try {
         if (name === "getEffectivePolicy") return session.policy(input2.nodeId);
         if (name === "selectCapitalRoot") return session.select(input2.query);
         if (name === "prepareRootSetup") {
-          if (recoveryDeployment) return { status: "unavailable", transactionSubmitted: false, next: "This connection explicitly targets the historical USDC controller for existing-vault recovery. Create new roots with the normal current-deployment capital MCP; never confuse equally numbered roots across controllers." };
           const previous = await session.onboarding.read();
           const test = input2.test ?? previous?.test;
           if (test?.model) {
@@ -81683,9 +81497,9 @@ try {
     "Private profile domain does not match",
     "Unsafe private capital profile",
     "An operator is already bound",
-    "Capital signing currently requires"
+    "Capital signing requires"
   ];
-  process.stderr.write(`${safe.some((prefix) => String(error62.message).startsWith(prefix)) ? error62.message : "Capital setup unavailable. Check the root identifier, Sepolia RPC and private Linux profile. No success was confirmed."}
+  process.stderr.write(`${safe.some((prefix) => String(error62.message).startsWith(prefix)) ? error62.message : "Capital setup unavailable. Check the root identifier, Sepolia RPC and private Unix profile. No success was confirmed."}
 `);
   process.exitCode = 1;
 }

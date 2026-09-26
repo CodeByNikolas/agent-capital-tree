@@ -1,12 +1,12 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { mkdtemp, readFile, stat, chmod, symlink, rm } from 'node:fs/promises';
+import { realpath, mkdtemp, readFile, stat, chmod, symlink, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { WorkerKeyStore } from '../dist/keys.js';
 
 test('encrypted worker keys survive restart, concurrent preparation and reject unsafe storage', async () => {
-  const directory = await mkdtemp(join(tmpdir(), 'act-key-test-'));
+  const directory = await mkdtemp(join(await realpath(tmpdir()), 'act-key-test-'));
   try {
     const keys = new WorkerKeyStore(directory);
     const [first, repeated] = await Promise.all([keys.wallet('worker1', true), keys.wallet('worker1', true)]);

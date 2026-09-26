@@ -2,6 +2,8 @@
 
 This is test and review evidence, not an implementation or release acceptance claim. The checkout was based on `2927f37` and received concurrent onboarding changes during the runtime test. Existing edits were preserved.
 
+After fetching, remote main was `a9594c7`, with the Kanoki deployment cutover and newer verifier repairs already merged. The local tests below describe the older checkout and connected MCP, not acceptance testing of that newer remote revision. The user assigned implementation to another agent and assigned this session review/tests.
+
 ## Verified before the concurrent changes
 
 - Connected Kanoki MCP: invalid `budgetRaw: "0"` rejected before execution, with a PNG; valid setup inspection reported no selected root or local signer and `writeReady: false`.
@@ -45,6 +47,8 @@ Onboarding status reads a latest block for gas and separately resolves a tree, w
 The in-progress implementation requires `rootCapitalLimit` and `createRootWithCapitalLimit`, which the checked-in current public controller manifest does not establish. A local contract edit cannot upgrade the immutable deployed controller. Verify an additive deployment, generated ABI, published wallet page and distributed MCP bundle together before claiming the new flow works publicly. Preserve existing roots and funds.
 
 Live read at Sepolia block **11789212**: local manifest/MCP controller `0x7eDFa3D484d64b6bA3b5b2bcef51147E57133FFB` passed existing deployment verification, but its `rootCapitalLimit(0)` call did not succeed. The canonical `https://kanoki-app.vercel.app/api/deployment` returned HTTP 200 and controller **`0xeB2041B486D66aB91140FFcF54B66513D8eC40c8`**. These controllers differ. The normal handoff opens this canonical website while saved root discovery uses the MCP controller; the pair must be aligned before an end-to-end claim. No financial transaction was sent.
+
+The fetched **remote main manifest matches the public app** and uses `kanoki.eth`; the mismatch is in this stale local checkout/connected MCP. Integrate the current remote release and rebuild/reconnect the local MCP before retesting. Do not repoint the website to the retired controller or replace private signing profiles.
 
 `pnpm typecheck` on the concurrent sources passed plugin, SDK, MultiBaas and runtime, but failed the web package: its generated `capitalControllerAbi` does not contain `rootCapitalLimit`, `rootCapitalFunded` or `createRootWithCapitalLimit`. Update the ABI from the reviewed contract and rerun the complete typecheck.
 

@@ -289,7 +289,6 @@ export function useWalletActions({
   const actions: DashboardActions = {
     async completeRootSetup(label, operatorInput, budgetRaw, draft, fundingRaw) {
       if (busy.current) throw new Error("Setup is already running.");
-      if (deployment.recoveryOnly) throw new Error("New setup requires the current Kanoki deployment.");
       if (!/^[a-z][a-z0-9-]{0,30}$/.test(label) || !isAddress(operatorInput) || operatorInput === zeroAddress || !/^[1-9]\d{0,77}$/.test(budgetRaw) || BigInt(budgetRaw) >= 2n ** 256n || !/^(0|[1-9]\d{0,77})$/.test(fundingRaw) || BigInt(fundingRaw) > BigInt(budgetRaw)) throw new Error("Invalid prepared setup limit or funding amount.");
       busy.current = true;
       try {
@@ -445,7 +444,6 @@ export function useWalletActions({
     },
 
     async createRoot(label, draft) {
-      if (deployment.recoveryOnly) throw new Error("This deployment is only for existing-vault recovery. Create new roots on the current canonical app.");
       const normalizedLabel = label.trim().toLowerCase();
       if (!/^[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?$/.test(normalizedLabel)) {
         throw new Error("Use a lowercase ENS label with letters, numbers, or interior hyphens.");

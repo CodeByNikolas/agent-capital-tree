@@ -11,15 +11,15 @@ try {
     const response = await route.fetch({ url: 'https://kanoki-app.vercel.app' + url.pathname + url.search });
     await route.fulfill({ response });
   });
-  await page.goto(`${base}/agent-activity?vault=capital.agentcapitalvault.eth`);
-  await expect(page.getByRole('heading', { name: 'Agent activity', exact: true })).toBeVisible({ timeout: 60000 });
+  await page.goto(`${base}/agent-activity?vault=capital.kanoki.eth`);
+  await expect(page.getByRole('heading', { name: 'Curvegrid', exact: true })).toBeVisible({ timeout: 60000 });
   await expect(page.getByText('Totals from loaded events only', { exact: true })).toBeVisible({ timeout: 60000 });
   await expect(page.locator('.agent-report-picker select')).toBeVisible();
   for (const width of [1440, 390]) {
     await page.setViewportSize({ width, height: 1000 });
-    await page.locator('.agent-report-picker select').selectOption('2');
-    await expect(page.locator('.agent-report-totals')).toContainText('Allocations received');
-    await expect(page.locator('.agent-report-totals')).not.toContainText('Root funding');
+    await page.locator('.agent-report-picker select').selectOption('1');
+    await expect(page.locator('.agent-report-totals')).toContainText('Root funding');
+    await expect(page.locator('.agent-report-totals')).not.toContainText('Allocations received');
     assert.equal(await page.evaluate(() => document.documentElement.scrollWidth > window.innerWidth), false);
     await page.screenshot({ path: `/tmp/kanoki-agent-activity-${width}.png`, fullPage: true });
   }
