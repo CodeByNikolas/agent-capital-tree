@@ -34,6 +34,8 @@ The interface uses a shadcn/ui sidebar, readable typography, desktop/mobile layo
 | [Applications](https://agent-capital-tree.vercel.app/applications?root=1) | Bounded Uniswap swaps and vault-owned liquidity |
 | [Setup & control](https://agent-capital-tree.vercel.app/setup?root=5) | Wallet management, owner recovery and plugin/runtime instructions |
 
+Use **Open vault** at the top of the dashboard to enter a Sepolia vault contract address or a registered name under `agentcapitaltree.eth`. A child lookup opens its root tree with that child selected. Legacy numeric IDs still work. This is a lookup within this deployment, not a general Ethereum address or mainnet ENS explorer.
+
 No wallet or model credential is needed to inspect the public demo. [Preview mode](https://agent-capital-tree.vercel.app/tree?preview=1) contains explicitly labeled illustrative records.
 
 **Demo roots:** root 1 preserves funded seed liquidity. Roots 2, 5 and 9 are permanently revoked and empty after completed recovery tests. Root 5 retains its real four-node hierarchy; root 9 has 14 indexed events verified against Sepolia receipts. Use a new root for new agent tasks. Do not replay completed funding, spawning or recovery runners, or modify the seed during a read-only demo.

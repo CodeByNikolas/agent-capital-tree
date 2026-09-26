@@ -510,37 +510,29 @@ function PreviewNotice({ data, deployment }: { data: DashboardData; deployment: 
 }
 
 function RootAccessBar({ rootId, defaultRootId, path }: { rootId: string | null; defaultRootId: string | null; path: string }) {
-  const alternateHref = rootId
-    ? `${path}?preview=1`
-    : defaultRootId
-      ? `${path}?root=${encodeURIComponent(defaultRootId)}`
-      : null;
-  return (
-    <div className="root-access-bar" aria-label="Root navigation">
-      <form action={path} method="get" className="root-access-form">
-        <label htmlFor="root-id">Root ID</label>
-        <input
-          id="root-id"
-          name="root"
-          type="text"
-          inputMode="numeric"
-          pattern="[1-9][0-9]*"
-          maxLength={78}
-          defaultValue={rootId ?? ""}
-          placeholder={defaultRootId ?? "e.g. 1"}
-          aria-label="Root ID to load"
-          autoComplete="off"
-          required
-        />
-        <button className="button button-secondary button-small" type="submit">Load root</button>
-      </form>
-      {alternateHref && (
-        <a className="root-preview-link" href={alternateHref}>
-          {rootId ? "Preview sample" : "Open live root"}
-        </a>
-      )}
-    </div>
-  );
+  const router = useRouter();
+  const [lookupError, setLookupError] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
+  return <div className="root-access-bar" aria-label="Root navigation">
+    <form className="root-access-form" onSubmit={async (event) => {
+      event.preventDefault();
+      const query = String(new FormData(event.currentTarget).get("lookup") ?? "").trim();
+      setLoading(true); setLookupError(null);
+      try {
+        const response = await fetch(`/api/resolve-root?q=${encodeURIComponent(query)}`, { signal: AbortSignal.timeout(30000) });
+        const result = await response.json();
+        if (!response.ok) throw new Error(result.error ?? "Lookup failed.");
+        router.push(`${path}?root=${encodeURIComponent(result.rootId)}&node=${encodeURIComponent(result.nodeId)}`);
+      } catch (cause) { setLookupError(cause instanceof Error ? cause.message : "Lookup failed. Please try again."); }
+      finally { setLoading(false); }
+    }}>
+      <label htmlFor="root-id">Open vault</label>
+      <input id="root-id" name="lookup" type="text" maxLength={253} placeholder="ENS name or vault contract address" aria-label="ENS name or vault contract address" autoComplete="off" required disabled={loading} />
+      <button className="button button-secondary button-small" type="submit" disabled={loading}>{loading ? "Looking up…" : "Open vault"}</button>
+      {lookupError && <span role="alert" className="vault-lookup-error">{lookupError}</span>}
+    </form>
+    <a className="root-preview-link" href={rootId ? `${path}?preview=1` : defaultRootId ? `${path}?root=${defaultRootId}` : "/tree?root=5"}>{rootId ? "Preview sample" : "Open live root"}</a>
+  </div>;
 }
 
 function LiveReadNotice({

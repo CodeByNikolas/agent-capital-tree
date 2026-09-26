@@ -9,6 +9,12 @@ Stand: 26. September 2026 (Europe/Berlin). Nach Kontextkomprimierung zusammen mi
 - ENSv2/Uniswap und der echte Browser→Codex→Child→Grandchild-Ablauf sind nachgewiesen. Live-MultiBaas, tatsächlicher Master-Modell-Ablauf und vollständige Root9-Rückholung sind ebenfalls nachgewiesen. Gesamtabnahme bleibt für unabhängiges Fremdnutzer-Onboarding und die unten genannten Grenzen offen. Die letzte echte Browser-Owner-Rückholung ist bestanden.
 - Root1 ist der finanzierte Seed und bleibt unberührt. Root2 ist widerrufen und leer. Root5 ist der vollständig widerrufene und geleerte Browser-/Modell-Testbaum; nicht erneut als Runtime starten. Root9 mit Child10/11 ist ebenfalls widerrufen und leer. Abgeschlossene Finanzrunner niemals blind wiederholen.
 
+## Vault-Suche
+
+- Kopfzeile akzeptiert ENS-Namen unter agentcapitaltree.eth und Vault-Contract-Adressen auf Sepolia; Child-Suche öffnet Root und selektiert Child. Legacy-IDs bleiben unterstützt. Fehler sichtbar, keine Wallet-/Signeroperation.
+- Serverseitige Zuordnung liest Controller-Knoten an einem Block. Bounded Demo-Scan bis512 Knoten, darüber expliziter Kapazitätsfehler statt falschem Nichtgefunden. Keine generische Mainnet-ENS-Auflösung.
+- Regression: scripts/test-vault-lookup.mjs prüft Name/Adresse für Root und Child, Normalisierung, ungültige/fremde Eingaben und Desktop-/Mobilnavigation.
+
 ## Persönlicher Einstieg und lesbare Namen
 
 - Öffentlicher Vercel-Onboarding-/Create-Entry-Browsertest bestanden; keine Signaturen oder neuen Finanztransaktionen.

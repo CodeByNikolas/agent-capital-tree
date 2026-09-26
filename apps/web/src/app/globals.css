@@ -358,3 +358,7 @@ button:disabled { cursor: not-allowed; opacity: .55; }
 
 .onboarding-page { max-width: 1080px; margin: 0 auto; min-height: 100vh; }
 .onboarding-page .root-access-bar { margin-top: 24px; }
+
+.root-access-form { flex: 1; min-width: 0; }
+.root-access-form input { width: min(460px, 100%); min-width: 0; flex: 1 1 230px; }
+.vault-lookup-error { flex-basis: 100%; color: var(--destructive); font-size: 14px; overflow-wrap: anywhere; }

@@ -38,8 +38,8 @@ try {
   await page.goto(`${base}/setup?root=1`);
   await expect(page.getByText('Live root 1.', { exact: true })).toBeVisible({ timeout: 60000 });
   await expect(page.getByRole('button', { name: 'Claim demo tokens', exact: true })).toBeDisabled();
-  await page.getByLabel('Root ID to load').fill('2');
-  await page.getByRole('button', { name: 'Load root', exact: true }).click();
+  await page.getByLabel('ENS name or vault contract address').fill('2');
+  await page.getByRole('button', { name: 'Open vault', exact: true }).click();
   await expect(page.getByText('Live root 2.', { exact: true })).toBeVisible({ timeout: 60000 });
   assert.equal(new URL(page.url()).pathname, '/setup', 'Root picker preserves current page');
   await page.goto(`${base}/?root=2`);
