@@ -78,6 +78,44 @@ try {
     checks.push(`${name}: keyboard-only grandchild selection updates mandate with visible focus`);
   }
   checks.push('live root 5: mobile descendants stay with their parent; desktop/mobile without overflow');
+  const root9TreeResponse = await page.request.get(`${base}/api/tree?root=9`);
+  assert.equal(root9TreeResponse.status(), 200, 'root 9 tree');
+  const root9Tree = await root9TreeResponse.json();
+  assert.equal(root9Tree.nodes.length, 3);
+  assert.deepEqual(root9Tree.nodes.map(node => node.id).sort(), ['10', '11', '9']);
+
+  const root9ActivityResponse = await page.request.get(`${base}/api/activity?root=9`);
+  assert.equal(root9ActivityResponse.status(), 200, 'root 9 indexed activity');
+  const root9Activity = await root9ActivityResponse.json();
+  assert.equal(root9Activity.source, 'multi-baas');
+  assert.equal(root9Activity.page.rootId, '9');
+  assert.equal(root9Activity.page.indexing.indexingStartBlock, 11783944);
+  assert.equal(root9Activity.page.verification?.source, 'rpc');
+  assert(root9Activity.page.items.length > 0, 'root 9 has indexed activity');
+  for (const item of root9Activity.page.items) {
+    assert.equal(item.rootId, '9');
+    assert(item.provenance.blockNumber >= 11783944, 'indexed event is within the configured history window');
+  }
+  const verifiedRoot9Items = root9Activity.page.items.filter(item => ['confirmed', 'finalized'].includes(item.provenance.finality));
+  assert(verifiedRoot9Items.length >= 2, 'root 9 has canonical receipt-verified activity');
+  const createdNodeIds = new Set(root9Activity.page.items.filter(item => item.kind === 'node_created').map(item => item.nodeId));
+  for (const nodeId of ['9', '10', '11']) assert(createdNodeIds.has(nodeId), `indexed node-created event for ${nodeId}`);
+  checks.push(`root 9 API: ${root9Activity.page.items.length} indexed rows, ${verifiedRoot9Items.length} receipt-verified, from block 11783944`);
+
+  await page.goto(`${base}/?root=9`);
+  await expect(page.getByText('Live root 9.', { exact: true })).toBeVisible({ timeout: 60000 });
+  const root9ActivityPanel = page.locator('#activity');
+  const root9HistoryCoverage = 'History indexed from block 11,783,944; earlier activity is not included.';
+  for (const [name, width, height] of [['desktop', 1440, 1100], ['mobile', 390, 844]]) {
+    await page.setViewportSize({ width, height });
+    await root9ActivityPanel.scrollIntoViewIfNeeded();
+    await expect(root9ActivityPanel.locator('.activity-row').first()).toBeVisible({ timeout: 60000 });
+    await expect(root9ActivityPanel.locator('.activity-finality-confirmed, .activity-finality-finalized').first()).toBeVisible({ timeout: 60000 });
+    await expect(root9ActivityPanel.locator('.activity-provenance')).toContainText(root9HistoryCoverage);
+    assert(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth), `root 9 ${name} overflow`);
+    await page.screenshot({ path: new URL(`root9-history-${name}.png`, output).pathname, fullPage: true });
+    checks.push(`root 9 ${name}: indexed history and coverage status visible without overflow`);
+  }
   await page.goto(`${base}/?preview=1`);
   await expect(page.getByText('Preview workspace.', { exact: true })).toBeVisible();
   await expect(page.getByRole('link', { name: 'Open live root', exact: true })).toBeVisible();
