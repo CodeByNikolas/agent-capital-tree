@@ -5,11 +5,13 @@ Stand: 26. September 2026 (Europe/Berlin). Nach Kontextkomprimierung zusammen mi
 ## Aktueller Stand
 
 - Public Repository: https://github.com/CodeByNikolas/agent-capital-tree.
-- Live-Dashboard: https://agent-capital-tree.vercel.app. Aktuelles Deployment `dpl_2o8euc68kXhziPqot5gZEnjdRAaV`, https://agent-capital-tree-2ewo6ur9g-tumblockchains-projects.vercel.app (Sourcec668ab4). Fünf echte Seiten mit shadcn Sidebar/Badge/Button/Card/Sheet/Table, Agentendetails, System-Hell-/Dunkelmodus und größerer Schrift. Mit frontend-design/impeccable und shadcn-MCP umgesetzt; Sol-High-Subagent und Hauptagent-Review. Kapitaldelegation steht im Mittelpunkt; Uniswap ist eine Anwendung, Payments bleiben Zukunftsumfang.
+- Live-Dashboard: https://agent-capital-tree.vercel.app. Aktuelles Deployment `dpl_9RB4f9NLaxvizurAi9qpocZPAWG5`, https://agent-capital-tree-nssb7pztv-tumblockchains-projects.vercel.app (Sourced172999). Fünf echte Seiten mit shadcn Sidebar/Badge/Button/Card/Sheet/Table, Agentendetails, System-Hell-/Dunkelmodus und größerer Schrift. Mit frontend-design/impeccable und shadcn-MCP umgesetzt; Sol-High-Subagent und Hauptagent-Review. Kapitaldelegation steht im Mittelpunkt; Uniswap ist eine Anwendung, Payments bleiben Zukunftsumfang.
 - ENSv2/Uniswap und der echte Browser→Codex→Child→Grandchild-Ablauf sind nachgewiesen. Live-MultiBaas, tatsächlicher Master-Modell-Ablauf und vollständige Root9-Rückholung sind ebenfalls nachgewiesen. Gesamtabnahme bleibt für unabhängiges Fremdnutzer-Onboarding und die unten genannten Grenzen offen. Die letzte echte Browser-Owner-Rückholung ist bestanden.
 - Root1 ist der finanzierte Seed und bleibt unberührt. Root2 ist widerrufen und leer. Root5 ist der vollständig widerrufene und geleerte Browser-/Modell-Testbaum; nicht erneut als Runtime starten. Root9 mit Child10/11 ist ebenfalls widerrufen und leer. Abgeschlossene Finanzrunner niemals blind wiederholen.
 
 ## Vault-Suche
+
+- Lokaler und veröffentlichter API-/Browsertest bestanden (Root-/Child-Namen und Adressen, Normalisierung, Fehler, Mobil/Desktop). Produktionsbuild inklusive TypeScript bestanden; keine Signaturen/Transaktionen.
 
 - Kopfzeile akzeptiert ENS-Namen unter agentcapitaltree.eth und Vault-Contract-Adressen auf Sepolia; Child-Suche öffnet Root und selektiert Child. Legacy-IDs bleiben unterstützt. Fehler sichtbar, keine Wallet-/Signeroperation.
 - Serverseitige Zuordnung liest Controller-Knoten an einem Block. Bounded Demo-Scan bis512 Knoten, darüber expliziter Kapazitätsfehler statt falschem Nichtgefunden. Keine generische Mainnet-ENS-Auflösung.
