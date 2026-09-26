@@ -20,35 +20,59 @@ pnpm --filter @agent-capital-tree/plugin build
 pnpm mcp:doctor
 pnpm mcp:verify
 pnpm mcp:chat-verify
+pnpm mcp:settings
 ```
 
-`mcp:verify` creates a fresh temporary Codex profile, installs the local marketplace plugin, confirms exactly one enabled `capital-tree` MCP and all 16 tools, then calls the installed server's `getTree` on the current public USDC root. Its temporary loopback bridge implements **only** `getTree`; a write request is rejected. The profile is removed afterwards. `mcp:chat-verify` separately starts the permanent-use read-only STDIO server, confirms it advertises **only** `getTree`, and performs a live chain read. Both prove MCP mechanics, not a personal app connection or financial write. The host Codex CLI may be newer than the separately pinned Linux worker CLI 0.154.0. `ACT_APP_URL` and `ACT_SEPOLIA_RPC_URL` optionally override public test endpoints; neither is a secret. Do not use these tests to replay the completed payment/root.
+`mcp:verify` creates a fresh temporary Codex profile, installs the local marketplace plugin, confirms exactly one enabled `capital-tree` MCP and all 16 tools, then calls the installed server's `getTree` on the current public USDC root. Its temporary loopback bridge implements **only** `getTree`; a write request is rejected. The profile is removed afterwards. `mcp:chat-verify` starts the permanent-use read-only STDIO server, confirms exactly two read tools (`getTree`, `visualizeTree`), performs a live chain read and checks its PNG diagram. Both tests prove MCP mechanics, not a personal app connection or financial write. `mcp:settings` prints the **actual absolute Node and script paths** for the checkout containing that script, avoiding the nested-checkout path mistake. The host Codex CLI may be newer than the separately pinned Linux worker CLI 0.154.0. `ACT_APP_URL` and `ACT_SEPOLIA_RPC_URL` optionally override public test endpoints; neither is a secret. Do not use these tests to replay the completed payment/root.
 
 ## Use the read-only MCP in Codex inside the ChatGPT desktop app
 
-The proof above does **not** leave an MCP installed in your personal profile. To use `getTree` in an actual Codex chat, stay in the checkout root and register the local STDIO server once. In PowerShell:
+The proof above does **not** leave an MCP installed in your personal profile. To use the two read tools in an actual Codex chat, register the local STDIO server once. The exact paths are shown by `pnpm mcp:settings`. In PowerShell:
 
 ```powershell
-$actRepo = (Get-Location).Path
+$actScript = (Resolve-Path -LiteralPath 'scripts/mcp-readonly-server.mjs').Path
 $actNode = (Get-Command node).Source
-codex mcp add capital_tree_readonly -- $actNode (Join-Path $actRepo 'scripts/mcp-readonly-server.mjs')
+codex mcp add capital_tree_readonly -- $actNode $actScript
 codex mcp get capital_tree_readonly --json
+codex mcp list --json
 ```
 
 In Bash:
 
 ```sh
+test -f "$PWD/scripts/mcp-readonly-server.mjs" || { echo 'Run this from the current checkout root' >&2; exit 1; }
 codex mcp add capital_tree_readonly -- "$(command -v node)" "$PWD/scripts/mcp-readonly-server.mjs"
 codex mcp get capital_tree_readonly --json
 ```
 
-The resulting configuration contains only the Node executable and an absolute path to the script; no bearer or wallet key is needed. If `capital_tree_readonly` already exists, inspect it with `codex mcp get capital_tree_readonly --json` before changing anything. For a GUI-only route, use ChatGPT desktop **Settings → MCP servers → Add server → STDIO**, choose `node` as command and the script's absolute path as its argument, then Save and Restart. [OpenAI's MCP documentation](https://learn.chatgpt.com/docs/extend/mcp?surface=cli) says the desktop app and Codex CLI share MCP configuration and `/mcp` in the composer lists connected servers. Do not add both GUI and CLI registrations under different names in the same profile.
+The resulting configuration contains only the Node executable and an absolute path to the script; no bearer or wallet key is needed. If `capital_tree_readonly` already exists, inspect it with `codex mcp get capital_tree_readonly --json` before changing anything. If its script path does not exist, remove **only that entry** with `codex mcp remove capital_tree_readonly`, then add it again using the resolved path. For a GUI-only route, use ChatGPT desktop **Settings → MCP servers → Add server → STDIO**; paste the **Command** and **Argument** printed by `pnpm mcp:settings`, then Save and Restart. [OpenAI's MCP documentation](https://learn.chatgpt.com/docs/extend/mcp) says the desktop app and Codex CLI share MCP configuration for the same host and `/mcp` lists connected servers. Do not add both GUI and CLI registrations under different names in the same profile. If a Codex-controlled shell reports an empty `codex mcp list` while the real desktop has entries, check `codex doctor --json`: the shell may be running under an isolated Codex home. Run the check in your normal PowerShell outside the agent sandbox.
 
 Open a **new Codex chat** in the ChatGPT desktop app, select this project, type `/mcp` and confirm `capital_tree_readonly` is enabled. Then ask:
 
 > Use the `capital_tree_readonly` MCP server's `getTree` tool with `rootId: "1"`. Report `source.chainId`, `source.blockNumber`, `source.observedAt`, the node count and the root vault. Do not use the shell, web browsing, another tool or any write action.
 
 The answer should name Sepolia chain `11155111`, two nodes in the current demo tree and a recent block. Check the block and vault against the [public dashboard](https://agent-capital-tree-silk.vercel.app/tree?vault=0xAc5378EdA34f38A7fd34BB808B1b5492aF499bcf). The dashboard and Codex independently read Sepolia; the browser **cannot inspect the local STDIO session**, so its `/mcp` page shows the connection path and instructions, not an automatic live-connected badge. To remove this personal read-only registration later, run `codex mcp remove capital_tree_readonly` after confirming its name with `codex mcp list`.
+
+For the visual tree, ask: “Call `capital_tree_readonly.visualizeTree` with `rootId: "1"` and show its PNG diagram. State its Sepolia block number and observed time.” The image includes actual ENS names, parent/child edges, wallet vaults, Test-USDC balances and permissions; the tool also returns Mermaid text for hosts that do not display MCP image results. In a live Codex CLI test, the host received `text,image`; final rendering inside the ChatGPT desktop UI remains a manual acceptance check.
+
+### Keep a visible MCP connection open on your desktop
+
+Run `pnpm mcp:desktop` in a separate terminal. It starts the same local STDIO server, performs a live `getTree` read, prints `CONNECTED` with chain/block/node count and keeps its **own** connection open, checking it every minute. Ctrl+C stops it. This is an optional, honest status window; Codex and Claude still start **their own** STDIO process when a chat connects. The monitor is not a pairing service and the public dashboard cannot observe it.
+
+### Claude Code and Claude Desktop
+
+For Claude Code on the same laptop, use the same absolute paths printed by `pnpm mcp:settings`:
+
+```powershell
+$actScript = (Resolve-Path -LiteralPath 'scripts/mcp-readonly-server.mjs').Path
+$actNode = (Get-Command node).Source
+claude mcp add --scope user capital_tree_readonly -- $actNode $actScript
+claude mcp get capital_tree_readonly
+```
+
+`claude mcp get` must show `Connected`. Then ask for `visualizeTree` in Claude Code. Claude may ask you to approve that read-only tool once. Do not grant a blanket write permission. This Claude Code configuration is **separate** from the Claude Desktop chat configuration. [Claude Code's MCP guide](https://code.claude.com/docs/en/mcp) explains local STDIO installation and scopes.
+
+For Claude Desktop chat, open **Settings → Developer** and edit its local MCP configuration (`%APPDATA%\Claude\claude_desktop_config.json` on Windows). Merge the `capital_tree_readonly` entry printed by `pnpm mcp:settings` under the existing `mcpServers` object; do not replace other servers. Fully quit and reopen Claude Desktop, then check **+ → Connectors** and Developer connection status. Anthropic documents this [local configuration](https://py.sdk.modelcontextprotocol.io/get-started/real-host/) and the [Desktop connection check](https://support.claude.com/en/articles/10949351-getting-started-with-local-mcp-servers-on-claude-desktop). A packaged `.mcpb` extension for one-click install via Settings → Extensions is **not** supplied yet; do not select a random remote connector, which would require a publicly reachable server. Claude Desktop chat itself has not yet been manually verified with this project.
 
 This is **Codex in the ChatGPT desktop app**, not a normal chat at chatgpt.com. ChatGPT web does not read local Codex config or start this STDIO process; it requires a remote MCP-backed plugin or tunnel, neither of which this project currently provides. The [official distinction](https://learn.chatgpt.com/docs/extend/mcp?surface=cli) matters for jury instructions. Do not confuse this one-tool read-only server with the full 16-tool companion plugin; keep them in separate Codex profiles to avoid duplicate `getTree` tools.
 

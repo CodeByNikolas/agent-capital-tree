@@ -19,7 +19,8 @@ const manifest = JSON.parse(await readFile(new URL('../deployments/usdc-sepolia.
 const rootId = BigInt(manifest.bootstrap.rootId);
 const controller = manifest.contracts.CapitalController.address;
 const rpcUrl = process.env.ACT_SEPOLIA_RPC_URL ?? 'https://ethereum-sepolia.publicnode.com';
-const appUrl = process.env.ACT_APP_URL ?? 'https://agent-capital-tree.vercel.app';
+// The team's main alias still serves the earlier controller; this is the verified USDC app.
+const appUrl = process.env.ACT_APP_URL ?? 'https://agent-capital-tree-silk.vercel.app';
 const chain = capitalClient(rpcUrl, controller);
 const codex = process.env.ACT_CODEX_BIN ?? 'codex';
 const { stdout: version } = await execFile(codex, ['--version'], { timeout: 15_000 });

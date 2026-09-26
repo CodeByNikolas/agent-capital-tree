@@ -10,20 +10,23 @@ pnpm --filter @agent-capital-tree/sdk build
 pnpm --filter @agent-capital-tree/plugin build
 pnpm mcp:doctor
 pnpm mcp:verify
-pnpm mcp:chat-verify`;
+pnpm mcp:chat-verify
+pnpm mcp:settings`;
 
 const cloneSnippet = `git clone --branch work/rami https://github.com/CodeByNikolas/agent-capital-tree.git
 cd agent-capital-tree`;
 
-const installPwsh = `$actRepo = (Get-Location).Path
+const installPwsh = `$actScript = (Resolve-Path -LiteralPath 'scripts/mcp-readonly-server.mjs').Path
 $actNode = (Get-Command node).Source
-codex mcp add capital_tree_readonly -- $actNode (Join-Path $actRepo 'scripts/mcp-readonly-server.mjs')
+codex mcp add capital_tree_readonly -- $actNode $actScript
 codex mcp get capital_tree_readonly --json`;
 
-const installBash = `codex mcp add capital_tree_readonly -- "$(command -v node)" "$PWD/scripts/mcp-readonly-server.mjs"
+const installBash = `test -f "$PWD/scripts/mcp-readonly-server.mjs" || { echo 'Run from checkout root' >&2; exit 1; }
+codex mcp add capital_tree_readonly -- "$(command -v node)" "$PWD/scripts/mcp-readonly-server.mjs"
 codex mcp get capital_tree_readonly --json`;
 
 const chatPrompt = `Use the capital_tree_readonly MCP server's getTree tool with rootId "1". Report source.chainId, source.blockNumber, source.observedAt, node count and root vault. Do not use shell, web browsing, another tool or any write action.`;
+const imagePrompt = `Call capital_tree_readonly.visualizeTree with rootId "1" and show its PNG tree diagram. State the Sepolia block number and observed time. Do not use shell, web or write tools.`;
 
 export function McpPanel({
   deployment,
@@ -103,7 +106,7 @@ export function McpPanel({
         <div className="mcp-connection-flow" aria-label="Codex uses the local MCP to read Sepolia; the dashboard reads Sepolia independently">
           <div className="mcp-connection-node"><strong>Codex chat</strong><span>Check <code>/mcp</code> in the desktop app</span></div>
           <span className="mcp-connection-arrow" aria-hidden="true">→</span>
-          <div className="mcp-connection-node"><strong>Local read-only MCP</strong><span><code>getTree</code> only · no signer</span></div>
+          <div className="mcp-connection-node"><strong>Local read-only MCP</strong><span><code>getTree</code> + <code>visualizeTree</code> · no signer</span></div>
           <span className="mcp-connection-arrow" aria-hidden="true">→</span>
           <div className="mcp-connection-node"><strong>Sepolia</strong><span>Current block and vaults</span></div>
         </div>
@@ -117,7 +120,7 @@ export function McpPanel({
           <h2 id="mcp-tools-title">Full companion tools ({mcpTools.length})</h2>
         </div>
         <p className="mcp-lede">
-          The simple Codex chat setup below exposes only <code>getTree</code>. These 16 tools belong to the separate
+          The simple Codex chat setup below exposes only <code>getTree</code> and <code>visualizeTree</code>. These 16 tools belong to the separate
           authenticated Linux companion; discovery in the temporary verifier does not make them all usable. Read tools
           inspect chain state; write tools request bounded on-chain actions. Every schema is strict — a
           model-supplied <code>agentId</code> is rejected, and node IDs in arguments are targets, never proof of authority.
@@ -145,7 +148,7 @@ export function McpPanel({
         </div>
         <p className="mcp-lede">
           Run these commands from a checkout containing <code>package.json</code>. If you are already in the project,
-          do not clone it again. The automated checks are temporary; the next step registers a persistent one-tool
+          do not clone it again. The automated checks are temporary; the next step registers a persistent two-tool
           read-only MCP for Codex in the ChatGPT desktop app.
         </p>
 
@@ -172,8 +175,8 @@ export function McpPanel({
               <strong>Register in your personal Codex profile</strong>
               <small>
                 Run one shell-specific block from the checkout root. CLI and ChatGPT desktop share MCP configuration.
-                Alternatively use desktop Settings → MCP servers → Add server → STDIO with Node and the script&apos;s
-                absolute path, then restart. Do not register both routes under different names.
+                Alternatively use desktop Settings → MCP servers → Add server → STDIO with the command and argument
+                printed by <code>pnpm mcp:settings</code>, then restart. Do not register both routes under different names.
               </small>
               <span className="mcp-shell-tag">PowerShell · Windows</span>
               <CopyBlock code={installPwsh} label="register read-only MCP in PowerShell" />
@@ -191,6 +194,11 @@ export function McpPanel({
                 connection indicator.
               </small>
               <CopyBlock code={chatPrompt} label="read-only Codex chat prompt" />
+              <CopyBlock code={imagePrompt} label="render the live agent tree inside the chat" />
+              <small>
+                The PNG tool result also contains a Mermaid fallback. For an independent foreground connection status
+                window, run <code>pnpm mcp:desktop</code>; Codex and Claude start their own STDIO connections.
+              </small>
             </div>
           </li>
           <li className="setup-step">
