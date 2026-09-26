@@ -23,11 +23,16 @@ const rootPolicy: Policy = {
 };
 
 const marketPolicy: Policy = {
-  permissions: ["swap", "manage-liquidity", "collect-fees", "exit-liquidity"],
+  permissions: ["delegate", "swap", "manage-liquidity", "collect-fees", "exit-liquidity"],
   allowedTokens: ["ACT-A", "ACT-B"],
   maxActionAmounts: [units("1250000", "ACT-A"), units("1250000", "ACT-B")],
   expiresAt: "2026-11-30T23:59:59.000Z",
   poolId: previewPoolId,
+};
+
+const liquidityPolicy: Policy = {
+  ...marketPolicy,
+  permissions: ["manage-liquidity", "collect-fees", "exit-liquidity"],
 };
 
 const stewardPolicy: Policy = {
@@ -137,13 +142,13 @@ export const previewNodes: readonly VaultNode[] = [
     freeCapital: [units("196000", "ACT-A"), units("136000", "ACT-B")],
     tokenHoldings: [units("596000", "ACT-A"), units("336000", "ACT-B")],
     capitalReceivedFromParent: [units("400000", "ACT-A"), units("200000", "ACT-B")],
-    localPolicy: marketPolicy,
+    localPolicy: liquidityPolicy,
     inheritedConstraints: [
       { ancestorId: "root", ancestorLabel: "Cedar desk", policy: rootPolicy },
       { ancestorId: "market", ancestorLabel: "Market maker", policy: marketPolicy },
     ],
-    effectivePolicy: marketPolicy,
-    authorizedPermissions: marketPolicy.permissions,
+    effectivePolicy: liquidityPolicy,
+    authorizedPermissions: liquidityPolicy.permissions,
     position: { tokenId: "18", liquidity: "42800" },
     source: previewSource,
   },

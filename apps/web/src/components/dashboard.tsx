@@ -716,6 +716,11 @@ interface TreeEdge {
 function layoutTree(nodes: readonly VaultNode[]) {
   const maxNodes = 32;
   const maxDepth = 2;
+  const cardWidth = 240;
+  const cardHeight = 150;
+  const columnStep = 304;
+  const leafPitch = 184;
+  const firstLeafCenter = 119;
   const validNodes = nodes.filter((node) => node.depth <= maxDepth).slice(0, maxNodes);
   const validIds = new Set(validNodes.map((node) => node.id));
   const childrenById = new Map<string, VaultNode[]>();
@@ -731,7 +736,7 @@ function layoutTree(nodes: readonly VaultNode[]) {
   let leafIndex = 0;
   const visit = (node: VaultNode, path = new Set<string>()): number => {
     if (path.has(node.id)) {
-      const centerY = 72 + leafIndex * 116;
+      const centerY = firstLeafCenter + leafIndex * leafPitch;
       leafIndex += 1;
       positions.set(node.id, centerY);
       return centerY;
@@ -743,7 +748,7 @@ function layoutTree(nodes: readonly VaultNode[]) {
     const childCenters = children.map((child) => visit(child, nextPath));
     const centerY = childCenters.length > 0
       ? childCenters.reduce((sum, center) => sum + center, 0) / childCenters.length
-      : 72 + leafIndex++ * 116;
+      : firstLeafCenter + leafIndex++ * leafPitch;
     positions.set(node.id, centerY);
     return centerY;
   };
@@ -756,15 +761,15 @@ function layoutTree(nodes: readonly VaultNode[]) {
 
   const positioned: PositionedTreeNode[] = validNodes.map((node) => ({
     node,
-    left: 16 + node.depth * 205,
-    centerY: positions.get(node.id) ?? 72,
+    left: 16 + node.depth * columnStep,
+    centerY: positions.get(node.id) ?? firstLeafCenter,
   }));
   const byId = new Map(positioned.map((item) => [item.node.id, item]));
   const edges: TreeEdge[] = [];
   for (const child of positioned) {
     const parent = child.node.parentId ? byId.get(child.node.parentId) : undefined;
     if (!parent) continue;
-    const fromX = parent.left + 176;
+    const fromX = parent.left + cardWidth;
     const toX = child.left;
     const junctionX = (fromX + toX) / 2;
     edges.push({
@@ -777,9 +782,9 @@ function layoutTree(nodes: readonly VaultNode[]) {
   }
 
   const levels = Math.max(1, ...positioned.map((item) => item.node.depth + 1));
-  const width = Math.max(450, 16 + (levels - 1) * 205 + 176 + 16);
+  const width = 16 + (levels - 1) * columnStep + cardWidth + 16;
   positioned.sort((left, right) => left.node.depth - right.node.depth);
-  const height = Math.max(364, 98 + Math.max(1, leafIndex) * 116);
+  const height = Math.max(300, firstLeafCenter + (Math.max(1, leafIndex) - 1) * leafPitch + cardHeight / 2 + 36);
   return {
     nodes: positioned,
     edges,
@@ -825,12 +830,12 @@ function CapitalTree({ data, selectedId, onSelect, canSpawnVault, onRequestSpawn
             ))}
           </svg>
           {tree.nodes.map(({ node, left, centerY }) => (
-            <div className="tree-position" role="none" key={node.id} style={{ left, top: centerY - 49 }}>
+            <div className="tree-position" role="none" key={node.id} style={{ left, top: centerY - 75 }}>
               <TreeCard node={node} selected={node.id === selectedId} onSelect={onSelect} parentLabel={node.parentId ? nodeById(data, node.parentId)?.label : undefined} />
             </div>
           ))}
           {Array.from({ length: tree.levels }, (_, depth) => (
-            <div className="tree-column-label" key={depth} style={{ left: 16 + depth * 205 }}>
+            <div className="tree-column-label" key={depth} style={{ left: 16 + depth * 304 }}>
               {depth === 0 ? "OWNER · ROOT" : `LEVEL ${depth}`}
             </div>
           ))}

@@ -147,11 +147,11 @@ button:disabled { cursor: not-allowed; opacity: .55; }
 .panel-heading-actions, .activity-heading-actions { display: flex; align-items: center; gap: 10px; }
 .tree-panel { padding: 25px; }
 .tree-scroll { overflow-x: auto; overflow-y: auto; max-height: min(72vh, 960px); border: 1px solid var(--border); border-radius: 10px; background: var(--soft); }
-.tree-canvas-desktop { position: relative; min-width: 100%; }
+.tree-canvas-desktop { position: relative; margin: 0 auto; }
 .tree-connectors { position: absolute; inset: 0; width: 100%; height: 100%; fill: none; stroke: var(--ring); stroke-width: 1.6; }
 .tree-connectors circle { fill: var(--ring); stroke: none; }
 .tree-position { position: absolute; }
-.tree-node { display: flex; flex-direction: column; width: 176px; min-height: 98px; padding: 12px; border: 1px solid var(--border); border-radius: 10px; background: var(--surface); color: var(--ink); text-align: left; cursor: pointer; }
+.tree-node { display: flex; flex-direction: column; width: 240px; min-height: 150px; padding: 15px; border: 1px solid var(--border); border-radius: 10px; background: var(--surface); color: var(--ink); text-align: left; cursor: pointer; }
 .tree-node:hover, .tree-node-selected { border-color: var(--ring); background: var(--accent); }
 .tree-node:focus-visible { outline: 3px solid var(--ring); outline-offset: 3px; }
 .tree-node-head { display: flex; align-items: center; gap: 6px; margin-bottom: 7px; }
