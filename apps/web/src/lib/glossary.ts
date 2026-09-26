@@ -57,7 +57,7 @@ export const glossary = {
   },
   indexed: {
     label: "Indexed",
-    text: "An event pulled from the MultiBaas indexer and independently verified against the canonical Sepolia receipt.",
+    text: "An event pulled from the activity indexer and independently verified against the canonical Sepolia receipt.",
   },
   finality: {
     label: "Finality",

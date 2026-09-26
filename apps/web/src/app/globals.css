@@ -515,3 +515,10 @@ button:disabled { cursor: not-allowed; opacity: .55; }
 .agent-report-totals dt { color: var(--ink-muted); font-size: 13px; }
 .agent-report-totals dd { margin: var(--space-2) 0 0; font-family: var(--font-mono); font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
 @media (max-width: 640px) { .agent-report-totals { grid-template-columns: 1fr; } }
+
+.funding-details { flex: 1; min-width: 0; }
+.funding-details p { margin: 8px 0; }
+.funding-address { margin-bottom: 0; }
+.funding-address code { overflow-wrap: anywhere; white-space: normal; }
+.operator-pending-notice { margin: var(--space-4) 0; padding: var(--space-4); border: 1px solid var(--line); border-radius: var(--radius-md); }
+.operator-pending-notice p { margin: 8px 0 16px; color: var(--ink-muted); }

@@ -1,5 +1,14 @@
 ## MCP validation and concurrent onboarding review — 27 September
 
+## Funding address, pending operator and quiet refresh — 27 September 2026
+
+- Overview and Setup show the full, copyable root-vault contract address and explain direct Circle Sepolia faucet funding. Root 7 was independently read at block 11789217: all eight policy capabilities are stored, its operator is still zero, authorized capabilities are zero, and its vault holds 20 Test-USDC. No wallet transaction was submitted. UI now distinguishes policy limits from executable authority and links to operator authorization.
+- Routine tree/history/payment polling keeps loaded content visible. Initial reads and vault switches retain skeletons; read failures remain visible and disable wallet actions. The former whole-page loading transition reproduced in the browser before the fix. History pagination no longer replaces existing rows with skeletons.
+- MultiBaas name, checkpoint lag and detailed provenance are displayed on Curvegrid. Other activity pages retain a coverage/status link and an explicit error if history cannot refresh.
+- Checks: production build/TypeScript; new background-refresh regression on Overview, Activity, Uniswap, x402 and Curvegrid; full-address clipboard and mobile overflow checks; pending-operator setup/deep-link and mandate checks; persistent-shell desktop/mobile regression; nine-route initial skeleton/layout regression. Tests replay current public read responses with controlled latency, without financial writes or inference.
+- Publication: source commit/deployment recorded after the production release below.
+
+
 - Connected MCP validation and live tree read passed at Sepolia block 11789135. The session was unselected with no local signer and correctly reported not ready for writes. Plugin tests passed 22/22; keyless STDIO lookup/error/image tests passed at block 11789139; controlled wallet onboarding tests and plugin/runtime builds passed before concurrent onboarding edits.
 - The subsequent WSL runtime run saw concurrent source changes: 31/35 passed. Failures were obsolete budget/consent fixtures, a source/build mismatch, and the existing 10-second CLI startup timeout. This is not acceptance of the new onboarding implementation.
 - Reproduced a new continuation target-binding issue: readiness can report true for selected root 5 while the saved setup identifies root 4. Review also calls for generation-bound completion, terminal polling states, consistent snapshots and verified deployment compatibility. Findings and acceptance gates: [MCP onboarding review](docs/mcp-onboarding-review-2026-09-27.md).

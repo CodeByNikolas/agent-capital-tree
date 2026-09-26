@@ -33,8 +33,8 @@ try {
       await page.locator('.dashboard-loaded-content').evaluate(el => el.dataset.retainedState = 'yes');
       releaseTree = undefined;
       await page.clock.fastForward(20_001);
-      await expect(page.getByLabel('Loading vault data', { exact: true })).toBeVisible();
-      await expect(page.locator('.dashboard-loaded-content')).toBeHidden();
+      await expect(page.getByLabel('Loading vault data', { exact: true })).toHaveCount(0);
+      await expect(page.locator('.dashboard-loaded-content')).toBeVisible();
       await expect(async () => assert.equal(typeof releaseTree, 'function')).toPass();
       releaseTree();
       await expect(page.locator('.dashboard-loaded-content')).toBeVisible();
