@@ -6,7 +6,7 @@ As of 26 September 2026. Read this together with PLAN.md after context compactio
 
 - The dashboard header uses a single Sepolia badge. Removed the runtime-status sidebar footer, successful-read explanation and manual refresh buttons. Read failures still show an alert and keep wallet actions locked; the fictional-preview notice remains.
 - Tree and activity reads wait 20 seconds between completed requests. Payments now follow the same non-overlapping polling pattern, retaining their table while refreshing. Hidden tabs skip polling; leaving a route cancels its pending reads and timers.
-- Production build passed. The six-route browser smoke now checks the compact badge and absence of the removed notices/buttons; deployment/browser results follow after publication.
+- Production build and typecheck passed. Source `8b9e6c8` is pushed and deployed on Vercel (`dpl_4kW613RjYUnVV92zs3Cixvmgdr5x`). The public six-route browser smoke passed at desktop/light and mobile/dark widths, including the visible Sepolia badge, absence of removed notices/buttons, and automatic repeat reads for tree, activity and payments. See `artifacts/ui/usdc-ui-report.json`. No wallet transaction was sent.
 
 ## Minimal vault proxy release — current
 
