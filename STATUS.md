@@ -10,7 +10,7 @@ Nutzerentscheidung: Rapid Prototyping, keine Abwärtskompatibilität, kein Legac
 - `capital.agentcapitalusdc.eth`: Vault `0xAc5378EdA34f38A7fd34BB808B1b5492aF499bcf`, mit 2 USDC und 2 DEMO-USD finanziert. Uniswap-v4-Position NFT39858/Liquidity30000000 liegt im Vault. Preisverhältnis ist ein Testwert, keine USD-Bewertung. Public-Seed abgeschlossen; niemals blind wiederholen oder für reine UI-Tests zurückholen.
 - ERC1271/EIP3009 plus explizites PAY-Recht implementiert. Vault prüft Circle-Digest, aktuellen Agent-Signer, Generation, ENS-Autorität/Vorfahren, Betrag und Ablauf. Keine beliebigen Digest-Signaturen. Nonce-Replay-Schutz durch Circle USDC.
 - MCP `getPaymentServices`/`purchaseService`: feste Dienste, Empfänger und Preisgrenzen; persistentes privates Journal vor Signaturversand, gleiche Nonce bei Wiederholung, unabhängige Transfer-/AuthorizationUsed-Receipt-Prüfung. Serviceantworten sind untrusted Daten.
-- Echter Circle/x402-Fork11785051 bestanden, einschließlich Zahlung0,01USDC, Wiederholung ohne Doppelzahlung, falschem Signer/Generation/Digest, Widerruf, engerem Vorfahren und Operator-Rebind. LP-Eröffnung/-Schließung und Rückholung ebenfalls bestanden. Ein Raw-USDC Rundungsdifferenz bei LP =0,000001USDC. Nachweis `deployments/usdc-x402-fork.json`.
+- Echter Circle/x402-Fork11785184 bestanden, einschließlich Zahlung0,01USDC, Wiederholung ohne Doppelzahlung, falschem Signer/Generation/Digest, Widerruf, engerem Vorfahren und Operator-Rebind. LP-Eröffnung/-Schließung und Rückholung ebenfalls bestanden. Ein Raw-USDC Rundungsdifferenz bei LP =0,000001USDC. Nachweis `deployments/usdc-x402-fork.json`.
 - MultiBaas für neuen Controller als `capitalcontrollerusdc` ab Block11785117 konfiguriert, vor Seed-Aktivität. Privater eingeschränkter Runtime-Key und Vercel-Production-Label auf neuen Controller aktualisiert. Zahlungsevents aus USDC gehören nicht zum Controller-Event-Index.
 - Worker-Image mit x402-Werkzeugen neu gebaut: `sha256:4904e2fcc68d25374fffb15e933f4638719748562fac4156856f1710395edb07`. Zwei isolierte Live-Worker-Containerprüfungen bestanden. Kein Nachweis eines neuen autonomen Modellkaufs.
 
@@ -19,8 +19,8 @@ Nutzerentscheidung: Rapid Prototyping, keine Abwärtskompatibilität, kein Legac
 1. Öffentlicher x402-Nachweis bestanden: `deployments/usdc-payment.json`, Tx `0xf91a8d6619bc3f36f33c4dad8855c777c8e96bbcd451d76eba31d131155e55eb`. Child researcher mit PAY-only,0,25USDC Allokation und0,24USDC Rest. Wiederholung ohne Doppelzahlung. Kontrollierter Loopback-Seller; kein autonomer Modellkauf. Runner abgeschlossen, nicht erneut mit neuen Schlüsseln ausführen. MultiBaas sieben Ereignisse gegen kanonische Receipts bestätigt: `deployments/usdc-multibaas.json`.
 2. Staged Contract-Suite bestanden:37 Tests in8 Suites, einschließlich256 Fuzz-Läufen. ARM-solc-js kann bei kaltem Gesamtbuild OOM erzeugen, deshalb `contracts/scripts/test-contracts.sh` verwenden.
 3. Frontend-Agent `/root/curvegrid_free_tier`, Worktree `agent-capital-tree-web-usdc`, auf aktuellen SDK-PAY-Stand bringen, Review/Integration/Build/Browsertests.
-4. Payment-Review-Agent liefert minimale explizite Fehlermeldung für abgelaufene, ungenutzte Autorisierungen; keine automatische Neusignatur. Review bisher ohne bestätigten Sicherheitsbypass.
-5. Workspace-Tests bestanden:18 Runtime,11 MultiBaas,7 Plugin,2 SDK. UI lokal/öffentlich noch prüfen, README/Abnahme aktualisieren, kohärent committen, pushen und Vercel deployen.
+4. Payment-Review abgeschlossen: explizite Fehlermeldung für abgelaufene, ungenutzte Autorisierungen, keine automatische Neusignatur. Drei fokussierte Zahlungstests und erneuter vollständiger Circle/x402-Fork11785184 bestanden. Kein bestätigter Sicherheitsbypass im Review.
+5. Workspace-Tests bestanden:19 Runtime,11 MultiBaas,7 Plugin,2 SDK. UI lokal/öffentlich noch prüfen, README/Abnahme aktualisieren, kohärent committen, pushen und Vercel deployen.
 
 ## Produktgrenzen
 

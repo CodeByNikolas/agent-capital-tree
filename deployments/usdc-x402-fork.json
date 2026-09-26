@@ -1,7 +1,7 @@
 {
-  "checkedAt": "2026-09-26T08:29:37.949Z",
+  "checkedAt": "2026-09-26T08:56:18.890Z",
   "network": "disposable Ethereum Sepolia fork",
-  "forkBlock": 11785051,
+  "forkBlock": 11785184,
   "token": {
     "address": "0x1c7D4B196Cb0C7B01d743Fbc6116a902379C7238",
     "symbol": "USDC",
@@ -44,7 +44,7 @@
     },
     {
       "name": "claim-demo-quote",
-      "gas": "90095"
+      "gas": "72995"
     },
     {
       "name": "approve-demo-quote",
@@ -72,21 +72,17 @@
     },
     {
       "name": "x402-research-payment",
-      "transactionHash": "0xfd8fa185526a3522898adfd39ca2ceb9e2924a8453dc61233c3eca890d022459",
+      "transactionHash": "0xb6199ff87d8df9840b0441566333ff1591d2c624b7fb58eb38bc5a4a433ff160",
       "amountRaw": "10000",
       "retryChargedAgain": false
     },
     {
-      "name": "initialize-usdc-quote-pool",
-      "gas": "51532"
-    },
-    {
       "name": "open-usdc-lp",
-      "gas": "631911"
+      "gas": "472625"
     },
     {
       "name": "close-usdc-lp",
-      "gas": "248560"
+      "gas": "261247"
     },
     {
       "name": "recover-child",
