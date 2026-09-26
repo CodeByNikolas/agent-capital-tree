@@ -1,63 +1,40 @@
-# RAMI-AGENTS.md
+# RAMI-AGENTS.md — Arbeitsanweisungen für Ramis Agenten
 
-Work log of Rami's agent-assisted contributions to this repo. Newest entry first.
+> **Nur für Ramis Agenten** (Claude Code, Codex, o. Ä.). Rami referenziert diese Datei
+> zu Beginn jeder Session ("lies RAMI-AGENTS.md"). Sie **ersetzt nicht** die geteilte
+> `AGENTS.md` des Projekts, sondern **ergänzt** sie. Der Agent einer anderen Person soll
+> diese Datei **nicht** laden — sie ist absichtlich separat benannt, um Verwechslungen
+> zu vermeiden.
 
----
+## Zuerst lesen
+- Geteilte Projektregeln: **`AGENTS.md`** (Trust-Boundary, Commit-Regeln, Delegation) — gilt weiterhin.
+- Produktentscheidungen & Sicherheitsgrenzen: **`PLAN.md`**. Aktueller Fortschritt & nächste Arbeit: **`STATUS.md`**.
 
-## 2026-09-26 — MCP dashboard section, plugin verification, deploy + environment fixes
+## Geteilter Working Tree (WICHTIG)
+- An diesem Repo arbeitet **parallel ein anderer Agent** auf demselben Branch `work/rami`; er committet und pusht laufend.
+- **Nie gleichzeitig an denselben Dateien arbeiten.** Vor jeder Änderung `git status` prüfen und **fremde uncommittete Änderungen nicht überschreiben**.
+- Vor dem Commit **gezielt nur eigene Dateien** stagen/committen: `git commit --only -- <pfade>` (mit `-m "…"` **vor** `--`). Keine Sammelcommits, die fremde gestagte Änderungen mitnehmen.
 
-### 1. New `/mcp` dashboard section (MCP setup guide + tool catalog)
+## Merges & riskante Git-Operationen
+- Merges (z. B. `origin/main` → `work/rami`) und riskante Git-Ops **nur aus einem isolierten Snapshot**: `git archive <sha> | tar -x -C <tmp>` **außerhalb** des geteilten Verzeichnisses, oder ein separates `git worktree`. **Nie** im geteilten Working Tree mergen (Race/Datenverlust).
+- Zuerst Konflikte auflösen, **lokal grün bauen**, dann landen.
+- Landen nur als Fast-Forward (`git merge --ff-only`). Remote nur mit `git push --force-with-lease` überschreiben. Verworfene/aufgeschobene Merges als lokalen Branch bewahren.
+- **Aktueller Stand:** Der `origin/main`-Merge ist **aufgeschoben**; die fertige, grün gebaute Auflösung liegt lokal als Branch **`defer/merge-main-into-rami`**. Beim Wiederaufgreifen frisch gegen den dann-aktuellen Stand mergen, die Auflösung dort als Vorlage nutzen.
 
-Added a dedicated **MCP** section to the web dashboard (`apps/web`) that exposes the project's agent-facing MCP interface — previously the only MCP-related UI was a dead placeholder in the Setup view (*"Codex plugin · Independent setup pending"*).
+## Build (pnpm-Monorepo)
+- pnpm 11 gated Dependency-Build-Scripts über **`allowBuilds`** in `pnpm-workspace.yaml` (NICHT `onlyBuiltDependencies` — diese Version ignoriert es). `esbuild`, `@tailwindcss/oxide`, `lightningcss`, `sharp` auf `false` setzen (vorgefertigte Binaries; sonst bricht der Build mit `ERR_PNPM_IGNORED_BUILDS` ab).
+- Die Workspace-Pakete **`sdk`** und **`multibaas`** exportieren aus `dist/` und müssen **vor** `next build` per `tsc` gebaut werden (`next.config` hat kein `transpilePackages`). Der Build-Command dafür steht in `apps/web/vercel.json`.
+- **`pnpm --filter …` immer aus dem Repo-Root ausführen, nie aus dem Windows-Home** (`C:\Users\ramie_ckvh54z`). Dort lag versehentlich ein Streu-Node-Projekt (`package.json` + Lockfiles + `node_modules`), wodurch pnpm in fremde Projekte lief (z. B. ein `Hedera`-`package.json` mit illegalem `//`-Kommentar) und der Build fehlschlug. Bereinigt (2026-09-26): `package.json` → `package.json.home-backup` (wiederherstellbar), Lockfiles + `node_modules` gelöscht.
 
-**What it shows** (`/mcp`, new sidebar item):
-- **Server identity + status** — the `capital-tree` server, transport (`stdio · node ./bundle/server.mjs`), endpoint (`POST <ACT_RUNTIME_URL>/v1/tools/<tool>`), auth (`Bearer <ACT_MCP_TOKEN>`), 30 s read / 300 s write timeouts, Codex CLI 0.154.0. Connection status reuses the existing `runtimeLabel` heuristic.
-- **Tool catalog** — all tools with Read/Write badges, mirrored from `packages/plugin/src/tools.ts`.
-- **Setup guide** — ordered steps (prereqs → build plugin → start companion → set env vars → register with Codex → verify), each with copy buttons. Two registration paths (explicit `config.toml` @ 300 s, marketplace @ 60 s) in collapsible disclosures. Env-var step shows **both Bash and PowerShell**.
-- **Security note** — the plugin holds no wallet key / provider credential; token is a local `0600` file, re-issued each start, never printed; a model-supplied `agentId` is rejected.
+## Web-Konventionen
+- Vaults werden über **`?vault=<ENS-Name|Contract-Adresse>`** adressiert. `?root=` ist **stillgelegt** (führt zu `notFound()`). Neue Links/Features müssen das Vault-Modell nutzen.
+- **Root-Verzeichnis (aus der Kette, kein Hardcode):** `GET /api/roots` zählt alle Roots direkt von Sepolia auf (`nextNodeId` → `getNode` → `rootOwner`; Label = ENS-Leaf, owner-/ENS-konsistent). Der Client-Hook **`apps/web/src/lib/use-roots.ts`** (`useDiscoveredRoots`, cached) liefert sie an den **`RootAccessBar`** (in `dashboard.tsx`), der daraus Ein-Klick-Chips rendert (Navigation per `?vault=<adresse>`) und die Roots der verbundenen Wallet als **„Your vault"** markiert. Für neue Root-/Vault-Listen **diese Bausteine wiederverwenden**, keine ID-Listen hardcoden.
+- **Onboarding-Erklärung:** `apps/web/src/components/onboarding-hero.tsx` trägt den „How it works"-Narrativ; die geführte Tour steckt in `guided-tour.tsx` + `lib/tour-steps.ts` (URL-getrieben via `?tour=1&step=N`). Fachbegriffe über `<InfoHint term="…">` (`info-hint.tsx` + `lib/glossary.ts`) erklären, nicht über natives `title=`.
+- **MCP-Integration (`/mcp`):** eigener Dashboard-Bereich (Sidebar „MCP"), der den agentenseitigen MCP-Server dokumentiert — Server-Identität `capital-tree`, Verbindungsstatus, vollständiger Tool-Katalog und eine Codex-Einrichtungsanleitung (Bash **und** PowerShell, mit Copy-Buttons). Bausteine: `apps/web/src/components/mcp-panel.tsx`, `copy-block.tsx` (wiederverwendbarer Copy-Codeblock), `lib/mcp-tools.ts`; verdrahtet in `dashboard.tsx` (`views`-Array + View-Block), `lib/dashboard-page.tsx` (`DashboardView`) und `app/[section]/page.tsx` (Route-Allowlist). **`mcp-tools.ts` ist nur ein Anzeige-Spiegel von `packages/plugin/src/tools.ts` — bei Tool-Änderungen synchron halten** (aktuell **16 Tools**: 5 read / 11 write, inkl. der x402-Tools `getPaymentServices`/`purchaseService`; per Live-stdio-Handshake verifiziert).
 
-**Files**
-- New: `apps/web/src/lib/mcp-tools.ts` (display mirror of `packages/plugin/src/tools.ts` — **keep in sync**), `apps/web/src/components/copy-block.tsx` (reusable copy-to-clipboard code block), `apps/web/src/components/mcp-panel.tsx` (section body).
-- Edited: `apps/web/src/lib/dashboard-page.tsx` (`DashboardView` union), `apps/web/src/app/[section]/page.tsx` (route allowlist), `apps/web/src/components/dashboard.tsx` (`views` nav array + view block + Setup step-4 relink), `apps/web/src/app/globals.css` (`.mcp-*` / `.code-block` styles).
-
-**Design note:** no secrets are surfaced. `ACT_RUNTIME_URL` (loopback) and `ACT_MCP_TOKEN` (local file) do not exist in the web app and stay as placeholders in the guide.
-
-**Commits:** `b93a744` (feature), `4424097` (sync catalog to 16 tools + PowerShell snippets).
-**Live:** https://agent-capital-tree-silk.vercel.app/mcp
-
-### 2. Plugin / MCP server verification (it works)
-
-Verified `packages/plugin` end-to-end, from the **project directory**:
-- `pnpm --filter @agent-capital-tree/plugin build` → `bundle/server.mjs` (~180 ms).
-- `pnpm --filter @agent-capital-tree/plugin test` → **7/7 pass**.
-- **Live stdio MCP handshake** (initialize → tools/list → tools/call): server `agent-capital-tree` 0.1.0, **16 tools** (5 read / 11 write). Fail-closed guard confirmed (missing env → "runtime is not configured"); strict schema confirmed (forged `agentId` → `-32602 Input validation error`).
-
-**The 16 tools** (source of truth: `packages/plugin/src/tools.ts`):
-- Read (5): `getTree`, `getEffectivePolicy`, `getCapitalActivity`, `getOperationStatus`, `getPaymentServices`
-- Write (11): `spawnChild`, `purchaseService`, `allocateCapital`, `tightenPolicy`, `swap`, `openPosition`, `increasePosition`, `collectFees`, `closePosition`, `revokeSubtree`, `reclaimAssets`
-
-> The dashboard catalog had been stale at 14 (the x402 tools `getPaymentServices` / `purchaseService` were added by concurrent work); the live handshake caught it and it was synced in `4424097`.
-
-Fully *running* the companion still needs local setup (Sepolia wallet + gas, Docker, CLIProxyAPI model access, a real private config file) — not covered here.
-
-### 3. Deployment (Vercel)
-
-- Project **agent-capital-tree** on Vercel team **raglibol**; production alias **https://agent-capital-tree-silk.vercel.app**. Logged in as `ramiezze`.
-- **There is NO Git auto-deploy.** Pushing `work/rami` triggers nothing — the Vercel project is not connected to the GitHub repo. `vercel git connect` fails because the repo is owned by **`CodeByNikolas`** and the current GitHub account (`raglibol-re`) has **push-only** access (no admin). Enabling native auto-deploy needs the repo owner to authorize the Vercel GitHub App in-browser; a GitHub-Actions token approach needs repo admin to add a secret. Neither is self-serviceable from this account.
-- **How to deploy:** `vercel deploy --prod --yes` from the repo root (builds on Vercel infra, goes READY, auto-aliases the production URL).
-- **Convenience:** a local-only `git ship` alias was added to this clone's `.git/config` (not committed): `!git push origin HEAD && vercel deploy --prod --yes`. Run `git ship` to push + deploy in one step. A plain `git push` does **not** deploy.
-- ⚠️ A concurrent agent also deploys to the same production alias periodically; if its working tree is behind, it can overwrite the alias with an older build.
-
-### 4. Environment cleanup (fixed `pnpm --filter … build` failing from home)
-
-Running `pnpm --filter @agent-capital-tree/plugin build` from the Windows home directory (`C:\Users\ramie_ckvh54z`) failed — it was crawling into an unrelated project (`Hedera_Tokenization_v2/.../nextjs/package.json`, which has an illegal `//` comment in JSON). Root cause: a stray, accidental Node project living in the home root.
-
-Cleaned up (kept a recoverable backup):
-- `package.json` → renamed to `package.json.home-backup` (restore: rename back + `pnpm install`).
-- Deleted `pnpm-lock.yaml`, `package-lock.json`, `yarn.lock`, and `node_modules/`.
-
-**Rule going forward:** always run `pnpm --filter …` from inside the monorepo, never from home:
-```
-cd "C:\Users\ramie_ckvh54z\Documents\Hackathons\ETHGlobal\Agent Capital Tree\agent-capital-tree"
-pnpm --filter @agent-capital-tree/plugin build
-```
+## Deploy (Ramis eigenes Vercel)
+- Ziel: **Ramis** Vercel-Team **`raglibol`**, Projekt `agent-capital-tree`, Root Directory `apps/web`. (Der Haupt-/andere Tree nutzt ein **anderes** Vercel-Konto — nicht verwechseln.)
+- Deploy per CLI aus dem **Repo-Root**: `vercel deploy --prod --yes --scope raglibol` (baut auf Vercel-Infra, aliased auf die Production-URL).
+- **Keine** Git-Integration → `git push` löst **kein** Deploy aus. Bei laufendem Parallel-Agenten aus einem isolierten `git archive`-Snapshot deployen.
+- **Warum keine Git-Integration:** Repo gehört **`CodeByNikolas`**; das GitHub-Konto `raglibol-re` hat nur Push-Rechte (kein Admin). Native Auto-Deploys müsste der Owner per Vercel-GitHub-App in-browser freischalten (`vercel git connect` scheitert sonst); ein GitHub-Actions-Token bräuchte Repo-Admin für das Secret. Beides nicht allein machbar.
+- **Lokaler `git ship`-Alias** (nur in diesem Clone, in `.git/config`, **nicht** committet): `!git push origin HEAD && vercel deploy --prod --yes` → pusht + deployt in einem Schritt. Ein reines `git push` deployt nicht. Production-URL: **https://agent-capital-tree-silk.vercel.app**.
