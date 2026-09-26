@@ -13,10 +13,13 @@ node packages/runtime/cli.mjs prepare-root /absolute/private-config.json
 # 2. start the companion — it prints the loopback toolsOrigin and the token file path
 node packages/runtime/cli.mjs start /absolute/private-config.json --enable-sepolia-writes`;
 
-const envSnippet = `# Set in the same shell that launches Codex. The bearer is never printed;
-# read it straight from the 0600 file the companion wrote.
+const envSnippetBash = `# Bash — set in the shell that launches Codex. The bearer is never printed.
 export ACT_RUNTIME_URL="http://127.0.0.1:<port>"                        # the loopback toolsOrigin
 export ACT_MCP_TOKEN="$(< /absolute/runtime-root/root-session.token)"  # 0600 file; do not echo it`;
+
+const envSnippetPwsh = `# PowerShell — set in the shell that launches Codex. The bearer is never printed.
+$env:ACT_RUNTIME_URL = "http://127.0.0.1:<port>"                                            # loopback toolsOrigin
+$env:ACT_MCP_TOKEN   = (Get-Content -Raw C:\\absolute\\runtime-root\\root-session.token).Trim()  # do not echo`;
 
 const tomlSnippet = `[mcp_servers.capital_tree_root]
 command = "node"
@@ -139,8 +142,11 @@ export function McpPanel({
           <h2 id="mcp-setup-title">Wire it into Codex</h2>
         </div>
         <p className="mcp-lede">
-          The plugin runs locally and proxies to your companion. Follow the steps in order; the two registration paths in
-          step 5 are alternatives — pick one, don&apos;t register both in the same profile.
+          The plugin runs locally and proxies to your companion. <strong>Replace every placeholder</strong> — <code>&lt;port&gt;</code> and
+          any <code>/absolute/...</code> path (on Windows use a real path like <code>C:\act\config.json</code>) — with your own
+          values; the guide won&apos;t work if you paste them verbatim. Shell-specific commands show both Bash and PowerShell —
+          use the one for your terminal. The two registration paths in step 5 are alternatives — pick one, don&apos;t register
+          both in the same profile.
         </p>
 
         <ol className="setup-steps mcp-steps">
@@ -177,9 +183,12 @@ export function McpPanel({
           <li className="setup-step">
             <span>4</span>
             <div>
-              <strong>Export the two env vars</strong>
+              <strong>Set the two env vars</strong>
               <small>A new bearer is issued on every start — refresh these before launching another Codex process.</small>
-              <CopyBlock code={envSnippet} label="environment variables" />
+              <span className="mcp-shell-tag">Bash · macOS / Linux</span>
+              <CopyBlock code={envSnippetBash} label="environment variables (Bash)" />
+              <span className="mcp-shell-tag">PowerShell · Windows</span>
+              <CopyBlock code={envSnippetPwsh} label="environment variables (PowerShell)" />
             </div>
           </li>
           <li className="setup-step">

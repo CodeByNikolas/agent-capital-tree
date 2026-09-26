@@ -510,6 +510,7 @@ button:disabled { cursor: not-allowed; opacity: .55; }
 .mcp-steps .setup-step > div { flex: 1; min-width: 0; }
 .mcp-steps .setup-step small { line-height: 1.55; }
 .mcp-steps code { font-family: var(--font-mono); font-size: 0.85em; }
+.mcp-shell-tag { display: inline-block; margin: 12px 0 0; color: var(--quiet); font-size: 11px; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; }
 .mcp-path { margin-top: 12px; }
 .mcp-path > summary { font-size: 14px; }
 .mcp-path small { display: block; margin: 8px 0 0; color: var(--quiet); font-size: 13px; line-height: 1.5; }
