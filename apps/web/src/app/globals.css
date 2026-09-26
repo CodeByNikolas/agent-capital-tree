@@ -321,7 +321,9 @@ button:disabled { cursor: not-allowed; opacity: .55; }
   .app-topbar-actions { gap: 6px; } .app-manage-link { display: none; }
   .wallet-address { display: none; } .network-button { font-size: 14px; }
   .dashboard-content { padding: 20px 16px 38px; } .page-heading { margin: 30px 0 25px; }
-  .preview-notice, .live-read-notice { flex-wrap: wrap; } .preview-notice a { white-space: normal; }
+  .preview-notice, .live-read-notice { flex-wrap: wrap; }
+  .preview-notice { display: grid; grid-template-columns: 18px minmax(0, 1fr); }
+  .preview-notice a { grid-column: 2; white-space: normal; }
   .metrics-grid { grid-template-columns: 1fr; } .metric-card { padding: 19px; }
   .tree-panel { padding: 17px; } .tree-scroll { display: none; }
   .tree-canvas-mobile { display: flex; flex-direction: column; gap: 14px; margin: 13px 0; }
@@ -329,7 +331,16 @@ button:disabled { cursor: not-allowed; opacity: .55; }
   .mobile-tree-depth-1 { margin-left: 20px; } .mobile-tree-depth-2 { margin-left: 40px; }
   .mobile-tree-branch { position: absolute; top: -14px; left: -11px; width: 8px; height: 28px; border-left: 1px solid var(--ring); border-bottom: 1px solid var(--ring); }
   .mobile-tree-row .tree-node { width: 100%; min-height: 105px; } .mobile-tree-parent { color: var(--quiet); font-size: 14px; }
-  .activity-meta { align-items: flex-start; text-align: left; } .position-stats { grid-template-columns: 1fr; }
+  .activity-list { display: block; min-width: 0; width: 100%; }
+  .activity-list thead { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+  .activity-list tbody { display: block; }
+  .activity-list .activity-row { display: grid; grid-template-columns: 34px minmax(0, 1fr); gap: 9px 12px; padding: 18px 0; }
+  .activity-list .activity-row td { width: auto; min-width: 0; padding: 0; white-space: normal; overflow-wrap: anywhere; }
+  .activity-list .activity-row td:first-child { grid-column: 1; grid-row: 1 / span 3; }
+  .activity-list .activity-row td:not(:first-child) { grid-column: 2; }
+  .activity-meta { align-items: flex-start; text-align: left; }
+  .activity-meta strong { white-space: normal; }
+  .position-stats { grid-template-columns: 1fr; }
   .wallet-action-form, .wallet-form-grid, .wallet-permission-fields > div { grid-template-columns: 1fr; }
   .setup-panel { grid-template-columns: 1fr; } .node-detail-scroll { padding: 0 10px 20px; }
 }
