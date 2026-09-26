@@ -8,9 +8,9 @@ Reviewed on 26 September 2026 (Europe/Berlin), against [PLAN.md](PLAN.md). **The
 | --- | --- |
 | Public source | https://github.com/CodeByNikolas/agent-capital-tree |
 | Published app | https://agent-capital-tree.vercel.app |
-| Verified frontend deployment | `dpl_3ERiRiD21fvoAvtCgAKBhwRJWoMx`; product source `72fcc42` |
-| Immutable frontend URL | https://agent-capital-tree-8nxdkkoo6-tumblockchains-projects.vercel.app |
-| Last fully observed source CI | [`f144c68`](https://github.com/CodeByNikolas/agent-capital-tree/actions/runs/36222115594), TypeScript and Contracts jobs passed |
+| Verified frontend deployment | `dpl_CecwmDyVPjRKMLYcUGkMTGie4Js2`; product source `b505621` |
+| Immutable frontend URL | https://agent-capital-tree-ceds85iya-tumblockchains-projects.vercel.app |
+| Last fully observed source CI | [`b505621`](https://github.com/CodeByNikolas/agent-capital-tree/actions/runs/36224369865), TypeScript and Contracts jobs passed |
 | Chain | Ethereum Sepolia, `11155111` |
 | Controller | `0x55caFFf719B5FA70c0e8942eEe2C7EE6B8c7Db6b`, deployment block `11781260` |
 | ENS namespace / registry | `agentcapitaltree.eth` / `0x72D923aaBc7b1deD019A25577C46D6Fb1Ff67Fb3` |
@@ -47,7 +47,7 @@ Final owner recovery: [`0x2d4a57…4808c`](https://sepolia.etherscan.io/tx/0x2d4
 | P1: real integration gates | Deployment manifest, [Sepolia fork runner](scripts/test-sepolia-fork.mjs) | MultiBaas ABI/address linking and positive query/receipt verification passed from block11783944 |
 | P2/P3: native ENS EAC, constrained capital, custody, generation and exit | [Controller tests](contracts/test/CapitalController.t.sol), [Registry tests](contracts/test/ManagedRegistry.t.sol), [Owner exit test](contracts/test/CapitalOwnerExit.t.sol) |25 staged Forge tests including256 fuzz runs; live flows supplement rather than replace adversarial tests |
 | P4: SDK / shared state | [SDK](packages/sdk), generated ABI check in CI, actual model runs and final-state check | Reads token amounts as integers; tree snapshot uses one block |
-| P5: frontend / permissions | [UI report](artifacts/ui/smoke-report.json), [desktop](artifacts/ui/root5-current-desktop.png), [mobile](artifacts/ui/root5-current-mobile.png) |1440/390px; hierarchy/order, exact balance access, keyboard Tab/Enter selection with visible focus, invalid/missing roots and disconnected controls tested |
+| P5: frontend / permissions | [UI report](artifacts/ui/smoke-report.json), [desktop](artifacts/ui/root5-current-desktop.png), [mobile](artifacts/ui/root5-current-mobile.png) |Five routes ×1440/390px ×light/dark; sidebar/query navigation, tree geometry,14px minimum rendered text and contrast, keyboard detail Sheet/focus return, mobile amounts/receipts, invalid roots and disconnected controls tested |
 | P6: isolated workers and model access | [worker integration](packages/runtime/test/worker.integration.mjs), [model integration](packages/runtime/test/model.integration.mjs), live model receipts | Separate private keys/workspaces, networkless worker containers, no Docker socket or provider master credential in worker. Host compromise is outside this claim |
 | P7: plugin package/install | [Plugin](packages/plugin), fresh root/model report | [Fresh native install/read proof](deployments/plugin-install-e2e.json) passed on Codex0.154.0; [runner](scripts/test-plugin-install.mjs). Installed plugin retains the default60s timeout; financial writes use the documented direct MCP path |
 | P8/P9: bounded swaps and LP lifecycle | [Swap tests](contracts/test/CapitalSwap.t.sol), [Liquidity tests](contracts/test/CapitalLiquidity.t.sol), real LP receipts | Custody, caller/callback/slippage checks and owner closure after invalid ENS path covered |
@@ -60,6 +60,8 @@ The [Root9 master report](deployments/multibaas-master.json) records a real Sol 
 
 The [local Sepolia-fork rehearsal](deployments/multibaas-master-fork.json) passed before the new public flow. API-format errors and a read-only model refusal were reconciled before continuation. A transient post-model indexer read timeout did not cause a model replay: the [finalizer](scripts/test-multibaas-master-finalize.mjs) verified both existing transactions and performed only the remaining owner recovery. Private original reports/transcripts are retained; public reports contain hashes and sanitized evidence. Root9 is now retired as well; no completed financial runner should be replayed.
 
+The redesigned five-page dashboard preserves the live APIs and wallet action layer. [Additional UI guardrails](artifacts/ui/guardrails-report.json) use a keyless EIP-1193 stub to check owner/account/network gating, stale-state blocking and an injected history outage. They send no transactions and do not replace the historical real MetaMask evidence. Wallet setup now compares the actual injected account with the expected address before recording readiness; helper regression checks passed, but fresh real wallet provisioning was not repeated.
+
 ## Reproduce without spending test funds
 
 ```sh
@@ -68,6 +70,7 @@ pnpm typecheck
 pnpm test
 bash contracts/scripts/test-contracts.sh
 ACT_TEST_APP_URL=https://agent-capital-tree.vercel.app node scripts/test-web-smoke.mjs
+ACT_TEST_APP_URL=https://agent-capital-tree.vercel.app node scripts/test-web-guardrails.mjs
 node scripts/test-sepolia-negative-calls.mjs
 ```
 

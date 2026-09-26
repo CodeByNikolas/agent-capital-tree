@@ -126,7 +126,7 @@ Jury-Voraussetzungen sind Wallet, Sepolia-ETH, Node.js, Docker, Codex und der ob
 
 ## 3. Arbeitspakete, Freigaben und Veröffentlichung
 
-Stack: pnpm TypeScript-Workspace; Next.js, wagmi/viem und React Flow; Solidity/Foundry; Docker; Playwright mit Chromium und MetaMask für echte Wallet-E2E-Tests. Vorhandene Tools verwenden, fehlendes Foundry lokal und versioniert installieren. Keine Host-Updates oder Aktivierung automatischer Hooks.
+Stack: pnpm TypeScript-Workspace; Next.js, shadcn/ui (Base UI), viem mit injiziertem Wallet-Provider und eigener SVG-Baumansicht; Solidity/Foundry; Docker; Playwright mit Chromium und MetaMask für echte Wallet-E2E-Tests. Vorhandene Tools verwenden, fehlendes Foundry lokal und versioniert installieren. Keine Host-Updates oder Aktivierung automatischer Hooks.
 
 | Paket | Inhalt | Abgeschlossen, wenn |
 | --- | --- | --- |
@@ -135,7 +135,7 @@ Stack: pnpm TypeScript-Workspace; Next.js, wagmi/viem und React Flow; Solidity/F
 | P2 | Verwaltete ENS-Registries und Finance-Rollen | Rollen-/Operator-/Lifecycle-Negativtests bestehen |
 | P3 | Kapitalbaum, atomarer Spawn, Notausstieg | Budget-, Vorfahren-, Idempotenz- und Rückholtests bestehen |
 | P4 | SDK und gemeinsame Typen | Echte Contract-Integration aus TypeScript funktioniert |
-| P5 | Dashboard-Grundgerüst | Responsive Baum und Rechteansicht mit klar markierten Entwicklungsdaten |
+| P5 | Dashboard mit fünf Seiten | shadcn Sidebar, responsive Baum-/Rechteansicht mit Knotendetails, lesbare Typografie, System-Theme und klar markierte Beispieldaten; Wallet-Schutzgrenzen erhalten |
 | P6 | Isolierte Runtime und Modellanbindung | Zwei Worker mit verschiedenen Schlüsseln und nachgewiesener Trennung laufen |
 | P7 | Codex-Plugin/Installation | Frisches Profil installiert Plugin und erzeugt einen echten Child-Knoten |
 | P8 | Begrenzter Uniswap-Swap | Erlaubter Swap gelingt, falsche Inputs/Empfänger scheitern |

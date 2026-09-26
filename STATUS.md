@@ -5,9 +5,17 @@ Stand: 26. September 2026 (Europe/Berlin). Nach Kontextkomprimierung zusammen mi
 ## Aktueller Stand
 
 - Public Repository: https://github.com/CodeByNikolas/agent-capital-tree.
-- Live-Dashboard: https://agent-capital-tree.vercel.app. Aktuelles Deployment `dpl_3ERiRiD21fvoAvtCgAKBhwRJWoMx`, https://agent-capital-tree-8nxdkkoo6-tumblockchains-projects.vercel.app (Source72fcc42). Frontend einschließlich Coverage-Anzeige3214df6, mit frontend-design/impeccable geprüft. Exakte Beträge bleiben zugänglich; kompakte Übersicht und mobile Reihenfolge Root→Child→Grandchild→Sibling. Build, Typecheck, fokussierte Tests und veröffentlichter Desktop-/Mobil-/API-Smoke bestanden.
+- Live-Dashboard: https://agent-capital-tree.vercel.app. Aktuelles Deployment `dpl_CecwmDyVPjRKMLYcUGkMTGie4Js2`, https://agent-capital-tree-ceds85iya-tumblockchains-projects.vercel.app (Sourceb505621). Fünf echte Seiten mit shadcn Sidebar/Badge/Button/Card/Sheet/Table, Agentendetails, System-Hell-/Dunkelmodus und größerer Schrift. Mit frontend-design/impeccable und shadcn-MCP umgesetzt; Sol-High-Subagent und Hauptagent-Review. Kapitaldelegation steht im Mittelpunkt; Uniswap ist eine Anwendung, Payments bleiben Zukunftsumfang.
 - ENSv2/Uniswap und der echte Browser→Codex→Child→Grandchild-Ablauf sind nachgewiesen. Live-MultiBaas, tatsächlicher Master-Modell-Ablauf und vollständige Root9-Rückholung sind ebenfalls nachgewiesen. Gesamtabnahme bleibt für unabhängiges Fremdnutzer-Onboarding und die unten genannten Grenzen offen. Die letzte echte Browser-Owner-Rückholung ist bestanden.
 - Root1 ist der finanzierte Seed und bleibt unberührt. Root2 ist widerrufen und leer. Root5 ist der vollständig widerrufene und geleerte Browser-/Modell-Testbaum; nicht erneut als Runtime starten. Root9 mit Child10/11 ist ebenfalls widerrufen und leer. Abgeschlossene Finanzrunner niemals blind wiederholen.
+
+## Dashboard-Neugestaltung: veröffentlicht und geprüft
+
+- Veröffentlichter Browser-Smoke am26.09.2026 um06:41UTC bestanden:22 zusammengefasste Checks, alle fünf Routen auf Desktop/Mobil in beiden Themes, keine JS-Fehler. Root9 zeigt14 indexierte und14 unabhängig receipt-verifizierte Ereignisse. Beide Berichte in artifacts/ui nennen die öffentliche Vercel-URL; UI-Schutztests ebenfalls bestanden.
+- Lokaler Workspace-Build, Typecheck und35 Pakettests bestanden; Wallet-Readiness-Regression geprüft. Setup markiert eine Wallet nur nach tatsächlichem Adressvergleich als bereit; frische reale Wallet-Provisionierung wurde dafür nicht erneut ausgeführt.
+- Browser-Matrix: fünf Seiten × Desktop1440/Mobil390 × Hell/Dunkel, lesbare14px/16px-Typografie und Textkontrast, echte Sidebar-Navigation, Tastatur-Details mit Fokus-Rückkehr, lange ENS-Namen, korrekte Baumgeometrie und mobile Historie ohne seitliches Scrollen.
+- Zusätzliche UI-Schutztests mit schlüssellosem EIP-1193-Stub: fremde Adresse, falsches Netzwerk, veralteter Zustand und injizierter Historienausfall. Keine Signaturen/Transaktionen und kein neuer realer MetaMask- oder Provider-Ausfall-Nachweis. [Bericht](artifacts/ui/guardrails-report.json).
+- Review-/Jury-Walkthrough: [docs/jury-demo.md](docs/jury-demo.md); echte Finanznachweise bleiben unverändert, abgeschlossene Roots wurden nicht erneut ausgeführt.
 
 ## Browser und echte Modelle: Root5
 
@@ -87,7 +95,7 @@ Pool `0x80e34634349a395620aa17ea88c88f61b1bc1631cbb5737b2a8445bba27b563d`, fee30
 
 1. Unabhängiges Fremdnutzer-/Fremdmaschinen-Onboarding bleibt ungeprüft. Frisches lokales Profil, native Marketplace-Installation mit Read und gelieferte Provider-Datei sind belegt; Native Marketplace-Finanzaktionen bleiben ungeprüft; Finanzaktionen sind über den dokumentierten direkten MCP-Pfad mit300Sekunden-Timeout belegt.
 2. Kein absichtlich herbeigeführter echter Curvegrid-Ausfall. Adapter-Fehlerpfade sind getestet; Owner-Exit funktionierte im Root5-Lauf ohne konfigurierte Historie. Dies ist kein Nachweis eines realen Anbieter-Ausfalls während eines laufenden Nutzerablaufs.
-3. Letzte bestätigte vollständige CI für Sourcef144c68: https://github.com/CodeByNikolas/agent-capital-tree/actions/runs/36222115594. Finale Nachweiscommits werden zusätzlich gepusht.
+3. Sourceb505621 ist gepusht und vollständig grün: https://github.com/CodeByNikolas/agent-capital-tree/actions/runs/36224369865 (TypeScript und Contracts). Nachfolgende reine Dokumentations-/UI-Nachweiscommits ändern den veröffentlichten Produktcode nicht.
 4. Uniswap FEEDBACK.md existiert; Feedback-Formular und ETHGlobal-Abgabe wurden nicht gesendet. Teamangaben und eine ausdrückliche Sendeanweisung fehlen.
 
 ## Arbeitsgrenzen
