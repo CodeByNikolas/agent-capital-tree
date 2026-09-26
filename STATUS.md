@@ -5,9 +5,14 @@ Stand: 26. September 2026 (Europe/Berlin). Nach Kontextkomprimierung zusammen mi
 ## Aktueller Stand
 
 - Public Repository: https://github.com/CodeByNikolas/agent-capital-tree.
-- Live-Dashboard: https://agent-capital-tree.vercel.app. Aktuelles Deployment `dpl_9RB4f9NLaxvizurAi9qpocZPAWG5`, https://agent-capital-tree-nssb7pztv-tumblockchains-projects.vercel.app (Sourced172999). Fünf echte Seiten mit shadcn Sidebar/Badge/Button/Card/Sheet/Table, Agentendetails, System-Hell-/Dunkelmodus und größerer Schrift. Mit frontend-design/impeccable und shadcn-MCP umgesetzt; Sol-High-Subagent und Hauptagent-Review. Kapitaldelegation steht im Mittelpunkt; Uniswap ist eine Anwendung, Payments bleiben Zukunftsumfang.
+- Live-Dashboard: https://agent-capital-tree.vercel.app. Aktuelles Deployment `dpl_9JTa95pckip7PT2EbAVyZYVToTMp`, https://agent-capital-tree-6p497n2k9-tumblockchains-projects.vercel.app (Source6897392). Fünf echte Seiten mit shadcn Sidebar/Badge/Button/Card/Sheet/Table, Agentendetails, System-Hell-/Dunkelmodus und größerer Schrift. Mit frontend-design/impeccable und shadcn-MCP umgesetzt; Sol-High-Subagent und Hauptagent-Review. Kapitaldelegation steht im Mittelpunkt; Uniswap ist eine Anwendung, Payments bleiben Zukunftsumfang.
 - ENSv2/Uniswap und der echte Browser→Codex→Child→Grandchild-Ablauf sind nachgewiesen. Live-MultiBaas, tatsächlicher Master-Modell-Ablauf und vollständige Root9-Rückholung sind ebenfalls nachgewiesen. Gesamtabnahme bleibt für unabhängiges Fremdnutzer-Onboarding und die unten genannten Grenzen offen. Die letzte echte Browser-Owner-Rückholung ist bestanden.
 - Root1 ist der finanzierte Seed und bleibt unberührt. Root2 ist widerrufen und leer. Root5 ist der vollständig widerrufene und geleerte Browser-/Modell-Testbaum; nicht erneut als Runtime starten. Root9 mit Child10/11 ist ebenfalls widerrufen und leer. Abgeschlossene Finanzrunner niemals blind wiederholen.
+
+## Einstieg: erkennbare Links
+
+- Die drei Einstiegslinks sind umrandete, unterstrichene Navigationselemente mit Icons und Fokuszustand; mobil untereinander. Copy erklärt ENS-/Adresszugang ohne interne IDs. Setup-Link führt direkt zur vollständigen Anleitung.
+- Build und lokale Desktop-/Mobil-/Hell-/Dunkel-Browserprüfung inklusive Tastatur und Preview-Navigation bestanden. Öffentliche Mobilansicht mit drei Links und ENS-/Adressfeld nach Deployment geprüft.
 
 ## Vault-Suche
 
