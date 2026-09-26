@@ -310,6 +310,7 @@ test('canonical receipts verify amounts/finality and remove orphaned indexer ent
   };
   let checked = await reconcileCapitalActivity(page, rpc);
   assert.equal(checked.items[0].provenance.finality, 'confirmed');
+  assert.deepEqual(checked.verification.checks, ['canonical_block', 'successful_receipt', 'event_identity', 'decoded_values']);
   assert.equal(checked.source.provider, 'multibaas');
   finalizedNumber = 200n;
   checked = await reconcileCapitalActivity(page, rpc);

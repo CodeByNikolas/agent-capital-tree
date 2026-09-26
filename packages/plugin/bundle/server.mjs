@@ -36486,12 +36486,12 @@ var restrictions = external_exports.object({
   maxPerAction: external_exports.record(address, amount).optional()
 }).strict();
 var toolSpecs = {
-  getTree: { description: "Read the current capital tree for a root.", schema: external_exports.object({ rootId: id }).strict(), readOnly: true },
+  getTree: { description: "Read a capital tree at one current RPC block. Each node includes authorizedActions (named capabilities checked onchain for its agent), the exact authorizedCapabilities bitmask, balances and LP state. delegate permits funding direct children; reclaim permits recovering direct children. These authority checks do not guarantee a future transaction: live policy, balances and simulation still apply.", schema: external_exports.object({ rootId: id }).strict(), readOnly: true },
   getEffectivePolicy: { description: "Read a node mandate including inherited restrictions.", schema: external_exports.object({ nodeId: id }).strict(), readOnly: true },
-  getCapitalActivity: { description: "Read paginated indexed activity with source and confirmation status.", schema: external_exports.object({ rootId: id, cursor: external_exports.string().max(512).optional() }).strict(), readOnly: true },
+  getCapitalActivity: { description: "Read paginated MultiBaas-indexed activity enriched from transaction receipts. verification.checks records independent canonical RPC checks of successful receipts, event identity and decoded financial values. Only confirmed/finalized entries are positive evidence. The index checkpoint can lag returned events; missing history does not prove inactivity. Check current getTree balances, named authority and LP state before acting.", schema: external_exports.object({ rootId: id, cursor: external_exports.string().max(512).optional() }).strict(), readOnly: true },
   getOperationStatus: { description: "Reconcile a submitted operation against runtime and chain state.", schema: external_exports.object({ operationKey }).strict(), readOnly: true },
   spawnChild: { description: "Request an on-chain child and bounded capital allocation using an idempotency key.", schema: external_exports.object({ operationKey, task: external_exports.string().min(1).max(12e3), model: id, asset: address, amount, restrictions }).strict(), readOnly: false },
-  allocateCapital: { description: "Allocate additional free parent capital to an existing child.", schema: external_exports.object({ childId: id, asset: address, amount }).strict(), readOnly: false },
+  allocateCapital: { description: "Allocate free capital from the authenticated parent to its existing direct child. Requires the parent delegate capability and valid policy; amounts are raw token units. The signer is bound by the runtime, not supplied by the model.", schema: external_exports.object({ childId: id, asset: address, amount }).strict(), readOnly: false },
   tightenPolicy: { description: "Tighten a node mandate without expanding rights.", schema: external_exports.object({ nodeId: id, restrictions }).strict(), readOnly: false },
   swap: { description: "Request a bounded exact-input swap from a node vault.", schema: external_exports.object({ nodeId: id, tokenIn: address, amountIn: amount, minAmountOut: amount, deadline }).strict(), readOnly: false },
   openPosition: { description: "Open the fixed Uniswap position with exact liquidity and bounded token inputs.", schema: external_exports.object({ nodeId: id, maxAmount0: amount, maxAmount1: amount, liquidity: amount, deadline }).strict(), readOnly: false },
@@ -36499,7 +36499,7 @@ var toolSpecs = {
   collectFees: { description: "Collect earned fees to the bound vault.", schema: external_exports.object({ nodeId: id, minAmount0Out: amount.optional(), minAmount1Out: amount.optional(), deadline }).strict(), readOnly: false },
   closePosition: { description: "Close the existing position to the bound vault.", schema: external_exports.object({ nodeId: id, minAmount0Out: amount, minAmount1Out: amount, deadline }).strict(), readOnly: false },
   revokeSubtree: { description: "Permanently revoke a node and its descendants.", schema: external_exports.object({ nodeId: id }).strict(), readOnly: false },
-  reclaimAssets: { description: "Start or resume authorized parent recovery to bound vaults.", schema: external_exports.object({ nodeId: id }).strict(), readOnly: false }
+  reclaimAssets: { description: "Recover a direct child\u2019s remaining free assets to its authenticated parent vault, revoking the child. Requires the parent reclaim capability; open LP must first be resolved. The signer and destination are bound by the runtime and contracts.", schema: external_exports.object({ nodeId: id }).strict(), readOnly: false }
 };
 
 // src/runtime-client.ts

@@ -104,7 +104,7 @@ export interface CapitalActivityPage {
     indexGapBlocks: number;
     updatedAt: string;
   };
-  verification?: { source: 'rpc'; checkedAtBlock: string; finalizedBlock: string; orphanedItems: number };
+  verification?: { source: 'rpc'; checks: readonly ['canonical_block', 'successful_receipt', 'event_identity', 'decoded_values']; checkedAtBlock: string; finalizedBlock: string; orphanedItems: number };
   source: {
     provider: 'multibaas';
     chainId: typeof CHAIN_ID;
@@ -679,6 +679,7 @@ export async function reconcileCapitalActivity(page: CapitalActivityPage, rpc: {
     items.push({ ...item, provenance: { ...item.provenance, finality } });
   }
   return { ...page, items, verification: {
-    source: 'rpc', checkedAtBlock: head.number.toString(), finalizedBlock: finalized.number.toString(), orphanedItems: page.items.length - items.length,
+    source: 'rpc', checks: ['canonical_block', 'successful_receipt', 'event_identity', 'decoded_values'],
+    checkedAtBlock: head.number.toString(), finalizedBlock: finalized.number.toString(), orphanedItems: page.items.length - items.length,
   } };
 }

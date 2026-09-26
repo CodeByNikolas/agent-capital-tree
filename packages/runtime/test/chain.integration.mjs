@@ -86,6 +86,8 @@ try {
     { tokenId: 0n, liquidity: 0n }, { tokenId: 0n, liquidity: 0n }
   ]);
   assert.ok(tree.nodes[1].authorizedCapabilities !== 0n);
+  assert.deepEqual(tree.nodes[1].authorizedActions, Object.entries(financeRoles)
+    .filter(([, role]) => (tree.nodes[1].authorizedCapabilities & role) !== 0n).map(([name]) => name));
   const handlers = chainHandlers({ rpcUrl, controller: controller.address, accountFor: async context => accounts[context.workerId === 'root' ? 1 : 2] });
   const root = { workerId: 'root', rootId: '1', nodeId: '1', authorityGeneration: '1' };
   // Mine a second confirmation automatically while handlers wait for receipt finality depth.
@@ -99,6 +101,7 @@ try {
     assert.deepEqual((await sdk.getTree(1n)).nodes.map(node => node.balances[0]), [100n, 0n]);
     await handlers.revokeSubtree(root, { nodeId: '2' });
     assert.equal((await sdk.getTree(1n)).nodes[1].authorizedCapabilities, 0n);
+    assert.deepEqual((await sdk.getTree(1n)).nodes[1].authorizedActions, []);
     const intents = await mkdtemp(join(tmpdir(), 'act-spawn-intent-'));
     try {
       const spawnRequest = { operationKey: toHex(2n, { size: 32 }), task: 'synthetic task', model: 'gpt-6-luna',
@@ -297,12 +300,13 @@ syncBuiltinESMExports();
           deniedCli.once('error', reject);
           deniedCli.once('exit', code => resolve({ code }));
         });
-        const result = await Promise.race([deniedExit, delay(3_000).then(() => undefined)]);
+        // Cold module loading can exceed 3s; match the successful CLI startup budget.
+        const result = await Promise.race([deniedExit, delay(15_000).then(() => undefined)]);
         if (result === undefined) {
           if (deniedCli.exitCode === null && deniedCli.signalCode === null) deniedCli.kill('SIGTERM');
           await deniedExit;
         }
-        assert.ok(result, 'CLI fell back after an invalid explicit provider token path');
+        assert.ok(result, 'CLI did not exit within the startup deadline for an invalid explicit provider token path');
         assert.notEqual(result.code, 0, 'CLI accepted an invalid explicit provider token path');
         await assertNoHostHelper();
       }

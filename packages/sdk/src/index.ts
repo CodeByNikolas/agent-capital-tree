@@ -1,7 +1,7 @@
 import { BaseError, ContractFunctionRevertedError, parseAbi, createPublicClient, erc20Abi, getContract, http, type Address, type PublicClient, type HttpTransport, type GetContractReturnType, type ContractFunctionReturnType, type Hex } from 'viem';
 import { sepolia } from 'viem/chains';
 import { capitalControllerAbi } from './abi.js';
-import { financeRoles } from './policy.js';
+import { financeRoles, type Capability } from './policy.js';
 
 export const capitalVaultReadAbi = parseAbi([
   'function positionTokenId() view returns (uint256)',
@@ -18,7 +18,7 @@ type EffectivePolicy = ContractFunctionReturnType<typeof capitalControllerAbi, '
 export type CapitalTree = {
   rootId: bigint; owner: Address; operator: Address; generation: bigint;
   tokens: readonly [Address, Address];
-  nodes: Array<Node & { effectivePolicy: EffectivePolicy; balances: [bigint, bigint]; ensName: string; position: { tokenId: bigint; liquidity: bigint }; authorizedCapabilities: bigint }>;
+  nodes: Array<Node & { effectivePolicy: EffectivePolicy; balances: [bigint, bigint]; ensName: string; position: { tokenId: bigint; liquidity: bigint }; authorizedCapabilities: bigint; authorizedActions: Capability[] }>;
   totalBalances: [bigint, bigint];
   source: { kind: 'rpc'; chainId: number; blockNumber: bigint; blockHash: Hex; timestamp: bigint; observedAt: string };
 };
@@ -69,7 +69,8 @@ export function capitalClient(rpcUrl: string, controllerAddress: Address): Capit
         })),
       ]);
       return { ...node, effectivePolicy, balances: balances as [bigint, bigint], position: { tokenId, liquidity },
-        authorizedCapabilities: permissions.reduce((mask, role) => mask | role, 0n) };
+        authorizedCapabilities: permissions.reduce((mask, role) => mask | role, 0n),
+        authorizedActions: Object.entries(financeRoles).filter(([, role]) => permissions.includes(role)).map(([name]) => name as Capability) };
     }));
     const byId = new Map(nodes.map(node => [node.id, node]));
     const named = nodes.map(node => {
