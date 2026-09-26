@@ -23,7 +23,7 @@ if (command === 'prepare-root') {
   process.stdout.write(`${address}\n`);
 } else {
   let upstreamKey;
-  if (config.providerTokenFile) upstreamKey = (await privateFile(config.providerTokenFile)).trim();
+  if (Object.hasOwn(config, 'providerTokenFile')) upstreamKey = (await privateFile(config.providerTokenFile)).trim();
   else {
     const result = await promisify(execFile)('/usr/local/bin/codexops-proxy-token', [], { encoding: 'utf8' });
     upstreamKey = result.stdout.trim();

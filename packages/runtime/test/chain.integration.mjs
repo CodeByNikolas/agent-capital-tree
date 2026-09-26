@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { spawn } from 'node:child_process';
 import { createServer } from 'node:net';
-import { mkdtemp, readFile, readdir, rm } from 'node:fs/promises';
+import { chmod, mkdir, mkdtemp, readFile, readdir, rm, symlink, writeFile } from 'node:fs/promises';
 import { homedir, tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { setTimeout as delay } from 'node:timers/promises';
@@ -210,6 +210,104 @@ try {
       assert.equal(await rpc.getTransactionCount({ address: rootAddress }), rootNonce);
       assert.equal(await rpc.getBalance({ address: childAccount.address }), fundedBalance);
       assert.equal((await sdk.getTree(1n)).nodes.length, allocatedTree.nodes.length);
+      const cliDirectory = join(runtimeRoot, 'portable-provider-cli');
+      const dockerBin = join(cliDirectory, 'bin');
+      const dockerPath = join(dockerBin, 'docker');
+      const cliConfigPath = join(cliDirectory, 'config.json');
+      const providerTokenPath = join(cliDirectory, 'provider-token');
+      const helperGuardPath = join(cliDirectory, 'host-helper-attempted');
+      const preloadPath = join(cliDirectory, 'guard-provider-helper.mjs');
+      await mkdir(dockerBin, { recursive: true, mode: 0o700 });
+      await writeFile(dockerPath, '#!/bin/sh\nif [ "$1" = info ]; then exit 0; fi\nif [ "$1" = inspect ]; then exit 1; fi\nif [ "$1" = stop ]; then exit 0; fi\nexit 1\n', { mode: 0o700 });
+      await chmod(dockerPath, 0o700);
+      await writeFile(providerTokenPath, 'synthetic-provider-token\n', { mode: 0o600 });
+      await writeFile(preloadPath, `import childProcess from 'node:child_process';
+import { syncBuiltinESMExports } from 'node:module';
+import { appendFileSync } from 'node:fs';
+const original = childProcess.execFile;
+childProcess.execFile = (...args) => {
+  if (args[0] === '/usr/local/bin/codexops-proxy-token') {
+    appendFileSync(${JSON.stringify(helperGuardPath)}, 'attempted\\n', { mode: 0o600 });
+    throw new Error('provider helper forbidden in acceptance');
+  }
+  return original(...args);
+};
+syncBuiltinESMExports();
+`, { mode: 0o600 });
+      const assertNoHostHelper = async () => {
+        let attempted = false;
+        try { await readFile(helperGuardPath); attempted = true; }
+        catch (error) { if (error.code !== 'ENOENT') throw error; }
+        assert.equal(attempted, false, 'CLI attempted to call the HomeBox helper');
+      };
+      const cliEnv = { ...process.env, PATH: `${dockerBin}:${process.env.PATH}`,
+        NODE_OPTIONS: [process.env.NODE_OPTIONS, `--import=${preloadPath}`].filter(Boolean).join(' ') };
+      await writeFile(cliConfigPath, JSON.stringify({ runtimeRoot, rootId: '1', rpcUrl, controller: controller.address,
+        upstream: 'http://127.0.0.1:1/v1', providerTokenFile: providerTokenPath, imageId: `sha256:${'a'.repeat(64)}`,
+        models: ['gpt-6-luna'], childGasWei: '0' }), { mode: 0o600 });
+      const cli = spawn(process.execPath, [new URL('../cli.mjs', import.meta.url).pathname, 'start', cliConfigPath], {
+        env: cliEnv, stdio: ['ignore', 'pipe', 'pipe']
+      });
+      const cliExit = new Promise((resolve, reject) => {
+        cli.once('error', reject);
+        cli.once('exit', (code, signal) => resolve({ code, signal }));
+      });
+      let cliOutput = '', cliReady = false;
+      const cliStartup = new Promise((resolve, reject) => {
+        const timeout = setTimeout(() => reject(new Error('CLI provider-file startup timed out')), 15_000);
+        const fail = () => { clearTimeout(timeout); reject(new Error('CLI provider-file startup failed')); };
+        cli.stdout.on('data', chunk => {
+          cliOutput = (cliOutput + chunk.toString()).slice(-2048);
+          if (cliOutput.includes('Companion listening at')) {
+            cliReady = true;
+            clearTimeout(timeout);
+            resolve(cliOutput);
+          }
+        });
+        cli.stderr.on('data', () => {});
+        cli.once('error', fail);
+        cli.once('exit', () => { if (!cliReady) fail(); });
+      });
+      try {
+        const output = await cliStartup;
+        assert.match(output, /Sepolia writes disabled/);
+        assert.ok(!output.includes('synthetic-provider-token'));
+        await assertNoHostHelper();
+      } finally {
+        if (cli.exitCode === null && cli.signalCode === null) cli.kill('SIGTERM');
+        await cliExit;
+      }
+      const looseToken = join(cliDirectory, 'loose-token');
+      const emptyToken = join(cliDirectory, 'empty-token');
+      const linkedToken = join(cliDirectory, 'linked-token');
+      await writeFile(looseToken, 'synthetic-provider-token\n', { mode: 0o644 });
+      await chmod(looseToken, 0o644);
+      await writeFile(emptyToken, '', { mode: 0o600 });
+      await symlink(providerTokenPath, linkedToken);
+      // Explicit missing, malformed, world-readable, empty, or symlinked files fail closed.
+      const invalidProviderFiles = [join(cliDirectory, 'missing-token'), '', null, false, 17, looseToken, emptyToken, linkedToken];
+      for (const providerTokenFile of invalidProviderFiles) {
+        await writeFile(cliConfigPath, JSON.stringify({ runtimeRoot, rootId: '1', rpcUrl, controller: controller.address,
+          upstream: 'http://127.0.0.1:1/v1', providerTokenFile,
+          imageId: `sha256:${'a'.repeat(64)}`, models: ['gpt-6-luna'], childGasWei: '0' }), { mode: 0o600 });
+        const deniedCli = spawn(process.execPath, [new URL('../cli.mjs', import.meta.url).pathname, 'start', cliConfigPath], {
+          env: cliEnv, stdio: ['ignore', 'ignore', 'ignore']
+        });
+        const deniedExit = new Promise((resolve, reject) => {
+          deniedCli.once('error', reject);
+          deniedCli.once('exit', code => resolve({ code }));
+        });
+        const result = await Promise.race([deniedExit, delay(3_000).then(() => undefined)]);
+        if (result === undefined) {
+          if (deniedCli.exitCode === null && deniedCli.signalCode === null) deniedCli.kill('SIGTERM');
+          await deniedExit;
+        }
+        assert.ok(result, 'CLI fell back after an invalid explicit provider token path');
+        assert.notEqual(result.code, 0, 'CLI accepted an invalid explicit provider token path');
+        await assertNoHostHelper();
+      }
+      console.log(JSON.stringify({ portableProviderCliConfig: true, invalidExplicitTokenFilesRejected: true,
+        hostHelperAttempts: 0, writesEnabled: false }));
       await rm(join(runtimeRoot, 'spawn-journal'), { recursive: true, force: true }); // Disposable loss-of-journal case.
       running = await start();
       try {
