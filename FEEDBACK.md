@@ -1,6 +1,6 @@
 # Uniswap developer feedback — Agent Capital Tree
 
-Work in progress, Ethereum Sepolia. This records actual integration work; it is not confirmation that the feedback form or hackathon submission has been sent.
+Implemented on Ethereum Sepolia with testnet and browser evidence. This records actual integration work; it is not confirmation that the feedback form or hackathon submission has been sent.
 
 ## Integration
 
@@ -27,5 +27,7 @@ On public Sepolia, the system is deployed and the fixed pool is initialized and 
 A separate real-model run created root 2, child 3 and grandchild 4 through the bundled MCP server and isolated workers. The child swapped, opened and increased NFT 39812, collected fees, and delegated a smaller swap-only mandate to the grandchild. After subtree revocation and runtime shutdown, the independent owner closed that LP and recovered every remaining token through the vault hierarchy. [The evidence report](deployments/runtime-e2e.json) records 23 canonical controller events and direct calls rejecting both revoked agents with `Inactive()`. This run used programmatic owner signing; full independent browser/plugin onboarding acceptance is still open. No mainnet safety or audited-custody claim is made.
 
 ## Submission
+
+The later [Root5 Codex run](deployments/root-codex-e2e.json) demonstrates swap, LP opening/increase, nonzero fee collection and delegated sub-agents. The published app and MetaMask then performed [owner LP closure](deployments/browser-owner-close.json) and [complete owner recovery](deployments/browser-owner-recovery.json). All four Root5 vaults are revoked and empty, with the seed pool preserved. These are separate real model and browser flows; independent external-user onboarding remains unproven. The [demo guide](docs/jury-demo.md) provides source-line links and a read-only walkthrough.
 
 The required [Uniswap Developer Feedback Form](https://developers.uniswap.org/hackathon-feedback) still needs to be submitted with this file's public GitHub URL after the implementation and feedback are final.
