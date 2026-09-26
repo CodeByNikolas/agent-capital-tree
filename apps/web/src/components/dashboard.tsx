@@ -42,6 +42,13 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { WalletControlsPanel, type WalletActionMode } from "@/components/wallet-controls";
+import { X402Panel } from "@/components/x402-panel";
+import { InfoHint } from "@/components/info-hint";
+import { GuidedTour } from "@/components/guided-tour";
+import { OnboardingHero, ONBOARDING_OPEN_EVENT } from "@/components/onboarding-hero";
+import { ViewerStatusBar } from "@/components/viewer-status";
+import { TooltipProvider } from "@/components/ui/tooltip";
+import type { GlossaryTerm } from "@/lib/glossary";
 import { useWalletActions } from "@/lib/use-wallet-actions";
 import type {
   ActivityFeedResult,
@@ -78,6 +85,8 @@ interface DashboardProps {
   nodeQuery?: string | null;
   actionQuery?: WalletActionMode;
   view: "overview" | "tree" | "activity" | "applications" | "setup";
+  tour?: boolean;
+  step?: number;
 }
 
 const permissionLabels: Record<Permission, string> = {
@@ -492,7 +501,7 @@ function Topbar({ view, source, wallet, rootQuery, selectedId }: { view: Dashboa
   return (
     <header className="app-topbar">
       <div className="app-topbar-title"><SidebarTrigger aria-label="Toggle navigation" /><span>{views.find((item) => item.id === view)?.title}</span><Badge variant="outline">{source === "preview" ? "Preview workspace" : source === "direct-rpc" ? "Direct RPC view" : "Local diagnostic"}</Badge></div>
-      <div className="app-topbar-actions"><Link className="app-manage-link" href={routeHref("/setup", rootQuery, selectedId)}>Wallet actions</Link><WalletControl wallet={wallet} /></div>
+      <div className="app-topbar-actions"><Link className="app-manage-link app-topbar-guide" href={routeHref("/", rootQuery)} onClick={() => { try { window.localStorage.removeItem("act.onboarding.dismissed"); } catch { /* storage unavailable */ } window.dispatchEvent(new Event(ONBOARDING_OPEN_EVENT)); }}>How it works</Link><Link className="app-manage-link" href={routeHref("/setup", rootQuery, selectedId)}>Wallet actions</Link><WalletControl wallet={wallet} /></div>
     </header>
   );
 }
@@ -507,6 +516,12 @@ function PreviewNotice({ data, deployment }: { data: DashboardData; deployment: 
     </div>
   );
 }
+
+const demoRoots = [
+  { id: "1", label: "Seed liquidity" },
+  { id: "5", label: "4-node hierarchy" },
+  { id: "9", label: "Indexed activity" },
+] as const;
 
 function RootAccessBar({ rootId, defaultRootId, path }: { rootId: string | null; defaultRootId: string | null; path: string }) {
   const alternateHref = rootId
@@ -533,10 +548,32 @@ function RootAccessBar({ rootId, defaultRootId, path }: { rootId: string | null;
         />
         <button className="button button-secondary button-small" type="submit">Load root</button>
       </form>
+      <div className="root-quick-start">
+        <span className="root-quick-label">Demo roots</span>
+        <div className="demo-root-chips" role="group" aria-label="Demo roots">
+          {demoRoots.map((root) => {
+            const active = rootId === root.id;
+            return (
+              <a
+                key={root.id}
+                className={`demo-root-chip${active ? " demo-root-chip-active" : ""}`}
+                href={`${path}?root=${root.id}`}
+                aria-current={active ? "true" : undefined}
+              >
+                <strong>Root {root.id}</strong>
+                <span>{root.label}</span>
+              </a>
+            );
+          })}
+        </div>
+      </div>
       {alternateHref && (
-        <a className="root-preview-link" href={alternateHref}>
-          {rootId ? "Preview sample" : "Open live root"}
-        </a>
+        <div className="source-toggle">
+          <span className="source-toggle-current">{rootId ? "Live chain" : "Preview data"}</span>
+          <a className="root-preview-link" href={alternateHref}>
+            {rootId ? "Preview sample" : "Open live root"}
+          </a>
+        </div>
       )}
     </div>
   );
@@ -587,6 +624,7 @@ function MetricCard({
   source,
   exactValue,
   exactDetail,
+  labelHint,
 }: {
   label: string;
   value: string;
@@ -597,10 +635,11 @@ function MetricCard({
   source: DataSource;
   exactValue?: string;
   exactDetail?: string;
+  labelHint?: GlossaryTerm;
 }) {
   return (
     <article className={`metric-card${accent ? " metric-card-accent" : ""}`}>
-      <div className="metric-card-top"><span>{label}</span><span className="metric-icon">{icon}</span></div>
+      <div className="metric-card-top"><span className="metric-card-label">{label}{labelHint && <InfoHint term={labelHint} />}</span><span className="metric-icon">{icon}</span></div>
       <div className="metric-value" role={exactValue ? "group" : undefined} aria-label={exactValue ? `Exact balance: ${exactValue}` : undefined} title={exactValue}>{value}<span>{unit}</span></div>
       <div className="metric-detail"><PreviewFlag source={source} compact /> <span role={exactDetail ? "group" : undefined} aria-label={exactDetail ? `Exact balance: ${exactDetail}` : undefined} title={exactDetail}>{detail}</span></div>
     </article>
@@ -645,12 +684,13 @@ function SummaryMetrics({ data }: { data: DashboardData }) {
         source={data.source}
       />
       <MetricCard
-        label="Runtime links"
+        label="Linked agent runtimes"
         value={String(data.nodes.filter((node) => node.runtime === "connected").length).padStart(2, "0")}
         unit=" connected"
-        detail="No agent process implied"
+        detail="A live mandate does not mean a bot is running"
         icon={<Zap size={17} aria-hidden="true" />}
         source={data.source}
+        labelHint="runtime"
       />
     </section>
   );
@@ -911,7 +951,7 @@ function CapitalLedger({ data, node }: { data: DashboardData; node: VaultNode })
       <div className="capital-ledger-heading"><strong>Vault holdings &amp; flow</strong><PreviewFlag source={data.source} compact /></div>
       <div className="capital-ledger-table" role="table" aria-label="Current holdings compared with free and directly allocated capital">
         <div className="capital-ledger-row capital-ledger-header" role="row">
-          <span role="columnheader">Asset</span><span role="columnheader">Held now</span><span role="columnheader">Free</span><span role="columnheader">Allocated out</span>
+          <span role="columnheader">Asset</span><span role="columnheader">Held now <InfoHint term="held" /></span><span role="columnheader">Available <InfoHint term="free" /></span><span role="columnheader">Sent to children <InfoHint term="allocated" /></span>
         </div>
         {assets.map((asset) => (
           <div className="capital-ledger-row" role="row" key={asset.key}>
@@ -939,8 +979,8 @@ function MandatePanel({ data, node, canTighten, canRevoke, canRecover, onRequest
     <section className="panel mandate-panel" aria-labelledby="mandate-title">
       <div className="panel-heading panel-heading-compact">
         <div>
-          <div className="panel-overline">SELECTED VAULT <PreviewFlag source={node.source} compact /></div>
-          <h2 id="mandate-title">Effective mandate</h2>
+          <div className="panel-overline">WHAT THIS AGENT MAY DO <PreviewFlag source={node.source} compact /></div>
+          <h2 id="mandate-title">Effective mandate <InfoHint term="effectivePolicy" /></h2>
         </div>
       </div>
 
@@ -950,17 +990,24 @@ function MandatePanel({ data, node, canTighten, canRevoke, canRecover, onRequest
         <span className={`vault-state-pill vault-state-${node.state}`}><span />{node.source === "preview" ? `Example ${vaultStateLabels[node.state].toLowerCase()}` : vaultStateLabels[node.state]}</span>
       </div>
 
+      <p className="mandate-summary">
+        {node.effectivePolicy.allowedTokens.join(" · ")} · {actionCeiling} · {node.authorizedPermissions.length} capabilities · expires {new Date(node.effectivePolicy.expiresAt).toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric", timeZone: "UTC" })}
+      </p>
+
       <CapitalLedger data={data} node={node} />
 
-      <div className="address-pair">
-        <AddressLine label="Agent address" value={node.agentAddress} source={node.source} />
-        <AddressLine label="Bound vault" value={node.vaultAddress} source={node.source} />
-      </div>
+      <details className="mandate-disclosure">
+        <summary>Addresses</summary>
+        <div className="address-pair">
+          <AddressLine label="Agent address" value={node.agentAddress} source={node.source} />
+          <AddressLine label="Bound vault" value={node.vaultAddress} source={node.source} />
+        </div>
+      </details>
 
       <div className="mandate-divider" />
       <div className="policy-section-heading">
         <span className="policy-heading-icon"><ShieldCheck size={15} aria-hidden="true" /></span>
-        <div><strong>Live authorized capabilities</strong><small>Current EAC roles at this vault</small></div>
+        <div><strong>Allowed right now <InfoHint term="authorizedCapabilities" /></strong><small>Live on-chain EAC roles — can be narrower than the policy</small></div>
         <span className="permission-count">{node.authorizedPermissions.length}</span>
       </div>
       {node.authorizedPermissions.length > 0
@@ -969,21 +1016,24 @@ function MandatePanel({ data, node, canTighten, canRevoke, canRecover, onRequest
       {notCurrentlyAuthorized.length > 0 && <p className="authorization-gap">Policy lists {notCurrentlyAuthorized.map((permission) => permissionLabels[permission]).join(" · ")}, but current EAC state does not authorize those actions.</p>}
 
       <div className="inherited-box">
-        <div className="inherited-box-heading"><Network size={14} aria-hidden="true" /><strong>Inherited limits</strong><span>{node.inheritedConstraints.length} ancestors</span></div>
+        <div className="inherited-box-heading"><Network size={14} aria-hidden="true" /><strong>Limits inherited from parents <InfoHint term="inheritedLimits" /></strong><span>{node.inheritedConstraints.length} ancestors</span></div>
         <p>This mandate is capped by every parent on the path to the owner.</p>
         <div className="inherited-limit-row"><span>Allowed assets</span><strong>{node.effectivePolicy.allowedTokens.join(" · ")}</strong></div>
         <div className="inherited-limit-row"><span>Maximum per token</span><strong>{actionCeiling}</strong></div>
         <div className="inherited-limit-row"><span>Authorized now</span><strong>{node.authorizedPermissions.length} capabilities</strong></div>
         {node.inheritedConstraints.length > 0 && (
-          <div className="ancestor-rules">
-            {node.inheritedConstraints.map((constraint) => (
-              <div className="ancestor-rule" key={constraint.ancestorId}>
-                <strong>{constraint.ancestorLabel}</strong>
-                <span>{constraint.policy.permissions.map((permission) => permissionLabels[permission]).join(" · ")}</span>
-                <small>{policyAmountLabel(constraint.policy)} per token</small>
-              </div>
-            ))}
-          </div>
+          <details className="mandate-disclosure mandate-disclosure-inset">
+            <summary>Per-ancestor rules ({node.inheritedConstraints.length})</summary>
+            <div className="ancestor-rules">
+              {node.inheritedConstraints.map((constraint) => (
+                <div className="ancestor-rule" key={constraint.ancestorId}>
+                  <strong>{constraint.ancestorLabel}</strong>
+                  <span>{constraint.policy.permissions.map((permission) => permissionLabels[permission]).join(" · ")}</span>
+                  <small>{policyAmountLabel(constraint.policy)} per token</small>
+                </div>
+              ))}
+            </div>
+          </details>
         )}
         {node.inheritedConstraints.length === 0 && <div className="root-mandate-note">Root mandate · no parent constraints above this vault.</div>}
       </div>
@@ -1167,7 +1217,7 @@ function Footer({ source, walletConnected, rootQuery }: { source: DataSource; wa
   );
 }
 
-export function Dashboard({ data: initialData, deployment, rootQuery, nodeQuery, actionQuery, view }: DashboardProps) {
+export function Dashboard({ data: initialData, deployment, rootQuery, nodeQuery, actionQuery, view, tour = false, step = 1 }: DashboardProps) {
   const router = useRouter();
   const [selectedId, setSelectedId] = useState(nodeQuery ?? initialData.rootId);
   const [detailOpen, setDetailOpen] = useState(false);
@@ -1369,16 +1419,29 @@ export function Dashboard({ data: initialData, deployment, rootQuery, nodeQuery,
   };
 
   return (
+    <TooltipProvider delay={150}>
     <SidebarProvider>
       <AppSidebar view={view} rootQuery={rootQuery} selectedId={selectedNode.id} rootLabel={rootNode?.label ?? "Treasury"} runtimeLabel={runtimeLabel} />
       <SidebarInset className="main-shell">
         <Topbar view={view} source={data.source} wallet={wallet} rootQuery={rootQuery} selectedId={selectedNode.id} />
         <div className="dashboard-content">
+          <GuidedTour active={tour} step={step} />
           <PreviewNotice data={data} deployment={deployment} />
           <RootAccessBar rootId={rootQuery} defaultRootId={deployment.defaultRootId} path={path} />
           {rootQuery && <LiveReadNotice rootId={rootQuery} data={data} loading={currentReadState.status === "loading"} error={liveError} onRetry={() => setTreeRetry((value) => value + 1)} />}
+          <ViewerStatusBar
+            source={data.source}
+            vaultLabel={selectedNode.label}
+            walletConnected={wallet.address !== null}
+            walletOnSepolia={walletOnSepolia}
+            liveStateReady={liveStateReady}
+            ownerConnected={ownerConnected}
+            selectedAgentConnected={selectedAgentConnected}
+            parentCanRestrict={parentCanRestrict}
+          />
           {view === "overview" && <>
-            <div className="page-heading"><span className="page-kicker">Delegated capital · Sepolia</span><h1>Capital under clear authority.</h1><p>See what each vault holds, which mandates are active, and where owner control stands.</p></div>
+            <div className="page-heading"><span className="page-kicker">Delegated capital · Sepolia</span><h1>Each AI agent gets its own wallet — and strict limits.</h1><p>See what each vault holds, which mandates are active, and where owner control stands.</p></div>
+            {!tour && <OnboardingHero />}
             <SummaryMetrics data={data} />
             <div className="overview-lower">
               <Card><CardHeader><CardTitle>Agent tree</CardTitle><CardDescription>Capital moves through bounded vaults, one delegation at a time.</CardDescription></CardHeader><CardContent><div className="overview-node-list">{mobileTreeOrder(data.nodes).slice(0, 5).map((node) => <div key={node.id}><span className="overview-node-indent" style={{ width: node.depth * 20 }} aria-hidden="true" /><GitBranch size={17} aria-hidden="true" /><strong>{node.label}</strong><Badge variant="outline">{node.source === "preview" ? "Example " : ""}{vaultStateLabels[node.state]}</Badge></div>)}</div><Button render={<Link href={routeHref("/tree", rootQuery, selectedNode.id)} />} variant="outline">Explore agent tree <ArrowRight data-icon="inline-end" /></Button></CardContent></Card>
@@ -1403,10 +1466,10 @@ export function Dashboard({ data: initialData, deployment, rootQuery, nodeQuery,
             />
           </>}
           {view === "applications" && <>
-            <div className="page-heading"><span className="page-kicker">Bounded applications</span><h1>Applications</h1><p>Delegated capital can serve a specific mandate. The current integrated application is bounded Uniswap v4 activity.</p></div>
+            <div className="page-heading"><span className="page-kicker">Bounded applications</span><h1>Applications</h1><p>Agents can only act inside their mandate. Built-in actions today are bounded Uniswap v4 activity and x402 service payments settled in USDC.</p></div>
             <PositionsPanel data={data} actions={actions} walletOnSepolia={walletOnSepolia} />
+            <X402Panel node={selectedNode} actions={actions} walletOnSepolia={walletOnSepolia} canPay={selectedAgentConnected} />
             <Card className="future-applications"><CardHeader><CardTitle>Future modules</CardTitle><CardDescription>Planned capabilities. Expand an item to see its scope; these modules cannot execute actions.</CardDescription></CardHeader><CardContent>
-              <details className="future-module"><summary><span>x402 service payments</span><Badge variant="outline" className="future-module-badge">Future work</Badge></summary><p>Not implemented. Purchase research, API access, and other services within an agent mandate. Vault-compatible payment authorization, supported test USDC, recipient limits, and retry-safe settlement must be verified before activation.</p></details>
               <details className="future-module"><summary><span>Contract transactions</span><Badge variant="outline" className="future-module-badge">Future work</Badge></summary><p>Not implemented. Execute approved contract functions with recipient, token, and spending checks. A balance-delta check alone cannot prevent unsafe approvals or future liabilities.</p></details>
               <details className="future-module"><summary><span>Currency conversion & valuation</span><Badge variant="outline" className="future-module-badge">Future work</Badge></summary><p>Not implemented. Display supported assets in a chosen currency using verified price sources. Current ACT-A and ACT-B balances are valueless demo tokens, not USDC or dollar balances.</p></details>
             </CardContent></Card>
@@ -1430,11 +1493,15 @@ export function Dashboard({ data: initialData, deployment, rootQuery, nodeQuery,
               router.push(`/setup?root=${encodeURIComponent(rootId)}`);
             }}
           />
-          <ContractSetupPanel data={dashboardData} deployment={deployment} actions={actions} wallet={wallet} liveStateReady={liveStateReady} historyError={activeActivityState.loadMoreError} />
+          <details className="setup-disclosure">
+            <summary>Deployment &amp; integration status</summary>
+            <ContractSetupPanel data={dashboardData} deployment={deployment} actions={actions} wallet={wallet} liveStateReady={liveStateReady} historyError={activeActivityState.loadMoreError} />
+          </details>
           </>}
           <Footer source={data.source} walletConnected={walletOnSepolia} rootQuery={rootQuery} />
         </div>
       </SidebarInset>
     </SidebarProvider>
+    </TooltipProvider>
   );
 }

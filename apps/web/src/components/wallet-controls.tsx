@@ -13,6 +13,7 @@ import type {
 } from "@/lib/dashboard-types";
 import type { PublicDeployment } from "@/lib/deployment";
 import type { WalletActionNotice } from "@/lib/use-wallet-actions";
+import { InfoHint } from "@/components/info-hint";
 
 export type WalletActionMode =
   | "create-root"
@@ -200,7 +201,7 @@ function PolicyFields({
         </label>
       </div>
       <fieldset className="wallet-permission-fields" disabled={disabled}>
-        <legend>Allowed capabilities</legend>
+        <legend>Allowed capabilities <InfoHint term="mandate" /></legend>
         <div>
           {permissions.map((permission) => {
             const needsPool = ["swap", "manage-liquidity", "collect-fees", "exit-liquidity"].includes(permission);
