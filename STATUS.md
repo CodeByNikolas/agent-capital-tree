@@ -4,6 +4,15 @@
 - Wallet progress and error notices now appear above the form instead of below all controls.
 - Verification: wallet-adapter tests cover delayed receipt, confirmed callback, revert and RPC failure; browser tests cover setup-to-tree navigation, visible pending/confirmed state, receipt link and dismissal on desktop/mobile using controlled wallet/RPC responses without broadcasts. Production build/TypeScript passed.
 
+## Shared capital limit and real-worker onboarding � 27 September 2026
+
+- Implemented explicit shared-limit/funding consent, persistent setup/test identity, automatic continuation, root/generation binding, receipt/event verification and separate gas diagnostics. Confirmed request: 10 Test-USDC shared across the tree, up to 10 Test-USDC new funding, 0.02 Test-USDC child test. Existing private keys and gas were preserved.
+- Added contract-enforced limited roots. Internal transfers do not multiply capital; external token donations above the cap block delegation. Limited roots currently support delegate/restrict/reclaim only; trading/payment accounting is not included.
+- The default Kanoki MCP now exposes 22 tools including native worker preflight and real spawnChild through the existing isolated runtime. No per-child owner signature is needed within granted authority; actual worker startup requires the project-provisioned host. A vault allocation is never reported as a started worker.
+- Validation: 39 contract tests, 22 plugin tests, 19 focused Linux runtime tests, controlled wallet adapter checks, and merged production web build passed. Fresh installed plugin read the five-vault current kanoki.eth tree at Sepolia block 11789344. Actual getWorkerSetup returned unavailable/workerStarted false. No financial transaction or inference run was submitted.
+- Integrated current remote main including kanoki.eth and native macOS capital signing; regenerated the distributed bundle. Old pending agentcapitalvault.eth enrollment remains preserved in its original private controller domain, not silently migrated.
+- OPEN: deploy/verify the new limited controller and authorized namespace, publish its aligned web/MCP manifest, provision the isolated native worker host, safely reattach the existing funded operator if continuing the old enrollment, then obtain wallet signatures and complete the real child/worker E2E. The project responsible person accepted deployment ownership. See [release handoff](docs/shared-capital-limit-release.md).
+
 ## Observable dashboard metrics — 27 September 2026
 
 - Removed the unobservable Runtime/Unknown overview metric and MCP connection/runtime status. Overview now has three summary columns, with matching initial skeleton count and responsive layout. Production build/TypeScript passed.

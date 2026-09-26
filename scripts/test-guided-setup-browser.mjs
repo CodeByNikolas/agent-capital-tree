@@ -11,12 +11,12 @@ try {
       if(method==='eth_chainId')return '0xaa36a7';
       throw new Error('No transaction requests permitted in visual smoke');
     }};});
-    await page.goto(`${base}/setup?action=create-root&label=kanoki-visual-test&budget=100000&operator=0x3333333333333333333333333333333333333333`);
+    await page.goto(`${base}/setup?action=create-root&label=kanoki-visual-test&budget=10000000&funding=10000000&operator=0x3333333333333333333333333333333333333333`);
     await expect(page.getByRole('heading',{name:'Set up Kanoki.',exact:true})).toBeVisible();
     await expect(page.getByRole('button',{name:'Set up Kanoki',exact:true})).toBeEnabled();
     await expect(page.getByRole('button',{name:'Launch a new root vault'})).toHaveCount(0);
     await expect(page.getByLabel('Root ENS label',{exact:true})).toHaveCount(0);
-    await expect(page.getByText('0.1 Test-USDC total',{exact:false})).toBeVisible();
+    await expect(page.getByText('10 Test-USDC total',{exact:false})).toBeVisible();
     await expect(page.getByText('0.01 Sepolia ETH',{exact:true})).toBeVisible();
     assert.equal(await page.locator('.wallet-action-shortcuts').count(),0);
     assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),true);

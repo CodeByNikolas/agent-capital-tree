@@ -8,11 +8,11 @@ On the retired pre-Kanoki deployment, a same-host acceptance run using the earli
 
 ## Recommended: one-time Kanoki wallet setup
 
-After installing the MCP, ask: **“Set up Kanoki with 0.10 Test-USDC.”** The chat calls `prepareRootSetup` without asking for an ENS name. Open its normal-browser link, connect your owner wallet and click **Set up Kanoki**. Confirm the displayed wallet requests. Return to chat; `getCapitalSetup` automatically recognizes the vault and its saved local signer, including after a restart.
+Before setup, Kanoki asks for the shared root-and-children capital limit and separate authorized funding. There is no default amount or demo maximum. An explicitly supplied amount answers that question. The chat calls `prepareRootSetup` without asking for an ENS name. Open its normal-browser link, connect your owner wallet and click **Set up Kanoki**. Confirm the displayed wallet requests. The host keeps calling `continueCapitalSetup` while the owner signs, then runs the saved authorized test. No done message or copied ENS/hash is required. The saved local signer survives restart.
 
 The one guided setup creates the root, authorizes the local signer, deposits the shared USDC budget and tops the signer up to 0.01 native Sepolia ETH for gas. Current contracts can require up to five wallet confirmations (creation, authorization, USDC approval, deposit and gas). There is no manual root selection, operator-address copying, JSON profile, bearer token or separate runtime terminal. The owner key never enters the MCP. Completed deposits are never repeated; keep the same link to resume an interrupted setup.
 
-The capital MCP exposes 19 useful tools. Unconfigured history, purchases and autonomous-worker spawning are omitted. `createChildVault` creates funded vaults managed by this chat, not autonomous model processes. Separate autonomous-worker configuration remains available below. Per-action policy and simulated gas checks still apply; funds and gas are finite.
+The capital MCP exposes 22 tools. Unconfigured history and purchases are omitted. `getWorkerSetup` checks the project-provisioned native worker host; `spawnChild` launches real workers only after those checks pass. `createChildVault` creates funded vaults managed by this chat, not autonomous model processes. Separate autonomous-worker configuration remains available below. Per-action policy and simulated gas checks still apply; funds and gas are finite.
 
 ### Install once
 

@@ -7,6 +7,7 @@ import { sepolia } from 'viem/chains';
 import type { WorkerKeyStore } from './keys.js';
 import type { WorkerContext } from './context.js';
 import type { SpawnChain, SpawnReceipt, SpawnRequest } from './spawn.js';
+import { childGasGrant } from './gas.js';
 
 function canonical(value: unknown): string {
   if (Array.isArray(value)) return `[${value.map(canonical).join(',')}]`;
@@ -37,11 +38,23 @@ export type SpawnChainConfig = Readonly<{
   rpcUrl: string; controller: Address; keys: WorkerKeyStore;
   keyIdFor: (context: WorkerContext) => Promise<string>;
   serialize: <T>(address: Address, action: () => Promise<T>) => Promise<T>;
+  childGasWei?: bigint;
 }>;
 
 export class OnchainSpawnChain implements SpawnChain {
   readonly client;
   #sent = new Map<string, Hex>();
+  async #transaction(keyId: string): Promise<Hex | undefined> {
+    if (this.#sent.has(keyId)) return this.#sent.get(keyId);
+    const path = join(this.config.keys.directory, `${keyId}.transaction`);
+    try {
+      const info = await lstat(path);
+      if (!info.isFile() || info.isSymbolicLink() || info.uid !== process.getuid?.() || (info.mode & 0o777) !== 0o600) throw new Error('unsafe spawn transaction record');
+      const hash = await readFile(path, 'utf8');
+      if (!/^0x[0-9a-fA-F]{64}$/.test(hash)) throw new Error('invalid spawn transaction record');
+      return hash as Hex;
+    } catch (error) { if ((error as NodeJS.ErrnoException).code === 'ENOENT') return undefined; throw error; }
+  }
   async #intent(keyId: string, request: SpawnRequest, allocated: boolean): Promise<void> {
     const path = join(this.config.keys.directory, `${keyId}.intent.json`);
     const value = createHash('sha256').update(canonical(request)).digest('hex');
@@ -115,13 +128,19 @@ export class OnchainSpawnChain implements SpawnChain {
     if (atConfirmation.nodeId !== prepared.operation.nodeId || atConfirmation.paramsHash !== prepared.paramsHash) {
       throw new Error('spawn is awaiting confirmation');
     }
-    const txHash = this.#sent.get(prepared.keyId);
+    const txHash = await this.#transaction(prepared.keyId);
     return { childId: child.id.toString(), ...(txHash ? { txHash } : {}), blockHash: confirmedBlock.hash, blockNumber: confirmedBlock.number.toString() };
   }
 
   async submit(parent: WorkerContext, request: SpawnRequest): Promise<void> {
     const prepared = await this.#parameters(parent, request);
     if (prepared.operation.nodeId !== 0n) return;
+    const pending = await this.#transaction(prepared.keyId);
+    if (pending) {
+      const receipt = await this.client.rpc.waitForTransactionReceipt({hash:pending,confirmations:2,timeout:120_000});
+      if (receipt.status !== 'success') throw new Error('saved spawn transaction reverted; no automatic replacement submitted');
+      return;
+    }
     await this.config.serialize(prepared.account.address, async () => {
       // Recheck inside the signer queue so sibling tool writes cannot race this nonce.
       const current = await this.#parameters(parent, request);
@@ -132,7 +151,8 @@ export class OnchainSpawnChain implements SpawnChain {
       const gas = await this.client.rpc.estimateContractGas({ ...common, functionName: 'spawnChild', args });
       const fees = await this.client.rpc.estimateFeesPerGas();
       const gasLimit = gas * 120n / 100n;
-      const required = gasLimit * fees.maxFeePerGas;
+      const grant = request.execution === 'vault-only' ? 0n : childGasGrant(this.config.childGasWei ?? 0n, current.node.depth);
+      const required = gasLimit * fees.maxFeePerGas + grant + (grant > 0n ? 30_000n * fees.maxFeePerGas : 0n);
       if (await this.client.rpc.getBalance({ address: current.account.address }) < required) {
         throw new Error('Insufficient native Sepolia ETH for estimated child transaction fees; no transaction submitted');
       }
@@ -140,6 +160,7 @@ export class OnchainSpawnChain implements SpawnChain {
       const hash = await wallet.writeContract({ ...common, functionName: 'spawnChild', args, gas: gasLimit,
         maxFeePerGas: fees.maxFeePerGas, maxPriorityFeePerGas: fees.maxPriorityFeePerGas });
       this.#sent.set(current.keyId, hash);
+      await writeFile(join(this.config.keys.directory, `${current.keyId}.transaction`), hash, {mode:0o600,flag:'wx'});
       const receipt = await this.client.rpc.waitForTransactionReceipt({ hash, confirmations: 2, timeout: 120_000 });
       if (receipt.status !== 'success') throw new Error('spawn transaction reverted');
     });

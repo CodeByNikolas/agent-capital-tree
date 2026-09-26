@@ -4,8 +4,8 @@ import { openWalletBrowser } from './open-wallet-browser.mjs';
 import { demoBudgetSchema } from '../packages/plugin/demo-budget.mjs';
 
 export const rootSetupSpec = {
-  description: 'Prepare a new Sepolia demo root with at most 0.10 Test-USDC and open the normal system browser with the existing wallet profile. Do not use an isolated chat browser. Only the owner reviews and signs; this tool sends no transaction.',
-  schema: z.object({ label: z.string().regex(/^[a-z][a-z0-9-]{0,30}$/),
+  description: 'Ask the user for the shared capital limit before setup. No assumed amount. Prepare a Sepolia wallet handoff; only the owner signs.',
+  schema: z.object({ label: z.string().regex(/^[a-z][a-z0-9-]{0,30}$/, 'label: use 1–31 lowercase ASCII letters, digits or hyphens; start with a letter. Spaces and uppercase letters are not allowed.').describe('Optional ENS label: 1–31 lowercase ASCII letters, digits or hyphens, starting with a letter. Omit to generate a name.'),
     budgetRaw: demoBudgetSchema,
     openBrowser: z.boolean().default(true) }).strict(), readOnly: false
 };

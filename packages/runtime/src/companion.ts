@@ -152,6 +152,7 @@ export class RuntimeCompanion {
     }
     this.gas = new ChildGasFunding(config.rpcUrl, join(config.runtimeRoot, 'gas'));
     this.chain = new OnchainSpawnChain({ rpcUrl: config.rpcUrl, controller: config.controller, keys: this.keys,
+      childGasWei:config.mode === 'capital' ? 0n : config.childGasWei,
       keyIdFor: context => this.identities.keyId(context), serialize: (address, action) => this.serialize(address, action) });
     const handlers = chainHandlers({ rpcUrl: config.rpcUrl, controller: config.controller,
       accountFor: async context => this.keys.account(await this.identities.keyId(context)) });

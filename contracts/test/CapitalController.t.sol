@@ -159,6 +159,50 @@ contract CapitalControllerTest is Test {
         vm.stopPrank();
     }
 
+    function testSharedCapitalLimitAndDonationGuard() public {
+        CapitalController.Policy memory p =
+            _policy(FinanceRoles.DELEGATE | FinanceRoles.RESTRICT | FinanceRoles.RECLAIM, 1, 100);
+        p.poolId = bytes32(0);
+        vm.startPrank(owner);
+        uint256 limited = controller.createRootWithCapitalLimit("limited", p, 100);
+        controller.setRootOperator(limited, rootAgent, p);
+        controller.fundRoot(limited, [uint256(100), uint256(0)]);
+        vm.expectRevert(CapitalController.CapitalLimitExceeded.selector);
+        controller.fundRoot(limited, [uint256(1), uint256(0)]);
+        vm.stopPrank();
+        vm.prank(rootAgent);
+        uint256 child = controller.spawnChild(
+            limited, "child", childAgent, p, [uint256(20), uint256(0)], keccak256("limited-child")
+        );
+        assertEq(controller.totalCapital(limited), 100);
+        assertEq(controller.rootCapitalFunded(limited), 100);
+        vm.prank(rootAgent);
+        assertEq(
+            controller.spawnChild(
+                limited, "child", childAgent, p, [uint256(20), uint256(0)], keccak256("limited-child")
+            ),
+            child
+        );
+        assertEq(controller.totalCapital(limited), 100);
+        vm.prank(childAgent);
+        vm.expectRevert(CapitalController.Unauthorized.selector);
+        controller.setCapitalLimit(limited, 200);
+        token0.mint(address(controller.getNode(child).vault), 1);
+        vm.prank(rootAgent);
+        vm.expectRevert(CapitalController.CapitalLimitExceeded.selector);
+        controller.allocateCapital(limited, child, [uint256(1), uint256(0)]);
+        vm.startPrank(owner);
+        controller.setCapitalLimit(limited, 101);
+        vm.expectRevert(CapitalController.CapitalLimitExceeded.selector);
+        controller.setCapitalLimit(limited, 99);
+        CapitalController.Policy memory expanded = p;
+        expanded.capabilities |= FinanceRoles.PAY;
+        vm.expectRevert(CapitalController.InvalidInput.selector);
+        controller.setRootOperator(limited, rootAgent, expanded);
+        controller.ownerEmergencyRecover(child);
+        vm.stopPrank();
+    }
+
     function testAtomicSpawnCustodyAndIdempotency() public {
         CapitalController.Policy memory childPolicy = _policy(FinanceRoles.DELEGATE | FinanceRoles.RECLAIM, 1, 50);
         uint256[2] memory amounts = [uint256(40), uint256(0)];

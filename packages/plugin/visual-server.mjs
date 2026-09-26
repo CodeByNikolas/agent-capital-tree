@@ -21,7 +21,7 @@ export async function visualServer({ name, specs, execute, instructions = '', de
     const parsed=spec?.schema.safeParse(request.params.arguments??{});
     // Only schema-owned messages: never echo supplied values, unknown keys or provider errors.
     if (!parsed?.success) {
-      const details = parsed?.error.issues.filter(issue => issue.code === 'custom').map(issue => issue.message);
+      const details = parsed?.error.issues.filter(issue => issue.code === 'custom' || issue.code === 'invalid_format').map(issue => issue.message);
       return visualResult(name,{},spec?(details?.join(' ') || 'Invalid tool arguments. Check the required fields and allowed values. No handler executed.'):'Unknown tool.',{isError:true,readOnly:spec?.readOnly??true,phase:'validation',snapshot});
     }
     let data;

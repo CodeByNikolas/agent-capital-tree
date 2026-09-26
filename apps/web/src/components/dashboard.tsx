@@ -94,6 +94,7 @@ interface DashboardProps {
   actionQuery?: WalletActionMode;
   demoLabel?: string | null;
   demoBudget?: string | null;
+  setupFunding?: string | null;
   setupOperator?: string | null;
   view: "overview" | "tree" | "activity" | "agent-activity" | "uniswap" | "payments" | "applications" | "mcp" | "setup";
   tour?: boolean;
@@ -1082,7 +1083,7 @@ function Footer({ source, vaultQuery }: { source: DataSource; vaultQuery: string
   );
 }
 
-export function Dashboard({ data: initialData, deployment, vaultQuery, nodeQuery, actionQuery, demoLabel, demoBudget, setupOperator, view, onboarding = false, tour = false, step = 1 }: DashboardProps) {
+export function Dashboard({ data: initialData, deployment, vaultQuery, nodeQuery, actionQuery, demoLabel, demoBudget, setupFunding, setupOperator, view, onboarding = false, tour = false, step = 1 }: DashboardProps) {
   const router = useRouter();
   const vaultKey = vaultQuery?.toLowerCase() ?? null;
   const [selectedId, setSelectedId] = useState(nodeQuery ?? initialData.rootId);
@@ -1370,7 +1371,7 @@ export function Dashboard({ data: initialData, deployment, vaultQuery, nodeQuery
             onModeChange={setWalletActionMode}
             onRootCreated={(vaultAddress) => router.push(setupOperator ? `/tree?vault=${encodeURIComponent(vaultAddress)}` : `/setup?vault=${encodeURIComponent(vaultAddress)}${demoBudget ? `&action=fund-root&budget=${demoBudget}` : ""}`)}
             demoLabel={demoLabel}
-            demoBudget={demoBudget}
+            demoBudget={demoBudget} setupFunding={setupFunding}
             setupOperator={setupOperator}
           />}
           {!setupOperator && <nav className="onboarding-links" aria-label="Explore and get started">
@@ -1499,7 +1500,7 @@ export function Dashboard({ data: initialData, deployment, vaultQuery, nodeQuery
               router.push(`/setup?vault=${encodeURIComponent(vaultAddress)}${demoBudget ? `&action=fund-root&budget=${demoBudget}` : ""}`);
             }}
             demoLabel={demoLabel}
-            demoBudget={demoBudget}
+            demoBudget={demoBudget} setupFunding={setupFunding}
             setupOperator={setupOperator}
           />
           <section className="setup-disclosure" aria-labelledby="integration-status-title">

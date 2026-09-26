@@ -6,7 +6,7 @@ export const TEST_USDC = '0x1c7D4B196Cb0C7B01d743Fbc6116a902379C7238' as const;
 /** Public-only checklist. All chain values must come from the supplied snapshot block. */
 export function capitalReadiness(tree: CapitalTree, localOperator: Address | undefined, gasWei: bigint, budgetRaw = 100_000n) {
   if (tree.source.chainId !== 11155111) throw new Error('Expected Ethereum Sepolia');
-  if (budgetRaw <= 0n || budgetRaw > 100_000n || gasWei < 0n) throw new Error('Invalid demo budget');
+  if (budgetRaw < 0n || budgetRaw >= 2n ** 256n || gasWei < 0n) throw new Error('Invalid capital amount');
   const root = tree.nodes.find(node => node.id === tree.rootId);
   const index = tree.tokens.findIndex(token => token.toLowerCase() === TEST_USDC.toLowerCase());
   if (!root || index < 0) throw new Error('Expected a Test-USDC root');
