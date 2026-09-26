@@ -59,7 +59,7 @@ try {
       }
       if(path==='/payments') {
         await expect(page.locator('.payment-table tbody tr')).toHaveCount(1,{timeout:60000});
-        await expect(page.locator('.payment-table tbody tr')).toContainText('0.010 Test USDC');
+        await expect(page.locator('.payment-table tbody tr')).toContainText('0.010 USDC');
         await expect(page.getByText('Complete scan since this controller was deployed',{exact:false})).toBeVisible();
       }
       await page.screenshot({path:new URL(`usdc-${path.slice(1)||'overview'}-${colorScheme}.png`,output).pathname,fullPage:true});

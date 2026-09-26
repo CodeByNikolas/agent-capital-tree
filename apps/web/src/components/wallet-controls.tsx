@@ -79,9 +79,9 @@ function defaultDeadlineLocal(): string {
 function tokenLabels(data: DashboardData, deployment: PublicDeployment): readonly [string, string] {
   if (data.source === "direct-rpc") {
     const assets = data.nodes[0]?.tokenHoldings ?? [];
-    if (assets.length >= 2) return [assets[0].symbol === "USDC" ? "Test USDC" : assets[0].symbol, assets[1].symbol];
+    if (assets.length >= 2) return [assets[0].symbol === "USDC" ? "USDC" : assets[0].symbol, assets[1].symbol];
   }
-  return deployment.id === "usdc" ? ["Test USDC", "DEMO-USD"] : ["Token 1", "Token 2"];
+  return deployment.id === "usdc" ? ["USDC", "DEMO-USD"] : ["Token 1", "Token 2"];
 }
 
 function defaultAmounts(policy: Policy | null): readonly [string, string] {
@@ -324,7 +324,7 @@ export function WalletControlsPanel({
           {deployment.contractsConfigured ? deployment.poolConfigured ? "Sepolia pool ready" : "Contracts ready · pool pending" : "Contract deployment pending"}
         </span>
       </div>
-      <p className="wallet-controls-intro">Every action is simulated before your wallet is asked to sign. Get Test USDC from Circle’s faucet; this dashboard never mints USDC. DEMO-USD is valueless.</p>
+      <p className="wallet-controls-intro">Every action is simulated before your wallet is asked to sign. Get USDC from Circle’s faucet; this dashboard never mints USDC. DEMO-USD is valueless.</p>
       <div className="wallet-action-shortcuts">
         <a className="button button-secondary button-small" href="https://faucet.circle.com/" target="_blank" rel="noreferrer">Get test USDC <ArrowUpRight size={13} aria-hidden="true" /></a>
         {deployment.demoQuoteAddress && <button className="button button-secondary button-small" type="button" disabled={!walletAddress || !walletOnSepolia || busy || !actions.claimDemoQuote} onClick={() => void actions.claimDemoQuote?.().catch(() => undefined)}>Get DEMO-USD</button>}

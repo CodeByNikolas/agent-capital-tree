@@ -531,7 +531,7 @@ function AppSidebar({ view, vaultQuery, selectedId, rootLabel, runtimeLabel, dat
 function Topbar({ view, source, wallet, vaultQuery, selectedId }: { view: DashboardProps["view"]; source: DataSource; wallet: InjectedWalletState; vaultQuery: string | null; selectedId: string }) {
   return (
     <header className="app-topbar">
-      <div className="app-topbar-title"><SidebarTrigger aria-label="Toggle navigation" /><span>{views.find((item) => item.id === view)?.title}</span><Badge variant="outline">{source === "preview" ? "Fictional sample · no funds" : "Test USDC · Sepolia"}</Badge><Badge variant="outline">{source === "preview" ? "Preview workspace" : source === "direct-rpc" ? "Direct RPC view" : "Local diagnostic"}</Badge></div>
+      <div className="app-topbar-title"><SidebarTrigger aria-label="Toggle navigation" /><span>{views.find((item) => item.id === view)?.title}</span><Badge variant="outline">{source === "preview" ? "Fictional sample · no funds" : "USDC · Sepolia"}</Badge><Badge variant="outline">{source === "preview" ? "Preview workspace" : source === "direct-rpc" ? "Direct RPC view" : "Local diagnostic"}</Badge></div>
       <div className="app-topbar-actions"><Link className="app-manage-link" href={routeHref("/setup", vaultQuery, selectedId)}>Wallet actions</Link><WalletControl wallet={wallet} /></div>
     </header>
   );
@@ -542,7 +542,7 @@ function PreviewNotice({ data, deployment }: { data: DashboardData; deployment: 
   return (
     <div className="preview-notice" role="note">
       <span className="notice-symbol"><CircleDashed size={16} aria-hidden="true" /></span>
-      <p><strong>Fictional preview · no real tokens.</strong> The names, addresses and balances on this page are invented examples, not Sepolia vaults. {deployment.contractsConfigured ? "Open the live demo to see the official Circle Sepolia Test USDC balance." : "The USDC controller deployment is still pending."}</p>
+      <p><strong>Fictional preview · no real tokens.</strong> The names, addresses and balances on this page are invented examples, not Sepolia vaults. {deployment.contractsConfigured ? "Open the live demo to see the official Circle Sepolia USDC balance." : "The USDC controller deployment is still pending."}</p>
       {deployment.contractsConfigured && <Link href="/tree?vault=capital.agentcapitalusdc.eth">Open live demo <ArrowRight size={13} aria-hidden="true" /></Link>}
     </div>
   );
@@ -1173,7 +1173,7 @@ function PaymentsPanel({ history, loading, error, onRetry }: { history: PaymentH
         <TableHeader><TableRow><TableHead>Agent vault</TableHead><TableHead>Amount</TableHead><TableHead>Recipient</TableHead><TableHead>Block</TableHead><TableHead>Evidence</TableHead></TableRow></TableHeader>
         <TableBody>{history?.payments.map((payment) => <TableRow key={payment.id}>
           <TableCell><strong>{payment.nodeName}</strong><small><CopyablePaymentAddress address={payment.from} label="vault address" /></small></TableCell>
-          <TableCell className="payment-amount">{formatRoundedAmount({ rawAmount: payment.amountRaw, decimals: 6, symbol: "USDC" })} <span>Test USDC</span></TableCell>
+          <TableCell className="payment-amount">{formatRoundedAmount({ rawAmount: payment.amountRaw, decimals: 6, symbol: "USDC" })} <span>USDC</span></TableCell>
           <TableCell><CopyablePaymentAddress address={payment.to} label="recipient address" /></TableCell>
           <TableCell>{payment.blockNumber.toLocaleString()}</TableCell>
           <TableCell><a className="activity-transaction-link" href={`https://sepolia.etherscan.io/tx/${payment.transactionHash}`} target="_blank" rel="noreferrer">Receipt <ExternalLink size={13} aria-hidden="true" /></a></TableCell>
@@ -1479,8 +1479,8 @@ export function Dashboard({ data: initialData, deployment, vaultQuery, nodeQuery
             </CardHeader>
             <CardContent>
               <Button onClick={() => setWalletActionMode("create-root")}>Launch a new root vault</Button>
-              <p>Connect a Sepolia wallet to create a vault. Get Test USDC from Circle’s faucet; DEMO-USD is a valueless quote token.</p>
-              <a className="button button-secondary button-small" href="https://faucet.circle.com/" target="_blank" rel="noreferrer">Get Test USDC <ArrowUpRight size={13} aria-hidden="true" /></a>
+              <p>Connect a Sepolia wallet to create a vault. Get USDC from Circle’s faucet; DEMO-USD is a valueless quote token.</p>
+              <a className="button button-secondary button-small" href="https://faucet.circle.com/" target="_blank" rel="noreferrer">Get USDC <ArrowUpRight size={13} aria-hidden="true" /></a>
             </CardContent>
           </Card>
           <RootAccessBar vault={null} path="/setup" />
@@ -1513,7 +1513,7 @@ export function Dashboard({ data: initialData, deployment, vaultQuery, nodeQuery
         <Topbar view={view} source={data.source} wallet={wallet} vaultQuery={vaultQuery} selectedId={selectedNode.id} />
         <div className="dashboard-content">
           <PreviewNotice data={data} deployment={deployment} />
-          {data.source === "direct-rpc" && rootNode?.tokenHoldings[0]?.symbol === "USDC" && BigInt(rootNode.tokenHoldings[0].rawAmount) === 0n && <div className="zero-usdc-notice" role="note"><Coins size={20} aria-hidden="true" /><span><strong>This root has no Test USDC.</strong> Request Sepolia USDC from Circle, then use Fund root in Setup &amp; control. The owner wallet also needs Sepolia ETH for gas; the vault itself does not.</span><a href="https://faucet.circle.com/" target="_blank" rel="noreferrer">Circle faucet <ArrowUpRight size={15} aria-hidden="true" /></a></div>}
+          {data.source === "direct-rpc" && rootNode?.tokenHoldings[0]?.symbol === "USDC" && BigInt(rootNode.tokenHoldings[0].rawAmount) === 0n && <div className="zero-usdc-notice" role="note"><Coins size={20} aria-hidden="true" /><span><strong>This root has no USDC.</strong> Request Sepolia USDC from Circle, then use Fund root in Setup &amp; control. The owner wallet also needs Sepolia ETH for gas; the vault itself does not.</span><a href="https://faucet.circle.com/" target="_blank" rel="noreferrer">Circle faucet <ArrowUpRight size={15} aria-hidden="true" /></a></div>}
           {view === "overview" && <>
             <div className="page-heading"><span className="page-kicker">Delegated capital · Sepolia</span><h1>Capital under clear authority.</h1><p>See what each vault holds, which mandates are active, and where owner control stands.</p></div>
             <SummaryMetrics data={data} />
@@ -1541,7 +1541,7 @@ export function Dashboard({ data: initialData, deployment, vaultQuery, nodeQuery
           </>}
           {view === "uniswap" && <>
             <div className="page-heading"><span className="page-kicker">Bounded Uniswap v4 actions</span><h1>Uniswap</h1><p>{deployment.poolConfigured ? "Agents with the right mandate can swap within the fixed pool and manage vault-owned liquidity positions." : "Uniswap swaps and liquidity management are unavailable for this deployment."}</p></div>
-            <div className="module-summary"><div><strong>Swap</strong><span>Exact input · fixed Test USDC / DEMO-USD pool · minimum output and deadline</span></div><div><strong>Liquidity</strong><span>Open, increase, collect fees, or close with separate ENS rights</span></div></div>
+            <div className="module-summary"><div><strong>Swap</strong><span>Exact input · fixed USDC / DEMO-USD pool · minimum output and deadline</span></div><div><strong>Liquidity</strong><span>Open, increase, collect fees, or close with separate ENS rights</span></div></div>
             <PositionsPanel data={data} actions={actions} walletOnSepolia={walletOnSepolia} />
             <ActivityPanel data={{ ...dashboardData, activity: dashboardData.activity.filter((item) => ["swap", "position-opened", "position-increased", "position-closed", "fees-collected"].includes(item.kind)) }} feed={activityFeed} loading={activeActivityState.loading} loadingMore={activeActivityState.loadingMore} loadMoreError={activeActivityState.loadMoreError} onRetry={() => setActivityRetry((value) => value + 1)} onLoadMore={() => void loadEarlierActivity()} uniswapOnly />
             <p className="module-footnote">The agent MCP provides swap and LP actions. This page shows positions and verified indexed actions; it does not submit swaps from the browser. DEMO-USD is a valueless test asset, so pool prices are not dollar valuations.</p>
