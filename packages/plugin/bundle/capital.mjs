@@ -51189,6 +51189,62 @@ var init_abi2 = __esm({
       },
       {
         "type": "function",
+        "name": "createRootWithCapitalLimit",
+        "inputs": [
+          {
+            "name": "label",
+            "type": "string",
+            "internalType": "string"
+          },
+          {
+            "name": "policy",
+            "type": "tuple",
+            "internalType": "struct CapitalController.Policy",
+            "components": [
+              {
+                "name": "capabilities",
+                "type": "uint256",
+                "internalType": "uint256"
+              },
+              {
+                "name": "maxAmounts",
+                "type": "uint256[2]",
+                "internalType": "uint256[2]"
+              },
+              {
+                "name": "expiry",
+                "type": "uint64",
+                "internalType": "uint64"
+              },
+              {
+                "name": "tokenMask",
+                "type": "uint8",
+                "internalType": "uint8"
+              },
+              {
+                "name": "poolId",
+                "type": "bytes32",
+                "internalType": "bytes32"
+              }
+            ]
+          },
+          {
+            "name": "limit",
+            "type": "uint256",
+            "internalType": "uint256"
+          }
+        ],
+        "outputs": [
+          {
+            "name": "rootId",
+            "type": "uint256",
+            "internalType": "uint256"
+          }
+        ],
+        "stateMutability": "nonpayable"
+      },
+      {
+        "type": "function",
         "name": "fundRoot",
         "inputs": [
           {
@@ -51614,6 +51670,44 @@ var init_abi2 = __esm({
       },
       {
         "type": "function",
+        "name": "rootCapitalFunded",
+        "inputs": [
+          {
+            "name": "",
+            "type": "uint256",
+            "internalType": "uint256"
+          }
+        ],
+        "outputs": [
+          {
+            "name": "",
+            "type": "uint256",
+            "internalType": "uint256"
+          }
+        ],
+        "stateMutability": "view"
+      },
+      {
+        "type": "function",
+        "name": "rootCapitalLimit",
+        "inputs": [
+          {
+            "name": "",
+            "type": "uint256",
+            "internalType": "uint256"
+          }
+        ],
+        "outputs": [
+          {
+            "name": "",
+            "type": "uint256",
+            "internalType": "uint256"
+          }
+        ],
+        "stateMutability": "view"
+      },
+      {
+        "type": "function",
         "name": "rootGeneration",
         "inputs": [
           {
@@ -51687,6 +51781,24 @@ var init_abi2 = __esm({
           }
         ],
         "stateMutability": "view"
+      },
+      {
+        "type": "function",
+        "name": "setCapitalLimit",
+        "inputs": [
+          {
+            "name": "rootId",
+            "type": "uint256",
+            "internalType": "uint256"
+          },
+          {
+            "name": "limit",
+            "type": "uint256",
+            "internalType": "uint256"
+          }
+        ],
+        "outputs": [],
+        "stateMutability": "nonpayable"
       },
       {
         "type": "function",
@@ -51904,6 +52016,25 @@ var init_abi2 = __esm({
         "stateMutability": "nonpayable"
       },
       {
+        "type": "function",
+        "name": "totalCapital",
+        "inputs": [
+          {
+            "name": "rootId",
+            "type": "uint256",
+            "internalType": "uint256"
+          }
+        ],
+        "outputs": [
+          {
+            "name": "total",
+            "type": "uint256",
+            "internalType": "uint256"
+          }
+        ],
+        "stateMutability": "view"
+      },
+      {
         "type": "event",
         "name": "CapitalAllocated",
         "inputs": [
@@ -51933,6 +52064,25 @@ var init_abi2 = __esm({
           },
           {
             "name": "amount",
+            "type": "uint256",
+            "indexed": false,
+            "internalType": "uint256"
+          }
+        ],
+        "anonymous": false
+      },
+      {
+        "type": "event",
+        "name": "CapitalLimitSet",
+        "inputs": [
+          {
+            "name": "rootId",
+            "type": "uint256",
+            "indexed": true,
+            "internalType": "uint256"
+          },
+          {
+            "name": "limit",
             "type": "uint256",
             "indexed": false,
             "internalType": "uint256"
@@ -52351,6 +52501,11 @@ var init_abi2 = __esm({
       {
         "type": "error",
         "name": "BadTransfer",
+        "inputs": []
+      },
+      {
+        "type": "error",
+        "name": "CapitalLimitExceeded",
         "inputs": []
       },
       {
@@ -61560,10 +61715,148 @@ var init_keys = __esm({
   }
 });
 
+// dist/gas.js
+import { randomBytes as randomBytes9 } from "node:crypto";
+import { mkdir as mkdir3, readFile as readFile3, readdir, rename as rename2, writeFile as writeFile3, lstat as lstat4 } from "node:fs/promises";
+import { join as join3 } from "node:path";
+function childGasGrant(base, parentDepth) {
+  if (base < 0n || base > MAX_CHILD_GAS_WEI)
+    throw new Error("invalid child gas budget");
+  if (parentDepth === 1)
+    return base;
+  if (parentDepth === 2)
+    return base / 4n;
+  throw new Error("maximum worker depth reached");
+}
+var MAX_CHILD_GAS_WEI, MAX_FEE_PER_GAS_WEI, ChildGasFunding;
+var init_gas = __esm({
+  "dist/gas.js"() {
+    "use strict";
+    init_esm2();
+    init_chains();
+    MAX_CHILD_GAS_WEI = 25000000000000000n;
+    MAX_FEE_PER_GAS_WEI = 20000000000n;
+    ChildGasFunding = class {
+      rpcUrl;
+      directory;
+      rpc;
+      constructor(rpcUrl, directory) {
+        this.rpcUrl = rpcUrl;
+        this.directory = directory;
+        this.rpc = createPublicClient({ chain: sepolia, transport: http(rpcUrl, { timeout: 15e3 }) });
+      }
+      async recoverPending() {
+        try {
+          await lstat4(this.directory);
+        } catch (error62) {
+          if (error62.code === "ENOENT")
+            return;
+          throw error62;
+        }
+        if (await this.rpc.getChainId() !== sepolia.id)
+          throw new Error("expected Sepolia chain ID");
+        const directoryInfo = await lstat4(this.directory);
+        if (!directoryInfo.isDirectory() || directoryInfo.isSymbolicLink() || directoryInfo.uid !== process.getuid?.() || (directoryInfo.mode & 511) !== 448)
+          throw new Error("invalid private gas journal");
+        for (const entry of await readdir(this.directory)) {
+          if (!/^child-[a-f0-9]{64}\.json$/.test(entry))
+            continue;
+          const path = join3(this.directory, entry);
+          const info = await lstat4(path);
+          if (!info.isFile() || info.isSymbolicLink() || info.uid !== process.getuid?.() || (info.mode & 511) !== 384) {
+            throw new Error("invalid gas record");
+          }
+          const record2 = JSON.parse(await readFile3(path, "utf8"));
+          if (keccak256(record2.raw) !== record2.hash || BigInt(record2.value) > MAX_CHILD_GAS_WEI)
+            throw new Error("invalid gas record");
+          await this.#broadcast(record2);
+        }
+      }
+      async #broadcast(record2) {
+        if (!record2.raw.startsWith("0x02"))
+          throw new Error("invalid gas transaction type");
+        const transaction = parseTransaction(record2.raw);
+        const sender = await recoverTransactionAddress({ serializedTransaction: record2.raw });
+        if (transaction.chainId !== sepolia.id || transaction.to?.toLowerCase() !== record2.to.toLowerCase() || transaction.value?.toString() !== record2.value || sender.toLowerCase() !== record2.from.toLowerCase()) {
+          throw new Error("gas record does not match signed transaction");
+        }
+        let receipt = await this.rpc.getTransactionReceipt({ hash: record2.hash }).catch(() => void 0);
+        if (!receipt) {
+          try {
+            await this.rpc.sendRawTransaction({ serializedTransaction: record2.raw });
+          } catch {
+            receipt = await this.rpc.getTransactionReceipt({ hash: record2.hash }).catch(() => void 0);
+            if (!receipt)
+              throw new Error("gas broadcast outcome is uncertain");
+          }
+        }
+        if (!receipt || await this.rpc.getBlockNumber() < receipt.blockNumber + 1n) {
+          receipt = await this.rpc.waitForTransactionReceipt({ hash: record2.hash, confirmations: 2, timeout: 12e4 });
+        }
+        if (receipt.status !== "success")
+          throw new Error("child gas transfer failed");
+        nonceManager.reset({ address: record2.from, chainId: sepolia.id });
+      }
+      async fund(scope, account, child, value) {
+        if (value === 0n)
+          return void 0;
+        if (value < 0n || value > MAX_CHILD_GAS_WEI || !/^child-[a-f0-9]{64}$/.test(scope))
+          throw new Error("invalid child gas grant");
+        await mkdir3(this.directory, { recursive: true, mode: 448 });
+        const directoryInfo = await lstat4(this.directory);
+        if (!directoryInfo.isDirectory() || directoryInfo.isSymbolicLink() || directoryInfo.uid !== process.getuid?.() || (directoryInfo.mode & 511) !== 448)
+          throw new Error("invalid private gas journal");
+        const path = join3(this.directory, `${scope}.json`);
+        let record2;
+        try {
+          const info = await lstat4(path);
+          if (!info.isFile() || info.isSymbolicLink() || info.uid !== process.getuid?.() || (info.mode & 511) !== 384) {
+            throw new Error("invalid gas record");
+          }
+          record2 = JSON.parse(await readFile3(path, "utf8"));
+        } catch (error62) {
+          if (error62.code !== "ENOENT")
+            throw error62;
+          if (await this.rpc.getChainId() !== sepolia.id)
+            throw new Error("expected Sepolia chain ID");
+          const fees = await this.rpc.estimateFeesPerGas();
+          if (fees.maxFeePerGas > MAX_FEE_PER_GAS_WEI)
+            throw new Error("gas price exceeds configured ceiling");
+          const nonce = await nonceManager.consume({ address: account.address, chainId: sepolia.id, client: this.rpc });
+          let raw2;
+          try {
+            raw2 = await account.signTransaction({
+              type: "eip1559",
+              chainId: sepolia.id,
+              nonce,
+              to: child,
+              value,
+              gas: 21000n,
+              maxFeePerGas: fees.maxFeePerGas,
+              maxPriorityFeePerGas: fees.maxPriorityFeePerGas
+            });
+          } catch (error63) {
+            nonceManager.reset({ address: account.address, chainId: sepolia.id });
+            throw error63;
+          }
+          record2 = { from: account.address, to: child, value: value.toString(), raw: raw2, hash: keccak256(raw2) };
+          const temp = `${path}.${randomBytes9(8).toString("hex")}.tmp`;
+          await writeFile3(temp, JSON.stringify(record2), { mode: 384, flag: "wx" });
+          await rename2(temp, path);
+        }
+        if (record2.from.toLowerCase() !== account.address.toLowerCase() || record2.to.toLowerCase() !== child.toLowerCase() || record2.value !== value.toString() || keccak256(record2.raw) !== record2.hash)
+          throw new Error("gas grant scope conflict");
+        await this.#broadcast(record2);
+        return record2.hash;
+      }
+    };
+  }
+});
+
 // dist/spawn-chain.js
 import { createHash as createHash6 } from "node:crypto";
-import { lstat as lstat4, readFile as readFile3, writeFile as writeFile3 } from "node:fs/promises";
-import { join as join3 } from "node:path";
+import { lstat as lstat5, readFile as readFile4, writeFile as writeFile4 } from "node:fs/promises";
+import { join as join4 } from "node:path";
 function canonical2(value) {
   if (Array.isArray(value))
     return `[${value.map(canonical2).join(",")}]`;
@@ -61587,6 +61880,7 @@ var init_spawn_chain = __esm({
     init_dist();
     init_esm2();
     init_chains();
+    init_gas();
     policyType = { type: "tuple", components: [
       { name: "capabilities", type: "uint256" },
       { name: "maxAmounts", type: "uint256[2]" },
@@ -61605,12 +61899,30 @@ var init_spawn_chain = __esm({
       config;
       client;
       #sent = /* @__PURE__ */ new Map();
+      async #transaction(keyId) {
+        if (this.#sent.has(keyId))
+          return this.#sent.get(keyId);
+        const path = join4(this.config.keys.directory, `${keyId}.transaction`);
+        try {
+          const info = await lstat5(path);
+          if (!info.isFile() || info.isSymbolicLink() || info.uid !== process.getuid?.() || (info.mode & 511) !== 384)
+            throw new Error("unsafe spawn transaction record");
+          const hash5 = await readFile4(path, "utf8");
+          if (!/^0x[0-9a-fA-F]{64}$/.test(hash5))
+            throw new Error("invalid spawn transaction record");
+          return hash5;
+        } catch (error62) {
+          if (error62.code === "ENOENT")
+            return void 0;
+          throw error62;
+        }
+      }
       async #intent(keyId, request, allocated) {
-        const path = join3(this.config.keys.directory, `${keyId}.intent.json`);
+        const path = join4(this.config.keys.directory, `${keyId}.intent.json`);
         const value = createHash6("sha256").update(canonical2(request)).digest("hex");
         try {
-          const info = await lstat4(path);
-          if (!info.isFile() || info.isSymbolicLink() || info.uid !== process.getuid?.() || (info.mode & 511) !== 384 || await readFile3(path, "utf8") !== value)
+          const info = await lstat5(path);
+          if (!info.isFile() || info.isSymbolicLink() || info.uid !== process.getuid?.() || (info.mode & 511) !== 384 || await readFile4(path, "utf8") !== value)
             throw new Error("spawn intent conflicts with durable key");
         } catch (error62) {
           if (error62.code !== "ENOENT")
@@ -61618,7 +61930,7 @@ var init_spawn_chain = __esm({
           if (allocated)
             throw new Error("allocated child has no durable spawn intent");
           try {
-            await writeFile3(path, value, { flag: "wx", mode: 384 });
+            await writeFile4(path, value, { flag: "wx", mode: 384 });
           } catch (writeError) {
             if (writeError.code !== "EEXIST")
               throw writeError;
@@ -61686,13 +61998,20 @@ var init_spawn_chain = __esm({
         if (atConfirmation.nodeId !== prepared.operation.nodeId || atConfirmation.paramsHash !== prepared.paramsHash) {
           throw new Error("spawn is awaiting confirmation");
         }
-        const txHash = this.#sent.get(prepared.keyId);
+        const txHash = await this.#transaction(prepared.keyId);
         return { childId: child.id.toString(), ...txHash ? { txHash } : {}, blockHash: confirmedBlock.hash, blockNumber: confirmedBlock.number.toString() };
       }
       async submit(parent, request) {
         const prepared = await this.#parameters(parent, request);
         if (prepared.operation.nodeId !== 0n)
           return;
+        const pending = await this.#transaction(prepared.keyId);
+        if (pending) {
+          const receipt = await this.client.rpc.waitForTransactionReceipt({ hash: pending, confirmations: 2, timeout: 12e4 });
+          if (receipt.status !== "success")
+            throw new Error("saved spawn transaction reverted; no automatic replacement submitted");
+          return;
+        }
         await this.config.serialize(prepared.account.address, async () => {
           const current = await this.#parameters(parent, request);
           if (current.operation.nodeId !== 0n)
@@ -61703,7 +62022,8 @@ var init_spawn_chain = __esm({
           const gas = await this.client.rpc.estimateContractGas({ ...common, functionName: "spawnChild", args: args2 });
           const fees = await this.client.rpc.estimateFeesPerGas();
           const gasLimit = gas * 120n / 100n;
-          const required2 = gasLimit * fees.maxFeePerGas;
+          const grant = request.execution === "vault-only" ? 0n : childGasGrant(this.config.childGasWei ?? 0n, current.node.depth);
+          const required2 = gasLimit * fees.maxFeePerGas + grant + (grant > 0n ? 30000n * fees.maxFeePerGas : 0n);
           if (await this.client.rpc.getBalance({ address: current.account.address }) < required2) {
             throw new Error("Insufficient native Sepolia ETH for estimated child transaction fees; no transaction submitted");
           }
@@ -61717,6 +62037,7 @@ var init_spawn_chain = __esm({
             maxPriorityFeePerGas: fees.maxPriorityFeePerGas
           });
           this.#sent.set(current.keyId, hash5);
+          await writeFile4(join4(this.config.keys.directory, `${current.keyId}.transaction`), hash5, { mode: 384, flag: "wx" });
           const receipt = await this.client.rpc.waitForTransactionReceipt({ hash: hash5, confirmations: 2, timeout: 12e4 });
           if (receipt.status !== "success")
             throw new Error("spawn transaction reverted");
@@ -61730,144 +62051,6 @@ var init_spawn_chain = __esm({
           this.client.rpc.getBlock()
         ]);
         return block.hash === receipt.blockHash && head.number >= block.number + 1n;
-      }
-    };
-  }
-});
-
-// dist/gas.js
-import { randomBytes as randomBytes9 } from "node:crypto";
-import { mkdir as mkdir3, readFile as readFile4, readdir, rename as rename2, writeFile as writeFile4, lstat as lstat5 } from "node:fs/promises";
-import { join as join4 } from "node:path";
-function childGasGrant(base, parentDepth) {
-  if (base < 0n || base > MAX_CHILD_GAS_WEI)
-    throw new Error("invalid child gas budget");
-  if (parentDepth === 1)
-    return base;
-  if (parentDepth === 2)
-    return base / 4n;
-  throw new Error("maximum worker depth reached");
-}
-var MAX_CHILD_GAS_WEI, MAX_FEE_PER_GAS_WEI, ChildGasFunding;
-var init_gas = __esm({
-  "dist/gas.js"() {
-    "use strict";
-    init_esm2();
-    init_chains();
-    MAX_CHILD_GAS_WEI = 25000000000000000n;
-    MAX_FEE_PER_GAS_WEI = 20000000000n;
-    ChildGasFunding = class {
-      rpcUrl;
-      directory;
-      rpc;
-      constructor(rpcUrl, directory) {
-        this.rpcUrl = rpcUrl;
-        this.directory = directory;
-        this.rpc = createPublicClient({ chain: sepolia, transport: http(rpcUrl, { timeout: 15e3 }) });
-      }
-      async recoverPending() {
-        try {
-          await lstat5(this.directory);
-        } catch (error62) {
-          if (error62.code === "ENOENT")
-            return;
-          throw error62;
-        }
-        if (await this.rpc.getChainId() !== sepolia.id)
-          throw new Error("expected Sepolia chain ID");
-        const directoryInfo = await lstat5(this.directory);
-        if (!directoryInfo.isDirectory() || directoryInfo.isSymbolicLink() || directoryInfo.uid !== process.getuid?.() || (directoryInfo.mode & 511) !== 448)
-          throw new Error("invalid private gas journal");
-        for (const entry of await readdir(this.directory)) {
-          if (!/^child-[a-f0-9]{64}\.json$/.test(entry))
-            continue;
-          const path = join4(this.directory, entry);
-          const info = await lstat5(path);
-          if (!info.isFile() || info.isSymbolicLink() || info.uid !== process.getuid?.() || (info.mode & 511) !== 384) {
-            throw new Error("invalid gas record");
-          }
-          const record2 = JSON.parse(await readFile4(path, "utf8"));
-          if (keccak256(record2.raw) !== record2.hash || BigInt(record2.value) > MAX_CHILD_GAS_WEI)
-            throw new Error("invalid gas record");
-          await this.#broadcast(record2);
-        }
-      }
-      async #broadcast(record2) {
-        if (!record2.raw.startsWith("0x02"))
-          throw new Error("invalid gas transaction type");
-        const transaction = parseTransaction(record2.raw);
-        const sender = await recoverTransactionAddress({ serializedTransaction: record2.raw });
-        if (transaction.chainId !== sepolia.id || transaction.to?.toLowerCase() !== record2.to.toLowerCase() || transaction.value?.toString() !== record2.value || sender.toLowerCase() !== record2.from.toLowerCase()) {
-          throw new Error("gas record does not match signed transaction");
-        }
-        let receipt = await this.rpc.getTransactionReceipt({ hash: record2.hash }).catch(() => void 0);
-        if (!receipt) {
-          try {
-            await this.rpc.sendRawTransaction({ serializedTransaction: record2.raw });
-          } catch {
-            receipt = await this.rpc.getTransactionReceipt({ hash: record2.hash }).catch(() => void 0);
-            if (!receipt)
-              throw new Error("gas broadcast outcome is uncertain");
-          }
-        }
-        if (!receipt || await this.rpc.getBlockNumber() < receipt.blockNumber + 1n) {
-          receipt = await this.rpc.waitForTransactionReceipt({ hash: record2.hash, confirmations: 2, timeout: 12e4 });
-        }
-        if (receipt.status !== "success")
-          throw new Error("child gas transfer failed");
-        nonceManager.reset({ address: record2.from, chainId: sepolia.id });
-      }
-      async fund(scope, account, child, value) {
-        if (value === 0n)
-          return void 0;
-        if (value < 0n || value > MAX_CHILD_GAS_WEI || !/^child-[a-f0-9]{64}$/.test(scope))
-          throw new Error("invalid child gas grant");
-        await mkdir3(this.directory, { recursive: true, mode: 448 });
-        const directoryInfo = await lstat5(this.directory);
-        if (!directoryInfo.isDirectory() || directoryInfo.isSymbolicLink() || directoryInfo.uid !== process.getuid?.() || (directoryInfo.mode & 511) !== 448)
-          throw new Error("invalid private gas journal");
-        const path = join4(this.directory, `${scope}.json`);
-        let record2;
-        try {
-          const info = await lstat5(path);
-          if (!info.isFile() || info.isSymbolicLink() || info.uid !== process.getuid?.() || (info.mode & 511) !== 384) {
-            throw new Error("invalid gas record");
-          }
-          record2 = JSON.parse(await readFile4(path, "utf8"));
-        } catch (error62) {
-          if (error62.code !== "ENOENT")
-            throw error62;
-          if (await this.rpc.getChainId() !== sepolia.id)
-            throw new Error("expected Sepolia chain ID");
-          const fees = await this.rpc.estimateFeesPerGas();
-          if (fees.maxFeePerGas > MAX_FEE_PER_GAS_WEI)
-            throw new Error("gas price exceeds configured ceiling");
-          const nonce = await nonceManager.consume({ address: account.address, chainId: sepolia.id, client: this.rpc });
-          let raw2;
-          try {
-            raw2 = await account.signTransaction({
-              type: "eip1559",
-              chainId: sepolia.id,
-              nonce,
-              to: child,
-              value,
-              gas: 21000n,
-              maxFeePerGas: fees.maxFeePerGas,
-              maxPriorityFeePerGas: fees.maxPriorityFeePerGas
-            });
-          } catch (error63) {
-            nonceManager.reset({ address: account.address, chainId: sepolia.id });
-            throw error63;
-          }
-          record2 = { from: account.address, to: child, value: value.toString(), raw: raw2, hash: keccak256(raw2) };
-          const temp = `${path}.${randomBytes9(8).toString("hex")}.tmp`;
-          await writeFile4(temp, JSON.stringify(record2), { mode: 384, flag: "wx" });
-          await rename2(temp, path);
-        }
-        if (record2.from.toLowerCase() !== account.address.toLowerCase() || record2.to.toLowerCase() !== child.toLowerCase() || record2.value !== value.toString() || keccak256(record2.raw) !== record2.hash)
-          throw new Error("gas grant scope conflict");
-        await this.#broadcast(record2);
-        return record2.hash;
       }
     };
   }
@@ -67643,6 +67826,7 @@ var init_companion = __esm({
           rpcUrl: config2.rpcUrl,
           controller: config2.controller,
           keys: this.keys,
+          childGasWei: config2.mode === "capital" ? 0n : config2.childGasWei,
           keyIdFor: (context) => this.identities.keyId(context),
           serialize: (address2, action) => this.serialize(address2, action)
         });
@@ -68056,8 +68240,8 @@ ${request.task}`,
 function capitalReadiness(tree, localOperator, gasWei, budgetRaw = 100000n) {
   if (tree.source.chainId !== 11155111)
     throw new Error("Expected Ethereum Sepolia");
-  if (budgetRaw <= 0n || budgetRaw > 100000n || gasWei < 0n)
-    throw new Error("Invalid demo budget");
+  if (budgetRaw < 0n || budgetRaw >= 2n ** 256n || gasWei < 0n)
+    throw new Error("Invalid capital amount");
   const root = tree.nodes.find((node2) => node2.id === tree.rootId);
   const index2 = tree.tokens.findIndex((token2) => token2.toLowerCase() === TEST_USDC.toLowerCase());
   if (!root || index2 < 0)
@@ -68225,8 +68409,24 @@ var init_open_wallet_browser = __esm({
   }
 });
 
+// ../plugin/demo-budget.mjs
+var demo_budget_exports = {};
+__export(demo_budget_exports, {
+  DEMO_BUDGET_MESSAGE: () => DEMO_BUDGET_MESSAGE,
+  demoBudgetSchema: () => demoBudgetSchema
+});
+var DEMO_BUDGET_MESSAGE, demoBudgetSchema;
+var init_demo_budget = __esm({
+  "../plugin/demo-budget.mjs"() {
+    "use strict";
+    init_zod();
+    DEMO_BUDGET_MESSAGE = "budgetRaw: provide the user-confirmed shared capital limit as a positive uint256 integer in raw Test-USDC units (Sepolia, 6 decimals). No default and no demo maximum. 1 USDC = 1000000 raw units.";
+    demoBudgetSchema = external_exports.string().refine((value) => /^[1-9]\d{0,77}$/.test(value) && BigInt(value) < 2n ** 256n, DEMO_BUDGET_MESSAGE).describe(DEMO_BUDGET_MESSAGE);
+  }
+});
+
 // capital-onboarding.mjs
-import { mkdir as mkdir6, readFile as readFile8, writeFile as writeFile7, lstat as lstat8, realpath as realpath5, copyFile, constants } from "node:fs/promises";
+import { mkdir as mkdir6, readFile as readFile8, writeFile as writeFile7, rename as rename5, lstat as lstat8, realpath as realpath5, copyFile, constants } from "node:fs/promises";
 import { join as join8, resolve as resolve5 } from "node:path";
 import { randomBytes as randomBytes13 } from "node:crypto";
 async function privateDirectory(path) {
@@ -68239,12 +68439,15 @@ async function privateJson(path) {
   if (!stat4.isFile() || stat4.isSymbolicLink() || stat4.uid !== process.getuid() || (stat4.mode & 511) !== 384) throw new Error("Unsafe onboarding file");
   return JSON.parse(await readFile8(path, "utf8"));
 }
-var CapitalOnboarding;
+var TOKEN, limitAbi, CapitalOnboarding;
 var init_capital_onboarding = __esm({
   "capital-onboarding.mjs"() {
     "use strict";
     init_dist3();
     init_open_wallet_browser();
+    init_demo_budget();
+    TOKEN = "0x1c7D4B196Cb0C7B01d743Fbc6116a902379C7238";
+    limitAbi = [{ type: "function", name: "rootCapitalLimit", stateMutability: "view", inputs: [{ name: "rootId", type: "uint256" }], outputs: [{ name: "limit", type: "uint256" }] }];
     CapitalOnboarding = class {
       constructor(session) {
         this.session = session;
@@ -68261,14 +68464,27 @@ var init_capital_onboarding = __esm({
           throw error62;
         }
       }
-      async prepare({ label, budgetRaw = "100000", openBrowser = true }) {
+      async save(state2) {
+        const temporary = `${this.file}.${randomBytes13(8).toString("hex")}.tmp`;
+        await writeFile7(temporary, JSON.stringify(state2), { mode: 384, flag: "wx" });
+        await rename5(temporary, this.file);
+      }
+      async prepare({ label, budgetRaw, fundingRaw, userConfirmedLimit, test, openBrowser = true }) {
         await privateDirectory(this.directory);
         let state2 = await this.read();
-        if (state2 && (label && label !== state2.label || budgetRaw !== state2.budgetRaw)) throw new Error("An onboarding already exists. Resume the existing setup; do not replace its key or budget.");
+        if (!state2 && (!userConfirmedLimit || !budgetRaw || fundingRaw === void 0)) throw new Error("LIMIT_REQUIRED: Ask the user for the shared Test-USDC capital limit and authorized funding amount. No default is allowed.");
+        if (state2 && !state2.limitConfirmed && !userConfirmedLimit) throw new Error("LIMIT_REQUIRED: This older setup has no recorded user-confirmed limit. Ask for confirmation while preserving its signer and name.");
+        budgetRaw ??= state2?.budgetRaw;
+        fundingRaw ??= state2?.fundingRaw;
+        demoBudgetSchema.parse(budgetRaw);
+        if (test && (test.asset.toLowerCase() !== TOKEN.toLowerCase() || BigInt(test.amount) > BigInt(fundingRaw ?? "0"))) throw new Error("SETUP_CONFLICT: Test allocation must fit explicitly authorized Test-USDC funding.");
+        if (state2?.test && test && JSON.stringify(state2.test) !== JSON.stringify(test)) throw new Error("SETUP_CONFLICT: The saved child test cannot change on retry.");
+        if (fundingRaw === void 0 || !/^(0|[1-9]\d{0,77})$/.test(fundingRaw) || BigInt(fundingRaw) > BigInt(budgetRaw)) throw new Error("FUNDING_REQUIRED: Explicit funding must be between zero and the confirmed shared limit.");
+        if (state2 && (label && label !== state2.label || state2.limitConfirmed && (budgetRaw !== state2.budgetRaw || fundingRaw !== state2.fundingRaw))) throw new Error("SETUP_CONFLICT: Resume the existing setup; repeated calls cannot replace its key, funding or confirmed limit.");
         if (!state2) {
           label ??= `kanoki-${randomBytes13(8).toString("hex")}`;
           const operator = (await new WorkerKeyStore(join8(this.directory, "keys")).account("setup", true)).address;
-          state2 = { chainId: 11155111, controller: this.session.controller.toLowerCase(), label, budgetRaw, operator };
+          state2 = { setupId: randomBytes13(16).toString("hex"), chainId: 11155111, token: TOKEN, decimals: 6, controller: this.session.controller.toLowerCase(), label, budgetRaw, fundingRaw, limitConfirmed: true, operator, test };
           try {
             await writeFile7(this.file, JSON.stringify(state2), { mode: 384, flag: "wx" });
           } catch (error62) {
@@ -68276,19 +68492,66 @@ var init_capital_onboarding = __esm({
             state2 = await this.read();
           }
         }
+        if (!state2.limitConfirmed) {
+          state2 = { ...state2, setupId: state2.setupId ?? randomBytes13(16).toString("hex"), token: TOKEN, decimals: 6, budgetRaw, fundingRaw, limitConfirmed: true };
+          await this.save(state2);
+        }
+        if (test && !state2.test) {
+          state2.test = test;
+          await this.save(state2);
+        }
+        try {
+          await this.session.client.rpc.readContract({ address: this.session.controller, abi: limitAbi, functionName: "rootCapitalLimit", args: [0n] });
+        } catch {
+          return { ...await this.status(), status: "blocked", transactionSubmitted: false, next: "CAPITAL_LIMIT_UNSUPPORTED: The configured controller could not prove shared-limit support. Deploy and verify the limited controller before wallet creation or funding. Saved signer and existing gas are preserved." };
+        }
+        const rpc = this.session.client.rpc;
+        const decimals = await rpc.readContract({ address: TOKEN, abi: [{ type: "function", name: "decimals", stateMutability: "view", inputs: [], outputs: [{ type: "uint8" }] }], functionName: "decimals" });
+        const token0 = await rpc.readContract({ address: this.session.controller, abi: [{ type: "function", name: "TOKEN0", stateMutability: "view", inputs: [], outputs: [{ type: "address" }] }], functionName: "TOKEN0" });
+        if (await rpc.getChainId() !== 11155111 || decimals !== 6 || token0.toLowerCase() !== TOKEN.toLowerCase()) throw new Error("WRONG_CHAIN: Setup token/network/decimal configuration does not match Sepolia USDC. No wallet link created.");
         const url2 = new URL("/setup", this.session.walletOrigin);
-        for (const [key, value] of Object.entries({ action: "create-root", label: state2.label, budget: state2.budgetRaw, operator: state2.operator })) url2.searchParams.set(key, value);
+        for (const [key, value] of Object.entries({ action: "create-root", label: state2.label, budget: state2.budgetRaw, funding: state2.fundingRaw, setup: state2.setupId, operator: state2.operator })) url2.searchParams.set(key, value);
         const browser = openBrowser ? await openWalletBrowser(url2.href) : { opened: false, method: "not-requested" };
         return {
           chainId: 11155111,
+          setupId: state2.setupId,
+          token: TOKEN,
+          decimals: 6,
           ensName: `${state2.label}.${this.session.namespace}`,
           budgetRaw: state2.budgetRaw,
+          fundingRaw: state2.fundingRaw,
           localOperator: state2.operator,
           url: url2.href,
           browser,
           transactionSubmitted: false,
-          next: "Open this setup once and confirm the displayed wallet transactions. Creation, authorization, shared USDC funding and native gas are guided together. Kanoki automatically recognizes your vault; no ENS copying, root selection or config change is needed. Then call getCapitalSetup."
+          next: "Keep calling continueCapitalSetup while the owner signs. Do not end the task or request done, a hash or ENS selection. The saved authorized test continues with its original operation key when ready. Wallet signatures remain with the owner."
         };
+      }
+      async status() {
+        const state2 = await this.read();
+        if (!state2) return { status: "unavailable", localOperator: null, missing: ["userConfirmedLimit"], next: "Ask the user for the shared Test-USDC capital limit and authorized funding before prepareRootSetup. No default." };
+        const rpc = this.session.client.rpc;
+        const block = await rpc.getBlock();
+        const gas = await rpc.getBalance({ address: state2.operator, blockNumber: block.number });
+        let tree;
+        try {
+          tree = (await this.session.client.resolveTree(`${state2.label}.${this.session.namespace}`)).tree;
+        } catch (error62) {
+          if (!/^No vault in this Sepolia deployment|^Root not found/.test(error62.message)) throw error62;
+        }
+        const matched = Boolean(tree && tree.operator.toLowerCase() === state2.operator.toLowerCase());
+        const total = tree?.totalBalances[0] ?? 0n;
+        let limit = null;
+        if (tree) {
+          try {
+            limit = await rpc.readContract({ address: this.session.controller, abi: limitAbi, functionName: "rootCapitalLimit", args: [tree.rootId], blockNumber: tree.source.blockNumber });
+          } catch {
+          }
+        }
+        let funded = 0n;
+        if (tree && limit !== null) funded = await rpc.readContract({ address: this.session.controller, abi: [{ ...limitAbi[0], name: "rootCapitalFunded" }], functionName: "rootCapitalFunded", args: [tree.rootId], blockNumber: tree.source.blockNumber });
+        const steps = { limit: state2.limitConfirmed && limit !== null && limit === BigInt(state2.budgetRaw) ? "confirmed" : "required", root: tree ? "confirmed" : "required", authorization: matched ? "confirmed" : "required", funding: tree && (funded > total ? funded : total) >= BigInt(state2.fundingRaw ?? state2.budgetRaw) ? "confirmed" : "required", gas: gas > 0n ? "confirmed" : "required" };
+        return { status: "awaiting_wallet", setupId: state2.setupId ?? null, chainId: 11155111, token: TOKEN, decimals: 6, ensName: `${state2.label}.${this.session.namespace}`, localOperator: state2.operator, operatorGasAddress: state2.operator, operatorGasWei: gas, viewedRootId: tree?.rootId ?? null, budgetRaw: state2.budgetRaw, fundingRaw: state2.fundingRaw ?? null, onchainCapitalLimitRaw: limit, cumulativeFundedRaw: funded, treeSource: tree?.source ?? null, totalUsdcBalanceRaw: total, steps, missing: Object.entries(steps).filter(([, v]) => v !== "confirmed").map(([k]) => k), source: { chainId: 11155111, blockNumber: block.number, timestamp: block.timestamp, observedAt: (/* @__PURE__ */ new Date()).toISOString() }, next: `${gas > 0n ? "Gas confirmed; " : ""}${!tree ? "root creation is not confirmed. " : "Continue the remaining wallet steps. "}Keep checking this saved setup automatically; no new user command or transaction hash is required.` };
       }
       async resume() {
         const state2 = await this.read();
@@ -68343,6 +68606,7 @@ import { access, lstat as lstat9, readFile as readFile9, readdir as readdir4 } f
 import { isAbsolute as isAbsolute4, join as join9, resolve as resolve6, relative } from "node:path";
 function safeCapitalError(error62) {
   if (error62 instanceof SetupError) return error62.message;
+  if (/^(LIMIT_REQUIRED|FUNDING_REQUIRED|SETUP_CONFLICT):/.test(error62?.message ?? "")) return error62.message;
   if (error62?.message?.startsWith("ROOT_REVOKED:")) return "ROOT_REVOKED: Your saved vault is permanently revoked. No replacement, key change or funding was requested.";
   if (error62?.code === "INSUFFICIENT_GAS") return "INSUFFICIENT_GAS: Local signer has insufficient native Sepolia ETH for the simulated child transaction. No transaction was submitted. Fund native gas, not USDC.";
   if (/^No vault in this Sepolia deployment|^Root not found/.test(error62?.message ?? "")) return "ROOT_NOT_FOUND: No confirmed root matches this identifier at the observed block. If you just signed creation, wait for its receipt; pending status is not known to this MCP.";
@@ -68414,7 +68678,7 @@ var init_capital_session = __esm({
         const rootId = String(resolved.tree.rootId), runtimeRoot = await this.profile(rootId);
         await this.closeRuntime();
         Object.assign(this, { rootId, runtimeRoot, query: query2 });
-        return this.inspect("100000", resolved.tree);
+        return this.inspect(void 0, resolved.tree);
       }
       async initialize() {
         if (!this.rootId && !this.query) await this.onboarding.resume();
@@ -68449,26 +68713,26 @@ var init_capital_session = __esm({
         if (!await this.matchingDomain(path, rootId)) throw new SetupError("PROFILE_MISMATCH", "Private profile does not match the requested root.");
         return (await new WorkerKeyStore(join9(path, "keys")).account(`root-${rootId}`, false)).address;
       }
-      async inspect(budgetRaw = "100000", tree) {
+      async inspect(budgetRaw, tree) {
         if (!this.rootId && !this.query) await this.onboarding.resume();
         if (!this.rootId && !this.query) return {
-          status: "unavailable",
           mode: "capital",
           activeMcpRootId: null,
           controller: this.controller,
           namespace: this.namespace,
           writesEnabled: this.writesEnabled,
           writeReady: false,
-          localOperator: null,
           backgroundWorker: "not_requested",
           transactionSubmitted: false,
-          next: "Call prepareRootSetup to start or resume the single wallet setup. Do not ask the user for an ENS name or manual configuration. After wallet confirmation, call getCapitalSetup again; the root and local signer are recognized automatically."
+          ...await this.onboarding.status()
         };
         await this.initialize();
         tree ??= await this.client.getTree(BigInt(this.rootId));
         const local = await this.localOperator();
         const gas = local ? await this.client.rpc.getBalance({ address: local, blockNumber: tree.source.blockNumber }) : 0n;
-        const setup = capitalReadiness(tree, local, gas, BigInt(budgetRaw));
+        const saved = this.runtimeRoot === this.onboarding.directory ? await this.onboarding.read() : null;
+        const setup = capitalReadiness(tree, local, gas, BigInt(budgetRaw ?? saved?.fundingRaw ?? "0"));
+        const onboarding = saved ? await this.onboarding.status() : null;
         return {
           ...setup,
           controller: this.controller,
@@ -68476,15 +68740,21 @@ var init_capital_session = __esm({
           namespace: this.namespace,
           activeMcpRootId: this.rootId,
           writesEnabled: this.writesEnabled,
-          writeReady: this.writesEnabled && setup.prerequisitesMet,
+          writeReady: this.writesEnabled && setup.prerequisitesMet && (!onboarding || onboarding.missing.length === 0),
           readinessScope: "Setup prerequisites only; each action still requires a fresh policy, balance, simulation and fee check.",
+          onboarding,
+          next: onboarding?.next,
+          steps: onboarding?.steps,
+          prerequisitesMet: setup.prerequisitesMet && (!onboarding || onboarding.missing.length === 0),
+          missing: [.../* @__PURE__ */ new Set([...setup.missing, ...onboarding?.missing ?? []])],
           localProfile: this.runtimeRoot,
           toolVersion: "capital-demo-2",
           backgroundWorker: "not_requested",
-          budgetMeaning: "Shared tree capital, not a per-child allowance. Internal delegations are not deposits. The demo input cap is not an onchain balance cap."
+          budgetMeaning: "Shared tree capital, not a per-child allowance. Internal delegations are not deposits. Per-action policy and the shared onchain capital limit are separate."
         };
       }
       async tree(query2) {
+        if (!this.rootId && !this.query) await this.onboarding.resume();
         if (!this.rootId && !this.query) {
           const resolved2 = await this.client.resolveTree(query2);
           return { ...resolved2.tree, selectedNodeId: resolved2.selectedNodeId, mcp: {
@@ -68500,7 +68770,7 @@ var init_capital_session = __esm({
         await this.initialize();
         const resolved = await this.client.resolveTree(query2);
         const matches = String(resolved.tree.rootId) === this.rootId;
-        const setup = matches ? await this.inspect("100000", resolved.tree) : null;
+        const setup = matches ? await this.inspect(void 0, resolved.tree) : null;
         const activeSigner = matches ? null : await this.localOperator();
         const activeGas = activeSigner ? await this.client.rpc.getBalance({ address: activeSigner, blockNumber: resolved.tree.source.blockNumber }) : null;
         return {
@@ -68518,8 +68788,9 @@ var init_capital_session = __esm({
           }
         };
       }
-      async prepare({ budgetRaw = "100000", openBrowser = true, expectedBoundOperator, recovery = false }) {
+      async prepare({ budgetRaw, openBrowser = true, expectedBoundOperator, recovery = false }) {
         await this.initialize();
+        if (!budgetRaw) throw new SetupError("LIMIT_REQUIRED", "An explicitly confirmed capital amount is required before preparing funding.");
         const tree = await this.client.getTree(BigInt(this.rootId));
         if (tree.nodes.find((node2) => String(node2.id) === this.rootId)?.revoked) {
           throw new SetupError("ROOT_REVOKED", "This root is permanently revoked. Operator replacement cannot reactivate it. No key, funding request or wallet handoff was created. Select an active root or explicitly create a new one.");
@@ -68584,6 +68855,7 @@ var init_capital_session = __esm({
         if (!this.writesEnabled) throw new SetupError("WRITES_DISABLED", "Enable --enable-sepolia-writes explicitly. No transaction forwarded.");
         if (!setup.checks.localKey) throw new SetupError("PROFILE_MISSING", "No local signer for this root. Prepare setup/recovery first.");
         if (!setup.checks.operatorBound) throw new SetupError("SIGNER_MISMATCH", "Local signer does not match the bound onchain operator. Owner authorization is required.");
+        if (setup.onboarding?.steps.limit !== void 0 && setup.onboarding.steps.limit !== "confirmed") throw new SetupError("CAPITAL_LIMIT_UNCONFIRMED", "The saved shared limit is not confirmed onchain. No transaction forwarded.");
         const recorded = operationKey2 ? await this.client.controller.read.getOperation([BigInt(this.rootId), BigInt(this.rootId), setup.authorityGeneration, operationKey2], { blockNumber: setup.source.blockNumber }) : null;
         if (!setup.checks.operatorHasGas) {
           if (!recorded?.nodeId) throw new SetupError("GAS_MISSING", `Local signer ${setup.localOperator} has zero native Sepolia ETH. Fund gas, not USDC.`);
@@ -68591,6 +68863,64 @@ var init_capital_session = __esm({
         return { ...setup, operationAlreadyRecorded: Boolean(recorded?.nodeId) };
       }
     };
+  }
+});
+
+// worker-host.mjs
+var worker_host_exports = {};
+__export(worker_host_exports, {
+  checkWorkerHost: () => checkWorkerHost,
+  loadWorkerHost: () => loadWorkerHost,
+  workerHostSchema: () => workerHostSchema
+});
+import { lstat as lstat10, readFile as readFile10 } from "node:fs/promises";
+import { join as join10, isAbsolute as isAbsolute5 } from "node:path";
+import { execFile } from "node:child_process";
+import { promisify } from "node:util";
+async function loadWorkerHost(base) {
+  const file2 = join10(base, "worker-host.json");
+  let info;
+  try {
+    info = await lstat10(file2);
+  } catch (error62) {
+    if (error62.code === "ENOENT") return null;
+    throw error62;
+  }
+  if (!info.isFile() || info.isSymbolicLink() || info.uid !== process.getuid() || (info.mode & 511) !== 384) throw new Error("WORKER_HOST_INVALID: worker-host.json must be an owner-only private file.");
+  const parsed = workerHostSchema.safeParse(JSON.parse(await readFile10(file2, "utf8")));
+  if (!parsed.success) throw new Error("WORKER_HOST_INVALID: Project worker settings are invalid. No capital will be allocated to a worker.");
+  return { ...parsed.data, mode: "workers", inference: "codex", childGasWei: BigInt(parsed.data.childGasWei), workerUid: process.getuid(), workerGid: process.getgid() };
+}
+async function checkWorkerHost(config2, model = config2?.models[0]) {
+  if (!config2) return { status: "unavailable", workerReady: false, workerStarted: false, next: "Project operator must provision the private worker-host.json, pinned Docker image and dedicated native Codex authentication. Users should not configure this per vault. No worker allocation was requested." };
+  if (!config2.models.includes(model)) return { status: "blocked", workerReady: false, workerStarted: false, next: "Requested model is not approved in the project worker configuration." };
+  const launcher = new NativeCodexLauncher(config2);
+  try {
+    const image = await promisify(execFile)("docker", ["image", "inspect", config2.imageId, "--format", "{{.Id}}"], { timeout: 2e4 });
+    if (image.stdout.trim() !== config2.imageId) throw new Error("Worker image mismatch");
+    await launcher.ensureAvailable(model);
+    return { status: "ready", workerReady: true, workerStarted: false, model, models: config2.models, childGasWei: config2.childGasWei, next: "Worker prerequisites checked. spawnChild uses the saved root signer and its shared capital limit; no additional owner signature is needed per child." };
+  } catch {
+    return { status: "unavailable", workerReady: false, workerStarted: false, next: "Worker preflight failed: check the pinned Docker image, dedicated Codex binary/login or API key and approved model access. No child capital was allocated." };
+  } finally {
+    await launcher.close();
+  }
+}
+var workerHostSchema;
+var init_worker_host = __esm({
+  "worker-host.mjs"() {
+    "use strict";
+    init_zod();
+    init_dist3();
+    workerHostSchema = external_exports.object({
+      imageId: external_exports.string().regex(/^sha256:[a-f0-9]{64}$/),
+      models: external_exports.array(external_exports.string().regex(/^[\w.-]+$/)).min(1),
+      codexBinary: external_exports.string().refine(isAbsolute5),
+      codexHome: external_exports.string().refine(isAbsolute5),
+      openaiApiKeyFile: external_exports.string().refine(isAbsolute5).optional(),
+      reasoningEffort: external_exports.literal("high").optional(),
+      childGasWei: external_exports.string().regex(/^(0|[1-9]\d*)$/).refine((value) => BigInt(value) <= 10000000000000000n)
+    }).strict();
   }
 });
 
@@ -80063,11 +80393,11 @@ var init_resvg_wasm = __esm({
 });
 
 // ../plugin/png-renderer.mjs
-import { readFile as readFile10 } from "node:fs/promises";
+import { readFile as readFile11 } from "node:fs/promises";
 function prepareRenderer() {
   return ready ??= (async () => {
-    const wasm2 = await readFile10(new URL("./visual-assets/resvg.wasm", import.meta.url)).catch(() => readFile10(new URL(import.meta.resolve("@resvg/resvg-wasm/index_bg.wasm"))));
-    const fonts = await Promise.all(["IBMPlexSans.ttf", "Fraunces.ttf", "IBMPlexMono-Regular.ttf"].map((name) => readFile10(new URL(`./visual-assets/${name}`, import.meta.url))));
+    const wasm2 = await readFile11(new URL("./visual-assets/resvg.wasm", import.meta.url)).catch(() => readFile11(new URL(import.meta.resolve("@resvg/resvg-wasm/index_bg.wasm"))));
+    const fonts = await Promise.all(["IBMPlexSans.ttf", "Fraunces.ttf", "IBMPlexMono-Regular.ttf"].map((name) => readFile11(new URL(`./visual-assets/${name}`, import.meta.url))));
     await initWasm(wasm2);
     return fonts;
   })();
@@ -80221,7 +80551,7 @@ function resultMarkdown(name, args2, data, { isError: isError2 = false, snapshot
   } else {
     if (d.status === "blocked" || d.status === "unavailable") lines2.push(`Cannot ${verbs[name] ?? "continue"}: ${clean2(d.next ?? "integration unavailable.")}`);
     else if (name === "revokeSubtree") lines2.push(`Revocation ${d.status === "confirmed" ? "confirmed" : "result received"}. Funds stay in the vault until recovery.`);
-    else if (name === "prepareRootSetup") lines2.push(`Root setup: ${code(d.ensName)}. Owner approval required.`, `Funding: ${usdc(d.budgetRaw)} USDC`);
+    else if (name === "prepareRootSetup") lines2.push(`Root setup: ${code(d.ensName)}. Owner approval required.`, `Shared limit: ${usdc(d.budgetRaw)} USDC; authorized funding: ${usdc(d.fundingRaw)} USDC.`);
     else if (name === "purchaseService") lines2.push(d.alreadySettled ? "Already settled \u2014 not charged again." : `Purchase ${d.status === "confirmed" ? "settled" : "result received"}.`);
     else lines2.push(`${clean2(name)}: ${clean2(d.status ?? d.dispatchStatus ?? "data received")}.`);
     if (d.childId) lines2.push(`Node: ${code(d.childId)}`);
@@ -80229,6 +80559,9 @@ function resultMarkdown(name, args2, data, { isError: isError2 = false, snapshot
     if (d.url) lines2.push(`[Open root setup](${d.url})`);
     if (d.setupUrl) lines2.push(`[Open owner setup](${d.setupUrl})`);
     if (d.missing?.length) lines2.push(`Missing: ${d.missing.map(clean2).join(", ")}.`);
+    for (const [step, status2] of Object.entries(d.steps ?? {})) lines2.push(`${clean2(step)}: ${clean2(status2)}.`);
+    if (d.operatorGasWei !== void 0) lines2.push(`Operator gas: ${clean2(d.operatorGasWei)} wei.`);
+    if (d.next) lines2.push(clean2(d.next));
     if (d.source?.blockNumber) lines2.push(`Block ${clean2(d.source.blockNumber)}.`);
   }
   if (!Array.isArray(d.nodes) && tree?.source?.blockNumber) lines2.push(`Node status observed at block ${clean2(tree.source.blockNumber)}; read the tree after an action.`);
@@ -80374,11 +80707,11 @@ var init_tree_visual = __esm({
 // ../plugin/tool-visual.mjs
 import { mkdtemp, writeFile as writeFile8 } from "node:fs/promises";
 import { tmpdir } from "node:os";
-import { join as join10 } from "node:path";
+import { join as join11 } from "node:path";
 import { createHash as createHash9 } from "node:crypto";
 async function imageLink(png, title) {
-  imageDirectory ??= mkdtemp(join10(tmpdir(), "act-mcp-visuals-"));
-  const file2 = join10(await imageDirectory, `${createHash9("sha256").update(png).digest("hex").slice(0, 24)}.png`);
+  imageDirectory ??= mkdtemp(join11(tmpdir(), "act-mcp-visuals-"));
+  const file2 = join11(await imageDirectory, `${createHash9("sha256").update(png).digest("hex").slice(0, 24)}.png`);
   await writeFile8(file2, png, { mode: 384 });
   const displayPath = process.platform === "linux" && /^[a-zA-Z0-9._-]+$/.test(process.env.WSL_DISTRO_NAME ?? "") ? `//wsl.localhost/${process.env.WSL_DISTRO_NAME}${file2}` : file2.replaceAll("\\", "/");
   return `![${title}](<${displayPath}>)`;
@@ -80411,7 +80744,13 @@ function toolView(name, args2, data, { readOnly = true, isError: isError2 = fals
     view.next = d.next ?? view.next;
     return view;
   }
-  if (["getCapitalSetup", "prepareCapitalSetup", "selectCapitalRoot", "prepareOperatorRecovery"].includes(name)) {
+  if (name === "getWorkerSetup") {
+    view.status = d.workerReady ? "WORKER HOST READY \xB7 NO CHILD STARTED BY CHECK" : "WORKER HOST UNAVAILABLE";
+    row("Model", d.model);
+    row("Approved models", d.models?.join(", "));
+    row("Child gas grant (wei)", d.childGasWei);
+    view.next = d.next;
+  } else if (["getCapitalSetup", "prepareCapitalSetup", "selectCapitalRoot", "prepareOperatorRecovery"].includes(name) || name === "continueCapitalSetup" && d.status !== "confirmed") {
     view.status = d.prerequisitesMet ? "CHAIN CHECKS PASSED \xB7 REVIEW GAS FEES" : "SETUP INCOMPLETE \xB7 NO TRANSACTION";
     row("Vault / active MCP root", `${d.ensName} / #${d.activeMcpRootId}`);
     row("LOCAL ETH gas (wei)", d.operatorGasWei ?? "Not checked: local signer missing");
@@ -80419,7 +80758,8 @@ function toolView(name, args2, data, { readOnly = true, isError: isError2 = fals
     row("Controller", d.controller);
     row("Onchain rights", d.onchainRights?.join(", ") || "None");
     row("Local signer / match", `${d.localOperator ?? "Not prepared"} / ${d.checks?.operatorBound ? "MATCH" : "NO MATCH"}`);
-    row("Test-USDC balance / limit", `${amount2(d.usdcBalanceRaw ?? 0)} USDC / ${amount2(d.usdcLimitRaw ?? 0)} USDC`);
+    row("Test-USDC balance / per-action limit", `${amount2(d.usdcBalanceRaw ?? 0)} USDC / ${amount2(d.usdcLimitRaw ?? 0)} USDC`);
+    row("Shared onchain capital limit", d.onboarding?.onchainCapitalLimitRaw ?? d.onchainCapitalLimitRaw ?? "Not confirmed");
     row("Shared tree / still to fund", `${amount2(d.totalUsdcBalanceRaw ?? 0)} USDC / ${amount2(d.fundingShortfallRaw ?? 0)} USDC`);
     row("Missing requirements", Array.isArray(d.missing) ? d.missing.join(" \xB7 ") || "None" : "Unknown");
     row("Write readiness", d.writeReady ? "Setup checks passed; action simulation and fee check required" : "BLOCKED");
@@ -80427,16 +80767,17 @@ function toolView(name, args2, data, { readOnly = true, isError: isError2 = fals
     for (const action of d.walletActions ?? []) row("Wallet action", `${action.action}: ${action.recipient ?? action.newOperator ?? action.vault} ${action.amountWei ? `${action.amountWei} wei` : action.amountRaw ? `${action.amountRaw} raw USDC` : ""}`);
     row("Snapshot block", d.source?.blockNumber);
     row("Observed", d.source?.observedAt);
-    row("Inference", "This chat. No Docker, model key or background AI worker.");
-    view.next = "Owner authorizes the agent key in the normal wallet browser. USDC approval is not an ETH gas transfer. Do not repeat completed funding or rebind a correct operator.";
+    row("Inference", d.workers?.configured ? "Main chat with project worker runtime; check individual dispatch results" : "Main chat. Worker host is not configured.");
+    for (const [step, status] of Object.entries(d.steps ?? {})) row(`Setup: ${step}`, status);
+    view.next = d.next ?? "Owner authorizes the agent key in the normal wallet browser. USDC approval is not an ETH gas transfer. Do not repeat completed funding or rebind a correct operator.";
   } else if (name === "prepareRootSetup") {
     view.status = d.browser?.opened ? "AWAITING WALLET" : "OPEN WALLET IN BROWSER";
     row("ENS name", d.ensName);
-    row("Demo budget", `${amount2(d.budgetRaw ?? 0)} USDC`);
+    row("Shared capital limit", `${amount2(d.budgetRaw ?? 0)} USDC`);
     row("Browser", d.browser?.opened ? "Launch requested in your normal browser profile" : "Open the setup link below in your wallet-enabled browser");
-    row("Wallet steps", "Create root \u2192 select root in capital MCP \u2192 prepare local signer \u2192 authorize \u2192 fund only shortfall \u2192 check native gas");
+    row("Wallet steps", "Confirm limit \u2192 create root \u2192 authorize prepared signer \u2192 fund authorized shortfall \u2192 check separate gas");
     row("Signing", "Owner reviews and signs each setup transaction in their wallet.");
-    view.next = "No transaction submitted by this MCP. Return to the capital-mode chat after root creation. Select its ENS explicitly before preparing local signer authorization.";
+    view.next = d.next ?? "Root and signer are restored automatically. Continue checking the saved setup; no done message, ENS selection or hash copying is required.";
   } else {
     if (d.status === "blocked" || d.status === "unavailable") {
       view.status = "NOT EXECUTED";
@@ -80576,6 +80917,8 @@ var init_tool_visual = __esm({
       prepareCapitalSetup: "Authorize your chat agent",
       selectCapitalRoot: "Select the MCP root",
       prepareOperatorRecovery: "Recover local agent access",
+      continueCapitalSetup: "Continue saved setup and test",
+      getWorkerSetup: "Check autonomous worker runtime",
       getPaymentServices: "Available services",
       purchaseService: "Service payment",
       allocateCapital: "Delegate capital",
@@ -80614,7 +80957,7 @@ ${KANOKI_INSTRUCTIONS}` });
     const name2 = request.params.name, spec = Object.hasOwn(specs, name2) ? specs[name2] : void 0;
     const parsed = spec?.schema.safeParse(request.params.arguments ?? {});
     if (!parsed?.success) {
-      const details = parsed?.error.issues.filter((issue2) => issue2.code === "custom").map((issue2) => issue2.message);
+      const details = parsed?.error.issues.filter((issue2) => issue2.code === "custom" || issue2.code === "invalid_format").map((issue2) => issue2.message);
       return visualResult(name2, {}, spec ? details?.join(" ") || "Invalid tool arguments. Check the required fields and allowed values. No handler executed." : "Unknown tool.", { isError: true, readOnly: spec?.readOnly ?? true, phase: "validation", snapshot: snapshot2 });
     }
     let data;
@@ -80830,19 +81173,54 @@ var init_stdio2 = __esm({
   }
 });
 
-// ../plugin/demo-budget.mjs
-var demo_budget_exports = {};
-__export(demo_budget_exports, {
-  DEMO_BUDGET_MESSAGE: () => DEMO_BUDGET_MESSAGE,
-  demoBudgetSchema: () => demoBudgetSchema
+// capital-continue.mjs
+var capital_continue_exports = {};
+__export(capital_continue_exports, {
+  continueCapitalSetup: () => continueCapitalSetup
 });
-var DEMO_BUDGET_MESSAGE, demoBudgetSchema;
-var init_demo_budget = __esm({
-  "../plugin/demo-budget.mjs"() {
+async function continueCapitalSetup(session, execute, waitSeconds = 20) {
+  const { client, controller } = session;
+  let setup = await session.inspect();
+  const end = Date.now() + waitSeconds * 1e3;
+  while (!setup.writeReady && Date.now() < end) {
+    await new Promise((resolve7) => setTimeout(resolve7, Math.min(3e3, end - Date.now())));
+    setup = await session.inspect();
+  }
+  if (!setup.writeReady) return { ...setup, status: setup.writesEnabled === false ? "blocked" : "awaiting_wallet", next: setup.writesEnabled === false ? "Enable the authorized write connection before continuation." : setup.next ?? "Continue polling this same setup automatically. Only the missing wallet steps need user interaction." };
+  const state2 = await session.onboarding.read();
+  if (!state2?.test) return { ...setup, status: "ready", next: "No child test was saved. Continue only the test explicitly authorized in the current user request." };
+  if (session.runtimeRoot !== session.onboarding.directory) throw new SetupError("WRONG_TARGET_ROOT", "The active root is not the saved onboarding root. No saved test was forwarded.");
+  const binding = { controller: controller.toLowerCase(), rootId: session.rootId, generation: String(setup.authorityGeneration) };
+  if (state2.testBinding && JSON.stringify(state2.testBinding) !== JSON.stringify(binding)) throw new SetupError("SETUP_CONFLICT", "Saved test authority changed. No allocation was forwarded under a new generation.");
+  if (!state2.testBinding) {
+    state2.testBinding = binding;
+    await session.onboarding.save(state2);
+  }
+  const autonomous = typeof state2.test.task === "string" && typeof state2.test.model === "string";
+  const result = await execute(autonomous ? "spawnChild" : "createChildVault", { ...state2.test, expectedRootId: session.rootId });
+  if (result.status === "unavailable" || result.status === "blocked") return result;
+  const tree = await session.tree(session.rootId);
+  const child = tree.nodes.find((node2) => String(node2.id) === String(result.childId));
+  if (!child || String(child.rootId ?? tree.rootId) !== session.rootId || String(child.parentId) !== session.rootId) throw new SetupError("TEST_UNVERIFIED", "Child result does not match the saved root. Reconcile the same operation key.");
+  const txHash = result.txHash ?? result.transactionHash;
+  if (!txHash) throw new SetupError("TEST_UNVERIFIED", "Allocation exists, but its receipt hash is missing from the durable transaction record. No second allocation was requested.");
+  const receipt = await client.rpc.getTransactionReceipt({ hash: txHash });
+  if (receipt.status !== "success" || receipt.to?.toLowerCase() !== controller.toLowerCase()) throw new SetupError("TEST_UNVERIFIED", "Child receipt did not confirm the intended controller.");
+  const creations = parseEventLogs({ abi: capitalControllerAbi, eventName: "NodeCreated", logs: receipt.logs ?? [] });
+  if (!creations.some((log) => log.address.toLowerCase() === controller.toLowerCase() && String(log.args.rootId) === session.rootId && String(log.args.nodeId) === String(child.id) && String(log.args.parentId) === session.rootId)) throw new SetupError("TEST_UNVERIFIED", "Receipt does not contain the expected child creation event.");
+  const allocations = parseEventLogs({ abi: capitalControllerAbi, eventName: "CapitalAllocated", logs: receipt.logs ?? [] });
+  if (autonomous && !allocations.some((log) => log.address.toLowerCase() === controller.toLowerCase() && String(log.args.childId) === String(child.id) && log.args.token.toLowerCase() === state2.test.asset.toLowerCase() && log.args.amount === BigInt(state2.test.amount))) throw new SetupError("TEST_UNVERIFIED", "Worker allocation receipt does not match the requested capital.");
+  if (tree.totalBalances[0] > BigInt(state2.budgetRaw) || !autonomous && child.balances[0] !== BigInt(state2.test.amount)) throw new SetupError("TEST_UNVERIFIED", "Observed balances differ from the authorized child test or exceed the shared limit.");
+  state2.testCompletion = { transactionHash: txHash, childId: String(child.id), blockNumber: String(receipt.blockNumber), dispatchStatus: result.dispatchStatus ?? "not_requested" };
+  await session.onboarding.save(state2);
+  return { ...result, status: autonomous && result.dispatchStatus !== "started" ? "partial" : "confirmed", transactionHash: txHash, blockNumber: receipt.blockNumber, verifiedTree: tree, source: tree.source, setupId: state2.setupId, next: `Show getTree and report the confirmed receipt, shared balances and effective child policy. Worker dispatch: ${result.dispatchStatus ?? "not_requested"}.` };
+}
+var init_capital_continue = __esm({
+  "capital-continue.mjs"() {
     "use strict";
-    init_zod();
-    DEMO_BUDGET_MESSAGE = 'budgetRaw must be 1\u2013100000 raw Test-USDC units (6 decimals; maximum 0.10 Test-USDC). This is the demo setup/input limit, NOT an on-chain balance limit or a budget per child. Example: "100000" for the entire tree, "20000" for 0.02.';
-    demoBudgetSchema = external_exports.string().refine((value) => /^[1-9]\d{0,5}$/.test(value) && BigInt(value) <= 100000n, DEMO_BUDGET_MESSAGE);
+    init_capital_session();
+    init_esm2();
+    init_dist();
   }
 });
 
@@ -80878,9 +81256,9 @@ var init_root_wallet_setup = __esm({
     init_open_wallet_browser();
     init_demo_budget();
     rootSetupSpec = {
-      description: "Prepare a new Sepolia demo root with at most 0.10 Test-USDC and open the normal system browser with the existing wallet profile. Do not use an isolated chat browser. Only the owner reviews and signs; this tool sends no transaction.",
+      description: "Ask the user for the shared capital limit before setup. No assumed amount. Prepare a Sepolia wallet handoff; only the owner signs.",
       schema: external_exports.object({
-        label: external_exports.string().regex(/^[a-z][a-z0-9-]{0,30}$/),
+        label: external_exports.string().regex(/^[a-z][a-z0-9-]{0,30}$/, "label: use 1\u201331 lowercase ASCII letters, digits or hyphens; start with a letter. Spaces and uppercase letters are not allowed.").describe("Optional ENS label: 1\u201331 lowercase ASCII letters, digits or hyphens, starting with a letter. Omit to generate a name."),
         budgetRaw: demoBudgetSchema,
         openBrowser: external_exports.boolean().default(true)
       }).strict(),
@@ -80892,9 +81270,9 @@ var init_root_wallet_setup = __esm({
 // capital-entry.mjs
 init_usdc_sepolia();
 import { spawn as spawn4, execFileSync } from "node:child_process";
-import { readFile as readFile11 } from "node:fs/promises";
+import { readFile as readFile12 } from "node:fs/promises";
 import { homedir } from "node:os";
-import { join as join11 } from "node:path";
+import { join as join12 } from "node:path";
 import { fileURLToPath } from "node:url";
 
 // ../../deployments/history/usdc-full-vaults-sepolia.json
@@ -81124,7 +81502,7 @@ try {
     const session = new CapitalSession2({
       client,
       controller,
-      base: join11(homedir(), ".agent-capital-tree"),
+      base: join12(homedir(), ".agent-capital-tree"),
       namespace: manifest.ensNamespace.name,
       walletOrigin: recoveryDeployment ? "https://agent-capital-tree-silk.vercel.app" : "https://kanoki-app.vercel.app",
       repo,
@@ -81137,6 +81515,13 @@ try {
         bridge = void 0;
       }
     });
+    const { loadWorkerHost: loadWorkerHost2, checkWorkerHost: checkWorkerHost2 } = await Promise.resolve().then(() => (init_worker_host(), worker_host_exports));
+    let workerHost, workerHostInvalid = false;
+    try {
+      workerHost = await loadWorkerHost2(session.base);
+    } catch {
+      workerHostInvalid = true;
+    }
     const serialize = (value) => JSON.stringify(value, (_, v) => typeof v === "bigint" ? v.toString() : v, 2);
     if (command === "check") console.log(serialize(await session.inspect()));
     else if (command === "prepare") console.log(serialize(await session.prepare({ openBrowser: false })));
@@ -81146,16 +81531,17 @@ try {
       const { RuntimeClient: RuntimeClient2 } = await Promise.resolve().then(() => (init_runtime_client(), runtime_client_exports));
       const { StdioServerTransport: StdioServerTransport2 } = await Promise.resolve().then(() => (init_stdio2(), stdio_exports));
       const { z: z2 } = await Promise.resolve().then(() => (init_zod(), zod_exports));
+      const { continueCapitalSetup: continueCapitalSetup2 } = await Promise.resolve().then(() => (init_capital_continue(), capital_continue_exports));
       const { rootSetupSpec: rootSetupSpec2 } = await Promise.resolve().then(() => (init_root_wallet_setup(), root_wallet_setup_exports));
       const { demoBudgetSchema: demoBudgetSchema2 } = await Promise.resolve().then(() => (init_demo_budget(), demo_budget_exports));
-      const budgetRaw = demoBudgetSchema2.default("100000");
+      const budgetRaw = demoBudgetSchema2;
       const expectedRootId = z2.string().regex(/^[1-9]\d*$/).describe("Required write-target confirmation. Must equal the active MCP root reported by getCapitalSetup. Reading a tree does NOT change it.");
       const scoped = Object.fromEntries(Object.entries(toolSpecs2).map(([name, spec]) => [
         name,
         !spec.readOnly || name === "getOperationStatus" ? {
           ...spec,
           schema: spec.schema.extend({ expectedRootId }),
-          description: `${spec.description} Explicit expectedRootId must match the selected MCP root. ${name === "spawnChild" ? "UNAVAILABLE in capital mode: use createChildVault; no autonomous worker is configured." : ""}`
+          description: `${spec.description} Explicit expectedRootId must match the selected MCP root. ${name === "spawnChild" ? "Real AI worker: project worker-host prerequisites must pass before allocation. No owner signature per child after setup." : ""}`
         } : spec
       ]));
       const specs = {
@@ -81166,15 +81552,17 @@ try {
         visualizeTree: { ...toolSpecs2.getTree, description: "Alias of getTree. Return data and dashboard images from the same Sepolia snapshot." },
         prepareRootSetup: {
           ...rootSetupSpec2,
-          schema: rootSetupSpec2.schema.extend({ label: rootSetupSpec2.schema.shape.label.optional(), budgetRaw }),
+          schema: rootSetupSpec2.schema.extend({ label: rootSetupSpec2.schema.shape.label.optional(), budgetRaw: budgetRaw.optional(), fundingRaw: z2.string().regex(/^(0|[1-9]\d{0,77})$/).optional().describe("User-authorized funding target, raw USDC; separate from capital limit. Required on first setup."), userConfirmedLimit: z2.boolean().optional().describe("True only after the user explicitly supplied or confirmed the shared capital limit and funding. Never infer consent."), test: z2.union([toolSpecs2.createChildVault.schema, toolSpecs2.spawnChild.schema]).optional().describe("Persist the explicitly requested child test with its stable operationKey and narrowed mandate. Include task and model for a real autonomous worker; omit both for vault-only. Reused on restart.") }),
           description: "Start or resume the ONE-TIME Kanoki wallet setup. Automatically prepares and preserves the local signer and a unique name; no ENS choice or manual configuration needed. The user confirms creation, authorization, funding and gas in one guided page. Subsequent getCapitalSetup automatically discovers and restores this vault across chat restarts. Sends no transaction itself."
         },
         selectCapitalRoot: { readOnly: false, schema: z2.object({ query: z2.string().min(1).max(253) }).strict(), description: "Explicitly switch THIS MCP session to a confirmed root ENS/vault/ID. Closes the old companion safely, preserves all profiles, sends no transaction. No restart/config edit needed. New sessions start at the configured root; call this tool again if needed." },
-        getCapitalSetup: { readOnly: true, schema: z2.object({ budgetRaw }).strict(), description: "First call for the capital demo. All setup requirements from one block, active MCP root, signer match, actual rights, shared tree balance, separate LOCAL native gas. Demo budgetRaw maximum 100000 = 0.10 TOTAL Test-USDC, not per child or an onchain balance cap." },
+        getCapitalSetup: { readOnly: true, schema: z2.object({ budgetRaw: budgetRaw.optional() }).strict(), description: "Inspect saved setup, including prepared signer and gas before root creation. No default funding and no demo maximum. Ask for the shared capital limit and token before preparing a new setup. Continue polling while the user signs; resume the authorized test automatically when writeReady, without done, hashes or root selection." },
+        getWorkerSetup: { readOnly: true, schema: z2.object({ model: z2.string().optional() }).strict(), description: "Check project-provisioned Docker image and native Codex authentication/model access before any autonomous child allocation. Never reports a worker started; end users do not configure credentials per vault." },
+        continueCapitalSetup: { readOnly: false, schema: z2.object({ waitSeconds: z2.number().int().min(0).max(20).default(20) }).strict(), description: "Continue the saved, explicitly authorized setup/test. Wait up to 20 seconds for wallet prerequisites, then run the saved child operation with its original key and verify the resulting tree. Keep invoking while awaiting_wallet without asking for done or hashes. No wallet signature or funding is performed by this tool." },
         prepareCapitalSetup: { readOnly: false, schema: z2.object({ budgetRaw, expectedRootId, openBrowser: z2.boolean().default(true) }).strict(), description: "Prepare an unbound root\u2019s local key and a grouped normal-browser wallet handoff. Never replace a bound operator. Reuse existing funding/profile. No autonomous worker. If OPERATOR_RECOVERY_REQUIRED, use prepareOperatorRecovery." },
         prepareOperatorRecovery: { readOnly: false, schema: z2.object({ expectedRootId, expectedBoundOperator: z2.string().regex(/^0x[a-fA-F0-9]{40}$/), budgetRaw, openBrowser: z2.boolean().default(true) }).strict(), description: "Explicit recovery for a root bound to a wallet/unavailable signer. Preserve existing keys; prepare/reuse a LOCAL signer and OWNER-REVIEWED operator-change link. Requires current bound address to prevent stale changes. Does NOT replace the operator onchain, import an owner key, fund anything or launch a worker. Shows affected children, exact remaining funding and native gas separately." }
       };
-      for (const unavailable of ["spawnChild", "getCapitalActivity", "getPaymentServices", "purchaseService"]) delete specs[unavailable];
+      for (const unavailable of ["getCapitalActivity", "getPaymentServices", "purchaseService"]) delete specs[unavailable];
       let starting, bridgeGeneration;
       async function runtime() {
         const setup = await session.inspect();
@@ -81182,10 +81570,10 @@ try {
         if (bridge) await session.closeRuntime();
         starting ??= (async () => {
           if (!setup.checks.localKey || !setup.checks.operatorBound) throw new Error("SETUP_REQUIRED");
-          companion = new RuntimeCompanion2({ mode: "capital", runtimeRoot: session.runtimeRoot, rootId: session.rootId, controller, rpcUrl, writesEnabled });
+          companion = new RuntimeCompanion2({ ...workerHost ?? { mode: "capital" }, runtimeRoot: session.runtimeRoot, rootId: session.rootId, controller, rpcUrl, writesEnabled });
           try {
             const ready2 = await companion.start();
-            const token2 = (await readFile11(await privatePath2(ready2.rootTokenFile, 384), "utf8")).trim();
+            const token2 = (await readFile12(await privatePath2(ready2.rootTokenFile, 384), "utf8")).trim();
             bridge = new RuntimeClient2(ready2.toolsOrigin, token2);
             bridgeGeneration = String(setup.authorityGeneration);
             return bridge;
@@ -81200,11 +81588,22 @@ try {
       }
       let queue = Promise.resolve();
       const execute = async (name, input2) => {
-        if (name === "getCapitalSetup") return session.inspect(input2.budgetRaw);
+        if (name === "continueCapitalSetup") return continueCapitalSetup2(session, execute, input2.waitSeconds);
+        if (name === "getCapitalSetup") return { ...await session.inspect(input2.budgetRaw), workers: { configured: Boolean(workerHost), status: workerHostInvalid ? "invalid" : workerHost ? "preflight_required" : "not_configured", workerStartRequested: false, next: "Call getWorkerSetup before requesting a real AI child; setup readiness alone is not worker readiness." } };
+        if (name === "getWorkerSetup") return checkWorkerHost2(workerHost, input2.model);
         if (name === "getEffectivePolicy") return session.policy(input2.nodeId);
         if (name === "selectCapitalRoot") return session.select(input2.query);
         if (name === "prepareRootSetup") {
           if (recoveryDeployment) return { status: "unavailable", transactionSubmitted: false, next: "This connection explicitly targets the historical USDC controller for existing-vault recovery. Create new roots with the normal current-deployment capital MCP; never confuse equally numbered roots across controllers." };
+          const previous = await session.onboarding.read();
+          const test = input2.test ?? previous?.test;
+          if (test?.model) {
+            const worker = await checkWorkerHost2(workerHost, test.model);
+            if (!worker.workerReady) {
+              const saved = await session.onboarding.prepare({ ...input2, openBrowser: false });
+              return { ...saved, status: "blocked", workers: worker, transactionSubmitted: false, next: worker.next };
+            }
+          }
           return session.onboarding.prepare(input2);
         }
         if (name === "prepareCapitalSetup" || name === "prepareOperatorRecovery") {
@@ -81215,7 +81614,10 @@ try {
         if (name === "getTree" || name === "visualizeTree") {
           return session.tree(input2.query ?? input2.rootId);
         }
-        if (name === "spawnChild") return { status: "unavailable", transactionSubmitted: false, next: "Use createChildVault for chat-managed capital. Autonomous Docker workers require the separate worker configuration." };
+        if (name === "spawnChild") {
+          const worker = await checkWorkerHost2(workerHost, input2.model);
+          if (!worker.workerReady) return { ...worker, transactionSubmitted: false };
+        }
         if (name === "getPaymentServices") return { network: "eip155:11155111", asset: "0x1c7D4B196Cb0C7B01d743Fbc6116a902379C7238", decimals: 6, services: [] };
         if (name === "getCapitalActivity" || name === "purchaseService") return {
           status: "unavailable",
@@ -81224,25 +81626,26 @@ try {
         };
         if (!specs[name].readOnly && !writesEnabled) return { status: "blocked", transactionSubmitted: false, next: "Writes disabled. Enable --enable-sepolia-writes explicitly in this local MCP command." };
         const { expectedRootId: target, ...args2 } = input2;
-        const checked = !specs[name].readOnly ? await session.preflight(target, name === "createChildVault" ? args2.operationKey : void 0) : null;
+        const isChild = name === "createChildVault" || name === "spawnChild";
+        const checked = !specs[name].readOnly ? await session.preflight(target, isChild ? args2.operationKey : void 0) : null;
         if (name === "getOperationStatus") {
           await session.initialize();
           session.assertTarget(target);
         }
-        if (name === "createChildVault" && (args2.asset.toLowerCase() !== "0x1c7d4b196cb0c7b01d743fbc6116a902379c7238" || BigInt(args2.amount) > 100000n)) {
-          throw new SetupError2("DEMO_ALLOCATION_LIMIT", "Only Test-USDC allocations up to 100000 raw (0.10) are supported by this demo. The approved budget is shared, not per child.");
+        if (isChild && args2.asset.toLowerCase() !== "0x1c7d4b196cb0c7b01d743fbc6116a902379c7238") {
+          throw new SetupError2("UNSUPPORTED_ASSET", "This capital setup supports the explicitly authorized Sepolia Test-USDC only.");
         }
-        if (name === "createChildVault" && !checked.operationAlreadyRecorded) {
+        if (isChild && !checked.operationAlreadyRecorded) {
           if (!checked.checks.delegation || !checked.checks.usdcAllowed || BigInt(args2.amount) > checked.usdcLimitRaw) throw new SetupError2("MANDATE_LIMIT", "Delegate authority, allowed Test-USDC and a sufficient per-action limit are required. No transaction forwarded.");
           if (BigInt(args2.amount) > checked.usdcBalanceRaw) throw new SetupError2("INSUFFICIENT_VAULT_BALANCE", "The root lacks free Test-USDC for this allocation. Existing child balances are already delegated capital, not spendable root balance. No transaction forwarded.");
         }
         const result = await (await runtime()).call(name, args2);
-        return { ...result, controller, activeMcpRootId: session.rootId, targetRootId: session.rootId, backgroundWorker: "not_requested" };
+        return { ...result, controller, activeMcpRootId: session.rootId, targetRootId: session.rootId, backgroundWorker: result.dispatchStatus === "started" ? "started" : name === "spawnChild" ? result.dispatchStatus ?? "not_confirmed" : "not_requested" };
       };
       const server = await visualServer2({
         name: "kanoki",
         specs,
-        instructions: "Show every returned graphic. Normal onboarding is prepareRootSetup \u2192 owner confirms the guided wallet setup \u2192 getCapitalSetup \u2192 createChildVault. Do not ask the user for an ENS name, root selection, signer preparation or configuration. The saved onboarding automatically restores the correct root after confirmation and across restarts. Use expectedRootId from getCapitalSetup for writes. Advanced selection/recovery tools are only for explicitly requested existing roots. Budget is shared across all vaults. No background worker is launched. Never repeat completed funding. After actions show getTree.",
+        instructions: "Show every returned graphic. First ask the user for their shared capital limit and token, unless already explicit. Never assume a default or unlimited budget. Persist the authorized child test in prepareRootSetup, then keep calling continueCapitalSetup while the owner signs; do not require done, hashes or another task prompt. Do not ask the user for an ENS name, root selection, signer preparation or configuration. The saved onboarding automatically restores the correct root after confirmation and across restarts. Use expectedRootId from getCapitalSetup for writes. Advanced selection/recovery tools are only for explicitly requested existing roots. Budget is shared across all vaults. Use spawnChild for explicitly requested real AI workers only after getWorkerSetup passes; createChildVault starts no model process. Never repeat completed funding. After actions show getTree.",
         execute: (name, input2) => {
           const result = queue.then(() => execute(name, input2));
           queue = result.catch(() => {

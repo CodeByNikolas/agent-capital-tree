@@ -22,7 +22,7 @@ const titles = {
   getEffectivePolicy: 'Mandate and limits', getCapitalActivity: 'Capital activity',
   getOperationStatus: 'Operation status', spawnChild: 'Create a child agent', createChildVault: 'Create a child vault',
   getCapitalSetup: 'Capital demo readiness', prepareCapitalSetup: 'Authorize your chat agent',
-  selectCapitalRoot: 'Select the MCP root', prepareOperatorRecovery: 'Recover local agent access',
+  selectCapitalRoot: 'Select the MCP root', prepareOperatorRecovery: 'Recover local agent access', continueCapitalSetup:'Continue saved setup and test', getWorkerSetup:'Check autonomous worker runtime',
   getPaymentServices: 'Available services', purchaseService: 'Service payment',
   allocateCapital: 'Delegate capital', tightenPolicy: 'Restrict permissions', swap: 'Vault swap',
   openPosition: 'Open liquidity position', increasePosition: 'Add liquidity', collectFees: 'Collect fees',
@@ -51,29 +51,34 @@ export function toolView(name, args, data, { readOnly = true, isError = false, p
     view.next = d.next ?? view.next;
     return view;
   }
-  if (['getCapitalSetup','prepareCapitalSetup','selectCapitalRoot','prepareOperatorRecovery'].includes(name)) {
+  if (name === 'getWorkerSetup') {
+    view.status = d.workerReady ? 'WORKER HOST READY · NO CHILD STARTED BY CHECK' : 'WORKER HOST UNAVAILABLE';
+    row('Model',d.model);row('Approved models',d.models?.join(', '));row('Child gas grant (wei)',d.childGasWei);view.next=d.next;
+  } else if (['getCapitalSetup','prepareCapitalSetup','selectCapitalRoot','prepareOperatorRecovery'].includes(name) || (name === 'continueCapitalSetup' && d.status !== 'confirmed')) {
     view.status = d.prerequisitesMet ? 'CHAIN CHECKS PASSED · REVIEW GAS FEES' : 'SETUP INCOMPLETE · NO TRANSACTION';
     row('Vault / active MCP root', `${d.ensName} / #${d.activeMcpRootId}`); row('LOCAL ETH gas (wei)', d.operatorGasWei ?? 'Not checked: local signer missing');
     row('Onchain operator', d.boundOperator);
     row('Controller', d.controller);
     row('Onchain rights', d.onchainRights?.join(', ') || 'None');
     row('Local signer / match', `${d.localOperator ?? 'Not prepared'} / ${d.checks?.operatorBound ? 'MATCH' : 'NO MATCH'}`);
-    row('Test-USDC balance / limit', `${amount(d.usdcBalanceRaw ?? 0)} USDC / ${amount(d.usdcLimitRaw ?? 0)} USDC`);
+    row('Test-USDC balance / per-action limit', `${amount(d.usdcBalanceRaw ?? 0)} USDC / ${amount(d.usdcLimitRaw ?? 0)} USDC`);
+    row('Shared onchain capital limit', d.onboarding?.onchainCapitalLimitRaw ?? d.onchainCapitalLimitRaw ?? 'Not confirmed');
     row('Shared tree / still to fund', `${amount(d.totalUsdcBalanceRaw ?? 0)} USDC / ${amount(d.fundingShortfallRaw ?? 0)} USDC`);
     row('Missing requirements', Array.isArray(d.missing) ? d.missing.join(' · ') || 'None' : 'Unknown');
     row('Write readiness', d.writeReady ? 'Setup checks passed; action simulation and fee check required' : 'BLOCKED');
     row('MCP writes', d.writesEnabled ? 'Explicitly enabled; onchain policy still enforced' : 'Disabled');
     for (const action of d.walletActions ?? []) row('Wallet action', `${action.action}: ${action.recipient ?? action.newOperator ?? action.vault} ${action.amountWei ? `${action.amountWei} wei` : action.amountRaw ? `${action.amountRaw} raw USDC` : ''}`);
     row('Snapshot block', d.source?.blockNumber); row('Observed', d.source?.observedAt);
-    row('Inference', 'This chat. No Docker, model key or background AI worker.');
-    view.next = 'Owner authorizes the agent key in the normal wallet browser. USDC approval is not an ETH gas transfer. Do not repeat completed funding or rebind a correct operator.';
+    row('Inference', d.workers?.configured ? 'Main chat with project worker runtime; check individual dispatch results' : 'Main chat. Worker host is not configured.');
+    for (const [step,status] of Object.entries(d.steps ?? {})) row(`Setup: ${step}`, status);
+    view.next = d.next ?? 'Owner authorizes the agent key in the normal wallet browser. USDC approval is not an ETH gas transfer. Do not repeat completed funding or rebind a correct operator.';
   } else if (name === 'prepareRootSetup') {
     view.status = d.browser?.opened ? 'AWAITING WALLET' : 'OPEN WALLET IN BROWSER';
-    row('ENS name', d.ensName); row('Demo budget', `${amount(d.budgetRaw ?? 0)} USDC`);
+    row('ENS name', d.ensName); row('Shared capital limit', `${amount(d.budgetRaw ?? 0)} USDC`);
     row('Browser', d.browser?.opened ? 'Launch requested in your normal browser profile' : 'Open the setup link below in your wallet-enabled browser');
-    row('Wallet steps', 'Create root → select root in capital MCP → prepare local signer → authorize → fund only shortfall → check native gas');
+    row('Wallet steps', 'Confirm limit → create root → authorize prepared signer → fund authorized shortfall → check separate gas');
     row('Signing', 'Owner reviews and signs each setup transaction in their wallet.');
-    view.next = 'No transaction submitted by this MCP. Return to the capital-mode chat after root creation. Select its ENS explicitly before preparing local signer authorization.';
+    view.next = d.next ?? 'Root and signer are restored automatically. Continue checking the saved setup; no done message, ENS selection or hash copying is required.';
   } else {
     if (d.status === 'blocked' || d.status === 'unavailable') {
       view.status = 'NOT EXECUTED'; row('Details', d.next); row('Transaction submitted', d.transactionSubmitted);

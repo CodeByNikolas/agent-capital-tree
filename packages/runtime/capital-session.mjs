@@ -11,6 +11,7 @@ export class SetupError extends Error {
 }
 export function safeCapitalError(error) {
   if (error instanceof SetupError) return error.message;
+  if (/^(LIMIT_REQUIRED|FUNDING_REQUIRED|SETUP_CONFLICT):/.test(error?.message ?? '')) return error.message;
   if (error?.message?.startsWith('ROOT_REVOKED:')) return 'ROOT_REVOKED: Your saved vault is permanently revoked. No replacement, key change or funding was requested.';
   if (error?.code === 'INSUFFICIENT_GAS') return 'INSUFFICIENT_GAS: Local signer has insufficient native Sepolia ETH for the simulated child transaction. No transaction was submitted. Fund native gas, not USDC.';
   if (/^No vault in this Sepolia deployment|^Root not found/.test(error?.message ?? '')) return 'ROOT_NOT_FOUND: No confirmed root matches this identifier at the observed block. If you just signed creation, wait for its receipt; pending status is not known to this MCP.';
@@ -60,7 +61,7 @@ export class CapitalSession {
     const rootId = String(resolved.tree.rootId), runtimeRoot = await this.profile(rootId);
     await this.closeRuntime();
     Object.assign(this, { rootId, runtimeRoot, query });
-    return this.inspect('100000', resolved.tree);
+    return this.inspect(undefined, resolved.tree);
   }
   async initialize() {
     if (!this.rootId && !this.query) await this.onboarding.resume();
@@ -83,24 +84,30 @@ export class CapitalSession {
     if (!await this.matchingDomain(path, rootId)) throw new SetupError('PROFILE_MISMATCH', 'Private profile does not match the requested root.');
     return (await new WorkerKeyStore(join(path, 'keys')).account(`root-${rootId}`, false)).address;
   }
-  async inspect(budgetRaw = '100000', tree) {
+  async inspect(budgetRaw, tree) {
     if (!this.rootId && !this.query) await this.onboarding.resume();
-    if (!this.rootId && !this.query) return { status: 'unavailable', mode: 'capital', activeMcpRootId: null,
+    if (!this.rootId && !this.query) return { mode: 'capital', activeMcpRootId: null,
       controller: this.controller, namespace: this.namespace, writesEnabled: this.writesEnabled, writeReady: false,
-      localOperator: null, backgroundWorker: 'not_requested', transactionSubmitted: false,
-      next: 'Call prepareRootSetup to start or resume the single wallet setup. Do not ask the user for an ENS name or manual configuration. After wallet confirmation, call getCapitalSetup again; the root and local signer are recognized automatically.' };
+      backgroundWorker: 'not_requested', transactionSubmitted: false,
+      ...await this.onboarding.status() };
     await this.initialize();
     tree ??= await this.client.getTree(BigInt(this.rootId));
     const local = await this.localOperator();
     // Never display the wallet owner's gas as gas available to a missing local signer.
     const gas = local ? await this.client.rpc.getBalance({ address: local, blockNumber: tree.source.blockNumber }) : 0n;
-    const setup = capitalReadiness(tree, local, gas, BigInt(budgetRaw));
+    const saved = this.runtimeRoot === this.onboarding.directory ? await this.onboarding.read() : null;
+    const setup = capitalReadiness(tree, local, gas, BigInt(budgetRaw ?? saved?.fundingRaw ?? '0'));
+    const onboarding = saved ? await this.onboarding.status() : null;
     return { ...setup, controller: this.controller, authorityGeneration: tree.generation, namespace: this.namespace, activeMcpRootId: this.rootId, writesEnabled: this.writesEnabled,
-      writeReady: this.writesEnabled && setup.prerequisitesMet, readinessScope: 'Setup prerequisites only; each action still requires a fresh policy, balance, simulation and fee check.',
+      writeReady: this.writesEnabled && setup.prerequisitesMet && (!onboarding || onboarding.missing.length === 0), readinessScope: 'Setup prerequisites only; each action still requires a fresh policy, balance, simulation and fee check.',
+      onboarding, next:onboarding?.next, steps:onboarding?.steps,
+      prerequisitesMet:setup.prerequisitesMet && (!onboarding || onboarding.missing.length === 0),
+      missing:[...new Set([...setup.missing,...(onboarding?.missing ?? [])])],
       localProfile: this.runtimeRoot, toolVersion: 'capital-demo-2', backgroundWorker: 'not_requested',
-      budgetMeaning: 'Shared tree capital, not a per-child allowance. Internal delegations are not deposits. The demo input cap is not an onchain balance cap.' };
+      budgetMeaning: 'Shared tree capital, not a per-child allowance. Internal delegations are not deposits. Per-action policy and the shared onchain capital limit are separate.' };
   }
   async tree(query) {
+    if (!this.rootId && !this.query) await this.onboarding.resume();
     if (!this.rootId && !this.query) {
       const resolved = await this.client.resolveTree(query);
       return { ...resolved.tree, selectedNodeId: resolved.selectedNodeId, mcp: {
@@ -112,7 +119,7 @@ export class CapitalSession {
     const resolved = await this.client.resolveTree(query);
     const matches = String(resolved.tree.rootId) === this.rootId;
     // The annotated setup and image use exactly the tree's snapshot, never a second tree read.
-    const setup = matches ? await this.inspect('100000', resolved.tree) : null;
+    const setup = matches ? await this.inspect(undefined, resolved.tree) : null;
     const activeSigner = matches ? null : await this.localOperator();
     const activeGas = activeSigner ? await this.client.rpc.getBalance({address:activeSigner,blockNumber:resolved.tree.source.blockNumber}) : null;
     return { ...resolved.tree, selectedNodeId: resolved.selectedNodeId,
@@ -120,8 +127,9 @@ export class CapitalSession {
         controller: this.controller, targetMatches: false, writeReady: false, localOperator: activeSigner ?? null, operatorGasWei: activeGas,
         next: 'This is only a read. Call selectCapitalRoot explicitly before any action on this root.' } };
   }
-  async prepare({ budgetRaw = '100000', openBrowser = true, expectedBoundOperator, recovery = false }) {
+  async prepare({ budgetRaw, openBrowser = true, expectedBoundOperator, recovery = false }) {
     await this.initialize();
+    if (!budgetRaw) throw new SetupError('LIMIT_REQUIRED','An explicitly confirmed capital amount is required before preparing funding.');
     const tree = await this.client.getTree(BigInt(this.rootId));
     if (tree.nodes.find(node => String(node.id) === this.rootId)?.revoked) {
       throw new SetupError('ROOT_REVOKED', 'This root is permanently revoked. Operator replacement cannot reactivate it. No key, funding request or wallet handoff was created. Select an active root or explicitly create a new one.');
@@ -163,6 +171,7 @@ export class CapitalSession {
     if (!this.writesEnabled) throw new SetupError('WRITES_DISABLED', 'Enable --enable-sepolia-writes explicitly. No transaction forwarded.');
     if (!setup.checks.localKey) throw new SetupError('PROFILE_MISSING', 'No local signer for this root. Prepare setup/recovery first.');
     if (!setup.checks.operatorBound) throw new SetupError('SIGNER_MISMATCH', 'Local signer does not match the bound onchain operator. Owner authorization is required.');
+    if (setup.onboarding?.steps.limit !== undefined && setup.onboarding.steps.limit !== 'confirmed') throw new SetupError('CAPITAL_LIMIT_UNCONFIRMED','The saved shared limit is not confirmed onchain. No transaction forwarded.');
     const recorded = operationKey ? await this.client.controller.read.getOperation([BigInt(this.rootId),BigInt(this.rootId),setup.authorityGeneration,operationKey], {blockNumber:setup.source.blockNumber}) : null;
     if (!setup.checks.operatorHasGas) {
       // A confirmed retry requires no gas or additional capital; let the coordinator reconcile it.

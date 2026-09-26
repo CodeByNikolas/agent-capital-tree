@@ -76,7 +76,8 @@ test('one snapshot checklist lists ALL blockers and distinguishes ETH gas from U
   tree.nodes[0].effectivePolicy = { maxAmounts: [100000n, 0n], tokenMask: 1 };
   assert.equal(capitalReadiness(tree, controller, 1n).prerequisitesMet, true);
   assert.throws(() => capitalReadiness({ ...tree, source: { chainId: 1 } }, controller, 1n), /Sepolia/);
-  assert.throws(() => capitalReadiness(tree, controller, 1n, 100001n), /budget/);
+  assert.doesNotThrow(() => capitalReadiness(tree, controller, 1n, 100001n));
+  assert.throws(() => capitalReadiness(tree, controller, 1n, 2n ** 256n), /amount/);
 });
 
 test('Linux capital lifecycle opens only the scoped tool server, without Docker or inference', { skip: process.platform !== 'linux', timeout: 60_000 }, async () => {

@@ -66,7 +66,7 @@ export function resultMarkdown(name, args, data, { isError = false, snapshot } =
   } else {
     if (d.status === 'blocked' || d.status === 'unavailable') lines.push(`Cannot ${verbs[name] ?? 'continue'}: ${clean(d.next ?? 'integration unavailable.')}`);
     else if (name === 'revokeSubtree') lines.push(`Revocation ${d.status === 'confirmed' ? 'confirmed' : 'result received'}. Funds stay in the vault until recovery.`);
-    else if (name === 'prepareRootSetup') lines.push(`Root setup: ${code(d.ensName)}. Owner approval required.`, `Funding: ${usdc(d.budgetRaw)} USDC`);
+    else if (name === 'prepareRootSetup') lines.push(`Root setup: ${code(d.ensName)}. Owner approval required.`, `Shared limit: ${usdc(d.budgetRaw)} USDC; authorized funding: ${usdc(d.fundingRaw)} USDC.`);
     else if (name === 'purchaseService') lines.push(d.alreadySettled ? 'Already settled — not charged again.' : `Purchase ${d.status === 'confirmed' ? 'settled' : 'result received'}.`);
     else lines.push(`${clean(name)}: ${clean(d.status ?? d.dispatchStatus ?? 'data received')}.`);
     if (d.childId) lines.push(`Node: ${code(d.childId)}`);
@@ -74,6 +74,9 @@ export function resultMarkdown(name, args, data, { isError = false, snapshot } =
     if (d.url) lines.push(`[Open root setup](${d.url})`);
     if (d.setupUrl) lines.push(`[Open owner setup](${d.setupUrl})`);
     if (d.missing?.length) lines.push(`Missing: ${d.missing.map(clean).join(', ')}.`);
+    for (const [step,status] of Object.entries(d.steps ?? {})) lines.push(`${clean(step)}: ${clean(status)}.`);
+    if (d.operatorGasWei !== undefined) lines.push(`Operator gas: ${clean(d.operatorGasWei)} wei.`);
+    if (d.next) lines.push(clean(d.next));
     if (d.source?.blockNumber) lines.push(`Block ${clean(d.source.blockNumber)}.`);
   }
   if (!Array.isArray(d.nodes) && tree?.source?.blockNumber) lines.push(`Node status observed at block ${clean(tree.source.blockNumber)}; read the tree after an action.`);

@@ -90,10 +90,10 @@ try {
   client = new Client({ name: 'plugin-install-smoke', version: '0.1.0' });
   await client.connect(transport);
   const listed = await client.listTools();
-  assert.equal(listed.tools.length, 19);
+  assert.equal(listed.tools.length, 22);
   assert.ok(listed.tools.some(tool => tool.name === 'prepareRootSetup'));
   assert.ok(listed.tools.some(tool => tool.name === 'createChildVault'));
-  assert.ok(!listed.tools.some(tool => tool.name === 'spawnChild'));
+  assert.ok(listed.tools.some(tool => tool.name === 'spawnChild'));
   const result = await client.callTool({ name: 'getTree', arguments: { rootId: rootId.toString() } });
   console.log(result.structuredContent?._kanoki?.imageLinks?.join('\n') ?? '');
   assert.equal(result.isError, undefined, result.content?.[0]?.text);
