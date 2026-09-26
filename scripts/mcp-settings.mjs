@@ -7,7 +7,8 @@ const script = fileURLToPath(new URL('./mcp-readonly-server.mjs', import.meta.ur
 const required = [
   new URL('../packages/sdk/dist/index.js', import.meta.url),
   new URL('../packages/plugin/dist/tools.js', import.meta.url),
-  new URL('../packages/plugin/node_modules/sharp', import.meta.url)
+  new URL('../packages/plugin/node_modules/@resvg/resvg-wasm', import.meta.url),
+  new URL('../packages/plugin/visual-assets/Manrope.ttf', import.meta.url)
 ];
 for (const file of required) {
   try { await access(file); }

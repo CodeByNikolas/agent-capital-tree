@@ -1,84 +1,55 @@
 #!/usr/bin/env node
-// Keyless, read-only MCP for local Codex chats. No runtime token, signer or write handler.
+// Keyless local MCP: public reads and browser-wallet handoff, never a signer.
 import { readFile } from 'node:fs/promises';
-import { McpServer } from '../packages/plugin/node_modules/@modelcontextprotocol/sdk/dist/esm/server/mcp.js';
 import { StdioServerTransport } from '../packages/plugin/node_modules/@modelcontextprotocol/sdk/dist/esm/server/stdio.js';
 import { capitalClient } from '../packages/sdk/dist/index.js';
 import { toolSpecs } from '../packages/plugin/dist/tools.js';
-import { treeAsMermaid, treeAsPng } from '../packages/plugin/tree-visual.mjs';
+import { visualServer } from '../packages/plugin/visual-server.mjs';
 import { z } from '../packages/plugin/node_modules/zod/index.js';
+import { openWalletBrowser } from './open-wallet-browser.mjs';
 
 const manifest = JSON.parse(await readFile(new URL('../deployments/usdc-sepolia.json', import.meta.url), 'utf8'));
-const rpcUrl = process.env.ACT_SEPOLIA_RPC_URL ?? 'https://ethereum-sepolia.publicnode.com';
-const chain = capitalClient(rpcUrl, manifest.contracts.CapitalController.address);
-const server = new McpServer({
-  name: 'agent-capital-tree-readonly',
-  version: '0.1.0',
-  instructions: 'Read-only Ethereum Sepolia Test-USDC capital-tree inspection. getTree returns data; visualizeTree returns a rendered image and Mermaid fallback. Report source.blockNumber and observedAt with every answer. Never claim that this server can execute financial actions or that the dashboard can see this local MCP session.'
-});
+const chain = capitalClient(process.env.ACT_SEPOLIA_RPC_URL ?? 'https://ethereum-sepolia.publicnode.com', manifest.contracts.CapitalController.address);
+const specs = {
+  getTree:toolSpecs.getTree,
+  visualizeTree:{...toolSpecs.getTree,description:'Alias of getTree: return live data, dashboard-style PNG pages and Mermaid from one Sepolia snapshot. Accept root ID, full ENS name or vault address.'},
+  prepareRootSetup:{
+    description:'Prepare a new Sepolia demo vault with at most 0.10 Test-USDC and OPEN its setup link directly in the user’s normal system browser, where their existing wallet extension is installed. Do not open a separate chat/automation browser. The user reviews and signs in the browser wallet. Never signs or sends a transaction itself. Set openBrowser:false only to prepare a link without opening it.',
+    schema:z.object({label:z.string().regex(/^[a-z][a-z0-9-]{0,30}$/),
+      budgetRaw:z.string().max(6).regex(/^[1-9]\d*$/).refine(value=>BigInt(value)<=100_000n,'Maximum 0.10 Test-USDC'),
+      openBrowser:z.boolean().default(true)}).strict(),readOnly:false
+  }
+};
 
-async function readTree(query) {
-  for (let attempt = 0; attempt < 3; attempt++) {
+async function execute(name,args) {
+  if (name==='prepareRootSetup') {
+    const {label,budgetRaw}=args, url=new URL('https://agent-capital-tree-silk.vercel.app/setup');
+    url.searchParams.set('action','create-root');url.searchParams.set('label',label);url.searchParams.set('budget',budgetRaw);
+    const browser=args.openBrowser?await openWalletBrowser(url.href):{opened:false,method:'not-requested',walletDetected:false};
+    return {network:'Ethereum Sepolia',chainId:11155111,ensName:`${label}.agentcapitalusdc.eth`,budgetRaw,
+      budgetUSDC:(Number(budgetRaw)/1_000_000).toString(),url:url.href,browser,
+      next:'Use your normal browser profile with the wallet extension. Review and sign root creation, exact Test-USDC approval/funding, then bind the local root operator. Return to chat afterwards. No owner key enters this chat.'};
+  }
+  for(let attempt=0;attempt<3;attempt++) {
     try {
-      const resolved = await chain.resolveTree(query);
-      const tree = { ...resolved.tree, selectedNodeId: resolved.selectedNodeId };
-      if (tree.source.chainId !== manifest.chainId) throw new Error('Unexpected chain ID');
-      return tree;
-    } catch (error) {
-      if (!/\b429\b|Too Many Requests/i.test(String(error)) || attempt === 2) throw error;
-      await new Promise(resolve => setTimeout(resolve, 700 * (attempt + 1)));
+      const resolved=await chain.resolveTree(args.query??args.rootId);
+      if(resolved.tree.source.chainId!==11155111) throw new Error('Unexpected chain ID');
+      return {...resolved.tree,selectedNodeId:resolved.selectedNodeId};
+    } catch(error) {
+      if(!/\b429\b|Too Many Requests/i.test(String(error))||attempt===2) throw error;
+      await new Promise(resolve=>setTimeout(resolve,700*(attempt+1)));
     }
   }
 }
 
-function errorResult(error) {
-  const message = /\b429\b|Too Many Requests/i.test(String(error))
-    ? 'Public Sepolia RPC rate-limited the read. Wait briefly or set ACT_SEPOLIA_RPC_URL to your own Sepolia RPC endpoint.'
-    : error instanceof Error ? error.message : 'Sepolia read failed';
-  return { isError: true, content: [{ type: 'text', text: message }] };
-}
-
-async function treeResult(args) {
-  try {
-    const tree = await readTree(args.query ?? args.rootId);
-    const png = await treeAsPng(tree);
-    return { content: [
-      { type: 'text', text: JSON.stringify(tree, (_, value) => typeof value === 'bigint' ? value.toString() : value) },
-      { type: 'text', text: `Mermaid fallback:\n\x60\x60\x60mermaid\n${treeAsMermaid(tree)}\n\x60\x60\x60` },
-      { type: 'image', data: png.toString('base64'), mimeType: 'image/png' }
-    ] };
-  } catch (error) { return errorResult(error); }
-}
-
-server.registerTool('getTree', {
-  description: toolSpecs.getTree.description,
-  inputSchema: toolSpecs.getTree.schema,
-  annotations: { readOnlyHint: true, destructiveHint: false }
-}, treeResult);
-
-server.registerTool('visualizeTree', {
-  description: 'Alias of getTree: return both live JSON data and a PNG tree graph from one Sepolia snapshot, plus Mermaid fallback. Accept numeric root ID, full ENS name or vault address. Show the image in the chat.',
-  inputSchema: toolSpecs.getTree.schema,
-  annotations: { readOnlyHint: true, destructiveHint: false }
-}, treeResult);
-
-server.registerTool('prepareRootSetup', {
-  description: 'Start a new Sepolia root-vault demo from the chat. Returns a direct browser-wallet setup link with a reviewed label and at most 0.10 Test-USDC; this tool never signs or sends a transaction. After wallet creation, use getTree by ENS name, then bind the local operator before asking the agent to create children.',
-  inputSchema: z.object({
-    label: z.string().regex(/^[a-z][a-z0-9-]{0,30}$/),
-    budgetRaw: z.string().max(6).regex(/^[1-9]\d*$/).refine(value => BigInt(value) <= 100_000n, 'Maximum 0.10 Test-USDC')
-  }).strict(),
-  annotations: { readOnlyHint: true, destructiveHint: false }
-}, async ({ label, budgetRaw }) => {
-  const url = new URL('https://agent-capital-tree-silk.vercel.app/setup');
-  url.searchParams.set('action', 'create-root');
-  url.searchParams.set('label', label);
-  url.searchParams.set('budget', budgetRaw);
-  return { content: [{ type: 'text', text: JSON.stringify({
-    network: 'Ethereum Sepolia', chainId: 11155111, ensName: `${label}.agentcapitalusdc.eth`,
-    budgetRaw, budgetUSDC: (Number(budgetRaw) / 1_000_000).toString(), url: url.toString(),
-    next: 'Open the URL in a browser with your wallet. Review and sign root creation, exact Test-USDC approval/funding, then bind the local root operator. Each is a separate wallet transaction. No owner key enters this chat.'
-  }) }] };
+const server=await visualServer({name:'agent-capital-tree-readonly',specs,execute,
+  instructions:'Public Sepolia Test-USDC reads and local system-browser wallet setup. No financial signer. prepareRootSetup already opens the normal browser; do not use a chat-browser tool to open it again. Only the user can confirm wallet connection and sign. Never claim the dashboard observes this local MCP session.',
+  describeError(error) {
+    const message=String(error);
+    if(/\b429\b|Too Many Requests/i.test(message)) return 'Public Sepolia RPC rate-limited this read. Wait briefly or configure another Sepolia endpoint outside the chat.';
+    if(/chain ID|chain mismatch/i.test(message)) return 'Unexpected chain. Only Ethereum Sepolia (11155111) is supported.';
+    if(/not found|no matching|unknown root|does not exist|not a root|invalid.*query|expected.*root/i.test(message)) return 'No matching root or vault found. Check the ENS name, vault address or root ID.';
+    return 'Sepolia read unavailable. Check the vault identifier and RPC connection. No transaction was submitted.';
+  }
 });
-
 await server.connect(new StdioServerTransport());

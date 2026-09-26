@@ -1,6 +1,8 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { treeAsMermaid, treeAsPng, treeAsSvg } from '../tree-visual.mjs';
+import { visualResult } from '../tool-visual.mjs';
+import { readFile } from 'node:fs/promises';
 
 const base = {
   rootId: 1n,
@@ -35,4 +37,25 @@ test('untrusted labels are escaped and malformed topology fails closed', () => {
   assert.doesNotMatch(treeAsMermaid(tree), /onload=/);
   tree.nodes[1].parentId = 99n;
   assert.throws(() => treeAsSvg(tree), /Disconnected tree node/);
+});
+
+test('large trees retain every node and every right across readable pages from one snapshot', async () => {
+  const tree = structuredClone(base);
+  tree.nodes = [tree.nodes[0], ...Array.from({length:31},(_,index)=>({...tree.nodes[1],id:BigInt(index+2),ensName:`child-${index}.capital.agentcapitalusdc.eth`}))];
+  tree.nodes[0].authorizedActions = ['delegate','swap','lpManage','collectFees','exit','restrict','reclaim','pay'];
+  const result = await visualResult('getTree',{},tree,{readOnly:true});
+  assert.equal(result.content.filter(item=>item.type==='image').length,6);
+  for(let page=0;page<6;page++) assert.match(treeAsSvg(tree,page),/BLOCK 42/);
+  assert.match(treeAsSvg(tree,0),/reclaim · pay/);
+  assert.match(treeAsSvg(tree,5),/child-30/);
+  assert.match(treeAsSvg(tree,5),/Parent #1 · previous page/);
+  assert.match(treeAsMermaid(tree),/n1 --> n32/);
+  assert.throws(()=>treeAsSvg({...tree,source:{...tree.source,chainId:1}}),/Sepolia/);
+});
+
+test('chat Markdown links point to the exact returned PNG, not an invented attachment', async () => {
+  const result = await visualResult('getTree', {}, base, {readOnly:true});
+  const file = /!\[[^\]]+\]\(<([^>]+)>\)/.exec(result.content[1].text)?.[1];
+  assert.ok(file);
+  assert.deepEqual(await readFile(file), Buffer.from(result.content[2].data, 'base64'));
 });

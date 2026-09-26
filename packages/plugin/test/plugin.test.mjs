@@ -75,6 +75,8 @@ test('bundled stdio MCP server works from a copied plugin without node_modules',
     const result = await client.callTool({ name: 'getTree', arguments: { rootId } });
     assert.equal(result.isError, true);
     assert.match(result.content[0].text, /not configured/);
+    assert.equal(result.content[2].mimeType, 'image/png');
+    assert.equal(Buffer.from(result.content[2].data, 'base64').subarray(0, 8).toString('hex'), '89504e470d0a1a0a');
   } finally {
     await client.close();
     await rm(folder, { recursive: true, force: true });

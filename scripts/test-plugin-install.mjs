@@ -99,7 +99,7 @@ try {
   assert.ok(tree.nodes.length > 0);
   assert.equal(tree.tokens[0].toLowerCase(), manifest.token.address.toLowerCase());
   assert.equal(result.content[2].type, 'image');
-  assert.ok(['image/png', 'image/svg+xml'].includes(result.content[2].mimeType));
+  assert.equal(result.content[2].mimeType, 'image/png');
   assert.match(result.content[1].text, /Mermaid fallback:/);
   console.log(JSON.stringify({ pluginId: install.pluginId, cliVersion: version.trim(),
     mcpServer: registered.name, toolCount: listed.tools.length, rootId: tree.rootId,

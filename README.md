@@ -71,7 +71,7 @@ ENS roles are actual authorization, not descriptive text metadata. MultiBaas is 
 
 ## Run and test
 
-The quickstart above proves the keyless MCP path on Windows, macOS or Linux. `mcp:verify` installs the 16-tool plugin into a disposable profile with writes disabled. `mcp:chat-verify` checks the three-tool local STDIO server: `getTree`, `visualizeTree` and `prepareRootSetup`. Tree reads accept a root ID, full ENS name or vault address and return data plus an image from one Sepolia block. Root setup prepares a browser-wallet link; it cannot sign. See the [chat setup and demo instructions](docs/local-setup.md).
+The quickstart above proves the keyless MCP path on Windows, macOS or Linux. `mcp:verify` installs the 16-tool plugin into a disposable profile with writes disabled. `mcp:chat-verify` checks the three-tool local STDIO server: `getTree`, `visualizeTree` and `prepareRootSetup`. Every tool returns dashboard-style PNGs and real local image links, including setup, action receipts and errors. Trees accept a root ID, ENS name or vault address and render one Sepolia snapshot. Root setup opens your normal system browser with its existing wallet extensions; the user reviews and signs there. See the [chat setup and demo instructions](docs/local-setup.md).
 
 Full agent actions are separate and currently Linux-only (Windows through WSL2). They additionally require Docker, a wallet/operator setup, a reachable Sepolia RPC and CLIProxyAPI access; a Codex login alone does not provide inference for the worker. Native Windows financial writes and fresh external-laptop write onboarding are not verified. For the full development suite, use Node 22+, pnpm 11.13.1, Docker and Foundry 1.8.3 from the checkout root:
 

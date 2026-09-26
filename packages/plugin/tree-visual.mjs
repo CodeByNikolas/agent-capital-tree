@@ -1,41 +1,20 @@
-const WIDTH = 960;
-const CARD_HEIGHT = 96;
-const ROW_GAP = 22;
-const START_Y = 142;
-
-function xml(value) {
-  return String(value).replace(/[&<>"']/g, character => ({
-    '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&apos;'
-  })[character]);
-}
-
-function short(value, length = 44) {
-  const input = String(value);
-  return input.length > length ? `${input.slice(0, length - 1)}…` : input;
-}
-
-function amount(raw) {
-  const value = BigInt(raw);
-  const integer = value / 1_000_000n;
-  const decimal = (value % 1_000_000n).toString().padStart(6, '0').replace(/0+$/, '');
-  return `${integer.toLocaleString('en-US')}${decimal ? `.${decimal}` : ''}`;
-}
+import { WIDTH, t, text, rect, frame, lines, amount } from './visual-primitives.mjs';
+import { svgAsPng } from './png-renderer.mjs';
+export const NODES_PER_PAGE = 6;
 
 function sortedNodes(tree) {
-  const byParent = new Map();
+  if (tree.source.chainId !== 11155111) throw new Error('Expected Ethereum Sepolia');
+  if (!tree.nodes.length || tree.nodes.length > 32) throw new Error('Expected 1–32 tree nodes');
+  const byParent = new Map(), ordered = [], seen = new Set();
   for (const node of tree.nodes) {
+    if (!/^\d+$/.test(String(node.id)) || !/^\d+$/.test(String(node.parentId))) throw new Error('Invalid node ID');
     const key = String(node.parentId);
-    const siblings = byParent.get(key) ?? [];
-    siblings.push(node);
-    byParent.set(key, siblings);
+    byParent.set(key, [...(byParent.get(key) ?? []), node]);
   }
-  const ordered = [];
-  const seen = new Set();
   function visit(node, depth) {
     const key = String(node.id);
     if (seen.has(key) || depth > 2) throw new Error('Invalid tree topology');
-    seen.add(key);
-    ordered.push({ node, depth });
+    seen.add(key); ordered.push({ node, depth });
     for (const child of byParent.get(key) ?? []) visit(child, depth + 1);
   }
   const roots = byParent.get('0') ?? [];
@@ -45,69 +24,67 @@ function sortedNodes(tree) {
   return ordered;
 }
 
+function state(tree, node) {
+  if (node.revoked) return 'REVOKED';
+  if (BigInt(node.generation) !== BigInt(tree.generation)) return 'STALE MANDATE';
+  if (BigInt(node.effectivePolicy.expiry) <= BigInt(tree.source.timestamp)) return 'EXPIRED';
+  return node.authorizedActions?.length ? 'AUTHORIZED' : 'NO ACTIVE RIGHTS';
+}
+
 export function treeAsMermaid(tree) {
-  const lines = ['flowchart TD'];
+  const result = ['flowchart TD'];
   for (const { node } of sortedNodes(tree)) {
-    const label = short(node.ensName, 55).replace(/[^a-zA-Z0-9 ._-]/g, '');
-    const state = !node.revoked && BigInt(node.generation) === BigInt(tree.generation) &&
-      BigInt(node.effectivePolicy.expiry) > BigInt(tree.source.timestamp) ? 'active' : 'inactive';
-    lines.push(`  n${node.id}["${label}<br/>${state} · ${amount(node.balances[0])} USDC"]`);
-    if (BigInt(node.parentId) !== 0n) lines.push(`  n${node.parentId} --> n${node.id}`);
+    const label = String(node.ensName).replace(/[^a-zA-Z0-9 ._-]/g, '');
+    result.push(`  n${node.id}["${label}<br/>${state(tree,node)} · ${amount(node.balances[0])} Test-USDC<br/>${(node.authorizedActions ?? []).join(', ') || 'No active rights'}"]`);
+    if (BigInt(node.parentId)) result.push(`  n${node.parentId} --> n${node.id}`);
   }
-  return lines.join('\n');
+  result.push(`  classDef vault fill:${t.card},stroke:${t.ring},color:${t.foreground}`);
+  result.push(`  class ${tree.nodes.map(node => `n${node.id}`).join(',')} vault`);
+  return result.join('\n');
 }
 
-export function treeAsSvg(tree) {
-  const ordered = sortedNodes(tree);
-  const height = START_Y + ordered.length * (CARD_HEIGHT + ROW_GAP) + 52;
-  const positions = new Map(ordered.map(({ node, depth }, index) => [String(node.id), {
-    x: 34 + depth * 58,
-    y: START_Y + index * (CARD_HEIGHT + ROW_GAP)
-  }]));
-  const edges = ordered.filter(({ node }) => BigInt(node.parentId) !== 0n).map(({ node }) => {
-    const parent = positions.get(String(node.parentId));
-    const child = positions.get(String(node.id));
-    const branchX = child.x - 25;
-    const startY = parent.y + CARD_HEIGHT / 2;
-    const endY = child.y + CARD_HEIGHT / 2;
-    return `<path d="M ${parent.x + 4} ${startY} H ${branchX} Q ${branchX - 7} ${startY} ${branchX - 7} ${startY + 7} V ${endY - 7} Q ${branchX - 7} ${endY} ${branchX} ${endY} H ${child.x}" fill="none" stroke="#59a7a7" stroke-width="2.5"/><circle cx="${branchX}" cy="${endY}" r="4" fill="#58dec3"/>`;
-  }).join('');
-  const cards = ordered.map(({ node, depth }) => {
-    const { x, y } = positions.get(String(node.id));
-    const width = WIDTH - x - 34;
-    const active = !node.revoked && BigInt(node.generation) === BigInt(tree.generation) &&
-      BigInt(node.effectivePolicy.expiry) > BigInt(tree.source.timestamp);
-    const status = active ? 'ACTIVE' : node.revoked ? 'REVOKED' : 'INACTIVE';
-    const accent = active ? '#58dec3' : '#ffad78';
-    const selected = tree.selectedNodeId !== undefined && String(node.id) === String(tree.selectedNodeId);
-    const role = depth === 0 ? 'ROOT' : `LEVEL ${depth + 1}`;
-    const actions = (node.authorizedActions ?? []).slice(0, 4).join(' · ') || 'no active actions';
-    const vault = `${String(node.vault).slice(0, 8)}…${String(node.vault).slice(-6)}`;
-    const detailsX = x + 24;
-    return `<g>
-      <rect x="${x}" y="${y}" width="${width}" height="${CARD_HEIGHT}" rx="17" fill="${selected ? '#1c3145' : '#18243a'}" stroke="${selected ? '#58dec3' : '#35455e'}" stroke-width="${selected ? 3 : 1}"/>
-      <rect x="${x}" y="${y + 15}" width="4" height="66" rx="2" fill="${accent}"/>
-      <text x="${detailsX}" y="${y + 29}" fill="#7e9bc1" font-size="13" font-weight="700" letter-spacing="1.1">${role} · #${xml(node.id)}${selected ? ' · SELECTED' : ''}</text>
-      <text x="${detailsX}" y="${y + 58}" fill="#f0f6ff" font-size="21" font-weight="650">${xml(short(node.ensName, 43))}</text>
-      <text x="${detailsX}" y="${y + 80}" fill="#a6b7cf" font-size="13">Vault ${xml(vault)}  ·  ${xml(short(actions, 57))}</text>
-      <text x="${x + width - 20}" y="${y + 29}" fill="${accent}" font-size="12" font-weight="700" text-anchor="end" letter-spacing="1">${status}</text>
-      <text x="${x + width - 20}" y="${y + 58}" fill="#f0f6ff" font-size="17" font-weight="650" text-anchor="end">${xml(amount(node.balances[0]))} USDC</text>
-      <text x="${x + width - 20}" y="${y + 80}" fill="#a6b7cf" font-size="13" text-anchor="end">${xml(amount(node.balances[1]))} DEMO-USD</text>
-    </g>`;
-  }).join('');
-  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${WIDTH} ${height}" width="${WIDTH}" height="${height}" role="img" aria-label="Agent Capital Tree root ${xml(tree.rootId)} at Sepolia block ${xml(tree.source.blockNumber)}">
-    <rect width="${WIDTH}" height="${height}" fill="#0d1527"/>
-    <circle cx="882" cy="58" r="82" fill="#173b55" opacity=".34"/>
-    <circle cx="844" cy="66" r="47" fill="#285b67" opacity=".24"/>
-    <text x="34" y="52" fill="#f0f6ff" font-family="Segoe UI, Arial, sans-serif" font-size="27" font-weight="700">Agent Capital Tree</text>
-    <text x="34" y="80" fill="#a6b7cf" font-family="Segoe UI, Arial, sans-serif" font-size="15">Root #${xml(tree.rootId)} · ${ordered.length} agent${ordered.length === 1 ? '' : 's'} · Ethereum Sepolia</text>
-    <text x="34" y="111" fill="#58dec3" font-family="Segoe UI, Arial, sans-serif" font-size="13">LIVE READ  ·  BLOCK ${xml(tree.source.blockNumber)}  ·  ${xml(tree.source.observedAt)}</text>
-    <g font-family="Segoe UI, Arial, sans-serif">${edges}${cards}</g>
-    <text x="34" y="${height - 23}" fill="#7288a4" font-family="Segoe UI, Arial, sans-serif" font-size="12">Read-only snapshot · Test-USDC on Sepolia · No transaction submitted</text>
-  </svg>`;
+export function treeAsSvg(tree, page = 0) {
+  const all = sortedNodes(tree), pages = Math.ceil(all.length/NODES_PER_PAGE);
+  if (!Number.isInteger(page) || page < 0 || page >= pages) throw new Error('Invalid tree page');
+  const ordered = all.slice(page*NODES_PER_PAGE, (page+1)*NODES_PER_PAGE);
+  let cursor = 266;
+  const positions = new Map();
+  for (const { node, depth } of ordered) {
+    const nameLines = lines(node.ensName, 58-depth*4);
+    const rights = lines((node.authorizedActions ?? []).join(' · ') || 'No currently authorized actions', 90-depth*5);
+    const height = 126 + nameLines.length*23 + rights.length*20;
+    positions.set(String(node.id), { x: 32+depth*38, y: cursor, height, nameLines, rights });
+    cursor += height+20;
+  }
+  const total = tree.nodes.reduce((sum, node) => sum+BigInt(node.balances[0]), 0n);
+  let body = rect(32, 167, 976, 76, t.soft);
+  body += text(52, 191, 'FREE TEST-USDC ACROSS VAULTS', { size: 12, color:t.mutedForeground, mono:true });
+  body += text(52, 222, amount(total), { size: 25, weight:800 });
+  body += text(438, 191, 'AGENTS', { size: 12, color:t.mutedForeground, mono:true });
+  body += text(438, 222, all.length, { size: 25, weight:800 });
+  body += text(622, 191, `BLOCK ${tree.source.blockNumber}`, { size: 13, color:t.primary, mono:true });
+  body += text(622, 218, tree.source.observedAt, { size:12, mono:true, color:t.mutedForeground });
+  for (const { node, depth } of ordered) {
+    const p = positions.get(String(node.id)), parent = positions.get(String(node.parentId));
+    const width = WIDTH-p.x-32, selected = String(tree.selectedNodeId) === String(node.id);
+    if (parent) body += `<path d="M ${parent.x+14} ${parent.y+parent.height} V ${p.y+30} H ${p.x}" fill="none" stroke="${t.ring}" stroke-width="2"/>`;
+    const status = state(tree, node), accent = status === 'AUTHORIZED' ? t.primary : t.destructive;
+    body += rect(p.x,p.y,width,p.height,selected?t.accent:t.card,selected?t.ring:t.border);
+    body += rect(p.x+18,p.y+18,30,30,t.soft,t.border,7);
+    body += text(p.x+33,p.y+39,depth===0?'R':'A',{ size:15, color:t.primary, weight:800, anchor:'middle' });
+    body += text(p.x+60,p.y+32,`${depth===0?'ROOT':`LEVEL ${depth+1}`} · #${node.id}${selected?' · SELECTED':''}`,{size:12,color:t.mutedForeground,mono:true});
+    body += text(p.x+60,p.y+53,BigInt(node.parentId)?`Parent #${node.parentId}${parent?'':' · previous page'}`:'Owner-authorized root',{size:12,color:t.mutedForeground});
+    body += text(p.x+width-20,p.y+32,status,{size:12,color:accent,anchor:'end',weight:800});
+    body += text(p.x+width-20,p.y+67,`${amount(node.balances[0])} USDC`,{size:22,mono:true,anchor:'end'});
+    body += text(p.x+width-20,p.y+91,`${amount(node.balances[1])} DEMO-USD`,{size:12,mono:true,anchor:'end',color:t.mutedForeground});
+    p.nameLines.forEach((line,i)=>{body+=text(p.x+20,p.y+82+i*23,line,{size:17,weight:700});});
+    const baseY = p.y+82+p.nameLines.length*23;
+    body += text(p.x+20,baseY,`Vault ${node.vault}`,{size:12,mono:true,color:t.mutedForeground});
+    body += `<path d="M ${p.x+20} ${baseY+15} H ${p.x+width-20}" stroke="${t.border}"/>`;
+    p.rights.forEach((line,i)=>{body+=text(p.x+20,baseY+38+i*20,line,{size:14,color:t.primary});});
+  }
+  return frame(cursor+37,'Agent tree',`Root #${tree.rootId} · On-chain permissions and balances · Page ${page+1}/${pages}`,body,
+    'One chain snapshot · Rights are checked at this block; they do not indicate a running agent process.');
 }
 
-export async function treeAsPng(tree) {
-  const { default: sharp } = await import('sharp');
-  return sharp(Buffer.from(treeAsSvg(tree))).png({ compressionLevel: 9 }).toBuffer();
-}
+export const treeAsPng = (tree, page = 0) => svgAsPng(treeAsSvg(tree, page));

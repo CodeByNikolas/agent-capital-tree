@@ -12,12 +12,20 @@ try {
     args: [fileURLToPath(new URL('./mcp-readonly-server.mjs', import.meta.url))], env: process.env }));
   const listed = await client.listTools();
   assert.deepEqual(listed.tools.map(tool => tool.name).sort(), ['getTree', 'prepareRootSetup', 'visualizeTree']);
-  assert.ok(listed.tools.every(tool => tool.annotations?.readOnlyHint === true));
-  const prepared = await client.callTool({ name: 'prepareRootSetup', arguments: { label: 'demo-agent', budgetRaw: '100000' } });
+  assert.ok(listed.tools.filter(tool => tool.name !== 'prepareRootSetup').every(tool => tool.annotations?.readOnlyHint === true));
+  assert.equal(listed.tools.find(tool => tool.name === 'prepareRootSetup').annotations.readOnlyHint, false);
+  const openBrowser = process.env.ACT_OPEN_BROWSER_TEST === '1';
+  const prepared = await client.callTool({ name: 'prepareRootSetup', arguments: { label: 'demo-agent', budgetRaw: '100000', openBrowser } });
   assert.equal(prepared.isError, undefined);
   assert.match(prepared.content[0].text, /demo-agent\.agentcapitalusdc\.eth/);
+  const browser = JSON.parse(prepared.content[0].text).browser;
+  if (openBrowser) assert.equal(browser.opened, true, browser.note);
+  else assert.equal(browser.method, 'not-requested');
+  assert.equal(prepared.content[2].mimeType, 'image/png');
+  if (process.env.ACT_SETUP_VISUAL_OUTPUT) await writeFile(process.env.ACT_SETUP_VISUAL_OUTPUT, Buffer.from(prepared.content[2].data, 'base64'));
   const excessive = await client.callTool({ name: 'prepareRootSetup', arguments: { label: 'demo-agent', budgetRaw: '100001' } });
   assert.equal(excessive.isError, true);
+  assert.equal(excessive.content[2].mimeType, 'image/png');
   const result = await client.callTool({ name: 'getTree', arguments: { rootId: manifest.bootstrap.rootId } });
   assert.equal(result.isError, undefined, result.content?.[0]?.text);
   const tree = JSON.parse(result.content[0].text);
@@ -55,12 +63,14 @@ try {
   if (process.env.ACT_VISUAL_OUTPUT) await writeFile(process.env.ACT_VISUAL_OUTPUT, Buffer.from(visual.content[2].data, 'base64'));
   const invalid = await client.callTool({ name: 'getTree', arguments: { rootId: 'not-a-root' } });
   assert.equal(invalid.isError, true);
+  assert.equal(invalid.content[2].mimeType, 'image/png');
   const missing = await client.callTool({ name: 'getTree', arguments: { query: 'missing.agentcapitalusdc.eth' } });
   assert.equal(missing.isError, true);
+  assert.equal(missing.content[2].mimeType, 'image/png');
   console.log(JSON.stringify({ server: 'agent-capital-tree-readonly', toolCount: listed.tools.length,
     rootId: tree.rootId, nodeCount: tree.nodes.length, chainId: tree.source.chainId,
     blockNumber: tree.source.blockNumber, visualBytes: Buffer.from(visual.content[2].data, 'base64').length,
-    writes: 'not exposed' }));
+    browserLaunch: browser.method, writes: 'not exposed' }));
 } finally {
   await client.close().catch(() => {});
 }
