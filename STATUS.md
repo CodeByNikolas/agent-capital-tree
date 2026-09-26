@@ -2,6 +2,14 @@
 
 As of 26 September 2026. Read this together with PLAN.md after context compaction.
 
+## Live dashboard loading and navigation follow-up
+
+- The sample-data entry is a fictional frontend preview, not an onchain agent or vault. Live vault routes now render skeletons until their matching root snapshot arrives; failed reads show an error and retry instead of briefly exposing preview or old-root data. Activity and payment tables also show skeleton rows during their initial reads.
+- The top bar stays visible on scroll and no longer repeats the Sepolia badge shown beside a connected wallet. Payments is labeled **x402 Pay**. The activity and payment tables no longer have an outer card. Overview cards have equal columns, and its Agent tree card links to the full tree instead of displaying a different short node list.
+- Setup & control displays the root vault, offers **Create another root** while a vault is open, and resolves sidebar lookups to the root there. Child actions remain reachable from Agent tree. Removing the node selector also removes its cramped native dropdown arrow.
+- The failed Contracts CI runs stopped at `forge fmt --check` in `contracts/test/CapitalSwap.t.sol`, before executing contract tests. The file was formatted with pinned Foundry 1.8.3. CI for source `a68f318` passed both TypeScript and Contracts jobs: [run 36241142100](https://github.com/CodeByNikolas/agent-capital-tree/actions/runs/36241142100).
+- Web production build and typecheck passed. A local browser check held the real public tree response briefly to verify skeleton-first rendering, root-only setup, the sticky header and badge removal. Production deployment `dpl_Dx8NubjbWVBVWgx3a8rPzbKxww3t` is live. The read-only public browser smoke passed all six routes at desktop/light and mobile/dark sizes, including live ENS lookup, payment receipt, no horizontal overflow and automatic polling; see `artifacts/ui/usdc-ui-report.json`. No wallet transaction was sent.
+
 ## Quiet network status and automatic refresh
 
 - The dashboard header uses a single Sepolia badge. Removed the runtime-status sidebar footer, successful-read explanation and manual refresh buttons. Read failures still show an alert and keep wallet actions locked; the fictional-preview notice remains.
