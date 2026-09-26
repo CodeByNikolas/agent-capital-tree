@@ -10,6 +10,10 @@
 
 As of 26 September 2026. Read this together with PLAN.md after context compaction. Older sections below retain the evidence and acceptance limits known at the time; the newest E2E status is first.
 
+## Standalone team profile
+
+- Added TEAM.md with the confirmed team introduction and public profile links; linked it from README while retaining the partner-required introduction there. Relative links and whitespace checks passed.
+
 ## Team submission details completed
 
 - README now names Nikolas Hack and Rami Ezzeddine, their shared TUM Information Systems studies and TUM Blockchain Club membership, and their public profile links. Short bios use the user-confirmed affiliations, public GitHub profiles and Nikolas' portfolio; no individual Kanoki implementation responsibilities are inferred.

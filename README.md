@@ -103,6 +103,8 @@ The [Agent activity report](https://kanoki-app.vercel.app/agent-activity?vault=c
 
 ## Team
 
+Standalone team profile: [TEAM.md](TEAM.md).
+
 We are **Nikolas Hack and Rami Ezzeddine**, both studying **Information Systems (Wirtschaftsinformatik) at the Technical University of Munich (TUM)** and members of the **TUM Blockchain Club**. Together, we defined Kanoki's product scope, permission model and user flows, and reviewed the AI-assisted implementation; see our [AI-use disclosure](docs/ai-use.md).
 
 - **Nikolas Hack** — Head of IT & Development at TUM Blockchain Club, with a focus on building digital products. His personal portfolio uses React, Next.js and TypeScript. [GitHub: @CodeByNikolas](https://github.com/CodeByNikolas) · [Website](https://www.nikolashack.com/).
