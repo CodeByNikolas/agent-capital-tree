@@ -6,6 +6,7 @@ As of 26 September 2026. Read this together with PLAN.md after context compactio
 
 - Preview mode is explicitly fictional: root **Main agent** at `main.preview`, fictional addresses and Fictional USDC balances, scaled down to avoid implying funded Test-USDC. Its vault details now open in a centered shadcn Dialog with Escape dismissal and focus restoration; the earlier side Sheet is no longer used on the tree.
 - Live mode remains official Circle Sepolia Test-USDC at `0x1c7D4B196Cb0C7B01d743Fbc6116a902379C7238`, a testnet token without mainnet monetary value. The historical ACT-A/ACT-B controller is not a supported entry point in the current app.
+- Commit `4e674b7` is pushed; Vercel production deployment `dpl_4jJ4ej2LMh4aH1g9cqg47yXxaZSE` is ready at the existing public URL. [Public browser report](artifacts/ui/preview-dialog-public-report.json) confirms the fictional preview, modal Escape/focus behavior, six routes, and desktop/mobile layouts without wallet writes.
 
 ## Published six-page dashboard follow-up
 
