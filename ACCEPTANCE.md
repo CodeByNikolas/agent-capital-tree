@@ -2,6 +2,8 @@
 
 ## Current USDC release — 26 September 2026
 
+The six-page follow-up is live at `https://agent-capital-tree.vercel.app` from Vercel deployment `dpl_ESRyCh5768tpUtLwQKaWaykSkrz8`. Public read-only browser checks covered all six routes on desktop/light and mobile/dark, including the verified Uniswap position event and the one 0.01 Test-USDC payment receipt. [Current UI report](artifacts/ui/usdc-ui-report.json). The Payment API scans a bounded Circle USDC log range and marks incomplete coverage; it is separate from MultiBaas controller history. No new wallet write or full current-USDC onboarding was performed.
+
 The product uses only [usdc-sepolia.json](deployments/usdc-sepolia.json), controller `0x17a932987f3cAcFec067c4C1bbE6946963d87F13`, namespace `agentcapitalusdc.eth`. Older reports below are historical evidence, not supported legacy entry points.
 
 - 37 contract tests passed across8 suites, including256 fuzz runs;18 runtime plus an added payment-expiry test,11 MultiBaas,7 plugin and2 SDK tests passed.
