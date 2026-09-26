@@ -37,6 +37,8 @@ async function privateDirectory(path) {
   if (!info.isDirectory() || info.isSymbolicLink() || info.uid !== process.getuid() || (info.mode & 0o777) !== 0o700 || await realpath(path) !== resolve(path)) throw new Error('Private directory must be owned, non-symlinked and mode 0700');
 }
 
+let stage = 'config';
+try {
 const config = JSON.parse(await privateFile(process.argv[2]));
 assert.deepEqual(Object.keys(config).sort(), ['allowedPayers', 'childLabel', 'controller', 'journalDirectory', 'keystoreFile', 'passwordFile', 'rootId', 'rootVault', 'rpcUrl', 'sellerDirectory']);
 const rpcUrl = new URL(config.rpcUrl);
@@ -56,6 +58,7 @@ await privateDirectory(config.sellerDirectory);
 const rpc = new JsonRpcProvider(rpcUrl.href);
 let seller, poll;
 try {
+  stage = 'Sepolia RPC';
   if ((await rpc.getNetwork()).chainId !== 11155111n) throw new Error('Seller supports Sepolia only');
   const treeClient = capitalClient(rpcUrl.href, controller);
   const refreshPayer = async () => {
@@ -76,6 +79,7 @@ try {
     refreshing = true;
     void refreshPayer().catch(() => { allowedPayers.splice(0); }).finally(() => { refreshing = false; });
   }, 2000);
+  stage = 'merchant keystore';
   const signer = (await Wallet.fromEncryptedJson(await privateFile(config.keystoreFile), await privateFile(config.passwordFile))).connect(rpc);
   const combined = createWalletClient({ account: privateKeyToAccount(signer.privateKey), chain: sepolia, transport: http(rpcUrl.href) }).extend(publicActions);
   const facilitator = new ExactEvmScheme(toFacilitatorEvmSigner({ ...combined, address: signer.address,
@@ -93,7 +97,9 @@ try {
     },
     sendTransaction: async () => { throw new Error('Generic seller transfers are disabled'); }
   }), { simulateInSettle: true });
+  stage = 'loopback listener';
   seller = await startX402DemoService({ facilitator, payTo: signer.address, allowedPayers, directory: config.sellerDirectory, port: PORT });
+  stage = 'serving';
   console.log(JSON.stringify({ url: seller.url, payTo: signer.address, asset: USDC, amountRaw: '10000', network: 'eip155:11155111' }));
   await new Promise((done, fail) => {
     process.once('SIGINT', done);
@@ -104,4 +110,8 @@ try {
   if (poll) clearInterval(poll);
   if (seller) await seller.close();
   rpc.destroy();
+}
+} catch {
+  console.error(`Seller stopped during ${stage}; inspect private configuration and settlement journals.`);
+  process.exitCode = 1;
 }
