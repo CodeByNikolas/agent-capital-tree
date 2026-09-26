@@ -13,6 +13,7 @@
     "mcp:desktop": "node scripts/mcp-desktop.mjs",
     "mcp:settings": "node scripts/mcp-settings.mjs",
     "mcp:capital": "node packages/runtime/capital.mjs",
+    "mcp:readiness": "node scripts/check-capital-release.mjs",
     "wallet:create": "node scripts/create-test-wallet.mjs"
   },
   "devDependencies": {
