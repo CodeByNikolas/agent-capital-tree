@@ -1,9 +1,11 @@
 import { getAddress, isAddress, type Address, type Hex } from "viem";
 import usdcSepoliaManifest from "../../../../deployments/usdc-sepolia.json";
+import recoveryManifest from "../../../../deployments/history/usdc-full-vaults-sepolia.json";
 
 const USDC_ADDRESS = "0x1c7D4B196Cb0C7B01d743Fbc6116a902379C7238";
 
 export interface PublicDeployment {
+  recoveryOnly?: boolean;
   id: "usdc";
   paymentsSupported: boolean;
   demoQuoteAddress: Address | null;
@@ -37,7 +39,9 @@ function pickAddress(values: readonly unknown[]): Address | null {
 }
 
 export function getPublicDeployment(): PublicDeployment {
-  const manifest = usdcSepoliaManifest as unknown as DeploymentManifest;
+  // Explicit deployment-scoped recovery site only. Never infer a controller from a numeric root ID.
+  const recoveryOnly = process.env.ACT_USDC_RECOVERY_DEPLOYMENT === "full-vaults";
+  const manifest = (recoveryOnly ? recoveryManifest : usdcSepoliaManifest) as unknown as DeploymentManifest;
   const controllerAddress = pickAddress([manifest.contracts.CapitalController?.address]);
   const token0 = pickAddress([manifest.tokens?.[0]?.address]);
   const token1 = pickAddress([manifest.tokens?.[1]?.address]);
@@ -57,6 +61,7 @@ export function getPublicDeployment(): PublicDeployment {
 
   return {
     id: "usdc",
+    recoveryOnly,
     paymentsSupported: contractsConfigured && usdcAtIndexZero,
     demoQuoteAddress: contractsConfigured ? demoQuoteAddress : null,
     chainId: manifest.chainId,

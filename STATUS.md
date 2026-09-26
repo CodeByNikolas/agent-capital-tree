@@ -9,6 +9,7 @@ As of 26 September 2026. Read this together with PLAN.md after context compactio
 
 ## Active onboarding repair — main only
 
+- Wallet recovery UI production build and TypeScript passed. The local live-root smoke passed at 1440px and 390px: address/limit prefills, complete-funding lockout, separate native gas handoff, disconnected-wallet guards, no overflow or page errors. Evidence: `artifacts/ui/capital-web-report.json`; no wallet connected or transaction submitted. Preserved concurrently merged root-creation guidance and suggested names.
 - User requested all new commits on main. Integration is in isolated `.main-onboarding`, based on `d3b6655`; original dirty checkout and nested user clone are preserved. Native worker features and current deployment from main are retained. No new commit or push was made to work/rami.
 - Re-read historical-controller root 4 at Sepolia block 11788300: vault `0xC9c7926191b7928F838579D74CdA380A66A8CD9A`, 100000 raw Test-USDC, owner/bound operator `0x4E09c220BD556396Bc255A4DD24F858Bafeba6f5`, no matching local signer. The previous gas value belonged to the owner, not a local agent. No transaction submitted.
 - Implemented explicit root selection, required write target, guarded owner-reviewed recovery, safe budget/lookup errors, local-signer gas reporting, shared-capital funding accounting, graphical readiness and pre-broadcast child fee checking. Capital catalog is 23 tools; vault creation still reports no worker. Explicit historical recovery mode prevents collision with the newer controller's root 4.
