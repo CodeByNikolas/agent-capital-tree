@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { privateKeyToAccount } from 'viem/accounts';
 import { decodeAbiParameters, recoverTypedDataAddress } from 'viem';
 import { decodePaymentSignatureHeader, encodePaymentSignatureHeader } from '@x402/core/http';
-import { SEPOLIA_USDC, selectPayment, signVaultPayment, transferAuthorizationTypes, validateService } from '../dist/payments.js';
+import { assertUnusedAuthorizationFresh, SEPOLIA_USDC, selectPayment, signVaultPayment, transferAuthorizationTypes, validateService } from '../dist/payments.js';
 const actor = privateKeyToAccount(`0x${'11'.repeat(32)}`);
 const vault = '0x1111111111111111111111111111111111111111';
 const payTo = '0x2222222222222222222222222222222222222222';
@@ -29,4 +29,8 @@ test('ERC1271 envelope binds standard authorization and generation without expos
   assert.equal(address,actor.address);
   await assert.rejects(signVaultPayment(actor,vault,0n,quote,2000n,1000));
   await assert.rejects(signVaultPayment(actor,vault,7n,quote,1001n,1000));
+});
+test('expired unused authorization requires operator reconciliation without a replacement key', () => {
+  assert.doesNotThrow(() => assertUnusedAuthorizationFresh(1001n, 1000n));
+  assert.throws(() => assertUnusedAuthorizationFresh(1000n, 1000n), /Expired unused USDC authorization; operator reconciliation is required.*Do not create a replacement operation key or authorization/);
 });

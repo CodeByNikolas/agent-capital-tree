@@ -46,6 +46,10 @@ export function selectPayment(requirements: PaymentRequirements[], service: Paym
   return requirement;
 }
 
+export function assertUnusedAuthorizationFresh(validBefore: bigint, blockTimestamp: bigint): void {
+  if (validBefore <= blockTimestamp) throw new Error('Expired unused USDC authorization; operator reconciliation is required. Do not create a replacement operation key or authorization.');
+}
+
 export async function signVaultPayment(account: LocalAccount, vault: Address, generation: bigint, requirement: PaymentRequirements, expiry: bigint, now: number): Promise<PaymentPayload> {
   if (generation < 1n || generation >= 1n << 64n) throw new Error('Invalid mandate generation');
   const nonce = `0x${generation.toString(16).padStart(16, '0')}${randomBytes(24).toString('hex')}` as Hex;
@@ -118,9 +122,13 @@ export function paymentHandler(config: PaymentConfig): ToolHandler {
       const tokens = await Promise.all([chain.controller.read.TOKEN0(), chain.controller.read.TOKEN1()]);
       const tokenIndex = tokens.findIndex(t => same(t, SEPOLIA_USDC));
       if (tokenIndex < 0) throw new Error('This deployment does not support USDC');
-      const alreadyUsed = await rpc.readContract({ address: SEPOLIA_USDC, abi: usdcAbi, functionName: 'authorizationState', args: [node.vault, auth.nonce] });
-      if (!alreadyUsed) await rpc.readContract({ address: config.controller, abi: paymentAbi, functionName: 'checkPayment', account: node.vault,
-        args: [node.vault, account.address, tokenIndex, BigInt(auth.value), BigInt(auth.validBefore), auth.nonce] });
+      const currentBlock = await rpc.getBlock();
+      const alreadyUsed = await rpc.readContract({ address: SEPOLIA_USDC, abi: usdcAbi, functionName: 'authorizationState', args: [node.vault, auth.nonce], blockNumber: currentBlock.number });
+      if (!alreadyUsed) {
+        assertUnusedAuthorizationFresh(BigInt(auth.validBefore), currentBlock.timestamp);
+        await rpc.readContract({ address: config.controller, abi: paymentAbi, functionName: 'checkPayment', account: node.vault,
+          args: [node.vault, account.address, tokenIndex, BigInt(auth.value), BigInt(auth.validBefore), auth.nonce] });
+      }
       const response = await fetch(service.url, { headers: { 'PAYMENT-SIGNATURE': encodePaymentSignatureHeader(purchase.payload) }, redirect: 'error', signal: AbortSignal.timeout(180_000) });
       const content = await boundedText(response);
       const receiptHeader = response.headers.get('payment-response');
