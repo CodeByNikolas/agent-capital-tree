@@ -1,10 +1,12 @@
 import { chromium } from '@playwright/test';
 import { readFile, mkdir } from 'node:fs/promises';
+import { createServer } from 'node:http';
 import { homedir } from 'node:os';
 import { join } from 'node:path';
 import { Wallet } from 'ethers';
 import { createFreshOwnerProfile, recordFreshOwnerProfile } from './lib/fresh-owner-profile.mjs';
 import { openRecoveryPhraseImport } from './lib/browser-wallet-onboarding.mjs';
+import { assertExpectedWalletAddress } from './lib/wallet-address.mjs';
 
 // Local test wallet only. Never trace, screenshot, or print setup inputs.
 const root = join(homedir(), '.agent-capital-tree');
@@ -24,6 +26,7 @@ const context = await chromium.launchPersistentContext(profile, {
 context.setDefaultTimeout(60000);
 context.setDefaultNavigationTimeout(60000);
 let stage = 'extension startup';
+let verificationServer;
 try {
   const worker = context.serviceWorkers()[0] ?? await context.waitForEvent('serviceworker');
   const page = await context.newPage();
@@ -76,11 +79,51 @@ try {
   }
   stage = 'wallet overview';
   await page.getByTestId('account-menu-icon').waitFor({ timeout: 60000 });
+  stage = 'wallet address verification';
+  verificationServer = createServer((request, response) => {
+    response.writeHead(200, { 'content-type': 'text/html' }).end('<!doctype html><title>Wallet check</title>');
+  });
+  await new Promise(resolve => verificationServer.listen(0, '127.0.0.1', resolve));
+  const verifier = await context.newPage();
+  await verifier.goto(`http://127.0.0.1:${verificationServer.address().port}`);
+  await verifier.waitForFunction(() => Boolean(window.ethereum));
+  let [actualAddress] = await verifier.evaluate(() => window.ethereum.request({ method: 'eth_accounts' }));
+  if (!actualAddress) {
+    const accountsRequest = verifier.evaluate(() => window.ethereum.request({ method: 'eth_requestAccounts' }));
+    const extensionOrigin = `chrome-extension://${new URL(worker.url()).host}`;
+    const consentDeadline = Date.now() + 60000;
+    const openPendingAt = Date.now() + 3000;
+    let pendingOpened = false;
+    let consent;
+    while (!consent && Date.now() < consentDeadline) {
+      for (const candidate of context.pages().filter(candidate => candidate.url().startsWith(extensionOrigin))) {
+        const connect = candidate.getByRole('button', { name: /^(Connect|Connect anyway|Continue at your own risk)$/ }).first();
+        if (await connect.isVisible().catch(() => false)) {
+          if (await candidate.getByRole('button', { name: /^(Connect anyway|Continue at your own risk)$/ }).count()) {
+            throw new Error('MetaMask safety warning: local wallet check was not approved');
+          }
+          consent = candidate;
+          break;
+        }
+      }
+      if (!consent && !pendingOpened && Date.now() >= openPendingAt) {
+        const pending = await context.newPage();
+        await pending.goto(`${extensionOrigin}/notification.html`, { waitUntil: 'domcontentloaded' });
+        pendingOpened = true;
+      }
+      if (!consent) await verifier.waitForTimeout(250);
+    }
+    if (!consent) throw new Error('No MetaMask account consent screen appeared');
+    await consent.getByRole('button', { name: 'Connect', exact: true }).click();
+    [actualAddress] = await accountsRequest;
+  }
+  assertExpectedWalletAddress(actualAddress, wallet.address);
   if (freshOwnerResume) await recordFreshOwnerProfile(root, profileName, wallet.address, new URL(page.url()).host);
-  console.log(JSON.stringify({ walletUiReady: true, extensionId: new URL(page.url()).host, expectedAddress: wallet.address }));
+  console.log(JSON.stringify({ walletUiReady: true, extensionId: new URL(page.url()).host, address: actualAddress }));
 } catch {
   console.error(`Wallet setup failed during ${stage}; sensitive details suppressed.`);
   process.exitCode = 1;
 } finally {
+  if (verificationServer) await new Promise(resolve => verificationServer.close(resolve));
   await context.close();
 }
