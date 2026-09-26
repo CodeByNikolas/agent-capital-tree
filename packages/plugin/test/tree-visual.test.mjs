@@ -20,8 +20,8 @@ const base = {
 
 test('tree visual uses real hierarchy and raw six-decimal balances', async () => {
   const svg = treeAsSvg(base);
-  assert.match(svg, /1\.25 USDC/);
-  assert.match(svg, /0\.25 USDC/);
+  assert.match(svg, /1\.250000 USDC/);
+  assert.match(svg, /0\.250000 USDC/);
   assert.match(svg, /researcher\.capital\.agentcapitalusdc\.eth/);
   assert.match(svg, /BLOCK 42/);
   assert.match(treeAsMermaid(base), /n1 --> n2/);

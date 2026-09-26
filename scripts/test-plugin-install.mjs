@@ -92,7 +92,7 @@ try {
   assert.deepEqual(listed.tools.map(tool => tool.name).sort(), Object.keys(toolSpecs).sort());
   const result = await client.callTool({ name: 'getTree', arguments: { rootId: rootId.toString() } });
   assert.equal(result.isError, undefined, result.content?.[0]?.text);
-  const tree = JSON.parse(result.content[0].text);
+  const tree = result.structuredContent;
   assert.equal(tree.rootId, rootId.toString());
   assert.equal(tree.source.chainId, manifest.chainId);
   assert.ok(BigInt(tree.source.blockNumber) >= BigInt(manifest.contracts.CapitalController.blockNumber));

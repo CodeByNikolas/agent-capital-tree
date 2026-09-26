@@ -29,7 +29,7 @@ try {
   }
   const result = await client.callTool({ name: 'getTree', arguments: { rootId: '1' } });
   if (result.isError) throw new Error(result.content?.[0]?.text ?? 'getTree failed');
-  const tree = JSON.parse(result.content[0].text);
+  const tree = result.structuredContent;
   console.log(`CONNECTED · local MCP process · Sepolia ${tree.source.chainId} · root ${tree.rootId} · ${tree.nodes.length} agents · block ${tree.source.blockNumber}`);
   console.log('This foreground monitor keeps its own read-only MCP session open. Codex/Claude launch separate sessions from their settings. Press Ctrl+C to stop.');
   timer = setInterval(async () => {
