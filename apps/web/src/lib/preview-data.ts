@@ -15,7 +15,7 @@ const units = (rawAmount: string, symbol: string): TokenAmount => ({
 const previewPoolId = `0x${"0".repeat(64)}` as const;
 
 const rootPolicy: Policy = {
-  permissions: ["delegate", "swap", "manage-liquidity", "collect-fees", "exit-liquidity", "reclaim"],
+  permissions: ["delegate", "swap", "manage-liquidity", "collect-fees", "exit-liquidity", "restrict", "reclaim"],
   allowedTokens: ["ACT-A", "ACT-B"],
   maxActionAmounts: [units("2500000", "ACT-A"), units("2500000", "ACT-B")],
   expiresAt: "2026-12-31T23:59:59.000Z",
@@ -30,11 +30,19 @@ const marketPolicy: Policy = {
   poolId: previewPoolId,
 };
 
-const researchPolicy: Policy = {
-  permissions: ["swap"],
+const stewardPolicy: Policy = {
+  permissions: ["delegate", "restrict", "reclaim"],
   allowedTokens: ["ACT-A"],
   maxActionAmounts: [units("400000", "ACT-A"), units("0", "ACT-B")],
   expiresAt: "2026-10-31T23:59:59.000Z",
+  poolId: previewPoolId,
+};
+
+const reservePolicy: Policy = {
+  permissions: ["reclaim"],
+  allowedTokens: ["ACT-A"],
+  maxActionAmounts: [units("150000", "ACT-A"), units("0", "ACT-B")],
+  expiresAt: "2026-10-18T23:59:59.000Z",
   poolId: previewPoolId,
 };
 
@@ -140,11 +148,11 @@ export const previewNodes: readonly VaultNode[] = [
     source: previewSource,
   },
   {
-    id: "research",
+    id: "steward",
     parentId: "root",
     rootId: "root",
-    ensName: "research.cedar.preview",
-    label: "Signal research",
+    ensName: "steward.cedar.preview",
+    label: "Capital steward",
     agentAddress: "0x883c…2e71",
     vaultAddress: "0x7701…C192",
     depth: 1,
@@ -153,19 +161,19 @@ export const previewNodes: readonly VaultNode[] = [
     freeCapital: [units("250000", "ACT-A")],
     tokenHoldings: [units("650000", "ACT-A")],
     capitalReceivedFromParent: [units("400000", "ACT-A")],
-    localPolicy: researchPolicy,
+    localPolicy: stewardPolicy,
     inheritedConstraints: [{ ancestorId: "root", ancestorLabel: "Cedar desk", policy: rootPolicy }],
-    effectivePolicy: researchPolicy,
-    authorizedPermissions: researchPolicy.permissions,
+    effectivePolicy: stewardPolicy,
+    authorizedPermissions: stewardPolicy.permissions,
     position: null,
     source: previewSource,
   },
   {
-    id: "oracle",
-    parentId: "research",
+    id: "reserve",
+    parentId: "steward",
     rootId: "root",
-    ensName: "oracle.research.cedar.preview",
-    label: "Oracle watcher",
+    ensName: "reserve.steward.cedar.preview",
+    label: "Reserve custodian",
     agentAddress: "0x8ac7…2dd4",
     vaultAddress: "0x8053…F31a",
     depth: 2,
@@ -174,13 +182,13 @@ export const previewNodes: readonly VaultNode[] = [
     freeCapital: [units("125000", "ACT-A")],
     tokenHoldings: [units("285000", "ACT-A")],
     capitalReceivedFromParent: [units("180000", "ACT-A")],
-    localPolicy: scoutPolicy,
+    localPolicy: reservePolicy,
     inheritedConstraints: [
       { ancestorId: "root", ancestorLabel: "Cedar desk", policy: rootPolicy },
-      { ancestorId: "research", ancestorLabel: "Signal research", policy: researchPolicy },
+      { ancestorId: "steward", ancestorLabel: "Capital steward", policy: stewardPolicy },
     ],
-    effectivePolicy: scoutPolicy,
-    authorizedPermissions: scoutPolicy.permissions,
+    effectivePolicy: reservePolicy,
+    authorizedPermissions: reservePolicy.permissions,
     position: null,
     source: previewSource,
   },
@@ -195,6 +203,16 @@ const previewActivity: readonly CapitalActivity[] = [
     description: "Capital delegated from Cedar desk",
     amount: units("690000", "ACT-A"),
     timestamp: "2026-09-25T09:42:00.000Z",
+    source: previewSource,
+  },
+  {
+    id: "a-05",
+    kind: "capital-assigned",
+    nodeId: "steward",
+    nodeLabel: "Capital steward",
+    description: "Preview allocation from Cedar desk to a custody mandate",
+    amount: units("400000", "ACT-A"),
+    timestamp: "2026-09-25T09:31:00.000Z",
     source: previewSource,
   },
   {
@@ -217,10 +235,20 @@ const previewActivity: readonly CapitalActivity[] = [
     source: previewSource,
   },
   {
+    id: "a-06",
+    kind: "capital-reclaimed",
+    nodeId: "reserve",
+    nodeLabel: "Reserve custodian",
+    description: "Preview return of available capital to its parent vault",
+    amount: units("20000", "ACT-A"),
+    timestamp: "2026-09-24T17:20:00.000Z",
+    source: previewSource,
+  },
+  {
     id: "a-04",
     kind: "policy-tightened",
-    nodeId: "oracle",
-    nodeLabel: "Oracle watcher",
+    nodeId: "reserve",
+    nodeLabel: "Reserve custodian",
     description: "Action ceiling narrowed by parent",
     timestamp: "2026-09-24T17:08:00.000Z",
     source: previewSource,

@@ -173,7 +173,7 @@ button:disabled { cursor: not-allowed; opacity: .55; }
 .legend-node { display: inline-block; width: 10px; height: 10px; margin-right: 7px; border: 1px solid var(--ring); border-radius: 3px; }
 .tree-limit-warning { color: var(--destructive); font-size: 14px; }
 .node-detail-sheet { width: min(100vw, 560px) !important; max-width: 560px !important; font-size: 16px; }
-.node-detail-sheet [data-slot="sheet-title"] { font-size: 24px; }
+.node-detail-sheet [data-slot="sheet-title"] { min-width: 0; overflow-wrap: anywhere; font-size: 24px; }
 .node-detail-scroll { min-height: 0; overflow-y: auto; padding: 0 16px 20px; }
 .node-detail-scroll .panel { padding: 0; border: 0; background: transparent; }
 .node-detail-scroll .panel-heading { display: none; }
