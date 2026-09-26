@@ -160,12 +160,14 @@ export function useWalletActions({
   address,
   chainId,
   onConfirmed,
+  onOperatorAuthorized,
 }: {
   data: DashboardData;
   deployment: PublicDeployment;
   address: Address | null;
   chainId: number | null;
   onConfirmed: () => void;
+  onOperatorAuthorized?: (rootId: string, transactionHash: Hash) => void;
 }): { actions: DashboardActions; notice: WalletActionNotice | null } {
   const [notice, setNotice] = useState<WalletActionNotice | null>(null);
   const busy = useRef(false);
@@ -552,7 +554,7 @@ export function useWalletActions({
     async setRootOperator(rootId, operatorInput, draft) {
       const operator = isAddress(operatorInput.trim()) ? getAddress(operatorInput.trim()) : null;
       if (!operator || operator === zeroAddress) throw new Error("Enter a valid nonzero Sepolia operator address.");
-      await transact("Set root operator", async (context, awaitingWallet) => {
+      const receipt = await transact<{ transactionHash: Hash }>("Set root operator", async (context, awaitingWallet) => {
         await requireOwner(context, rootId);
         const policy = makePolicy(draft, await readTokenDecimals(context), deployment);
         if (deployment.namespaceExpiry && policy.expiry > BigInt(deployment.namespaceExpiry)) {
@@ -568,6 +570,7 @@ export function useWalletActions({
         awaitingWallet();
         return context.walletClient.writeContract(request);
       });
+      onOperatorAuthorized?.(rootId, receipt.transactionHash);
     },
 
     async spawnChild(parentId, label, agentInput, draft, amountInputs) {

@@ -1,3 +1,9 @@
+## Agent authorization confirmation — 27 September 2026
+
+- Standalone Authorize agent waits for a successful transaction receipt, then navigates to the correct root Agent Tree and shows a dismissible success notification with its receipt link. Wallet acceptance alone, reverted receipts and RPC failures do not trigger success/navigation. The existing guided multi-step setup remains unchanged.
+- Wallet progress and error notices now appear above the form instead of below all controls.
+- Verification: wallet-adapter tests cover delayed receipt, confirmed callback, revert and RPC failure; browser tests cover setup-to-tree navigation, visible pending/confirmed state, receipt link and dismissal on desktop/mobile using controlled wallet/RPC responses without broadcasts. Production build/TypeScript passed.
+
 ## Observable dashboard metrics — 27 September 2026
 
 - Removed the unobservable Runtime/Unknown overview metric and MCP connection/runtime status. Overview now has three summary columns, with matching initial skeleton count and responsive layout. Production build/TypeScript passed.

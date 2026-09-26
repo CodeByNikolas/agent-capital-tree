@@ -356,6 +356,7 @@ export function WalletControlsPanel({
           {deployment.contractsConfigured ? deployment.poolConfigured ? "Sepolia pool ready" : "Contracts ready · pool pending" : "Contract deployment pending"}
         </span>}
       </div>
+      {displayedNotice}
       {managedSetup ? <p className="wallet-controls-intro">Confirm the wallet requests below once. Kanoki creates your vault, authorizes your local agent and funds its shared budget and gas. Your chat recognizes the finished vault automatically.</p> : creationOnly ? <p className="wallet-controls-intro">Your connected wallet will own this vault. Choose its public name and the limits for your agents, then confirm creation in your wallet. You only need Sepolia ETH for the network fee now. Add USDC and authorize an agent from the dashboard afterwards.</p> : <p className="wallet-controls-intro">Every action is simulated before your wallet is asked to sign. Get USDC from Circle’s faucet; this dashboard never mints USDC. DEMO-USD is valueless.</p>}
       {demoBudget && !managedSetup && <div className="wallet-action-notice" role="status">
         <strong>Chat demo · {budgetUSDC} Test-USDC shared across the entire tree</strong>
@@ -594,7 +595,6 @@ export function WalletControlsPanel({
       {!canDoSelectedAction && !canCloseForRecovery && mode !== "create-root" && mode !== "fund-root" && mode !== "set-root-operator" && mode !== "owner-recovery" && (
         <span className="wallet-control-disabled-hint">Select an active vault and connect its recorded owner or parent agent to unlock the matching actions.</span>
       )}
-      {displayedNotice}
     </section>
   );
 }

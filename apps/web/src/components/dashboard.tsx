@@ -1092,6 +1092,7 @@ export function Dashboard({ data: initialData, deployment, vaultQuery, nodeQuery
   const [readState, setReadState] = useState<{ vaultKey: string | null; rootId: string | null; status: "idle" | "loading" | "ready" | "error"; error: string | null }>({ vaultKey: null, rootId: null, status: "idle", error: null });
   const [activityState, setActivityState] = useState<{ rootId: string | null; feed: ActivityFeedResult | null; loading: boolean; loadingMore: boolean; loadMoreError: string | null }>({ rootId: null, feed: null, loading: false, loadingMore: false, loadMoreError: null });
   const [paymentState, setPaymentState] = useState<{ rootId: string | null; history: PaymentHistory | null; loading: boolean; error: string | null }>({ rootId: null, history: null, loading: false, error: null });
+  const [authorizationSuccess, setAuthorizationSuccess] = useState<{ vault: string; hash: string } | null>(null);
   const [treeRetry, setTreeRetry] = useState(0);
   const [activityRetry, setActivityRetry] = useState(0);
   const wallet = useInjectedWallet();
@@ -1169,6 +1170,14 @@ export function Dashboard({ data: initialData, deployment, vaultQuery, nodeQuery
     address: wallet.address,
     chainId: wallet.chainId,
     onConfirmed: refreshConfirmedState,
+    onOperatorAuthorized: (rootId, hash) => {
+      const root = data.nodes.find(node => node.id === rootId);
+      if (!root) return;
+      setAuthorizationSuccess({ vault: root.vaultAddress, hash });
+      setWalletActionMode(null);
+      setDetailOpen(false);
+      router.push(routeHref("/tree", root.vaultAddress, rootId));
+    },
   });
 
   useEffect(() => {
@@ -1391,6 +1400,7 @@ export function Dashboard({ data: initialData, deployment, vaultQuery, nodeQuery
         <div className="dashboard-content">
           {currentReadState.status === "loading" && <DashboardLoading view={view} error={null} onRetry={() => setTreeRetry(value => value + 1)} />}
           <div className="dashboard-loaded-content" hidden={currentReadState.status === "loading"}>
+          {authorizationSuccess && rootNode?.vaultAddress.toLowerCase() === authorizationSuccess.vault.toLowerCase() && <div className="wallet-action-notice wallet-action-notice-confirmed" role="status" aria-live="polite"><strong>Agent authorized successfully</strong><span>Your agent authorization was confirmed on Ethereum Sepolia. You can now inspect its vault and mandate below.</span><a href={`https://sepolia.etherscan.io/tx/${authorizationSuccess.hash}`} target="_blank" rel="noreferrer">View authorization receipt <ArrowUpRight size={14} aria-hidden="true" /></a><button type="button" className="button button-secondary button-small" onClick={() => setAuthorizationSuccess(null)}>Dismiss notification</button></div>}
           <HelpLinks vaultQuery={vaultQuery} preview={data.source === "preview" && view !== "mcp"} />
           {view === "overview" && <div className="page-heading"><h1>Overview</h1><p>Balances and authority across your vaults.</p></div>}
           {view === "tree" && <div className="page-heading"><h1>Capital tree</h1><p>Select a node to inspect its balance, capabilities and limits.</p></div>}

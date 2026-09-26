@@ -22,7 +22,7 @@ try {
     globalThis.window={ethereum:{}};
     const state={root:null,bound:zero,balance:0n,gas:0n,allowance:0n,sends:[],failReceipt:false,unknownSend:false};
     globalThis.testRpc={getCode:async()=> '0x1234', getBlockNumber:async()=> 42n, estimateGas:async()=>21000n,getBalance:async()=>state.gas,
-      waitForTransactionReceipt:async()=>{if(state.failReceipt){state.failReceipt=false;throw new Error('RPC unavailable');}return {status:'success'};},
+      waitForTransactionReceipt:async()=>{if(state.failReceipt){state.failReceipt=false;throw new Error('RPC unavailable');}return {status:'success',transactionHash:`0x${'a'.repeat(64)}`};},
       simulateContract:async request=>({request}),
       readContract:async({functionName,args})=>{
         switch(functionName){
@@ -43,7 +43,7 @@ try {
         if(functionName==='fundRoot')state.balance+=args[1][0];
         return hash();
       },sendTransaction:async({value})=>{state.sends.push('gas');state.gas+=value;return hash();}};
-    const restart=()=>useWalletActions({data:{},deployment:{contractsConfigured:true,controllerAddress:controller,tokenAddresses:[token,controller]},address:owner,chainId:11155111,onConfirmed(){}}).actions;
+    const restart=(onOperatorAuthorized)=>useWalletActions({data:{},deployment:{contractsConfigured:true,controllerAddress:controller,tokenAddresses:[token,controller]},address:owner,chainId:11155111,onConfirmed(){},onOperatorAuthorized}).actions;
     return {state,restart};
   }
   const first=fixture();
@@ -63,5 +63,17 @@ try {
   const mismatched=fixture();mismatched.state.root={id:1n,parentId:0n,label:'kanoki-test',vault,policy:{},revoked:false};mismatched.state.bound=controller;
   await assert.rejects(mismatched.restart().completeRootSetup('kanoki-test',operator,'100000',draft),/different operator/);
   assert.equal(mismatched.state.sends.length,0);
+  const authorized=fixture();let notified=0;
+  let releaseReceipt;
+  globalThis.testRpc.waitForTransactionReceipt=()=>new Promise(resolve=>{releaseReceipt=resolve;});
+  const action=authorized.restart((root,hash)=>{assert.equal(root,'1');assert.equal(hash,'0x'+'a'.repeat(64));notified++;}).setRootOperator('1',operator,draft);
+  while(!releaseReceipt) await new Promise(resolve=>setTimeout(resolve,1));
+  assert.equal(notified,0,'Wallet acceptance is not onchain confirmation');
+  releaseReceipt({status:'success',transactionHash:'0x'+'a'.repeat(64)});await action;
+  assert.equal(notified,1);
+  const reverted=fixture();globalThis.testRpc.waitForTransactionReceipt=async()=>({status:'reverted'});
+  await assert.rejects(reverted.restart(()=>assert.fail('Must not redirect on revert')).setRootOperator('1',operator,draft),/reverted/);
+  const failed=fixture();failed.state.failReceipt=true;
+  await assert.rejects(failed.restart(()=>assert.fail('Must not redirect on RPC failure')).setRootOperator('1',operator,draft),/RPC unavailable/);
   console.log('PASS: guided setup, restart reconciliation, no repeat funding, uncertain-send lockout and operator protection. No chain writes.');
 } finally {await unlink(output);}
