@@ -18,7 +18,7 @@ Use Codex 0.154.0 and independently verify the binary SHA-256. Record the immuta
 
 ## 2. Create your root
 
-Open [Setup](https://agent-capital-tree.vercel.app/setup), connect your Sepolia wallet and create a new root. Claim demo tokens and fund it using the existing owner-wallet actions. Record the new numerical root ID. Roots 2, 5 and 9 are retired; root 1 is shared seed liquidity. Do not use these for new worker tasks.
+Open [Setup](https://agent-capital-tree.vercel.app/setup), connect your Sepolia wallet and create a new root. Get official Test-USDC from the Circle faucet linked in the app, then fund the vault with your owner wallet. DEMO-USD is a separate valueless pool quote. Record your new internal root ID and the current controller address from `deployments/usdc-sepolia.json`. Use your own new root for agent tasks.
 
 ## 3. Configure and prepare the operator
 
@@ -29,7 +29,7 @@ Outside the checkout, create a private directory (mode 0700), a JSON config (060
   "runtimeRoot": "/absolute/private/runtime",
   "rootId": "YOUR_NEW_ROOT_ID",
   "rpcUrl": "https://your-sepolia-rpc.example",
-  "controller": "0x55caFFf719B5FA70c0e8942eEe2C7EE6B8c7Db6b",
+  "controller": "0x17a932987f3cAcFec067c4C1bbE6946963d87F13",
   "upstream": "https://your-cliproxyapi.example/v1",
   "providerTokenFile": "/absolute/private/provider-token",
   "imageId": "sha256:YOUR_BUILT_IMAGE_ID",
@@ -42,7 +42,7 @@ Outside the checkout, create a private directory (mode 0700), a JSON config (060
 node packages/runtime/cli.mjs prepare-root /absolute/private/config.json
 ```
 
-This prints the **public operator address**, not its key. In your root's Setup page, use **Bind operator** to authorize that address and set its mandate. Fund the operator address with Sepolia ETH for its transactions; depositing ACT-A into the vault does not pay gas. `childGasWei` is a separate optional ETH grant for each spawned child; zero gives no grant. Size it from current fees and the task, within the runtime cap described in the runtime guide. A read-only child task does not require child transaction gas.
+This prints the **public operator address**, not its key. In your root's Setup page, use **Bind operator** to authorize that address and set its mandate. Fund the operator address with Sepolia ETH for its transactions; depositing Test-USDC into the vault does not pay gas. `childGasWei` is a separate optional ETH grant for each spawned child; zero gives no grant. Size it from current fees and the task, within the runtime cap described in the runtime guide. A read-only child task does not require child transaction gas.
 
 ## 4. Start the companion
 
@@ -101,7 +101,7 @@ Independent external-user onboarding remains an acceptance gate. These instructi
 
 ### Optional: official Test-USDC service purchases
 
-The additive USDC contract version introduces the explicit `pay` capability. Legacy ACT-A/ACT-B vaults do not gain payment support. Use the USDC deployment’s controller and a separate runtime directory; do not point an existing runtime directory at another controller. The current public deployment status is recorded in `STATUS.md` and `deployments/usdc-sepolia.json`.
+The current USDC contract version has an explicit `pay` capability. Use the current controller and a fresh private runtime directory; a runtime directory is bound to one controller and root. The current public deployment status is recorded in `STATUS.md` and `deployments/usdc-sepolia.json`.
 
 With a USDC-compatible controller and a PAY-authorized operator, add an operator-approved service to the private companion configuration:
 

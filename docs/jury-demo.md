@@ -1,39 +1,23 @@
-# Agent Capital Tree — demo guide
+# Jury walkthrough — Agent Capital Tree
 
-## Product in one sentence
+Use the current USDC deployment in `deployments/usdc-sepolia.json` and the public dashboard. Old root links are intentionally unsupported. The exact public acceptance state is recorded in `STATUS.md`.
 
-Give each agent its own capital and a narrower mandate, while keeping the human owner's recovery path independent of agents, ENS availability and the activity indexer.
+1. **Overview:** open the demo root by its vault address or `capital.agentcapitalusdc.eth`. Show official Circle Test-USDC separately from the valueless DEMO-USD pool quote. Capital is custody, permissions are a mandate, and neither proves that a worker process is currently running.
+2. **Agent tree:** select `researcher.capital.agentcapitalusdc.eth` once the public payment demo has run. Its separate vault receives a smaller allocation and an explicit PAY role. Show its name, address, narrower amount limit and ancestors. ENS EAC supplies roles; our controller checks the ancestor chain on every action.
+3. **Service purchase:** show the public `deployments/usdc-payment.json` report when present and its Explorer receipt. A real HTTP402 request leads to a vault-bound EIP-3009 signature, ERC-1271 authorization, Circle settlement and paid response. A retry does not charge twice. The controlled seller is local and pays the test owner; it is not an independent commercial merchant.
+4. **Uniswap:** open Applications and inspect the vault-owned LP NFT. Swapping, managing liquidity, collecting fees and exiting are distinct capabilities. The fixed pool uses USDC and a valueless quote; it is not a reliable dollar valuation. Revocation stops future management but does not itself close a market position.
+5. **Activity:** show actual MultiBaas-indexed capital and strategy events, their coverage boundary and canonical receipt verification. Direct USDC payment events are outside the controller-only index; use their separate verified payment receipt.
+6. **Setup:** show the owner recovery controls and the local companion/MCP guide. The human wallet stays separate from the companion operator for personal setups. Native Codex subagents do not automatically inherit capital; our explicit spawn workflow creates a separate worker, ENS node and vault.
 
-Capital is transferred into separate vaults. A child cannot spend a parent's balance. ENSv2 EAC supplies the current roles; the controller checks the ancestor chain and numerical constraints on every supported operation. Model intelligence is not a security boundary.
+Source entry points:
 
-## Five-minute read-only demonstration
+- ENS roles/registries: `contracts/src/ens/FinanceRoles.sol`, `contracts/src/ens/ManagedRegistry.sol`.
+- Inherited authority and payment checks: `contracts/src/CapitalController.sol` (`_authorize`, `checkPayment`).
+- Exact ERC-1271 payment verifier and Uniswap custody: `contracts/src/CapitalVault.sol`.
+- HTTP402 purchase, retry journal and independent receipts: `packages/runtime/src/payments.ts`.
+- Scoped identities and isolated worker dispatch: `packages/runtime/src/companion.ts`.
+- MultiBaas query/receipt verification: `packages/multibaas/src/index.ts`.
 
-No wallet or model credential is needed to inspect these completed runs.
+Do not replay completed public financial runners or recover the live demo seed during a read-only presentation. The fork runner safely exercises revocation and recovery without public writes. Amount ceilings are per action; physical vault balances bound total spending. The service allowlist lives in the companion, not in onchain recipient policy. No audit, independent external-machine onboarding, automatic strategy discovery or guaranteed original-dollar recovery is claimed.
 
-1. Open the [overview](https://agent-capital-tree.vercel.app/?root=5). Explain the difference between a vault's capital, its permissions, and an agent process. A valid mandate does not prove that a runtime is running.
-2. Open the [agent tree](https://agent-capital-tree.vercel.app/tree?root=5). Inspect root5, child6, grandchild7 and sibling8. Select the grandchild to show its ENS name and constraints inherited from its ancestors. This real tree is now revoked and empty because the owner recovered all funds.
-3. Open [Root9 activity](https://agent-capital-tree.vercel.app/activity?root=9). Show the actual master sequence: read indexed activity and current authority, reclaim1ACT-A from child10, then allocate0.5ACT-A to sibling11. Follow a receipt link. MultiBaas selects indexed activity; independent Sepolia receipt checks verify it. The displayed coverage boundary is real.
-4. Open [applications for the seed root](https://agent-capital-tree.vercel.app/applications?root=1). Uniswap v4 is the implemented example: bounded swaps and vault-owned liquidity. Managing liquidity, collecting fees and exiting are distinct permissions. Revocation alone does not close a market position. Preserve this seed; do not recover or modify it during a read-only demo.
-5. Open [setup](https://agent-capital-tree.vercel.app/setup?root=5) to show the wallet and plugin path. The owner uses an independent recovery operation; worker identities come from isolated runtime credentials and onchain authorization, not a model-supplied agent ID.
-
-Payments and service purchases are potential adapters, not current contract functions. These demo tokens have no monetary value; there is no USD valuation or guaranteed return. [Preview mode](https://agent-capital-tree.vercel.app/tree?preview=1) is illustrative and explicitly labeled.
-
-## Technical evidence for reviewers
-
-| Partner | Contribution | Review starting point |
-| --- | --- | --- |
-| ENS | Actual ENSv2 permissioned registries and EAC roles, checked alongside the ancestor policy chain | [ManagedRegistry](../contracts/src/ens/ManagedRegistry.sol), [controller authorization](https://github.com/CodeByNikolas/agent-capital-tree/blob/acb8226/contracts/src/CapitalController.sol#L536) |
-| Uniswap | Typed v4 swaps, vault-owned position NFT, distinct management/fee/exit roles and owner recovery | [swap](https://github.com/CodeByNikolas/agent-capital-tree/blob/acb8226/contracts/src/CapitalVault.sol#L67), [LP lifecycle](https://github.com/CodeByNikolas/agent-capital-tree/blob/acb8226/contracts/src/CapitalVault.sol#L128), [owner LP exit](https://github.com/CodeByNikolas/agent-capital-tree/blob/acb8226/contracts/src/CapitalController.sol#L443), [feedback](../FEEDBACK.md) |
-| Curvegrid | MultiBaas event queries and receipt enrichment, consumed by the UI and master-agent MCP tool | [queries](https://github.com/CodeByNikolas/agent-capital-tree/blob/acb8226/packages/multibaas/src/index.ts#L154), [independent verification](https://github.com/CodeByNikolas/agent-capital-tree/blob/acb8226/packages/multibaas/src/index.ts#L633), [model reallocation proof](../deployments/multibaas-master.json) |
-
-The [acceptance matrix](../ACCEPTANCE.md) distinguishes actual MetaMask transactions, programmatic owner actions, model actions, injected failures and read-only checks. Root9's complete indexed history starts after block11783944; Root5 predates the free-plan history boundary.
-
-## Running a new agent task
-
-Use a new root and a separate owner/operator. Do not restart retired roots2,5,9 or replay completed financial test scripts. Follow the [runtime guide](../packages/runtime/README.md) and [plugin guide](../packages/plugin/README.md). Required: Sepolia wallet/gas, Node22, pnpm, Docker, the pinned Codex binary and your own CLIProxyAPI model access. Keep all keys local and outside the repository.
-
-The supported long-running financial path registers the bundled MCP server explicitly with a300-second timeout. A separate marketplace-install/read proof exists; marketplace-installed writes have not been verified. Independent external-user onboarding still needs a separate environment with its own credentials.
-
-## Submission handoff
-
-The repository, deployment and evidence are public. The Uniswap feedback form and ETHGlobal entry have not been submitted. The team must supply its submission account, team/contact details and authorization to send. Use the evidence above without claiming unsupported payments, autonomous strategy discovery, a security audit, or independent onboarding already completed.
+Uniswap’s feedback form and the ETHGlobal entry have not been submitted. Team/contact details and an explicit submission instruction are still required.
