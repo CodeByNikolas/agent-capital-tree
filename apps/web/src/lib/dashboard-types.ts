@@ -40,6 +40,7 @@ export interface ActivityFeedPage {
   indexing: {
     state: "historical_indexing" | "lagging" | "caught_up" | "indexer_ahead";
     latestIndexedBlock: number;
+    indexingStartBlock: number;
     chainHeadBlock: number;
     indexGapBlocks: number;
     updatedAt: string;

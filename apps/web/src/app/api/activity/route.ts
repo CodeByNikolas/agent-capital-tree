@@ -41,6 +41,7 @@ function indexedPage(page: CapitalActivityPage, expectedRootId: string): Activit
     indexing: {
       state: page.indexing.state,
       latestIndexedBlock: page.indexing.latestIndexedBlock,
+      indexingStartBlock: page.indexing.indexingStartBlock,
       chainHeadBlock: page.indexing.chainHeadBlock,
       indexGapBlocks: page.indexing.indexGapBlocks,
       updatedAt: page.indexing.updatedAt,

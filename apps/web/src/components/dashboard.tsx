@@ -1073,6 +1073,9 @@ function ActivityPanel({
 }) {
   const page = feed?.source === "multi-baas" ? feed.page : null;
   const indexLag = page?.indexing.indexGapBlocks;
+  const historyCoverage = page
+    ? `History indexed from block ${page.indexing.indexingStartBlock.toLocaleString()}; earlier activity is not included.`
+    : null;
   const provenance = data.activitySource === "preview"
     ? "This is sample history. Transaction links appear only after an indexed on-chain receipt exists."
     : data.activitySource === "multi-baas" && page
@@ -1080,6 +1083,7 @@ function ActivityPanel({
       : data.activitySource === "unavailable"
         ? feed?.source === "unavailable" ? feed.message : "Activity history is not configured. Direct RPC data is not used as an activity-history fallback."
         : "Activity is reported by a local diagnostic source.";
+  const activityStatus = `${loading && data.activitySource !== "preview" ? "Refreshing MultiBaas activity…" : provenance}${historyCoverage ? ` ${historyCoverage}` : ""}`;
   const activitySource = data.activitySource === "preview" ? "preview" : data.source;
 
   return (
@@ -1127,10 +1131,10 @@ function ActivityPanel({
           );
         })}
       </ol>
-      {data.activity.length === 0 && <p className="activity-empty">{loading ? "Loading activity history…" : data.activitySource === "preview" ? "Preview records are shown above when available." : feed?.source === "unavailable" ? "Indexed activity is unavailable for this root." : "No activity records are available for this root yet."}</p>}
+      {data.activity.length === 0 && <p className="activity-empty">{loading ? "Loading activity history…" : data.activitySource === "preview" ? "Preview records are shown above when available." : feed?.source === "unavailable" ? "Indexed activity is unavailable for this root." : page ? "No indexed activity is available for this root within the covered block range." : "No activity records are available for this root yet."}</p>}
       {loadMoreError && feed?.source !== "unavailable" && <p className="activity-load-error" role="alert">{loadMoreError}</p>}
-      {page?.hasMore && <button className="button button-secondary button-small activity-load-more" type="button" disabled={loadingMore} onClick={onLoadMore}>{loadingMore ? "Loading…" : "Load earlier activity"}</button>}
-      <div className="activity-provenance"><span className="provenance-dot" />{loading && data.activitySource !== "preview" ? "Refreshing MultiBaas activity…" : provenance}</div>
+      {page?.hasMore && <button className="button button-secondary button-small activity-load-more" type="button" disabled={loadingMore} onClick={onLoadMore}>{loadingMore ? "Loading…" : "Load more activity"}</button>}
+      <div className="activity-provenance"><span className="provenance-dot" />{activityStatus}</div>
     </section>
   );
 }
