@@ -6,6 +6,9 @@ import { isAbsolute } from 'node:path';
 import { RuntimeCompanion, prepareRootOperator } from './dist/index.js';
 
 const [command, configPath, flag] = process.argv.slice(2);
+if (process.platform === 'win32') {
+  throw new Error('Native Windows finance runtime is unsupported. Run this CLI inside WSL2 (Linux) with a Linux-absolute private config path. For a keyless MCP read-only check on Windows, run pnpm mcp:doctor and pnpm mcp:verify from the repo root.');
+}
 if (!['prepare-root', 'start'].includes(command) || !isAbsolute(configPath ?? '') || (flag && flag !== '--enable-sepolia-writes')) {
   throw new Error('usage: node packages/runtime/cli.mjs prepare-root|start /absolute/private-config.json [--enable-sepolia-writes]');
 }
