@@ -10,6 +10,7 @@ The product uses only [usdc-sepolia.json](deployments/usdc-sepolia.json), contro
 - Seven capital/strategy events retrieved from MultiBaas and verified against canonical receipts: [history proof](deployments/usdc-multibaas.json). Direct USDC payment events are outside this controller index.
 - Two isolated live-worker checks passed with image `sha256:4904e2fcc68d25374fffb15e933f4638719748562fac4156856f1710395edb07`.
 - Keyless MCP install/read proof on Windows: `pnpm mcp:doctor` passed with Node v24.18.0, pnpm 11.13.1 and host Codex CLI 0.157.0. `pnpm mcp:verify` installed into a fresh temporary profile, registered exactly one `capital-tree` server, discovered all 16 tools, rejected a write endpoint and read USDC root1/two nodes from Sepolia block11785724. No private config, wallet, team host or transaction was involved. [Runner](scripts/test-plugin-install.mjs). This is not a finance-write or independent-laptop E2E proof.
+- [Rami's published MCP guide](https://agent-capital-tree-silk.vercel.app/mcp) is publicly accessible without selecting a vault (HTTP 200), from production deployment `dpl_3Bzf15EMwUUJTqCtc9yXBz8qVAcv`. The verified public deployment API still points to the current USDC Sepolia controller. This is distinct from the project's main Vercel URL.
 - New USDC frontend deployment/browser checks remain pending in STATUS.md. The earlier full browser-wallet/model lifecycle below is not a repeated USDC onboarding test.
 
 ## Historical pre-USDC acceptance

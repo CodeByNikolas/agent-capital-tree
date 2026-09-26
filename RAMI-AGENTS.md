@@ -48,6 +48,7 @@
 - Host-Codex 0.157.0 ist für den Read-Proof geprüft, Worker-Codex bleibt 0.154.0. Nicht behaupten, dass der lokale Read-Proof das permanente Plugin im persönlichen Codex-Profil installiert oder Writes beweist.
 - L0–L8 unten ist die aufgeschobene plattformneutrale Vollarchitektur. Keine Container-/Gateway-Umbauten als stillschweigende Nebenarbeit. Neue kleine Sepolia-Root-/x402-Pitch-Transaktionen erst nach ausdrücklicher Wallet-/Budget-/Konfigurationsprüfung; vorhandene Root-1-/Payment-Runner niemals wiederholen.
 - Spätere UX-Idee vom Nutzer: Baum/Agenten direkt in Claude- oder Codex-Chats visualisieren. Als exploratives Feature behandeln; zuerst Host-Fähigkeiten und MCP-Darstellungsgrenzen prüfen, dann eine read-only Ansicht mit Block-/Frischehinweis entwerfen.
+- Öffentliche Guide-URL auf Ramis Vercel: `https://agent-capital-tree-silk.vercel.app/mcp`, seit `81d9cc1` ohne Vault nutzbar. Verifizierter Deploy `dpl_3Bzf15EMwUUJTqCtc9yXBz8qVAcv`. Die Haupt-URL gehört zu einem anderen Vercel-Projekt und wird durch diesen Deploy nicht aktualisiert.
 
 ### Festgelegtes Produktziel
 
