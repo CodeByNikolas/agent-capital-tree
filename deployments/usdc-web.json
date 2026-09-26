@@ -1,0 +1,51 @@
+{
+  "checkedAt": "2026-09-26T09:02:26.746Z",
+  "sourceCommit": "b2332da61503652ada05bd85437688cbdc7d76b9",
+  "deploymentId": "dpl_9dWZcjSrxdUirjXSgYSdVMWm2QYA",
+  "productionUrl": "https://agent-capital-tree.vercel.app",
+  "deploymentUrl": "https://agent-capital-tree-gptmyfdbx-tumblockchains-projects.vercel.app",
+  "checks": [
+    {
+      "query": "researcher.capital.agentcapitalusdc.eth",
+      "status": 200
+    },
+    {
+      "query": "RESEARCHER.CAPITAL.AGENTCAPITALUSDC.ETH.",
+      "status": 200
+    },
+    {
+      "query": "capital.agentcapitaltree.eth",
+      "status": 400
+    },
+    {
+      "query": "0x0000000000000000000000000000000000000001",
+      "status": 404
+    }
+  ],
+  "multiBaas": {
+    "eventCount": 7,
+    "source": "multi-baas",
+    "verification": {
+      "source": "rpc",
+      "checks": [
+        "canonical_block",
+        "successful_receipt",
+        "event_identity",
+        "decoded_values"
+      ],
+      "checkedAtBlock": "11785217",
+      "finalizedBlock": "11785137",
+      "orphanedItems": 0
+    },
+    "indexing": {
+      "state": "lagging",
+      "latestIndexedBlock": 11785117,
+      "indexingStartBlock": 11785117,
+      "chainHeadBlock": 11785217,
+      "indexGapBlocks": 100,
+      "updatedAt": "2026-09-26T08:42:32.297645Z"
+    }
+  },
+  "ci": "https://github.com/CodeByNikolas/agent-capital-tree/actions/runs/36231431806",
+  "transactionsSent": 0
+}

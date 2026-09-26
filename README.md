@@ -4,7 +4,7 @@ Give agents capital, delegate smaller amounts to sub-agents, and enforce narrowe
 
 **ENSv2 Enhanced Access Control** supplies the roles. Separate vaults bound each agent’s available funds. **Uniswap v4** enables bounded swaps and liquidity positions; **x402** enables service purchases with official Circle **Test-USDC**. **Curvegrid MultiBaas** indexes the controller’s capital and strategy events.
 
-[Dashboard](https://agent-capital-tree.vercel.app) · [Local companion and MCP setup](docs/local-setup.md) · [Current status](STATUS.md) · [Jury walkthrough](docs/jury-demo.md)
+[Dashboard](https://agent-capital-tree.vercel.app) · [Live USDC tree](https://agent-capital-tree.vercel.app/tree?vault=capital.agentcapitalusdc.eth) · [Local companion and MCP setup](docs/local-setup.md) · [Current status](STATUS.md) · [Jury walkthrough](docs/jury-demo.md)
 
 The prototype targets **Ethereum Sepolia, chain 11155111**. The current release switches directly to the USDC deployment: no legacy deployment selector, old-link support or migration layer. Public contract addresses and deployment progress are recorded in [usdc-sepolia.json](deployments/usdc-sepolia.json). This is an unaudited hackathon prototype using testnet assets.
 

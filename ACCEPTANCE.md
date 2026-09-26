@@ -4,12 +4,12 @@
 
 The product uses only [usdc-sepolia.json](deployments/usdc-sepolia.json), controller `0x17a932987f3cAcFec067c4C1bbE6946963d87F13`, namespace `agentcapitalusdc.eth`. Older reports below are historical evidence, not supported legacy entry points.
 
-- 37 contract tests passed across8 suites, including256 fuzz runs;18 runtime,11 MultiBaas,7 plugin and2 SDK tests passed.
+- 37 contract tests passed across8 suites, including256 fuzz runs;18 runtime plus an added payment-expiry test,11 MultiBaas,7 plugin and2 SDK tests passed.
 - Actual Circle proxy / x402 protocol, inherited restrictions, revocation, LP lifecycle and recovery passed on a local fork: [report](deployments/usdc-x402-fork.json).
 - Public seed:2 Test-USDC +2 valueless DEMO-USD; vault-owned Uniswap NFT39858. PAY-only researcher allocated0.25USDC, paid0.01USDC and retains0.24USDC; repeated request did not double-charge: [payment proof](deployments/usdc-payment.json). Controlled loopback merchant, no independent commercial merchant or autonomous model purchase claimed.
 - Seven capital/strategy events retrieved from MultiBaas and verified against canonical receipts: [history proof](deployments/usdc-multibaas.json). Direct USDC payment events are outside this controller index.
 - Two isolated live-worker checks passed with image `sha256:4904e2fcc68d25374fffb15e933f4638719748562fac4156856f1710395edb07`.
-- New USDC frontend deployment/browser checks remain pending in STATUS.md. The earlier full browser-wallet/model lifecycle below is not a repeated USDC onboarding test.
+- New USDC frontend is deployed from b2332da; production build and CI passed. Public read-only browser tests passed across all five pages, desktop/light and mobile/dark, ENS/address lookup and retired-link404 checks: [UI report](artifacts/ui/usdc-ui-report.json), [lookup report](artifacts/ui/vault-lookup-report.json), [deployment and API evidence](deployments/usdc-web.json). The earlier full browser-wallet/model lifecycle below is not a repeated USDC onboarding test.
 
 ## Historical pre-USDC acceptance
 

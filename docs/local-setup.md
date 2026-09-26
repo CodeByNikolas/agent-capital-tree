@@ -18,7 +18,7 @@ Use Codex 0.154.0 and independently verify the binary SHA-256. Record the immuta
 
 ## 2. Create your root
 
-Open [Setup](https://agent-capital-tree.vercel.app/setup), connect your Sepolia wallet and create a new root. Get official Test-USDC from the Circle faucet linked in the app, then fund the vault with your owner wallet. DEMO-USD is a separate valueless pool quote. Record your new internal root ID and the current controller address from `deployments/usdc-sepolia.json`. Use your own new root for agent tasks.
+Open [Setup](https://agent-capital-tree.vercel.app/setup), connect your Sepolia wallet and create a new root. Get official Test-USDC from the Circle faucet linked in the app, then fund the vault with your owner wallet. DEMO-USD is a separate valueless pool quote; use the separate Get DEMO-USD button for its one-time faucet claim if you want to test liquidity positions. Record your new internal root ID and the current controller address from `deployments/usdc-sepolia.json`. Use your own new root for agent tasks.
 
 ## 3. Configure and prepare the operator
 
