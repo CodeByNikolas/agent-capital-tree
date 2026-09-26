@@ -2,6 +2,11 @@
 
 As of 26 September 2026. Read this together with PLAN.md after context compaction.
 
+## Website app icon
+
+- Added matching branch artwork in `apps/web/src/app/icon.svg`, a multi-size `favicon.ico` (16, 32, 48, 256 px), and an opaque 180 px `apple-icon.png`. The artwork follows the existing green dashboard brand mark. Next.js file-based metadata supplies the icon links; no duplicate manual icon metadata or PWA manifest was added.
+- Web typecheck and production build passed. A local production server emitted exactly one favicon, one SVG icon, and one Apple touch icon link; all three URLs returned the expected MIME types and signatures. Every ICO size and the Apple PNG were rendered and visually inspected. This local check did not deploy the change.
+
 ## Local setup guide audit
 
 - `docs/local-setup.md` now covers the current Circle USDC Sepolia root flow, external CLIProxyAPI and Codex CLI configuration, pinned worker binary/image requirements, private persistent operator files, ETH gas ownership, MCP registration, and a concrete read-and-report child task with raw USDC units and idempotency-key reconciliation. The sample child retains a zero-limit delegation capability because the runtime does not dispatch a worker with no active onchain capability. The guide also records success checks and the optional x402 configuration boundary.
