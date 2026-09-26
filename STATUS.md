@@ -4,6 +4,7 @@ As of 26 September 2026. Read this together with PLAN.md after context compactio
 
 ## Website title and footer placement
 
+- Source `2c4824d` is pushed and deployed to production (`dpl_BGMWs9Ui6bqbaPQFJaW7V57GwN9P`). Public browser checks confirmed the exact title and footer geometry on a short 1440×1400 live payments page and a long 390×650 live setup page, without horizontal overflow. CI run `36245055714` was still in progress at publication.
 - The browser title is now `Agent Capital Tree`. The dashboard content fills the available viewport height; a flexible footer wrapper places the footer at the bottom on short pages and after content on long pages, preserving the existing bottom inset and minimum separation.
 - Web build/typecheck, scoped layout detector, and local browser geometry checks passed on short desktop and long desktop/mobile pages. Title, footer position and absence of horizontal overflow were verified. Layout assessment was performed locally, honoring the no-subagents preference.
 - Rechecked MCP/runtime support: all seven plugin and 19 runtime tests pass. Historical model-driven spawning evidence uses Codex workers through the Companion and CLIProxyAPI. Native Codex subagents do not automatically provision vaults; Codex without that provider and Claude Code end-to-end spawning remain unverified. Live LP principal and fee values are explicitly null in the mapper, explaining `Not queried`; no new LP valuation reads were added.
