@@ -9,7 +9,7 @@ import {
 } from "@/lib/tour-steps";
 
 /**
- * Docked banner that guides a first-time viewer through the 5-step demo.
+ * Docked banner that guides a first-time viewer through the guided demo.
  * Rendered on every view; visible only when ?tour=1 is present. All navigation
  * is <Link>-based and URL-driven, so it persists across route changes.
  */

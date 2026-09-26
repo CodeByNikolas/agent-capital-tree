@@ -553,7 +553,7 @@ function AppSidebar({ view, vaultQuery, selectedId, rootLabel, data, readError, 
 function Topbar({ wallet, view, vaultQuery, selectedId }: { view: DashboardProps["view"]; source?: DataSource; wallet: InjectedWalletState; vaultQuery: string | null; selectedId: string }) {
   return <header className="app-topbar">
     <div className="app-topbar-title"><SidebarTrigger /><span>{views.find(item => item.id === view)?.title}</span></div>
-    <div className="app-topbar-actions"><ThemeControl /><WalletControl wallet={wallet} /></div>
+    <div className="app-topbar-actions">{view === "overview" && <Button variant="ghost" onClick={() => window.dispatchEvent(new Event(ONBOARDING_OPEN_EVENT))}>How it works</Button>}<ThemeControl /><WalletControl wallet={wallet} /></div>
   </header>;
 }
 
@@ -1375,6 +1375,7 @@ export function Dashboard({ data: initialData, deployment, vaultQuery, nodeQuery
           {view === "overview" && <>
 
 
+            {!tour && <OnboardingHero />}
             <SummaryMetrics data={data} />
             <VaultRegister data={data} vaultQuery={vaultQuery} />
             <div className="overview-lower">

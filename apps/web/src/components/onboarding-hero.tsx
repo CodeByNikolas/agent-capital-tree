@@ -25,7 +25,7 @@ export function OnboardingHero() {
   const [hidden, setHidden] = useState(false);
 
   useEffect(() => {
-    setHidden(window.localStorage.getItem(STORAGE_KEY) === "1");
+    try { setHidden(window.localStorage.getItem(STORAGE_KEY) === "1"); } catch { /* Storage is optional. */ }
     const reopen = () => setHidden(false);
     window.addEventListener(ONBOARDING_OPEN_EVENT, reopen);
     return () => window.removeEventListener(ONBOARDING_OPEN_EVENT, reopen);
@@ -34,7 +34,7 @@ export function OnboardingHero() {
   if (hidden) return null;
 
   function hide() {
-    window.localStorage.setItem(STORAGE_KEY, "1");
+    try { window.localStorage.setItem(STORAGE_KEY, "1"); } catch { /* Storage is optional. */ }
     setHidden(true);
   }
 
