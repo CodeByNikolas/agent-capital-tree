@@ -392,6 +392,62 @@ export const capitalControllerAbi = [
   },
   {
     "type": "function",
+    "name": "createRootWithCapitalLimit",
+    "inputs": [
+      {
+        "name": "label",
+        "type": "string",
+        "internalType": "string"
+      },
+      {
+        "name": "policy",
+        "type": "tuple",
+        "internalType": "struct CapitalController.Policy",
+        "components": [
+          {
+            "name": "capabilities",
+            "type": "uint256",
+            "internalType": "uint256"
+          },
+          {
+            "name": "maxAmounts",
+            "type": "uint256[2]",
+            "internalType": "uint256[2]"
+          },
+          {
+            "name": "expiry",
+            "type": "uint64",
+            "internalType": "uint64"
+          },
+          {
+            "name": "tokenMask",
+            "type": "uint8",
+            "internalType": "uint8"
+          },
+          {
+            "name": "poolId",
+            "type": "bytes32",
+            "internalType": "bytes32"
+          }
+        ]
+      },
+      {
+        "name": "limit",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "rootId",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
     "name": "fundRoot",
     "inputs": [
       {
@@ -817,6 +873,44 @@ export const capitalControllerAbi = [
   },
   {
     "type": "function",
+    "name": "rootCapitalFunded",
+    "inputs": [
+      {
+        "name": "",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "rootCapitalLimit",
+    "inputs": [
+      {
+        "name": "",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
     "name": "rootGeneration",
     "inputs": [
       {
@@ -890,6 +984,24 @@ export const capitalControllerAbi = [
       }
     ],
     "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "setCapitalLimit",
+    "inputs": [
+      {
+        "name": "rootId",
+        "type": "uint256",
+        "internalType": "uint256"
+      },
+      {
+        "name": "limit",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "outputs": [],
+    "stateMutability": "nonpayable"
   },
   {
     "type": "function",
@@ -1107,6 +1219,25 @@ export const capitalControllerAbi = [
     "stateMutability": "nonpayable"
   },
   {
+    "type": "function",
+    "name": "totalCapital",
+    "inputs": [
+      {
+        "name": "rootId",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "total",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
     "type": "event",
     "name": "CapitalAllocated",
     "inputs": [
@@ -1136,6 +1267,25 @@ export const capitalControllerAbi = [
       },
       {
         "name": "amount",
+        "type": "uint256",
+        "indexed": false,
+        "internalType": "uint256"
+      }
+    ],
+    "anonymous": false
+  },
+  {
+    "type": "event",
+    "name": "CapitalLimitSet",
+    "inputs": [
+      {
+        "name": "rootId",
+        "type": "uint256",
+        "indexed": true,
+        "internalType": "uint256"
+      },
+      {
+        "name": "limit",
         "type": "uint256",
         "indexed": false,
         "internalType": "uint256"
@@ -1554,6 +1704,11 @@ export const capitalControllerAbi = [
   {
     "type": "error",
     "name": "BadTransfer",
+    "inputs": []
+  },
+  {
+    "type": "error",
+    "name": "CapitalLimitExceeded",
     "inputs": []
   },
   {

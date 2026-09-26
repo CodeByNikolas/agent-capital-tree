@@ -57,11 +57,13 @@ contract CapitalController is ReentrancyGuard {
     error OperationConflict();
     error NodeLimit();
     error BadTransfer();
+    error CapitalLimitExceeded();
 
     event NodeCreated(
         uint256 indexed rootId, uint256 indexed nodeId, uint256 indexed parentId, address agent, address vault
     );
     event RootFunded(uint256 indexed rootId, address indexed token, uint256 amount);
+    event CapitalLimitSet(uint256 indexed rootId, uint256 limit);
     event CapitalAllocated(
         uint256 indexed rootId, uint256 indexed parentId, uint256 indexed childId, address token, uint256 amount
     );
@@ -129,6 +131,8 @@ contract CapitalController is ReentrancyGuard {
     mapping(uint256 => uint256[]) private _rootNodeIds;
     mapping(bytes32 => Operation) private _operations;
     mapping(address => uint256) private _nodeIdByVault;
+    mapping(uint256 => uint256) public rootCapitalLimit;
+    mapping(uint256 => uint256) public rootCapitalFunded;
 
     constructor(
         IPermissionedRegistry ethRegistry,
@@ -178,6 +182,50 @@ contract CapitalController is ReentrancyGuard {
     }
 
     function createRoot(string calldata label, Policy calldata policy) external nonReentrant returns (uint256 rootId) {
+        return _createRoot(label, policy);
+    }
+
+    /// @notice Single-token custody limit shared by the entire tree, separate from per-action policy.
+    /// Limited trees support delegation/restriction/reclaim only; trading and payments need separate accounting.
+    function createRootWithCapitalLimit(string calldata label, Policy calldata policy, uint256 limit)
+        external
+        nonReentrant
+        returns (uint256 rootId)
+    {
+        if (limit == 0) revert InvalidInput();
+        _validateLimitedPolicy(policy);
+        rootId = _createRoot(label, policy);
+        rootCapitalLimit[rootId] = limit;
+        emit CapitalLimitSet(rootId, limit);
+    }
+
+    function setCapitalLimit(uint256 rootId, uint256 limit) external nonReentrant {
+        Node storage root = _root(rootId);
+        if (msg.sender != rootOwner[rootId] || root.revoked) revert Unauthorized();
+        if (rootCapitalLimit[rootId] == 0 || limit == 0) revert InvalidInput();
+        if (limit < rootCapitalFunded[rootId] || limit < totalCapital(rootId)) revert CapitalLimitExceeded();
+        rootCapitalLimit[rootId] = limit;
+        emit CapitalLimitSet(rootId, limit);
+    }
+
+    function totalCapital(uint256 rootId) public view returns (uint256 total) {
+        _root(rootId);
+        uint256[] storage ids = _rootNodeIds[rootId];
+        for (uint256 i; i < ids.length; ++i) {
+            total += TOKEN0.balanceOf(address(_nodes[ids[i]].vault));
+        }
+    }
+
+    function _validateLimitedPolicy(Policy calldata policy) private pure {
+        if (
+            policy.tokenMask != 1 || policy.maxAmounts[1] != 0 || policy.poolId != bytes32(0)
+                || policy.capabilities & ~(FinanceRoles.DELEGATE | FinanceRoles.RESTRICT | FinanceRoles.RECLAIM) != 0
+        ) {
+            revert InvalidInput();
+        }
+    }
+
+    function _createRoot(string calldata label, Policy calldata policy) private returns (uint256 rootId) {
         _verifyAnchor();
         _validatePolicy(policy, true);
         if (policy.expiry > ETH_REGISTRY.getState(uint256(keccak256(bytes(namespaceLabel)))).expiry) {
@@ -208,6 +256,7 @@ contract CapitalController is ReentrancyGuard {
         if (operator == address(0)) revert InvalidInput();
         _verifyPath(rootId);
         _validatePolicy(policy, true);
+        if (rootCapitalLimit[rootId] != 0) _validateLimitedPolicy(policy);
         address oldOperator = rootOperator[rootId];
         if (oldOperator != address(0)) {
             node.registry.revokeRoles(node.resource, node.policy.capabilities, oldOperator);
@@ -266,6 +315,13 @@ contract CapitalController is ReentrancyGuard {
         Node storage root = _root(rootId);
         if (msg.sender != rootOwner[rootId] || root.revoked) revert Unauthorized();
         if (amounts[0] == 0 && amounts[1] == 0) revert InvalidInput();
+        uint256 limit = rootCapitalLimit[rootId];
+        if (limit != 0) {
+            if (amounts[1] != 0 || amounts[0] > limit - rootCapitalFunded[rootId]) revert CapitalLimitExceeded();
+            uint256 total = totalCapital(rootId);
+            if (total > limit || amounts[0] > limit - total) revert CapitalLimitExceeded();
+            rootCapitalFunded[rootId] += amounts[0];
+        }
         for (uint8 i; i < 2; ++i) {
             if (amounts[i] == 0) continue;
             IERC20 token = _token(i);
@@ -559,6 +615,12 @@ contract CapitalController is ReentrancyGuard {
 
     function _authorize(uint256 nodeId, uint256 role, address actor) private view returns (Policy memory effective) {
         Node storage node = _node(nodeId);
+        // Unsolicited ERC-20 transfers cannot be prevented. Excess custody blocks delegation,
+        // while restriction and owner recovery remain available to remove the excess safely.
+        uint256 limit = rootCapitalLimit[node.rootId];
+        if (limit != 0 && role == FinanceRoles.DELEGATE && totalCapital(node.rootId) > limit) {
+            revert CapitalLimitExceeded();
+        }
         if (role == 0 || role & ~FinanceRoles.KNOWN != 0 || node.agent != actor || actor == address(0)) {
             revert Unauthorized();
         }
