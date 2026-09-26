@@ -3,6 +3,7 @@ import type { WorkerContext } from './context.js';
 
 export type SpawnRequest = Readonly<{
   operationKey: `0x${string}`;
+  name?: string;
   task: string;
   model: string;
   token: `0x${string}`;

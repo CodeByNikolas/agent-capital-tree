@@ -88,3 +88,10 @@ test('LP tools request exact liquidity and explicit maximum inputs', () => {
   assert.throws(() => toolSpecs.openPosition.schema.parse({ ...request, liquidity: undefined, minLiquidity: '500' }));
   assert.throws(() => toolSpecs.increasePosition.schema.parse({ ...request, liquidity: '1.5' }));
 });
+
+test('spawn accepts readable ENS labels but rejects paths and invalid labels', () => {
+  const request = { operationKey: '0x' + '1'.repeat(64), task: 'Read state', model: 'gpt-6-luna', asset: '0x' + 'a'.repeat(40), amount: '1', restrictions: {} };
+  assert.equal(toolSpecs.spawnChild.schema.parse({ ...request, name: 'researcher' }).name, 'researcher');
+  for (const name of ['../master', 'child.parent', '', 'A name', 'a'.repeat(32)]) assert.throws(() => toolSpecs.spawnChild.schema.parse({ ...request, name }));
+  assert.equal(toolSpecs.spawnChild.schema.parse(request).name, undefined);
+});

@@ -154,7 +154,7 @@ export class RuntimeCompanion {
       if (!config.models.includes(String(args.model))) throw new Error('worker model is not approved');
       const request: SpawnRequest = { operationKey: String(args.operationKey) as `0x${string}`,
         task: String(args.task), model: String(args.model), token: String(args.asset) as `0x${string}`,
-        amount: String(args.amount), restrictions: args.restrictions };
+        amount: String(args.amount), restrictions: args.restrictions, ...(args.name === undefined ? {} : { name: String(args.name) }) };
       return this.coordinator.spawn(context, request);
     };
     wrapped.getOperationStatus = async (context, args) => {

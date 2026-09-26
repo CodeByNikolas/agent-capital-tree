@@ -78,7 +78,8 @@ export class OnchainSpawnChain implements SpawnChain {
     // An existing allocation can only use its original durable key. Missing key fails closed.
     const childAccount = await this.config.keys.account(keyId, operation.nodeId === 0n);
     await this.#intent(keyId, request, operation.nodeId !== 0n);
-    const label = `a${keyId.slice(6, 21)}`;
+    if (request.name !== undefined && !/^[a-z][a-z0-9-]{0,30}$/.test(request.name)) throw new Error("Invalid child name");
+    const label = request.name ?? `a${keyId.slice(6, 21)}`;
     const tokens = [token0, token1] as const;
     const amounts = tokenAmounts(tokens, request.token, request.amount);
     const policy = operation.nodeId === 0n
