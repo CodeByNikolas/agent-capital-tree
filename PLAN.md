@@ -4,6 +4,14 @@ Stand: 26. September 2026. Produktentscheidungen sind festgelegt; Implementierun
 
 ## 1. Produkt, Umfang und Partner
 
+### Dashboard-Neugestaltung (Nutzerauftrag 26.09.)
+
+Die bisherige überladene Ein-Seiten-Ansicht wird durch fünf echte, direkt adressierbare Seiten ersetzt: Übersicht, Agentenbaum, Aktivität, Anwendungen und Einrichtung. shadcn/ui Sidebar ist verbindlich; Badge, Button, Card, Sheet und Table werden nach Bedarf verwendet. Frontend Design, Impeccable und shadcn-MCP begleiten die Umsetzung. Eine ruhige Oberfläche, lesbare Schrift (16px Fließtext, mindestens14px ergänzende Informationen), großzügige Abstände und systemabhängiger Hell-/Dunkelmodus sind Abnahmekriterien.
+
+Der Baum erhält den gesamten Arbeitsbereich seiner Seite. Knotenauswahl öffnet verständliche Details zu Kapital, ENS-Namen, tatsächlichen Rechten und geerbten Grenzen. Root-/Preview-Kontext bleibt beim Seitenwechsel erhalten. Die Übersicht enthält nur die wichtigsten Zustandsinformationen und nächste Schritte; ausführliche Historie und LP-Verwaltung liegen auf eigenen Seiten. Das Produkt wird als delegiertes Agentenkapital dargestellt. Trading ist eine vorhandene Anwendung; Payments und Service-Einkäufe sind mögliche Erweiterungen, keine bereits implementierten Fähigkeiten.
+
+Alle Live-APIs, Wallet-Aktionen, Owner-Rückholung, Fehler-/Veraltungsgrenzen und die ehrliche MultiBaas-Abdeckungsanzeige bleiben erhalten. Keine neue Contract-Funktion und keine Wiederholung abgeschlossener Finanzläufe für dieses Redesign. GPT-6 Sol High implementiert in separatem Worktree; der Hauptagent prüft Änderungen, aktualisiert den read-only Browser-Smoke, testet Desktop/Mobil, beide Farbschemata, Tastatur/Details und Routenwechsel. Kohärente Änderungen werden einzeln geprüft und committet, danach gepusht und auf Vercel veröffentlicht.
+
 Agent Capital Tree delegiert echtes Kapital entlang eines Agentenbaums. Jeder Agent erhält einen eigenen Vault und ein begrenztes Mandat. Er kann einen Teil seines verfügbaren Kapitals an Sub-Agenten weitergeben, deren Rechte nur enger werden. Der menschliche Eigentümer behält die letzte Rückholbefugnis. Der Root-Agent ist ein vom Menschen autorisierter Operator; seine höhere Modellintelligenz ist keine Sicherheitsannahme.
 
 Das Produkt begrenzt den finanziellen Schadensradius eines kompromittierten Agenten. Es verwaltet keine Modellrechnung und garantiert weder Handelsgewinne noch den Erhalt des ursprünglichen Dollarwerts.
