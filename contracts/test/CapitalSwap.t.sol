@@ -48,11 +48,12 @@ contract CapitalSwapTest is Test {
         );
         IAllowanceTransfer permit2 = IAllowanceTransfer(address(new DummyPermit2()));
         vault = new VaultFactory(
-            IPoolManager(address(manager)),
-            IPositionManager(address(new PositionManagerConfig(IPoolManager(address(manager)), permit2))),
-            permit2,
-            [IERC20(address(token0)), IERC20(address(token1))]
-        ).createVault(address(this));
+                IPoolManager(address(manager)),
+                IPositionManager(address(new PositionManagerConfig(IPoolManager(address(manager)), permit2))),
+                permit2,
+                [IERC20(address(token0)), IERC20(address(token1))]
+            )
+            .createVault(address(this));
         token0.mint(address(vault), 100 ether);
     }
 
