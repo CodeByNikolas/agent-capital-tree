@@ -47,6 +47,9 @@ try {
       await expect(page.locator(selector)).toBeVisible({ timeout: 60000 });
       if (root === 7) {
         await expect(page.locator('.funding-address')).toContainText(vault);
+        await expect(page.locator('.funding-address')).toContainText(root7.nodes[0].ensName);
+        await page.getByRole('button', { name: 'Copy vault ens', exact: true }).click();
+        assert.equal(await page.evaluate(() => navigator.clipboard.readText()), root7.nodes[0].ensName);
         await page.getByRole('button', { name: 'Copy vault contract', exact: true }).click();
         assert.equal(await page.evaluate(() => navigator.clipboard.readText()), vault);
         await expect(page.locator('.operator-pending-notice')).toContainText('8 selected capabilities');

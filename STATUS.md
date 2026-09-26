@@ -1,3 +1,8 @@
+## Overview vault ENS — 27 September 2026
+
+- The Overview/Setup funding section now displays the full vault ENS name alongside its contract address. Both have independent copy buttons.
+- Production build/TypeScript and the background-refresh browser regression passed locally, including ENS/address clipboard checks and mobile overflow. Vercel release evidence follows after publication.
+
 ## Native macOS capital signing — 27 September 2026
 
 - The standalone capital MCP now accepts macOS alongside Linux/WSL. Private owner/mode/symlink checks remain enforced; the separate autonomous Docker-worker stack is not included in this support claim. The existing system-browser adapter uses /usr/bin/open on macOS.
