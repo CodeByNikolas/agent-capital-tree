@@ -8,6 +8,7 @@ Use the current USDC deployment in `deployments/usdc-sepolia.json` and the publi
 4. **Uniswap:** open Applications and inspect the vault-owned LP NFT. Swapping, managing liquidity, collecting fees and exiting are distinct capabilities. The fixed pool uses USDC and a valueless quote; it is not a reliable dollar valuation. Revocation stops future management but does not itself close a market position.
 5. **Activity:** show actual MultiBaas-indexed capital and strategy events, their coverage boundary and canonical receipt verification. Direct USDC payment events are outside the controller-only index; use their separate verified payment receipt.
 6. **Setup:** show the owner recovery controls and the local companion/MCP guide. The human wallet stays separate from the companion operator for personal setups. Native Codex subagents do not automatically inherit capital; our explicit spawn workflow creates a separate worker, ENS node and vault.
+7. **MCP live proof:** on a Judge laptop, clone the repository and run the read-only commands in `docs/local-setup.md`. `pnpm mcp:verify` installs the plugin into a temporary Codex profile, discovers 16 tools, and reads current USDC root state on Sepolia without a key or our laptops. It does not exercise a financial write. Do not present the Linux companion or native Windows writes as cross-platform verified.
 
 Source entry points:
 

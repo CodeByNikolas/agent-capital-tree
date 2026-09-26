@@ -28,7 +28,7 @@ The supported payment token is Circle Sepolia USDC at [`0x1c7D4B196Cb0C7B01d743F
 
 **Uniswap:** typed swaps and vault-owned LP positions use one fixed v4 pool. Management, fee collection and exit are separate permissions. The quote token is **DEMO-USD**, a clearly valueless six-decimal demo asset. Its pool price is not a real USD valuation. Agents cannot supply arbitrary router commands or redirect outputs.
 
-**Future work:** policy-checked generic contract transactions, cumulative/rolling spending budgets and cross-currency valuation are not implemented.
+**Future work:** policy-checked generic contract transactions, cumulative/rolling spending budgets, cross-currency valuation and a read-only agent-tree visualization inside Claude/Codex chats are not implemented.
 
 ## Dashboard
 
@@ -50,7 +50,9 @@ ENS roles are actual authorization, not descriptive text metadata. MultiBaas is 
 
 ## Run and test
 
-Use Node22, pnpm11.13.1, Docker and Foundry1.8.3. Follow the [complete setup guide](docs/local-setup.md) for wallet/operator separation, a private companion configuration and Codex MCP registration. Worker inference requires a reachable CLIProxyAPI endpoint and credential; a Codex login alone does not provide that service.
+For the keyless MCP jury proof, use Node22+, pnpm and Codex CLI on Windows, macOS or Linux: clone the current `work/rami` branch, run `pnpm install --frozen-lockfile --ignore-scripts`, build the SDK and plugin, then run `pnpm mcp:doctor` and `pnpm mcp:verify`. The latter installs the plugin into a disposable Codex profile, discovers all 16 tools and reads the live USDC tree; it cannot send a write. See [the exact commands and limits](docs/local-setup.md).
+
+Full agent actions are separate and currently Linux-only (Windows through WSL2). They additionally require Docker, a wallet/operator setup, a reachable Sepolia RPC and CLIProxyAPI access; a Codex login alone does not provide inference for the worker. Native Windows financial writes and fresh external-laptop write onboarding are not verified. For the full development suite, use Node22, pnpm11.13.1, Docker and Foundry1.8.3:
 
 ```sh
 git clone --recurse-submodules https://github.com/CodeByNikolas/agent-capital-tree.git

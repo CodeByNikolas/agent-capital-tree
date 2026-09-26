@@ -16,12 +16,18 @@ Nutzerentscheidung: Rapid Prototyping, keine Abwärtskompatibilität, kein Legac
 
 ## Jetzt laufend / nächste Schritte
 
+### Hackathon-MCP-Read-Proof (26.09.)
+
+- Implementiert und gepusht als `a348a40`: `pnpm mcp:doctor` und `pnpm mcp:verify` ohne private Konfiguration. Windows-Doctor: Node v24.18.0, pnpm 11.13.1, Host-Codex 0.157.0. Frisches temporäres Codex-Profil: genau ein `capital-tree`-Server, 16/16 Tools, Live-USDC-Root 1 mit zwei Knoten auf Sepolia-Block 11785724; lokaler Write-Pfad wurde mit 404 abgewiesen. Der Test nutzt öffentlichen App-Deployment-Abgleich und Direct-RPC, sendet keine Transaktion. Profil nach Test entfernt.
+- Native Windows-CLI bricht vor Dateizugriff mit klarer WSL2-Anweisung ab. `/mcp`, `docs/local-setup.md`, Plugin-README und Jury-Ablauf trennen den keyless Read-Proof von Linux-only Finanzaktionen. WSL2-, macOS- und fremde Laptop-Finanzwrites **nicht** nachgewiesen.
+- Geprüft: Plugin 7/7 Tests, Web-Typecheck und lokaler Next.js-Produktionsbuild. Noch zu prüfen: veröffentlichte `/mcp`-Route nach Deploy, frischer Judge-Laptop außerhalb dieses Rechners. Kein neuer Pitch-Root und keine weitere USDC-Ausgabe erfolgt. Der Default-Branch `main` ist noch älter; Jury-Clone vor Integration ausdrücklich mit `--branch work/rami`.
+
 ### Neu geplant: portabler lokaler MCP
 
 - Produktentscheidung: kein öffentlicher Remote-MCP und kein Cloud-Signer. Judges betreiben Plugin und Companion auf ihrem eigenen Laptop; Team-Rechner müssen nicht erreichbar sein.
 - Der gebündelte stdio-MCP ist auf dem aktuellen Windows-Arbeitsplatz grün: Typecheck plus 7/7 Plugin-Tests einschließlich Handshake, Tool-Discovery, strikter Schema-Prüfung, Bearer-Weiterleitung und Fail-Closed-Verhalten. Der öffentliche aktuelle USDC-Controller lieferte Root 1 per Direct-RPC mit zwei Knoten. Diese Nachweise beweisen noch keinen portablen Companion.
 - Der aktuelle Blocker ist klar eingegrenzt: Companion, private Dateiprüfungen, Worker-Gateway und Bind-Mounts setzen Linux-UIDs, `0600/0700` und Unix-Sockets voraus. Native Windows-Ausführung scheitert deshalb erwartbar; ein anderer Pfad darf diese Prüfungen nicht einfach abschalten.
-- Die `/mcp`-Darstellung wurde parallel bereits auf 16 Tools einschließlich `getPaymentServices` und `purchaseService` sowie Bash-/PowerShell-Hinweise synchronisiert. Diese abgeschlossene UI-Korrektur ist nicht Teil der noch offenen Runtime-Portierung.
+- Die `/mcp`-Darstellung spiegelt 16 Tools einschließlich `getPaymentServices` und `purchaseService`. Der neue Keyless-Read-Prüfpfad verwendet dieselben Befehle in Bash und PowerShell; Agent Actions bleiben separat Linux/WSL2.
 - Nächste Implementierungsreihenfolge: (1) portable Gateway-/Launcher-Schnittstellen und Negativtests fixieren; (2) internes Docker-Netz mit workergebundenen Gateway-Berechtigungen; (3) Companion-Container und getrennte Volumes; (4) Host-Launcher und Setup/Doctor; (5) Plugin-Manifest/Anleitung; (6) Windows/macOS/Linux-E2E; (7) neuer kleiner Sepolia-Akzeptanzroot.
 - Technisch ungeprüft bleiben insbesondere Docker-Desktop-Netzisolierung auf Windows/macOS, Multi-Arch-Images, sichere Secret-Einspeisung in Named Volumes, Companion-Neustart/Reconciliation und ein echter Finanz-Write aus einem frischen externen Laptop-Profil. Bis zu diesen Nachweisen ist „auf jedem Laptop“ kein erfülltes Abnahmekriterium.
 

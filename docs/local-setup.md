@@ -1,6 +1,24 @@
 # Local companion and MCP setup
 
-This is the Linux/Codex CLI path. Desktop-app environment inheritance and a native macOS runtime have not been independently verified. The Docker worker uses a pinned Linux Codex binary. Keep the owner wallet separate from the runtime operator; never import your owner key into the companion.
+## Fast jury check: read-only MCP on Windows, macOS or Linux
+
+With Node 22+, pnpm and Codex CLI installed, run the following in PowerShell or Bash. The `work/rami` branch contains this current proof until it is integrated into the default branch. No wallet, private configuration, Docker, runtime bearer, operator or team laptop is needed. Internet access to the public app and Sepolia RPC is required.
+
+```sh
+git clone --branch work/rami https://github.com/CodeByNikolas/agent-capital-tree.git
+cd agent-capital-tree
+pnpm install --frozen-lockfile --ignore-scripts
+pnpm --filter @agent-capital-tree/sdk build
+pnpm --filter @agent-capital-tree/plugin build
+pnpm mcp:doctor
+pnpm mcp:verify
+```
+
+`mcp:verify` creates a fresh temporary Codex profile, installs the local marketplace plugin, confirms exactly one enabled `capital-tree` MCP and all 16 tools, then calls the installed server's `getTree` on the current public USDC root. Its temporary loopback bridge implements **only** `getTree`; a write request is rejected. The profile is removed afterwards. This proves install, discovery, handshake and a live chain read, **not** a persistent personal install, autonomous worker or financial write. The host Codex CLI may be newer than the separately pinned Linux worker CLI 0.154.0. `ACT_APP_URL` and `ACT_SEPOLIA_RPC_URL` optionally override the public endpoints for controlled verification; neither is a secret. Do not use this test to replay the completed payment/root.
+
+## Full agent actions: Linux companion only
+
+The remainder is the Linux/Codex CLI path. On Windows, use WSL2 with Linux-local paths and a working Docker integration; native PowerShell execution of `packages/runtime/cli.mjs` deliberately fails with a WSL2 message. Native macOS and cross-platform Docker-companion onboarding have not been independently verified. These instructions are not a claim that a fresh Judge laptop can already perform financial writes. Desktop-app environment inheritance is also unverified. The Docker worker uses a pinned Linux Codex binary. Keep the owner wallet separate from the runtime operator; never import your owner key into the companion.
 
 ## 1. Prepare the checkout and worker
 

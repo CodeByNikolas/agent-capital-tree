@@ -2,6 +2,14 @@
 
 Stand: 26. September 2026. Produktentscheidungen sind festgelegt; Implementierung läuft, der tatsächliche Abnahmestand steht in STATUS.md. Dieser Plan ersetzt frühere Brainstorming-Varianten. Nach Kontextkomprimierung zuerst diesen Plan und STATUS.md lesen.
 
+## Hackathon-Schnitt 26.09.: erst beweisbarer Read-only-MCP
+
+Die unten beschriebene plattformneutrale Container-Architektur bleibt das spätere Vollziel, ist aber **keine Behauptung für diese Abgabe**. Priorität hat jetzt ein auf Windows/macOS/Linux wiederholbarer, schlüsselloser Nachweis: `pnpm mcp:doctor` und `pnpm mcp:verify` aus einem frischen Checkout, temporäres Codex-Profil, lokale Marketplace-Installation, genau ein `capital-tree`-MCP, 16 Tools und Live-`getTree` auf dem aktuellen USDC-Sepolia-Controller. Die Bridge akzeptiert ausschließlich diesen Read und löscht das Testprofil. Die öffentliche App und das lokale Manifest müssen auf denselben Controller zeigen. Keine alte Root-/Payment-Transaktion wiederholen.
+
+Future-Work-Idee: Agentenbaum und Knotenstatus innerhalb eines Claude-/Codex-Chats visualisieren, auf Basis der bestehenden MCP-Reads und mit klarer Kennzeichnung von Blockhöhe/Aktualität. Host-spezifische Darstellungswege und deren Unterstützung erst prüfen; keine zusätzliche Finanzberechtigung aus einer Visualisierung ableiten.
+
+Finanzaktionen bleiben davon streng getrennt. Der bestehende Companion ist Linux-only; Windows verlangt WSL2 und Linux-Dateipfade. Die Website und Doku dürfen ihn nicht als nativen Windows- oder allgemein portablen Write-Pfad ausgeben. Frisches externes Wallet-/Operator-/Plugin-Write-E2E, Docker-Desktop-/macOS-Läufe und die unten aufgeführten Container-L0–L8-Pakete bleiben offen. Die Jury kann den schlüssellosen MCP-Read auch bei ausgeschalteten Team-Laptops ausführen, benötigt aber Internet zum öffentlichen App-Deployment und Sepolia-RPC.
+
 ## Aktuelle Erweiterung: plattformneutraler lokaler MCP
 
 Nutzerentscheidung 26.09.: Der Jury-Pfad bleibt lokal und selbstverwaltet. Es wird kein öffentlicher Remote-MCP, kein Cloud-Signer und keine dauerhaft gehostete Finanz-Runtime eingeführt. Jeder Nutzer beziehungsweise Judge installiert das Plugin und betreibt den Companion auf seinem eigenen Laptop; Team-Laptops dürfen dabei ausgeschaltet sein. Das Installieren des Plugins allein genügt weiterhin nicht: Finanz- und Worker-Werkzeuge benötigen den laufenden, authentifizierten Companion sowie eigene RPC-, Modell- und Wallet-Voraussetzungen.

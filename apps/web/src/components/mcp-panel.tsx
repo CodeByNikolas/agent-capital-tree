@@ -5,37 +5,13 @@ import { mcpServerMeta, mcpTools } from "@/lib/mcp-tools";
 import type { PublicDeployment } from "@/lib/deployment";
 import type { VaultNode } from "@/lib/dashboard-types";
 
-const buildSnippet = `pnpm --filter @agent-capital-tree/plugin build`;
-
-const companionSnippet = `# 1. one-time: prepare the operator key (prints only the public address)
-node packages/runtime/cli.mjs prepare-root /absolute/private-config.json
-
-# 2. start the companion — it prints the loopback toolsOrigin and the token file path
-node packages/runtime/cli.mjs start /absolute/private-config.json --enable-sepolia-writes`;
-
-const envSnippetBash = `# Bash — set in the shell that launches Codex. The bearer is never printed.
-export ACT_RUNTIME_URL="http://127.0.0.1:<port>"                        # the loopback toolsOrigin
-export ACT_MCP_TOKEN="$(< /absolute/runtime-root/root-session.token)"  # 0600 file; do not echo it`;
-
-const envSnippetPwsh = `# PowerShell — set in the shell that launches Codex. The bearer is never printed.
-$env:ACT_RUNTIME_URL = "http://127.0.0.1:<port>"                                            # loopback toolsOrigin
-$env:ACT_MCP_TOKEN   = (Get-Content -Raw C:\\absolute\\runtime-root\\root-session.token).Trim()  # do not echo`;
-
-const tomlSnippet = `[mcp_servers.capital_tree_root]
-command = "node"
-args = ["/absolute/path/to/packages/plugin/bundle/server.mjs"]
-tool_timeout_sec = 300
-env_vars = ["ACT_RUNTIME_URL", "ACT_MCP_TOKEN"]`;
-
-const verifyTomlSnippet = `codex mcp get capital_tree_root --json   # tool_timeout_sec = 300, env_vars lists both names`;
-
-const marketplaceSnippet = `codex plugin marketplace add /absolute/path/to/this/repo
-codex plugin add agent-capital-tree@agent-capital-tree
-codex mcp list --json                    # shows the enabled "capital-tree" server`;
-
-const installCheckSnippet = `node scripts/test-plugin-install.mjs /absolute/private-runtime-config.json`;
-
-const defaultPrompt = "Show my Agent Capital Tree and the effective mandate for each node.";
+const verifySnippet = `git clone --branch work/rami https://github.com/CodeByNikolas/agent-capital-tree.git
+cd agent-capital-tree
+pnpm install --frozen-lockfile --ignore-scripts
+pnpm --filter @agent-capital-tree/sdk build
+pnpm --filter @agent-capital-tree/plugin build
+pnpm mcp:doctor
+pnpm mcp:verify`;
 
 export function McpPanel({
   deployment,
@@ -90,6 +66,7 @@ export function McpPanel({
           <span>{runtimeLabel}</span>
           <InfoHint term="runtime" />
         </div>
+        <p className="mcp-lede">This is dashboard data, not a live check of a Codex MCP process on your laptop.</p>
         <div className="mcp-facts-groups">
           <dl className="mcp-facts">
             {serverFacts.map(([key, value]) => (
@@ -139,86 +116,49 @@ export function McpPanel({
       <section className="panel mcp-panel" aria-labelledby="mcp-setup-title">
         <div className="panel-heading">
           <span className="panel-overline">Setup guide</span>
-          <h2 id="mcp-setup-title">Wire it into Codex</h2>
+          <h2 id="mcp-setup-title">Verify the MCP, then enable actions</h2>
         </div>
         <p className="mcp-lede">
-          The plugin runs locally and proxies to your companion. <strong>Replace every placeholder</strong> — <code>&lt;port&gt;</code> and
-          any <code>/absolute/...</code> path (on Windows use a real path like <code>C:\act\config.json</code>) — with your own
-          values; the guide won&apos;t work if you paste them verbatim. Shell-specific commands show both Bash and PowerShell —
-          use the one for your terminal. The two registration paths in step 5 are alternatives — pick one, don&apos;t register
-          both in the same profile.
+          Clone the public repository and run these commands from its root in PowerShell or Bash. The read-only check
+          creates a temporary Codex profile, installs the marketplace plugin, discovers all 16 tools, and calls
+          <code> getTree</code> on the live USDC Sepolia tree. It uses a local bridge that refuses writes; no wallet,
+          operator key, runtime token, Docker, or team laptop is needed.
         </p>
 
         <ol className="setup-steps mcp-steps">
           <li className="setup-step">
             <span>1</span>
             <div>
-              <strong>Prerequisites</strong>
+              <strong>Read-only verification</strong>
               <small>
-                Node ≥ 22, pnpm, Docker, Codex CLI 0.154.0, a funded Sepolia wallet, and your own CLIProxyAPI model
-                access. Keep every key local and outside the repo. Canonical docs: <code>packages/runtime/README.md</code>{" "}
-                and <code>packages/plugin/README.md</code>.
+                Install Node 22 or newer, pnpm and Codex CLI. Internet access to the published app and Sepolia RPC is
+                required. The host Codex version may be newer than the pinned 0.154.0 worker image.
               </small>
+              <CopyBlock code={verifySnippet} label="read-only MCP verification commands" />
             </div>
           </li>
           <li className="setup-step">
             <span>2</span>
             <div>
-              <strong>Build the plugin</strong>
-              <small>Produces the bundled stdio server the manifests point at.</small>
-              <CopyBlock code={buildSnippet} label="build command" />
+              <strong>Interpret the result</strong>
+              <small>
+                Look for <code>toolCount: 16</code>, <code>chainId: 11155111</code> and <code>writes: disabled</code>.
+                This proves packaging, installation, MCP handshake and a current chain read. The temporary profile
+                is removed afterwards; it does not install a persistent personal companion.
+              </small>
             </div>
           </li>
           <li className="setup-step">
             <span>3</span>
             <div>
-              <strong>Start the companion</strong>
+              <strong>Enable agent actions separately</strong>
               <small>
-                It binds to 127.0.0.1 and prints the loopback <code>toolsOrigin</code> and the private{" "}
-                <code>root-session.token</code> path. Omit <code>--enable-sepolia-writes</code> to keep writes off.
+                Financial writes are a separate Linux companion setup with your own Sepolia wallet, RPC and CLIProxyAPI
+                access. On Windows, run that Linux setup in WSL2; native PowerShell cannot run the current companion.
+                Follow <code>docs/local-setup.md</code> and <code>packages/plugin/README.md</code>. Do not reuse the
+                completed demo root or payment runner. Containerized cross-platform onboarding and fresh-laptop write
+                verification are still open.
               </small>
-              <CopyBlock code={companionSnippet} label="companion commands" />
-            </div>
-          </li>
-          <li className="setup-step">
-            <span>4</span>
-            <div>
-              <strong>Set the two env vars</strong>
-              <small>A new bearer is issued on every start — refresh these before launching another Codex process.</small>
-              <span className="mcp-shell-tag">Bash · macOS / Linux</span>
-              <CopyBlock code={envSnippetBash} label="environment variables (Bash)" />
-              <span className="mcp-shell-tag">PowerShell · Windows</span>
-              <CopyBlock code={envSnippetPwsh} label="environment variables (PowerShell)" />
-            </div>
-          </li>
-          <li className="setup-step">
-            <span>5</span>
-            <div>
-              <strong>Register with Codex — pick one path</strong>
-              <details className="setup-disclosure mcp-path">
-                <summary>Path A · explicit registration (recommended for long writes, 300 s)</summary>
-                <small>Add this table to the root profile&apos;s <code>config.toml</code>, then verify the effective setting.</small>
-                <CopyBlock code={tomlSnippet} label="config.toml block" />
-                <CopyBlock code={verifyTomlSnippet} label="verify command" />
-              </details>
-              <details className="setup-disclosure mcp-path">
-                <summary>Path B · marketplace install (reads / short actions, 60 s default)</summary>
-                <small>
-                  The installed server keeps Codex&apos;s default 60-second per-tool timeout. Set the same env vars in the
-                  launching shell.
-                </small>
-                <CopyBlock code={marketplaceSnippet} label="marketplace commands" />
-              </details>
-            </div>
-          </li>
-          <li className="setup-step">
-            <span>6</span>
-            <div>
-              <strong>Verify</strong>
-              <small>
-                Ask the agent the default prompt: <em>“{defaultPrompt}”</em>. For a hands-off read-only end-to-end check:
-              </small>
-              <CopyBlock code={installCheckSnippet} label="install check" />
             </div>
           </li>
         </ol>
@@ -234,7 +174,7 @@ export function McpPanel({
         </div>
         <ul className="mcp-security-list">
           <li>Holds no wallet key and no provider credential — it only forwards requests to your companion.</li>
-          <li>The MCP token is a local <code>0600</code> file, re-issued on every start, and never printed to the terminal.</li>
+          <li>In full Linux companion mode, the MCP token is a local <code>0600</code> file, re-issued on every start and never printed to the terminal.</li>
           <li>The companion binds the bearer to the real root/worker context; a model-supplied <code>agentId</code> is rejected.</li>
           <li>On an uncertain write, tools never claim success — reconcile with <code>getOperationStatus</code> or the chain before retrying.</li>
         </ul>
