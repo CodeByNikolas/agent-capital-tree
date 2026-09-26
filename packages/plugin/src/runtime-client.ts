@@ -11,7 +11,7 @@ export class RuntimeClient {
 
   async call(name: ToolName, rawArgs: unknown): Promise<unknown> {
     const args = toolSpecs[name].schema.parse(rawArgs);
-    if (!this.endpoint || !this.bearer) throw new RuntimeError('Local Agent Capital Tree runtime is not configured. Set ACT_RUNTIME_URL and ACT_MCP_TOKEN through trusted local setup.');
+    if (!this.endpoint || !this.bearer) throw new RuntimeError('Local Kanoki runtime is not configured. Set ACT_RUNTIME_URL and ACT_MCP_TOKEN through trusted local setup.');
     let url: URL;
     try { url = new URL(this.endpoint); }
     catch { throw new RuntimeError('Invalid ACT_RUNTIME_URL.'); }

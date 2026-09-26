@@ -1,9 +1,9 @@
 {
-  "name": "agent-capital-tree",
-  "interface": { "displayName": "Agent Capital Tree" },
+  "name": "kanoki",
+  "interface": { "displayName": "Kanoki" },
   "plugins": [
     {
-      "name": "agent-capital-tree",
+      "name": "kanoki",
       "source": { "source": "local", "path": "./packages/plugin" },
       "policy": { "installation": "AVAILABLE", "authentication": "ON_INSTALL" },
       "category": "Productivity"

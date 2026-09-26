@@ -6,7 +6,7 @@ import { join } from 'node:path';
 export function browserCommand(url, platform = process.platform, env = process.env) {
   const target = new URL(url);
   if (!['https://agent-capital-tree.vercel.app', 'https://agent-capital-tree-silk.vercel.app'].includes(target.origin) || target.pathname !== '/setup' || target.username || target.password) {
-    throw new Error('Only the public Agent Capital Tree wallet setup page can be opened.');
+    throw new Error('Only the public Kanoki wallet setup page can be opened.');
   }
   if (platform === 'win32') return { command: join(env.SystemRoot ?? 'C:\\Windows','System32','rundll32.exe'), args:['url.dll,FileProtocolHandler',target.href] };
   if (platform === 'darwin') return { command:'/usr/bin/open', args:[target.href] };

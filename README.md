@@ -1,4 +1,4 @@
-# Agent Capital Tree
+# Kanoki
 
 **Give AI agents capital without giving them the whole wallet.** A human funds a root vault, then agents delegate smaller amounts into separate child vaults. ENSv2 roles and contract-enforced ancestor policies narrow what each child can do. The owner retains an independent recovery path.
 

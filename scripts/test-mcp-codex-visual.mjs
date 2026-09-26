@@ -4,7 +4,7 @@ import assert from 'node:assert/strict';
 import { spawn } from 'node:child_process';
 import { access, writeFile } from 'node:fs/promises';
 
-const server=process.env.ACT_CAPITAL_MODE==='1'?'capital_tree_demo':'capital_tree_readonly';
+const server='kanoki';
 const query=process.env.ACT_TREE_QUERY??'capital.agentcapitalvault.eth';
 assert.match(query,/^[a-z0-9.-]+$/,'Expected a public ENS name');
 const prompt=`Use only ${server}.getTree with query ${query}. What is this vault’s current state? Follow the server’s graphical response instructions. No shell, web, browser or write actions.`;

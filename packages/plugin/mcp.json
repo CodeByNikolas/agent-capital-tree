@@ -1,7 +1,7 @@
 {
   "$schema": "https://agent-plugins.org/schemas/1.0.0/mcp.schema.json",
   "mcpServers": {
-    "capital-tree": {
+    "kanoki": {
       "type": "stdio",
       "command": "node",
       "args": ["./bundle/server.mjs"],

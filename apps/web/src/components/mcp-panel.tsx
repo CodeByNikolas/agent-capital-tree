@@ -18,14 +18,14 @@ cd agent-capital-tree`;
 
 const installPwsh = `$actScript = (Resolve-Path -LiteralPath 'scripts/mcp-readonly-server.mjs').Path
 $actNode = (Get-Command node).Source
-codex mcp add capital_tree_readonly -- $actNode $actScript
-codex mcp get capital_tree_readonly --json`;
+codex mcp add kanoki -- $actNode $actScript
+codex mcp get kanoki --json`;
 
 const installBash = `test -f "$PWD/scripts/mcp-readonly-server.mjs" || { echo 'Run from checkout root' >&2; exit 1; }
-codex mcp add capital_tree_readonly -- "$(command -v node)" "$PWD/scripts/mcp-readonly-server.mjs"
-codex mcp get capital_tree_readonly --json`;
+codex mcp add kanoki -- "$(command -v node)" "$PWD/scripts/mcp-readonly-server.mjs"
+codex mcp get kanoki --json`;
 
-const imagePrompt = `For a new test vault, call capital_tree_readonly.prepareRootSetup with label "my-demo-agent" and budgetRaw "100000". Show its dashboard graphic. Let the MCP open my normal system browser with my existing wallet extension; do not open a separate chat browser. I will review and sign there.`;
+const imagePrompt = `For a new test vault, call kanoki.prepareRootSetup with label "my-demo-agent" and budgetRaw "100000". Show its dashboard graphic. Let the MCP open my normal system browser with my existing wallet extension; do not open a separate chat browser. I will review and sign there.`;
 
 export function McpPanel({
   deployment,
@@ -39,7 +39,7 @@ export function McpPanel({
   const demoRoot = deployment.recoveryOnly ? 'root-agent.agentcapitalusdc.eth' : `capital.${deployment.namespaceName}`;
   const deploymentFlag = deployment.recoveryOnly ? ' --deployment usdc-full-vaults' : '';
   // The separate keyless server always uses the canonical current deployment.
-  const chatPrompt = 'Call capital_tree_readonly.getTree with query "capital.agentcapitalvault.eth". Show the returned tree image in this chat and report its Sepolia block, observed time, Test-USDC balance and actual authorized actions. Do not use shell or web.';
+  const chatPrompt = 'Call kanoki.getTree with query "capital.agentcapitalvault.eth". Show the returned tree image in this chat and report its Sepolia block, observed time, Test-USDC balance and actual authorized actions. Do not use shell or web.';
   const capitalSnippet = `pnpm --filter @agent-capital-tree/multibaas build
 pnpm --filter @agent-capital-tree/runtime build
 pnpm mcp:capital check ${demoRoot}${deploymentFlag}
@@ -74,7 +74,7 @@ pnpm mcp:capital settings ${demoRoot}${deploymentFlag} --enable-sepolia-writes`;
 
       <section className="panel mcp-panel" aria-labelledby="mcp-capital-title">
         <div className="panel-heading"><span className="panel-overline">Recommended demo</span><h2 id="mcp-capital-title">Authorize once. Manage capital in chat.</h2></div>
-        {deployment.recoveryOnly && <p><strong>Existing-vault recovery:</strong> this site and the capital command below target the funded historical root, not an equally numbered root on the current controller. Use <code>capital_tree_demo.getTree</code> with <code>root-agent.agentcapitalusdc.eth</code> after registration. The separate keyless examples below use the current deployment. New roots belong on <a href="https://agent-capital-tree.vercel.app/setup?action=create-root">the canonical setup page</a>, not this recovery site.</p>}
+        {deployment.recoveryOnly && <p><strong>Existing-vault recovery:</strong> this site and the capital command below target the funded historical root, not an equally numbered root on the current controller. Use <code>kanoki.getTree</code> with <code>root-agent.agentcapitalusdc.eth</code> after registration. The separate keyless examples below use the current deployment. New roots belong on <a href="https://agent-capital-tree.vercel.app/setup?action=create-root">the canonical setup page</a>, not this recovery site.</p>}
         <p>Build the SDK and plugin with the commands below first, then use capital mode. It starts the local signing companion automatically. No private JSON configuration, CLIProxyAPI account or separate companion terminal.</p>
         <CopyBlock code={capitalSnippet} label="Capital demo setup — Linux or Windows with WSL2 and Node 22+" />
         <p>Add the printed STDIO entry in Codex or Claude settings and restart that MCP once after updating its code. The capital connection exposes 23 tools. Use <code>selectCapitalRoot</code> to choose a confirmed root inside the same session; a tree read never changes the write target. No restart is needed for that selection.</p>
@@ -89,7 +89,7 @@ pnpm mcp:capital settings ${demoRoot}${deploymentFlag} --enable-sepolia-writes`;
         <div className="panel-heading">
           <span className="panel-overline">Full companion</span>
           <h2 id="mcp-server-title">
-            <Plug size={18} aria-hidden="true" /> capital-tree
+            <Plug size={18} aria-hidden="true" /> kanoki
           </h2>
         </div>
         <div className="mcp-status mcp-status-idle" role="status">
@@ -208,7 +208,7 @@ pnpm mcp:capital settings ${demoRoot}${deploymentFlag} --enable-sepolia-writes`;
             <div>
               <strong>Call it from a new Codex chat</strong>
               <small>
-                Type <code>/mcp</code> in Codex and confirm <code>capital_tree_readonly</code>, then send this prompt.
+                Type <code>/mcp</code> in Codex and confirm <code>kanoki</code>, then send this prompt.
                 Expect chain 11155111, the current capital root and a recent block. This is a real MCP tool call, not a dashboard
                 connection indicator.
               </small>

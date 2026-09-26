@@ -4,7 +4,7 @@ import { fileURLToPath } from 'node:url';
 import { Client } from '../packages/plugin/node_modules/@modelcontextprotocol/sdk/dist/esm/client/index.js';
 import { StdioClientTransport } from '../packages/plugin/node_modules/@modelcontextprotocol/sdk/dist/esm/client/stdio.js';
 
-const client = new Client({ name: 'capital-tree-desktop-monitor', version: '0.1.0' });
+const client = new Client({ name: 'kanoki-desktop-monitor', version: '0.1.0' });
 const transport = new StdioClientTransport({
   command: process.execPath,
   args: [fileURLToPath(new URL('./mcp-readonly-server.mjs', import.meta.url))],
