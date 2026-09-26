@@ -1,7 +1,15 @@
 # Kanoki — Status
 
+## MCP connection audit — 26 September, 20:52 UTC
+
+- Fixed the private Codex registration pointing to deleted `.main-onboarding`; rebuilt the missing runtime bundle. Real STDIO MCP connected with 23 tools; setup/tree/PNG and budget validation passed twice. Other settings and private keys were preserved.
+- Latest read at block **11788671**: historical root 4 is **revoked and empty**, with no children. Previous owner-rebind/gas/two-child instructions below are obsolete for this root. Do not replenish it. No financial transaction was sent in this audit.
+- Added revoked-root setup/preparation protection. Runtime build and 14/14 focused Linux tests passed, including key preservation and rejected preparation before key creation. Details: `docs/mcp-connection-audit-2026-09-26.md`.
+- A fresh host connection is still needed to load the corrected registration; wallet/two-child E2E remains open. The active chat does not expose Capital tools. No autonomous worker started.
+
 As of 26 September 2026. Read this together with PLAN.md after context compaction. Older sections below retain the evidence and acceptance limits known at the time; the newest E2E status is first.
 
+<<<<<<< HEAD
 ## Kanoki — main integration
 
 The user now requires all publication from `main` to `https://kanoki-app.vercel.app/`. The integrated source preserves main’s proxy contracts/deployment, native workers, explicit recovery selection, owner-filtered vault suggestions and verified payment history. Uniswap and payment routes remain available under Applications. No contract or deployment manifest changed in this integration. Earlier branch/deployment records below are historical.
@@ -25,6 +33,19 @@ The user confirmed that `kanoki-app.vercel.app` belongs to `codebynikolas`, whic
 - Echter Codex-CLI-Read bestätigt Kanoki-Header, Textbaum und PNG-Link. Claude Code erhielt den Live-Tree auf Block11788596, bevorzugte aber `structuredContent` und ließ den Markdown-Header weg. Diese Host-Darstellung wird noch abgeglichen; kein fertiger Claude-GUI-Nachweis.
 
 ## Aktiver Abschluss: Circle USDC und x402
+=======
+## Curvegrid submission documentation
+
+- README now explains actual MultiBaas usage, the agent report, observed checkpoint lag, pagination/availability, and Default-plan backfill, rate, API-call and retention limits. The 100-block limit is explicitly historical backfill, not a rolling query visibility limit. Setup/tests and the separately sourced x402 history are linked.
+- Added the verified public project contact and existing two-person-team description. Preferred member introductions and the second public social link still await team input; submission readiness is not claimed.
+- README relative links and git diff whitespace checks passed. Documentation-only change; no contract or application behavior changed.
+
+## Agent activity report
+
+- Added /agent-activity to the dashboard navigation with a vault selector, exact per-token totals for allocations, delegation, reclaim/recovery and swap inputs/outputs, and the existing receipt-linked event log filtered to that vault. Uses the existing MultiBaas API; x402 remains a separate source.
+- Summaries cover loaded events only, disclose pagination and reported index lag, and distinguish loaded event blocks from the indexer's reported checkpoint. Loading uses skeletons; failed refreshes hide totals. No balance, P&L or lifetime-spend inference is made.
+- Exact-amount regression checks passed for direction, node isolation, duplicate IDs, separate swap assets and large integers. Web TypeScript and production build passed. Desktop/mobile browser checks used the real public Sepolia/MultiBaas read APIs; controlled responses tested skeleton/error states. No wallet transaction was sent.
+>>>>>>> origin/main
 
 ## Remaining work/rami integration
 

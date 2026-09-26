@@ -23,7 +23,7 @@ for (let i = 2; i < args.length; i++) {
 const launchArgs = [script, 'stdio', query, ...(explicitRoot ? ['--runtime-root', explicitRoot] : []), ...(recoveryDeployment ? ['--deployment', 'usdc-full-vaults'] : []), ...(writesEnabled ? ['--enable-sepolia-writes'] : [])];
 try {
 if (command === 'settings') {
-  console.log(JSON.stringify({ capital_tree_demo: { command: process.execPath, args: launchArgs } }, null, 2));
+  console.log(JSON.stringify({ kanoki: { command: process.execPath, args: launchArgs } }, null, 2));
 } else if (process.platform === 'win32') {
   const linuxScript = execFileSync('wsl.exe', ['--exec', 'wslpath', '-u', script], { encoding: 'utf8', windowsHide: true }).trim();
   // Arguments remain positional, never inserted into shell source. Login shell loads the user's Node path.
@@ -120,7 +120,7 @@ if (command === 'settings') {
         const result = await (await runtime()).call(name, args);
         return { ...result, controller, activeMcpRootId: session.rootId, targetRootId: session.rootId, backgroundWorker: 'not_requested' };
       };
-    const server = await visualServer({ name: 'agent-capital-tree-capital', specs,
+    const server = await visualServer({ name: 'kanoki', specs,
       instructions: 'Show every returned graphic. Onboarding: prepareRootSetup → wallet confirms root → selectCapitalRoot(ENS) → getCapitalSetup → prepareCapitalSetup (or explicit prepareOperatorRecovery) → owner wallet authorization/funding/gas → getCapitalSetup → createChildVault with expectedRootId. Root selection persists ONLY within this session; no restart for selection. Reading another tree never changes the active root. Budget is shared across all vaults. No background worker is launched. Never repeat completed funding. After actions show getTree.',
       execute: (name, input) => { const result = queue.then(() => execute(name, input)); queue = result.catch(() => {}); return result; },
       describeError: safeCapitalError });

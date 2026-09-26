@@ -3,7 +3,7 @@ import { getPublicDeployment } from "@/lib/deployment";
 import { previewDashboard } from "@/lib/preview-data";
 import { notFound } from "next/navigation";
 
-export type DashboardView = "overview" | "tree" | "activity" | "uniswap" | "payments" | "applications" | "mcp" | "setup";
+export type DashboardView = "overview" | "tree" | "activity" | "agent-activity" | "uniswap" | "payments" | "applications" | "mcp" | "setup";
 export type DashboardSearchParams = Promise<{ root?: string | string[]; vault?: string | string[]; preview?: string | string[]; node?: string | string[]; action?: string | string[]; label?: string | string[]; budget?: string | string[]; operator?: string | string[]; tour?: string | string[]; step?: string | string[] }>;
 
 export async function renderDashboard(view: DashboardView, searchParams: DashboardSearchParams) {

@@ -27,8 +27,8 @@ First choose a new lowercase root label and derive its ENS name under `agentcapi
 ```powershell
 $actScript = (Resolve-Path -LiteralPath 'packages/runtime/capital.mjs').Path
 $actNode = (Get-Command node).Source
-codex mcp add capital_tree_demo -- $actNode $actScript stdio YOUR_INTENDED_ROOT_ENS_NAME --enable-sepolia-writes
-codex mcp get capital_tree_demo --json
+codex mcp add kanoki -- $actNode $actScript stdio YOUR_INTENDED_ROOT_ENS_NAME --enable-sepolia-writes
+codex mcp get kanoki --json
 
 ```
 
@@ -55,7 +55,7 @@ The user's funded historical root is `root-agent.agentcapitalusdc.eth`, vault `0
 On the current Windows machine the repaired, registered checkout is `.main-onboarding` on **main**. The outer checkout contains another contributor's in-progress changes and is not the MCP source. Run commands below from the repaired checkout. The recovery wallet UI is deployed at `https://agent-capital-tree-silk.vercel.app`; it preserves the historical controller and disables new-root creation. Use the canonical current deployment for a genuinely new root, not this recovery connection. A host restart is only needed to load an updated server/catalog; `selectCapitalRoot` switches roots within an already-running capital session.
 
 ```powershell
-codex mcp add capital_tree_demo -- $actNode $actScript stdio root-agent.agentcapitalusdc.eth --deployment usdc-full-vaults --enable-sepolia-writes
+codex mcp add kanoki -- $actNode $actScript stdio root-agent.agentcapitalusdc.eth --deployment usdc-full-vaults --enable-sepolia-writes
 ```
 
 This recovery connection uses the preserved historical manifest and the separate recovery site, does not migrate funds and cannot create new roots. The canonical app stays on the current deployment. `node scripts/test-capital-onboarding.mjs` checks this exact historical root without writes. `--prepare-recovery` prepares a private local key only; `--execute-demo` sends the two authorized 0.02-USDC allocations only after all checks pass and reuses fixed operation keys on repeats. Do not run it before owner authorization and gas are confirmed. Public evidence is written under `artifacts/ui/root-4-*`; no secret is exported.
@@ -94,8 +94,8 @@ The proof above does **not** leave an MCP installed in your personal profile. To
 ```powershell
 $actScript = (Resolve-Path -LiteralPath 'scripts/mcp-readonly-server.mjs').Path
 $actNode = (Get-Command node).Source
-codex mcp add capital_tree_readonly -- $actNode $actScript
-codex mcp get capital_tree_readonly --json
+codex mcp add kanoki -- $actNode $actScript
+codex mcp get kanoki --json
 codex mcp list --json
 
 ```
@@ -104,16 +104,16 @@ In Bash:
 
 ```sh
 test -f "$PWD/scripts/mcp-readonly-server.mjs" || { echo 'Run this from the current checkout root' >&2; exit 1; }
-codex mcp add capital_tree_readonly -- "$(command -v node)" "$PWD/scripts/mcp-readonly-server.mjs"
-codex mcp get capital_tree_readonly --json
+codex mcp add kanoki -- "$(command -v node)" "$PWD/scripts/mcp-readonly-server.mjs"
+codex mcp get kanoki --json
 
 ```
 
-The resulting configuration contains only the Node executable and an absolute path to the script; no bearer or wallet key is needed. If `capital_tree_readonly` already exists, inspect it with `codex mcp get capital_tree_readonly --json` before changing anything. If its script path does not exist, remove **only that entry** with `codex mcp remove capital_tree_readonly`, then add it again using the resolved path. For a GUI-only route, use ChatGPT desktop **Settings → MCP servers → Add server → STDIO**; paste the **Command** and **Argument** printed by `pnpm mcp:settings`, then Save and Restart. [OpenAI's MCP documentation](https://learn.chatgpt.com/docs/extend/mcp) says the desktop app and Codex CLI share MCP configuration for the same host and `/mcp` lists connected servers. Do not add both GUI and CLI registrations under different names in the same profile. If a Codex-controlled shell reports an empty `codex mcp list` while the real desktop has entries, check `codex doctor --json`: the shell may be running under an isolated Codex home. Run the check in your normal PowerShell outside the agent sandbox.
+The resulting configuration contains only the Node executable and an absolute path to the script; no bearer or wallet key is needed. If `kanoki` already exists, inspect it with `codex mcp get kanoki --json` before changing anything. If its script path does not exist, remove **only that entry** with `codex mcp remove kanoki`, then add it again using the resolved path. For a GUI-only route, use ChatGPT desktop **Settings → MCP servers → Add server → STDIO**; paste the **Command** and **Argument** printed by `pnpm mcp:settings`, then Save and Restart. [OpenAI's MCP documentation](https://learn.chatgpt.com/docs/extend/mcp) says the desktop app and Codex CLI share MCP configuration for the same host and `/mcp` lists connected servers. Do not add both GUI and CLI registrations under different names in the same profile. If a Codex-controlled shell reports an empty `codex mcp list` while the real desktop has entries, check `codex doctor --json`: the shell may be running under an isolated Codex home. Run the check in your normal PowerShell outside the agent sandbox.
 
-Open a **new Codex chat** in the ChatGPT desktop app, select this project, type `/mcp` and confirm `capital_tree_readonly` is enabled. Then ask:
+Open a **new Codex chat** in the ChatGPT desktop app, select this project, type `/mcp` and confirm `kanoki` is enabled. Then ask:
 
-> Use `capital_tree_readonly.getTree` with `query: "capital.agentcapitalvault.eth"`. Show its graph and report its Sepolia block, observation time, root vault, balances and current authorized actions. Do not use shell or another source.
+> Use `kanoki.getTree` with `query: "capital.agentcapitalvault.eth"`. Show its graph and report its Sepolia block, observation time, root vault, balances and current authorized actions. Do not use shell or another source.
 
 The answer should name Sepolia chain `11155111`, the current root ID and a recent block. Always read the current funding and rights from that snapshot: `capital` changed externally from empty to 0.10 Test-USDC with active rights during development. Do not assume an old balance or reuse it for a write test without checking its owner/operator. You can also pass a vault address or numeric root ID. The dashboard cannot inspect the local STDIO session.
 
@@ -134,14 +134,14 @@ For Claude Code on the same laptop, use the same absolute paths printed by `pnpm
 ```powershell
 $actScript = (Resolve-Path -LiteralPath 'scripts/mcp-readonly-server.mjs').Path
 $actNode = (Get-Command node).Source
-claude mcp add --scope user capital_tree_readonly -- $actNode $actScript
-claude mcp get capital_tree_readonly
+claude mcp add --scope user kanoki -- $actNode $actScript
+claude mcp get kanoki
 
 ```
 
 `claude mcp get` must show `Connected`. Then ask for `visualizeTree` in Claude Code. Claude may ask you to approve that read-only tool once. Do not grant a blanket write permission. This Claude Code configuration is **separate** from the Claude Desktop chat configuration. [Claude Code's MCP guide](https://code.claude.com/docs/en/mcp) explains local STDIO installation and scopes.
 
-For Claude Desktop chat, open **Settings → Developer** and edit its local MCP configuration (`%APPDATA%\Claude\claude_desktop_config.json` on Windows). Merge the `capital_tree_readonly` entry printed by `pnpm mcp:settings` under the existing `mcpServers` object; do not replace other servers. Fully quit and reopen Claude Desktop, then check **+ → Connectors** and Developer connection status. Anthropic documents this [local configuration](https://py.sdk.modelcontextprotocol.io/get-started/real-host/) and the [Desktop connection check](https://support.claude.com/en/articles/10949351-getting-started-with-local-mcp-servers-on-claude-desktop). A packaged `.mcpb` extension for one-click install via Settings → Extensions is **not** supplied yet; do not select a random remote connector, which would require a publicly reachable server. Claude Desktop chat itself has not yet been manually verified with this project.
+For Claude Desktop chat, open **Settings → Developer** and edit its local MCP configuration (`%APPDATA%\Claude\claude_desktop_config.json` on Windows). Merge the `kanoki` entry printed by `pnpm mcp:settings` under the existing `mcpServers` object; do not replace other servers. Fully quit and reopen Claude Desktop, then check **+ → Connectors** and Developer connection status. Anthropic documents this [local configuration](https://py.sdk.modelcontextprotocol.io/get-started/real-host/) and the [Desktop connection check](https://support.claude.com/en/articles/10949351-getting-started-with-local-mcp-servers-on-claude-desktop). A packaged `.mcpb` extension for one-click install via Settings → Extensions is **not** supplied yet; do not select a random remote connector, which would require a publicly reachable server. Claude Desktop chat itself has not yet been manually verified with this project.
 
 This is a local Codex chat, not a normal chat at chatgpt.com. ChatGPT web does not read local Codex config or start this STDIO process. The [official distinction](https://learn.chatgpt.com/docs/extend/mcp?surface=cli) matters for jury instructions. The keyless server prepares the owner-wallet setup but has no financial signer; the full 17-tool companion remains separate. Avoid registering both under different names in the same chat to prevent duplicate `getTree` tools.
 
@@ -283,14 +283,14 @@ After building SDK, plugin and runtime, register the private launcher as a **sep
 Use this launcher with the current native OpenAI API-key worker configuration or ChatGPT login; it does not require CLIProxyAPI.
 
 ```toml
-[mcp_servers.capital_tree_root]
+[mcp_servers.kanoki]
 command = "node"
 args = ["/your/linux/checkout/packages/runtime/mcp-stdio.mjs", "/your/private/runtimeRoot"]
 tool_timeout_sec = 300
 
 ```
 
-If Codex runs on Windows while the companion runs in WSL2, use `command = "wsl.exe"` and prepend `"--exec", "/absolute/linux/path/to/node"` to `args`; the default WSL distribution must be the one running the companion. Find that Node path with `wsl --exec sh -lc 'command -v node'` in PowerShell. A bare `node` after `wsl --exec` is **not reliable** when Node is installed via nvm: WSL does not load the interactive shell. The launcher validates the private directory/domain/chain, loads the current loopback origin and rotated token inside WSL2, then starts the existing bundled 17-tool MCP without printing either secret. If the companion is stopped, the launcher fails closed. Check registration with `codex mcp get capital_tree_root --json` and restart the chat after changing modes.
+If Codex runs on Windows while the companion runs in WSL2, use `command = "wsl.exe"` and prepend `"--exec", "/absolute/linux/path/to/node"` to `args`; the default WSL distribution must be the one running the companion. Find that Node path with `wsl --exec sh -lc 'command -v node'` in PowerShell. A bare `node` after `wsl --exec` is **not reliable** when Node is installed via nvm: WSL does not load the interactive shell. The launcher validates the private directory/domain/chain, loads the current loopback origin and rotated token inside WSL2, then starts the existing bundled 17-tool MCP without printing either secret. If the companion is stopped, the launcher fails closed. Check registration with `codex mcp get kanoki --json` and restart the chat after changing modes.
 
 See the [plugin guide](../packages/plugin/README.md) for the 17 tool schemas. The standalone plugin includes `bundle/visual-assets` (WASM and fonts) and always returns PNGs for tool responses, with Mermaid fallback for hosts that cannot display images. Keep the assets alongside `bundle/server.mjs`.
 On Linux, restart the root Codex session after registering the launcher; it reads the current token from the private runtime directory. No token needs to be copied into the root Codex environment.

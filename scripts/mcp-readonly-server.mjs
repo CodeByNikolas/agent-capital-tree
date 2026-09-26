@@ -29,7 +29,7 @@ async function execute(name,args) {
   }
 }
 
-const server=await visualServer({name:'agent-capital-tree-readonly',specs,execute,
+const server=await visualServer({name:'kanoki',specs,execute,
   instructions:'Public Sepolia Test-USDC reads and local system-browser wallet setup. No financial signer. prepareRootSetup already opens the normal browser; do not use a chat-browser tool to open it again. Only the user can confirm wallet connection and sign. Never claim the dashboard observes this local MCP session.',
   describeError(error) {
     const message=String(error);

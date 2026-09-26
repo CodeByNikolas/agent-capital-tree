@@ -44,8 +44,8 @@ let server;
 let client;
 try {
   await run(['plugin', 'marketplace', 'add', marketplace, '--json']);
-  const install = await run(['plugin', 'add', 'agent-capital-tree@agent-capital-tree', '--json']);
-  assert.equal(install.pluginId, 'agent-capital-tree@agent-capital-tree');
+  const install = await run(['plugin', 'add', 'kanoki@kanoki', '--json']);
+  assert.equal(install.pluginId, 'kanoki@kanoki');
   const registeredServers = await run(['mcp', 'list', '--json']);
   assert.equal(registeredServers.length, 1, 'fresh profile must register exactly one MCP server');
   const registered = registeredServers[0];

@@ -30,11 +30,11 @@ name = "ACT Broker"
 base_url = "http://127.0.0.1:8787/v1"
 env_key = "ACT_INFERENCE_TOKEN"
 wire_api = "responses"
-[ mcp_servers.act ]
+[ mcp_servers.kanoki ]
 command = "node"
 args = ["/opt/act/plugin-server.mjs"]
 tool_timeout_sec = 300
-[ mcp_servers.act.env ]
+[ mcp_servers.kanoki.env ]
 ACT_RUNTIME_URL = "http://127.0.0.1:8787"
 ACT_MCP_TOKEN = "worker-local"
 `, { mode: 0o600 });

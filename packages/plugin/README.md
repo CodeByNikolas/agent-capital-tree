@@ -1,4 +1,4 @@
-# Agent Capital Tree Codex plugin
+# Kanoki Codex plugin
 
 For a chat-managed vault demo, use **capital mode**: build SDK, MultiBaas, plugin and runtime, then `pnpm mcp:capital settings <ENS-name> --enable-sepolia-writes`. It prints the real STDIO command for Codex/Claude, auto-starts the existing companion and reuses the private signer. No Docker, CLIProxyAPI, private JSON config or bearer copy. The base plugin exposes 17 tools; capital mode adds `getCapitalSetup`, `prepareCapitalSetup`, `prepareRootSetup` and `visualizeTree` (21). `createChildVault` is a real allocation with no autonomous model dispatch. Wallet authorization and native Sepolia gas remain required. See [local setup](../../docs/local-setup.md).
 
@@ -14,7 +14,7 @@ For a root Codex CLI that may wait on confirmed writes, use **one explicit MCP r
 Do not put this table in the worker's dedicated `codexHome`: that profile stays free of manual MCP registrations and plugins.
 
 ```toml
-[mcp_servers.capital_tree_root]
+[mcp_servers.kanoki]
 command = "node"
 args = ["/your/linux/checkout/packages/runtime/mcp-stdio.mjs", "/your/private/runtimeRoot"]
 tool_timeout_sec = 300
@@ -25,7 +25,7 @@ Start the companion separately. It atomically writes `mcp-ready.json` and `root-
 Native OpenAI API-key financial E2E with real Luna High inference passed; see [evidence](../../deployments/jury-openai-native.json). ChatGPT-login, desktop and Claude Code financial E2E remain open.
 With either setting absent, tools return a clear error and do not claim an on-chain action succeeded. For writes with an uncertain transport result, use `getOperationStatus` or inspect chain state before retrying.
 
-For a persistent **marketplace installation**, use `codex plugin marketplace add <checkout-path>` followed by `codex plugin add agent-capital-tree@agent-capital-tree`. `codex mcp list --json` should then show the enabled `capital-tree` server from the installed plugin cache. Set `ACT_RUNTIME_URL` and `ACT_MCP_TOKEN` in the launching shell as above before using its tools. Do not add the explicit `capital_tree_root` MCP registration to the same profile. The host CLI was verified at 0.157.0 for the read-only check; the worker image remains separately pinned at 0.154.0.
+For a persistent **marketplace installation**, use `codex plugin marketplace add <checkout-path>` followed by `codex plugin add kanoki@kanoki`. `codex mcp list --json` should then show the enabled `kanoki` server from the installed plugin cache. Set `ACT_RUNTIME_URL` and `ACT_MCP_TOKEN` in the launching shell as above before using its tools. Do not add the explicit `kanoki` MCP registration to the same profile. The host CLI was verified at 0.157.0 for the read-only check; the worker image remains separately pinned at 0.154.0.
 
 The cross-platform read-only installation check is `pnpm mcp:verify` after building the SDK and plugin. It needs no private runtime config or token. It makes a fresh temporary Codex profile, installs from this repository's marketplace, starts the **installed** MCP server, and calls `getTree` against the current USDC Sepolia controller through a local read-only bridge. The bridge exposes no write endpoint and does not start a model or operator companion. A completed root can therefore be inspected without reactivating its revoked runtime. This proves installation, all 17 tool registrations, MCP handshake and live chain read; it does not prove marketplace-installed financial writes or leave a persistent plugin install. Run `pnpm mcp:doctor` first for host prerequisites.
 

@@ -70,7 +70,7 @@ try {
   const missing = await client.callTool({ name: 'getTree', arguments: { query: `missing.${manifest.ensNamespace.name}` } });
   assert.equal(missing.isError, true);
   assert.equal(missing.content[2].mimeType, 'image/png');
-  console.log(JSON.stringify({ server: 'agent-capital-tree-readonly', toolCount: listed.tools.length,
+  console.log(JSON.stringify({ server: 'kanoki', toolCount: listed.tools.length,
     rootId: tree.rootId, nodeCount: tree.nodes.length, chainId: tree.source.chainId,
     blockNumber: tree.source.blockNumber, visualBytes: Buffer.from(visual.content[2].data, 'base64').length,
     browserLaunch: browser.method, writes: 'not exposed' }));

@@ -1,7 +1,7 @@
 import { notFound } from "next/navigation";
 import { renderDashboard, type DashboardSearchParams, type DashboardView } from "@/lib/dashboard-page";
 
-const sections: readonly DashboardView[] = ["tree", "activity", "uniswap", "payments", "applications", "mcp", "setup"];
+const sections: readonly DashboardView[] = ["tree", "activity", "agent-activity", "uniswap", "payments", "applications", "mcp", "setup"];
 
 export default async function SectionPage({ params, searchParams }: { params: Promise<{ section: string }>; searchParams: DashboardSearchParams }) {
   const { section } = await params;

@@ -19,7 +19,7 @@ export function frame(height, title, subtitle, body, footer) {
     ${rect(0, 0, WIDTH, 56, t.background, t.border, 0)}
     <image x="32" y="16" width="24" height="24" href="data:image/png;base64,${mark}"/>
     ${text(64, 28, 'Kanoki', { size: 20, display: true, weight: 500 })}
-    ${text(64, 48, 'Agent Capital Tree', { size: 13, color: t.mutedForeground })}
+    ${text(64, 48, 'Kanoki', { size: 13, color: t.mutedForeground })}
     ${text(WIDTH-32, 35, 'sepolia', { size: 13, mono: true, color: t.primary, anchor: 'end' })}
     ${text(32, 112, title, { size: 44, display: true, weight: 500 })}${text(32, 145, subtitle, { color: t.mutedForeground })}
     ${body}${text(32, height-24, footer, { size: 13, color: t.mutedForeground })}

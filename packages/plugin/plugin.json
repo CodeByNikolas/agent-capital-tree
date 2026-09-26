@@ -1,8 +1,8 @@
 {
   "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
-  "name": "agent-capital-tree",
+  "name": "kanoki",
   "version": "0.1.0",
-  "description": "Kanoki \u2014 Agent Capital Tree. Inspect vaults and request bounded actions through a local companion.",
+  "description": "Kanoki. Inspect vaults and request bounded actions through a local companion.",
   "author": {
     "name": "CodeByNikolas"
   },
@@ -10,8 +10,8 @@
     "com.openai": {
       "interface": {
         "displayName": "Kanoki",
-        "shortDescription": "Agent Capital Tree",
-        "longDescription": "Kanoki \u2014 Agent Capital Tree. Inspect balances, capabilities and inherited limits through your local companion.",
+        "shortDescription": "Kanoki",
+        "longDescription": "Kanoki. Inspect balances, capabilities and inherited limits through your local companion.",
         "developerName": "CodeByNikolas",
         "category": "Productivity",
         "capabilities": [

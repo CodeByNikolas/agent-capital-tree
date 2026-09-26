@@ -19,6 +19,6 @@ console.log(`Command: ${process.execPath}`);
 console.log(`Argument: ${script}`);
 console.log('Codex desktop: Settings > MCP servers > Add server > STDIO. Enter the command and one argument above, Save, Restart.');
 console.log('Claude Desktop: use Desktop app > Developer settings to edit the local MCP configuration; merge this entry into mcpServers and fully restart Claude Desktop:');
-console.log(JSON.stringify({ capital_tree_readonly: { command: process.execPath, args: [script] } }, null, 2));
-console.log('Do not replace existing MCP servers. In Claude Code, use `claude mcp add --scope user capital_tree_readonly -- <command> <argument>` instead.');
+console.log(JSON.stringify({ kanoki: { command: process.execPath, args: [script] } }, null, 2));
+console.log('Do not replace existing MCP servers. In Claude Code, use `claude mcp add --scope user kanoki -- <command> <argument>` instead.');
 console.log('These hosts start the STDIO process while connected; `pnpm mcp:desktop` opens an optional, separate foreground status session.');
