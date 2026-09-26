@@ -491,7 +491,7 @@ function routeHref(path: string, vaultQuery: string | null, nodeId?: string | nu
   return `${path}?${params}`;
 }
 
-function AppSidebar({ view, vaultQuery, selectedId, rootLabel, runtimeLabel }: { view: DashboardProps["view"]; vaultQuery: string | null; selectedId: string; rootLabel: string; runtimeLabel: string }) {
+function AppSidebar({ view, vaultQuery, selectedId, rootLabel, runtimeLabel, data, rootId, readLoading, readError, onRetry }: { view: DashboardProps["view"]; vaultQuery: string | null; selectedId: string; rootLabel: string; runtimeLabel: string; data: DashboardData; rootId: string | null; readLoading: boolean; readError: string | null; onRetry: () => void }) {
   const { setOpenMobile } = useSidebar();
   return (
     <ShadcnSidebar collapsible="offcanvas" className="app-sidebar">
@@ -503,6 +503,12 @@ function AppSidebar({ view, vaultQuery, selectedId, rootLabel, runtimeLabel }: {
         <div className="app-workspace"><span className="app-workspace-symbol">{rootLabel.slice(0, 1).toUpperCase()}</span><span><small>Current root</small><strong>{rootLabel}</strong></span></div>
       </SidebarHeader>
       <SidebarContent>
+        <SidebarGroup className="app-sidebar-vault">
+          <SidebarGroupContent>
+            <RootAccessBar vault={vaultQuery} path={views.find((item) => item.id === view)?.path ?? "/"} />
+            {vaultQuery && <LiveReadNotice rootId={rootId} vaultQuery={vaultQuery} data={data} loading={readLoading} error={readError} onRetry={onRetry} />}
+          </SidebarGroupContent>
+        </SidebarGroup>
         <SidebarGroup>
           <SidebarGroupContent>
             <SidebarMenu aria-label="Primary navigation">
@@ -561,7 +567,7 @@ function RootAccessBar({ vault, path }: { vault: string | null; path: string }) 
       finally { setLoading(false); }
     }}>
       <label htmlFor="vault-reference">Open vault</label>
-      <input id="vault-reference" name="lookup" type="text" maxLength={253} placeholder="ENS name or vault contract address" aria-label="ENS name or vault contract address" autoComplete="off" required disabled={loading} />
+      <input id="vault-reference" name="lookup" type="text" maxLength={253} placeholder="ENS name or vault address" aria-label="ENS name or vault contract address" autoComplete="off" required disabled={loading} />
       <button className="button button-secondary button-small" type="submit" disabled={loading}>{loading ? "Looking up…" : "Open vault"}</button>
       {lookupError && <span role="alert" className="vault-lookup-error">{lookupError}</span>}
     </form>
@@ -1450,7 +1456,6 @@ export function Dashboard({ data: initialData, deployment, vaultQuery, nodeQuery
 
   const liveError = currentReadState.status === "error" ? currentReadState.error : null;
 
-  const path = view === "overview" ? "/" : `/${view}`;
   const requestAction = (mode: Exclude<WalletActionMode, null>) => {
     setDetailOpen(false);
     setWalletActionMode(mode);
@@ -1503,13 +1508,11 @@ export function Dashboard({ data: initialData, deployment, vaultQuery, nodeQuery
 
   return (
     <SidebarProvider>
-      <AppSidebar view={view} vaultQuery={vaultQuery} selectedId={selectedNode.id} rootLabel={rootNode?.label ?? "Treasury"} runtimeLabel={runtimeLabel} />
+      <AppSidebar view={view} vaultQuery={vaultQuery} selectedId={selectedNode.id} rootLabel={rootNode?.label ?? "Treasury"} runtimeLabel={runtimeLabel} data={data} rootId={currentSnapshot?.rootId ?? null} readLoading={currentReadState.status === "loading"} readError={liveError} onRetry={() => setTreeRetry((value) => value + 1)} />
       <SidebarInset className="main-shell">
         <Topbar view={view} source={data.source} wallet={wallet} vaultQuery={vaultQuery} selectedId={selectedNode.id} />
         <div className="dashboard-content">
           <PreviewNotice data={data} deployment={deployment} />
-          <RootAccessBar vault={vaultQuery} path={path} />
-          {vaultQuery && <LiveReadNotice rootId={currentSnapshot?.rootId ?? null} vaultQuery={vaultQuery} data={data} loading={currentReadState.status === "loading"} error={liveError} onRetry={() => setTreeRetry((value) => value + 1)} />}
           {data.source === "direct-rpc" && rootNode?.tokenHoldings[0]?.symbol === "USDC" && BigInt(rootNode.tokenHoldings[0].rawAmount) === 0n && <div className="zero-usdc-notice" role="note"><Coins size={20} aria-hidden="true" /><span><strong>This root has no Test USDC.</strong> Request Sepolia USDC from Circle, then use Fund root in Setup &amp; control. The owner wallet also needs Sepolia ETH for gas; the vault itself does not.</span><a href="https://faucet.circle.com/" target="_blank" rel="noreferrer">Circle faucet <ArrowUpRight size={15} aria-hidden="true" /></a></div>}
           {view === "overview" && <>
             <div className="page-heading"><span className="page-kicker">Delegated capital · Sepolia</span><h1>Capital under clear authority.</h1><p>See what each vault holds, which mandates are active, and where owner control stands.</p></div>

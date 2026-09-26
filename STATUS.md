@@ -2,6 +2,11 @@
 
 As of 26 September 2026. Read this together with PLAN.md after context compaction.
 
+## Sidebar vault controls
+
+- Moved the ENS/address vault lookup, sample link, live Sepolia read status, and refresh control from the content area into the existing sidebar on all six dashboard routes. The separate no-vault onboarding lookup remains in its onboarding card.
+- Web typecheck and production build passed. Local read-only browser checks confirmed the sidebar on desktop and in the mobile drawer, no horizontal overflow, and the live read notice and refresh control in the sidebar. No wallet transaction was sent.
+
 ## Current UI clarification
 
 - Preview mode is explicitly fictional: root **Main agent** at `main.preview`, fictional addresses and Fictional USDC balances, scaled down to avoid implying funded Test-USDC. Its vault details now open in a centered shadcn Dialog with Escape dismissal and focus restoration; the earlier side Sheet is no longer used on the tree.
