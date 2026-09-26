@@ -1,23 +1,33 @@
 # Canonical release checklist
 
-The project owner publishes the final reviewed main commit to https://kanoki-app.vercel.app/. This machine lacks access. Do not reuse the checkout's existing `.vercel` link: it refers to the older project.
+Current production is **https://kanoki-app.vercel.app/**, Vercel project `agent-capital-tree` in `tumblockchains-projects`. Source `8e50f9f` was deployed on 27 September 2026 as `dpl_9ZT2SeFt6FmSPjM7o3XhyE7KjtGF` (READY), followed by passing public desktop/mobile checks.
 
 ## Before deployment
 
-- The kanoki.eth cutover is implemented in the current manifest. Confirm the deployed SHA includes controller `0xeB2041B486D66aB91140FFcF54B66513D8eC40c8`, namespace and current wallet setup URLs.
-- Record the exact SHA and successful CI URL. CI covers workspace build/typecheck/tests, pinned Foundry checks and the retry journal.
-- Use a clean checkout of that SHA. Select the Vercel project owning the canonical alias and verify its team and `apps/web` root directory. Preserve server-only environment settings without printing credentials.
-- Use the repository's Vercel build configuration, including SDK/MultiBaas before Next.js. Do not assume a Git push automatically deploys.
+- Fetch `origin/main`, preserve concurrent changes and record the exact reviewed source SHA. Record CI results separately from local test results.
+- Confirm the current manifest uses `kanoki.eth` and controller `0xeB2041B486D66aB91140FFcF54B66513D8eC40c8`.
+- Run the relevant tests and production build. For a full workspace check use `pnpm test`, the contract test runner and `pnpm --filter @agent-capital-tree/web build`.
+- Verify `.vercel/project.json`: project `prj_xo0ekeqkGXO6GZpj67bhrV8Rght6`, organization `team_TYHTje9o9E8h9GzmpO1Nhz3p`. Confirm the remote project still owns the canonical alias and uses `apps/web` as its root. Keep server credentials private.
+- Use the existing Vercel build configuration (SDK/MultiBaas before Next.js). A Git push does not deploy this project automatically. When deployment is authorized, run from the repository root:
+
+```sh
+vercel deploy --prod --yes --scope tumblockchains-projects
+```
 
 ## After deployment
 
-- Record deployment ID, source SHA, alias and READY status in STATUS.md. HTTP 200 does not prove source identity.
-- Check Overview, Agent tree, Activity, Curvegrid, Applications, Uniswap, x402 Pay, Setup and MCP guide at desktop/mobile widths and in both themes. Verify tour context, loading skeletons, no overflow and no browser errors.
-- Resolve a live root through ENS/address lookup. Check separate USDC/DEMO-USD balances, capabilities, receipts and disclosed MultiBaas coverage. Sample screenshots are not financial evidence.
-- The separate onboarding owner confirms root, signer, budget and wallet actions before writes. Keep financial acceptance separate from read-only smoke results.
+Record deployment ID, build SHA, alias and READY status in STATUS.md. Verify the published build:
 
-## Open acceptance and submission
+```sh
+ACT_TEST_APP_URL=https://kanoki-app.vercel.app node scripts/test-wallet-session.mjs
+ACT_TEST_APP_URL=https://kanoki-app.vercel.app node scripts/test-dashboard-shell.mjs
+ACT_TEST_APP_URL=https://kanoki-app.vercel.app node scripts/test-live-demo.mjs
+```
 
-Independent-machine onboarding, marketplace-installed financial writes, desktop/Claude Code financial flows, native macOS signing, ChatGPT-login financial E2E and a deliberately induced live indexer outage remain open. ACCEPTANCE.md records completed native API-key and historical proofs with their limits.
+These checks cover sign-out/reconnect, dashboard-only guidance, persistent navigation, sticky header, five real demo vaults, two LP positions, the x402 receipt and indexed controller evidence on desktop/mobile. Wallet-session checks use a controlled injected provider; the demo check reads real public APIs. None submits a financial transaction.
 
-Use README.md for product/partner links, TEAM.md for profiles, FEEDBACK.md for Uniswap feedback, deployments/usdc-sepolia.json for addresses (revalidate after namespace work), and ACCEPTANCE.md for scoped evidence. The README GIF is illustrative. Record actual ETHGlobal and feedback-form confirmation receipts; preparation is not submission.
+For wider UI changes, also run the nine-route skeleton/layout, tour and owner-filtering checks. Keep USDC and DEMO-USD separate and display the actual MultiBaas coverage; a lagging reported checkpoint does not imply that newer returned events are absent. Confirm fresh financial authorization before any separate signing test.
+
+## Remaining acceptance and submission
+
+See [ACCEPTANCE.md](../ACCEPTANCE.md) for current versus historical financial evidence and open external-machine/host checks. The user reported submitting the Uniswap feedback form (no URL field was required). ETHGlobal entry and partner selections have not been independently confirmed here. Use [TEAM.md](../TEAM.md), [FEEDBACK.md](../FEEDBACK.md) and [submission requirements](ethglobal-requirements.md); repository preparation is not proof of submission.

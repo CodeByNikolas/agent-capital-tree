@@ -1,6 +1,6 @@
 # Kanoki
 
-Kanoki
+Agent Capital Tree
 
 **Give AI agents capital without giving them the whole wallet.** A human funds a root vault, then agents delegate smaller amounts into separate child vaults. ENSv2 roles and contract-enforced ancestor policies narrow what each child can do. The owner retains an independent recovery path.
 
@@ -16,7 +16,7 @@ The prototype runs on **Ethereum Sepolia (chain 11155111)** with official Circle
 
 ## Try the live tree and local MCP
 
-Open the [live root vault](https://kanoki-app.vercel.app/tree?vault=capital.kanoki.eth) to inspect a real Sepolia tree without a wallet. Explicit preview mode contains illustrative balances and names. The dashboard shows wallet controls, but viewing a vault does not start a worker or authorize a transaction.
+Open the [live root vault](https://kanoki-app.vercel.app/tree?vault=capital.kanoki.eth) to inspect a real Sepolia tree without a wallet. Explicit preview mode contains illustrative balances and names. The live demo contains five real vaults over three levels: Capital → Researcher, Trader and Liquidity; Trader → Risk check. It includes a confirmed 0.010 Test-USDC x402 payment, a 0.010-token swap, two vault-owned LP NFTs and indexed policy/fee events. [Current E2E evidence](deployments/kanoki-demo-e2e.json). Viewing a vault does not start a worker or authorize a transaction.
 
 To check the keyless local MCP from the current checkout, use Node 22+, pnpm and Codex CLI. From an existing checkout, start at `pnpm install`; clone only when you need a new checkout:
 
@@ -25,7 +25,9 @@ git clone https://github.com/CodeByNikolas/agent-capital-tree.git
 cd agent-capital-tree
 pnpm install --frozen-lockfile --ignore-scripts
 pnpm --filter @agent-capital-tree/sdk build
+pnpm --filter @agent-capital-tree/multibaas build
 pnpm --filter @agent-capital-tree/plugin build
+pnpm --filter @agent-capital-tree/runtime build
 pnpm mcp:doctor
 pnpm mcp:verify
 pnpm mcp:chat-verify
@@ -65,7 +67,7 @@ The keyless MCP renders the live ENS agent tree as PNG with a Mermaid fallback.
 
 ## Dashboard
 
-The Overview includes a dismissible How it works introduction with a six-step tour that retains the current vault or explicit preview, a balance ledger and a vault register. A shadcn sidebar provides separate pages for Agent tree, Activity, Uniswap, x402 Pay, Curvegrid, Applications, MCP and Setup & control. Curvegrid contains the per-agent MultiBaas report. Fraunces and IBM Plex, explicit dark/light themes and the supplied logo follow [the corrected Kanoki design scope](KANOKI_DESIGN.md). USDC and DEMO-USD stay separate. Selecting a node opens its balance, capabilities and limits. A zero-USDC root links to Circle's faucet; funding uses the owner wallet.
+Onboarding offers root creation and Open live demo. The Overview includes a dismissible How it works introduction with a six-step tour that retains the current vault or explicit preview, a balance ledger and a vault register. A shadcn sidebar provides separate pages for Agent tree, Activity, Uniswap, x402 Pay, Curvegrid, Applications, MCP and Setup & control. Curvegrid contains the per-agent MultiBaas report. Sidebar and header persist across navigation; the header stays visible while scrolling. The wallet button opens Sign out and an explorer link; app sign-out persists until explicit reconnect. Setup integration status is always expanded. Fraunces and IBM Plex, explicit dark/light themes and the supplied logo follow [the corrected Kanoki design scope](KANOKI_DESIGN.md). USDC and DEMO-USD stay separate. Selecting a node opens its balance, capabilities and limits. A zero-USDC root links to Circle's faucet; funding uses the owner wallet.
 
 See [ENS ownership and namespace permissions](docs/ens-namespace.md) for how users receive names without a server-side signing key.
 
@@ -114,7 +116,7 @@ We are **Nikolas Hack and Rami Ezzeddine**, both studying **Information Systems 
 
 ## Run and test
 
-For a fast local read-only check on Node 22+ hosts, run `pnpm mcp:doctor`, `pnpm mcp:verify` and `pnpm mcp:chat-verify` after installing dependencies and building the SDK and plugin. These use no wallet or signing key. The three-tool keyless server can be registered in Codex or Claude to view a live Sepolia tree and open the normal wallet browser for root setup. Its tool responses include dashboard-style PNGs with Mermaid fallback. See the [local setup guide](docs/local-setup.md).
+For a fast local read-only check on Node 22+ hosts, run `pnpm mcp:doctor`, `pnpm mcp:verify` and `pnpm mcp:chat-verify` after installing dependencies and building SDK, MultiBaas, plugin and runtime. These use no wallet or signing key. The three-tool keyless server can be registered in Codex or Claude to view a live Sepolia tree and open the normal wallet browser for root setup. Its tool responses include dashboard-style PNGs with Mermaid fallback. See the [local setup guide](docs/local-setup.md).
 
 For chat-managed vaults on Linux or WSL2, install the bundled Kanoki plugin or build SDK, MultiBaas, plugin and runtime and run `pnpm mcp:capital settings --enable-sepolia-writes`. The default capital MCP exposes **19 tools**, with no Docker, model key or runtime bearer required. Ask it to prepare a vault, approve the guided wallet setup, then return to chat: the matching root is restored automatically. The owner key stays in the wallet; a separate local operator signs bounded actions. `createChildVault` creates a funded vault, not an autonomous model process. The 0.10-USDC demo limit is shared tree capital, not per child or a contract balance cap. Advanced selection/recovery is only for intentionally selected existing roots. See the [setup guide](docs/local-setup.md) and [actual acceptance status](STATUS.md). New changes are published on **main**.
 
@@ -136,8 +138,8 @@ Deployment runners require an Etherscan key in `ETHERSCAN_API_KEY` or the privat
 
 The controlled x402 seller is loopback-only, charges 0.01 USDC, and uses the test owner as recipient. It demonstrates the real protocol; it is not an independent commercial merchant. The companion’s service allowlist is a runtime restriction, not an onchain merchant allowlist. Service content remains untrusted.
 
-Historical browser-wallet evidence and the current native financial proof are recorded in [ACCEPTANCE.md](ACCEPTANCE.md). Native OpenAI API-key inference with `gpt-6-luna` / `high` passed funded MCP spawn, x402 payment and Uniswap swap on Sepolia ([evidence](deployments/jury-openai-native.json)). ChatGPT-login financial E2E, independent external-machine onboarding and native-marketplace financial writes remain unproven. The controlled seller and testnet token scope is stated in the evidence.
+Historical browser-wallet and native financial proofs are recorded in [ACCEPTANCE.md](ACCEPTANCE.md). On the retired pre-Kanoki controller, native OpenAI API-key inference with `gpt-6-luna` / `high` passed funded MCP spawn, x402 payment and Uniswap swap on Sepolia ([evidence](deployments/jury-openai-native.json)). ChatGPT-login financial E2E, independent external-machine onboarding and native-marketplace financial writes remain unproven. The controlled seller and testnet token scope is stated in the evidence.
 
-[PLAN.md](PLAN.md) records product decisions. [STATUS.md](STATUS.md) tracks completed deployment/tests and remaining work. [Submission requirements](docs/ethglobal-requirements.md) and [AI-use provenance](docs/ai-use.md) are documented for the team. The Uniswap feedback form and ETHGlobal submission still require team details and an explicit submission instruction.
+[PLAN.md](PLAN.md) records product decisions. [STATUS.md](STATUS.md) tracks completed deployment/tests and remaining work. [Submission requirements](docs/ethglobal-requirements.md) and [AI-use provenance](docs/ai-use.md) are documented for the team. Team details are complete. The user reported submitting the Uniswap feedback form; no URL field was requested. ETHGlobal submission and partner selections still need confirmation.
 
-Public Sepolia x402 proof: [`deployments/usdc-payment.json`](deployments/usdc-payment.json). A PAY-only researcher spent **0.010000 USDC** from its vault; retry did not charge again. [Settlement transaction](https://sepolia.etherscan.io/tx/0xfb4b340038034b5ad44a347af7d2c45951ed04adccb77935149997724a0a7f13). This was a controlled local seller, not an independent merchant or autonomous model run. Controller history is separately verified in [`deployments/usdc-multibaas.json`](deployments/usdc-multibaas.json).
+Current Kanoki x402 proof: [`deployments/kanoki-payment.json`](deployments/kanoki-payment.json). Researcher spent **0.010 Test-USDC**; retry did not charge again. [Settlement transaction](https://sepolia.etherscan.io/tx/0x85b2089295d1e61473c29459dfc596db83028efd7bd0977278b119dc0b3ec467). The seller was controlled and local. The current [demo E2E](deployments/kanoki-demo-e2e.json) and `node scripts/test-live-demo.mjs` cover real vaults, swaps, LPs, payment receipts and MultiBaas events. Earlier `usdc-payment.json`, `usdc-multibaas.json` and native-model reports belong to retired deployments; the latest Kanoki demo did not launch autonomous workers.

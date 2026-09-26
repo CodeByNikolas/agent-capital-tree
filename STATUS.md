@@ -1,5 +1,12 @@
 # Current release: Kanoki live demo and wallet controls
 
+## Documentation audit — 27 September 2026
+
+- Updated README, local setup, package guides, product/design plan, handoff, release/onboarding checklists, acceptance and partner feedback to the current Kanoki namespace and five-vault demo. Marked pre-cutover x402/ENS proposals and financial proofs as historical; current native-worker evidence remains distinct from current demo evidence. Recorded the user's Uniswap-form submission report without inventing an independent receipt or ETHGlobal submission.
+- Production frontend source remains 8e50f9f, deployment dpl_9ZT2SeFt6FmSPjM7o3XhyE7KjtGF (READY), alias https://kanoki-app.vercel.app. Public wallet-session, shell and five-vault demo browser checks passed on that deployment. These documentation/test-runner updates do not change the web app.
+- Exercising the setup commands found obsolete manifest.token reads in the install/chat verifiers and a hard-coded child ID from a retired tree. The verifiers now compare the full current token pair and resolve the selected child from the live tree. They do not request financial writes.
+- Validation passed: mcp:doctor; fresh temporary-profile marketplace install with 19 tools and five live nodes (Codex CLI 0.154.0); three-tool keyless chat verification including ENS/vault resolution, setup/error graphics and live reads. Local Markdown link checks and git diff --check also passed. No financial transaction or inference request was made.
+
 ## Public multi-vault demo and wallet sign-out — 27 September 2026
 
 - Wallet address now opens a dialog with Sign out and a separate explorer link. App disconnection survives provider account events and reloads until an explicit Connect. Removed the normal Sepolia badge; the actionable wrong-network switch remains. How it works is shown only in the dashboard, with the live-demo entry retained on onboarding.

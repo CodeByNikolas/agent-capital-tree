@@ -7,8 +7,8 @@ The September 26 implementation brief and its corrections govern the app, docume
 ## Identity and scope
 
 - Kanoki is the display name. Agent Capital Tree is the tagline. The root is an owner-funded vault. Funding uses the owner's wallet.
-- Preserve contracts, events, ABIs, deployment manifests, package names, environment variables, scripts, the Vercel project and the `agentcapitalusdc.eth` namespace.
-- Preserve every existing MCP tool name and schema. The manifest server name is `kanoki`. Role requirements prefix tool descriptions; all tools remain discoverable.
+- Preserve contracts, events, ABIs, deployment manifests, package names, environment variables, scripts, the Vercel project and the current `kanoki.eth` ENSv2 Sepolia namespace. Earlier prototype namespaces are retired from the current app.
+- Preserve every existing MCP tool name and schema. The manifest server name is `kanoki`. Role requirements prefix tool descriptions; the default capital catalog exposes 19 supported tools; autonomous-worker, indexed-history and paid-service tools belong to the separately configured worker mode.
 - Use root, node, vault, allocation, limit, remaining, delegate, revoke, capability and owner. The tree has at most three levels. Revocation stops management. Funds remain in the vault until an authorized recovery or exit.
 
 ## Presentation
@@ -19,7 +19,7 @@ The September 26 implementation brief and its corrections govern the app, docume
 - Dashboard ERC-20 amounts show three decimals and a unit; positive dust below 0.001 remains visible as <0.001. Inputs, raw transaction values and MCP payloads retain exact precision. USDC uses `--gold-ink`. DEMO-USD is separate, muted and explicitly a test asset. Never add their balances together. Pool quotes state: "Test ratio, not a USD valuation."
 - Use line borders and the supplied radius tokens. Hover/focus/state transitions take 150ms ease-out; node entry takes 200ms. Focus is a two-pixel gold outline.
 - The sidebar uses the darker base surface; the dashboard uses the lighter raised surface in both themes.
-- Navigation uses the restored shadcn Sidebar with a mobile Sheet and sticky topbar. Keep all current routes discoverable. Overview action cards have equal widths and bottom-aligned light-green primary buttons.
+- Navigation uses the restored shadcn Sidebar with a mobile Sheet and sticky topbar. The shared App Router layout preserves sidebar/header state across navigation. Wallet address opens Sign out/explorer controls; no normal Sepolia badge is shown. How it works appears on Overview, while onboarding retains Open live demo. Setup integration status is always visible. Keep all current routes discoverable. Overview action cards have equal widths and bottom-aligned light-green primary buttons.
 - Every node shows all four capabilities: DELEGATE, SWAP, LIQUIDITY, PAY. Missing capabilities are dimmed. Disabled application actions remain visible. Revoke and Exit require confirmation describing their scope.
 - Service settlement has one receipt; retries reuse it. Activity rows have separators, timestamps, node names, right-aligned amounts and transaction links, with truthful MultiBaas coverage.
 

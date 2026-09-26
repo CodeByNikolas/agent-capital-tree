@@ -1,5 +1,7 @@
 # USDC x402 feasibility on Ethereum Sepolia
 
+> Historical feasibility research from before the USDC cutover. The identified deployment blocker was resolved: current Kanoki vaults implement ERC-1271/PAY and have a confirmed HTTP402 settlement. See [current proof](../deployments/kanoki-payment.json) and [acceptance](../ACCEPTANCE.md). Network/facilitator observations below are dated research, not fresh availability checks.
+
 Research checked 2026-09-26 against the deployed Sepolia USDC proxy, verified implementation source, and current Coinbase x402 source and facilitator metadata.
 
 ## Finding

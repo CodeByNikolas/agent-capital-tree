@@ -1,5 +1,7 @@
 # ENSv2 Sepolia feasibility gate
 
+> Historical feasibility gate. The selected production-testnet namespace is now kanoki.eth; tentative name availability and registration prices below are observations from that earlier check. Current permissions and namespace status: [ENS namespace guide](../docs/ens-namespace.md).
+
 Pinned source: [`ensdomains/contracts-v2` at `48b3e2d`](https://github.com/ensdomains/contracts-v2/tree/48b3e2d39513b9dd32ef1850877a29009bc807b9). The contracts in `lib/ens-contracts-v2` are this commit; OpenZeppelin Contracts is pinned to the exact commit used by that source (`e4f7021`).
 
 ## Read-only Sepolia evidence

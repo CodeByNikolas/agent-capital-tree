@@ -2,7 +2,7 @@
 
 ## Current override — main only
 
-User instruction, 26 September: all new commits and pushes go to `main`. Do not continue work on or publish to `work/rami`. Older branch instructions below are historical and superseded. Integrate in an isolated worktree, retain other contributors' changes and distinguish the historical `agentcapitalusdc.eth` recovery controller from the current `agentcapitalvault.eth` deployment. Never repeat completed funding or worker runs.
+User instruction, 26 September: all new commits and pushes go to `main`. Do not continue work on or publish to `work/rami`. Older branch instructions below are historical and superseded. Integrate in an isolated worktree, retain other contributors' changes and use the current `kanoki.eth` deployment; both `agentcapitalusdc.eth` and `agentcapitalvault.eth` are retired prototypes. Use HANDOFF.md for the verified current release. Never repeat completed funding or worker runs.
 
 > **Nur für Ramis Agenten** (Claude Code, Codex, o. Ä.). Rami referenziert diese Datei
 > zu Beginn jeder Session ("lies RAMI-AGENTS.md"). Sie **ersetzt nicht** die geteilte

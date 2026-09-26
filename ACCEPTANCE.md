@@ -1,10 +1,23 @@
 # Acceptance evidence — Agent Capital Tree
 
-## Current release gate — 26 September 2026
+## Current Kanoki release — 27 September 2026
 
-The project owner will deploy to https://kanoki-app.vercel.app/. The user selected kanoki.eth for onboarding and assigned implementation to another agent. That workstream must verify the active root, controller, wallet approval and financial E2E. Historical root-agent.agentcapitalusdc.eth is revoked. See [the handoff](HANDOFF.md) and [release checklist](docs/release-checklist.md).
+Production [kanoki-app.vercel.app](https://kanoki-app.vercel.app) is READY from source `8e50f9f`, Vercel deployment `dpl_9ZT2SeFt6FmSPjM7o3XhyE7KjtGF`. The namespace is ENSv2 Sepolia `kanoki.eth`; controller `0xeB2041B486D66aB91140FFcF54B66513D8eC40c8`. Addresses and explorer verification are in [the current manifest](deployments/usdc-sepolia.json).
 
-Team names and public profiles are complete in TEAM.md and README.md. Actual ETHGlobal and Uniswap feedback confirmations remain open. Older statements about missing team details or mandatory CLIProxyAPI are superseded: native API-key workers are the preferred, already tested setup; independent-machine acceptance remains open.
+- [Real demo E2E](deployments/kanoki-demo-e2e.json): five vaults over three levels, independent operator keys, Trader swap, Liquidity LP NFT 39890 and fee collection, Risk-check policy tightening and rejection of over-budget/wrong-capability/wrong-operator calls. Root LP NFT 39889 remains open.
+- [Current x402 evidence](deployments/kanoki-payment.json): Researcher paid 0.010 Test-USDC through HTTP402, ERC-1271 and Circle settlement; an identical retry returned the same receipt without another charge. Controlled loopback seller; no public merchant or model-worker claim.
+- Public desktop/mobile E2E passed after deployment: all five nodes and two LP positions, the x402 receipt, all new MultiBaas controller transactions, persistent sidebar/header, sticky header, wallet menu/sign-out/reconnect and dashboard-only guidance. Wallet interaction tests use a controlled injected provider; the live demo reads real public APIs.
+- Production build/TypeScript, 38 contract tests and 71 workspace tests (36 runtime, 22 plugin, 11 MultiBaas, 2 SDK) passed. Live default MCP: 19 tools, current-root reads, generated graphics and disabled-write guard. No autonomous model worker was launched during this release.
+
+### Remaining acceptance
+
+Fresh external-machine wallet onboarding, marketplace-installed financial writes, desktop/Claude Code financial flows, native macOS signing, ChatGPT-login financial E2E and an intentionally induced live MultiBaas outage remain open. Earlier native API-key worker evidence below belongs to a retired controller. It is not a new autonomous-worker test of Kanoki. The current existing-root demo does not close the fresh-user onboarding gate.
+
+Team profiles are complete. The user reported submitting the Uniswap feedback form and that no URL field was requested. ETHGlobal entry and partner selection still need confirmation. See [release checklist](docs/release-checklist.md) and [handoff](HANDOFF.md).
+
+## Historical evidence — earlier controllers and releases
+
+The dated sections below preserve the actual source commits, addresses, counts and limitations at test time. Old domains, roots and reports are not current entry points and must not be replayed to refresh documentation.
 
 ## Real native OpenAI API-key financial flow — 26 September 2026
 
@@ -28,21 +41,21 @@ The initial native setup used a dedicated normal Codex login without CLIProxyAPI
 
 **Normal-account inference and native financial E2E remain open.** The real-login smoke is implemented and awaits a separate Codex authentication. The earlier x402/swap receipts below prove the proxy-based financial flow and are not native-login evidence. Independent-machine, Codex desktop and Claude Code acceptance also remain open.
 
-## Current clone/USDC jury flow — 26 September 2026
+## Historical clone/USDC jury flow — 26 September 2026
 
-Current controller: `0x7eDFa3D484d64b6bA3b5b2bcef51147E57133FFB`, namespace `agentcapitalvault.eth`. The [local setup guide](docs/local-setup.md) was exercised with two fresh local clones, a real MetaMask owner flow on the public dashboard, and a fresh Codex CLI profile through CLIProxyAPI.
+Controller for that run: `0x7eDFa3D484d64b6bA3b5b2bcef51147E57133FFB`, namespace `agentcapitalvault.eth`. The [local setup guide](docs/local-setup.md) was exercised with two fresh local clones, a real MetaMask owner flow on the public dashboard, and a fresh Codex CLI profile through CLIProxyAPI.
 
 - [Owner setup](deployments/usdc-jury-owner.json): root 4 created, funded with 10 test USDC and bound to its separate runtime operator.
 - [Model/chain flow](deployments/jury-usdc-codex.json): GPT-6 Sol Medium selected funded MCP spawning; isolated child 6 paid 0.01 USDC using x402 and swapped 0.01 USDC using Uniswap v4. Remaining vault balances: 9.98 USDC and 0.009968 valueless DEMO-USD. Its 0.01-USDC action limit was independently checked, including an over-limit rejection.
 - The first child failed at network preflight before spending. The runtime context was repaired; expiry prevented its continuation, owner recovery returned its 10 USDC, and a replacement was launched. An insufficient maximum gas reserve required a top-up and exact-key retry. The successful result does not describe an uninterrupted first attempt.
 - [Public browser report](artifacts/ui/jury-dashboard-report.json): all eight desktop/mobile checks passed on the new tree, including exact spawn/payment/swap links and long ENS names contained within payment cells. The layout correction is live from source `18260a8`, production deployment `dpl_DMuNfp4xtJUgCafddnFxXFUdVEZW`; both CI jobs passed.
-- [Current contract verification](deployments/usdc-sepolia.json) includes all six nodes and their EIP-1167 associations. Runtime tests/build/typecheck and plugin tests pass; see [STATUS.md](STATUS.md) for publication and dashboard checks.
+- [Archived contract verification](deployments/history/agentcapitalvault-prototype-sepolia.json) records that prototype and its EIP-1167 associations. Runtime tests/build/typecheck and plugin tests pass; see [STATUS.md](STATUS.md) for publication and dashboard checks.
 
 **Independent external-user onboarding remains open.** This was a fresh installation/profile on the same Linux host, with a controlled loopback seller and Sepolia test funds. That recorded run used CLIProxyAPI; Codex desktop, native-login financial and Claude Code flows are not proven. Existing historical LP evidence below is not a repeated LP acceptance run.
 
 ## Historical first USDC release — 26 September 2026
 
-The six-page follow-up is live at `https://agent-capital-tree.vercel.app` from Vercel deployment `dpl_ESRyCh5768tpUtLwQKaWaykSkrz8`. Public read-only browser checks covered all six routes on desktop/light and mobile/dark, including the verified Uniswap position event and the one 0.01 Test-USDC payment receipt. [Current UI report](artifacts/ui/usdc-ui-report.json). The Payment API scans a bounded Circle USDC log range and marks incomplete coverage; it is separate from MultiBaas controller history. No new wallet write or full current-USDC onboarding was performed.
+The six-page follow-up was published at `https://agent-capital-tree.vercel.app` from Vercel deployment `dpl_ESRyCh5768tpUtLwQKaWaykSkrz8`. Public read-only browser checks covered all six routes on desktop/light and mobile/dark, including the verified Uniswap position event and the one 0.01 Test-USDC payment receipt. [Current UI report](artifacts/ui/usdc-ui-report.json). The Payment API scans a bounded Circle USDC log range and marks incomplete coverage; it is separate from MultiBaas controller history. No new wallet write or full current-USDC onboarding was performed.
 
 At that stage the product used controller `0x17a932987f3cAcFec067c4C1bbE6946963d87F13`, namespace `agentcapitalusdc.eth`. The current clone deployment above supersedes these addresses; these are historical reports, not supported legacy entry points.
 
@@ -127,14 +140,15 @@ pnpm build
 pnpm typecheck
 pnpm test
 bash contracts/scripts/test-contracts.sh
-ACT_TEST_APP_URL=https://agent-capital-tree.vercel.app node scripts/test-web-smoke.mjs
-ACT_TEST_APP_URL=https://agent-capital-tree.vercel.app node scripts/test-web-guardrails.mjs
-node scripts/test-sepolia-negative-calls.mjs
+ACT_TEST_APP_URL=https://kanoki-app.vercel.app node scripts/test-live-demo.mjs
+ACT_TEST_APP_URL=https://kanoki-app.vercel.app node scripts/test-wallet-session.mjs
+ACT_TEST_APP_URL=https://kanoki-app.vercel.app node scripts/test-dashboard-shell.mjs
+node scripts/test-mcp-capital.mjs
 
 ```
 
-The last command needs historical Sepolia RPC access, not a wallet. Do not rerun setup/spawn/funding/recovery scripts on completed public roots just to refresh a report. Their journals and receipts are deliberate safeguards against duplicate spending.
+These current-demo checks need public network access, but no wallet signer. The older negative-call runner targets historical blocks and is not a current-demo acceptance command. Do not rerun setup/spawn/funding/recovery scripts on completed public roots just to refresh a report. Their journals and receipts are deliberate safeguards against duplicate spending.
 
 ## Required external input
 
-MultiBaas is configured with a server-only runtime key, and Sepolia funding has been received. No additional key or paid plan is needed for the completed Root9 proof. Historical Root5 backfill exceeds the free plan's 100-block allowance and is excluded from complete history claims. Independent external-user installation needs a separate user/environment with its own native API-key setup or dedicated ChatGPT login; CLIProxyAPI is optional. Same-host tests do not establish independent onboarding. Team details are complete. Canonical deployment requires the project owner's access, and actual submission receipts remain open.
+MultiBaas is configured with a server-only runtime key, and Sepolia funding has been received. No additional key or paid plan is needed for the completed Root9 proof. Historical Root5 backfill exceeds the free plan's 100-block allowance and is excluded from complete history claims. Independent external-user installation needs a separate user/environment with its own native API-key setup or dedicated ChatGPT login; CLIProxyAPI is optional. Same-host tests do not establish independent onboarding. Team details are complete. Canonical deployment is complete as recorded above; ETHGlobal submission still needs confirmation.
