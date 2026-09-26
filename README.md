@@ -56,7 +56,7 @@ ENS roles are actual authorization, not descriptive text metadata. MultiBaas is 
 
 ## Run and test
 
-Use Node22, pnpm11.13.1, Docker and Foundry1.8.3. Follow the [complete setup guide](docs/local-setup.md) for wallet/operator separation, a private companion configuration and Codex MCP registration. Worker inference requires a reachable CLIProxyAPI endpoint and credential; a Codex login alone does not provide that service.
+Use Node22, pnpm11.13.1, Docker and Foundry1.8.3. Follow the [complete setup guide](docs/local-setup.md) for wallet/operator separation, a private companion configuration, native Codex login and MCP registration. The default worker inference path uses a dedicated authenticated Codex home on the host; HomeBox CLIProxyAPI remains an optional explicit configuration. Docker workers remain network isolated and receive scoped finance tools, while the host owns inference authentication.
 
 ```sh
 git clone --recurse-submodules https://github.com/CodeByNikolas/agent-capital-tree.git
@@ -75,7 +75,7 @@ Deployment runners require an Etherscan key in `ETHERSCAN_API_KEY` or the privat
 
 The controlled x402 seller is loopback-only, charges 0.01 USDC, and uses the test owner as recipient. It demonstrates the real protocol; it is not an independent commercial merchant. The companion’s service allowlist is a runtime restriction, not an onchain merchant allowlist. Service content remains untrusted.
 
-Earlier browser-wallet and real-model evidence is retained in [ACCEPTANCE.md](ACCEPTANCE.md) as historical verification, not as a supported legacy product. Independent external-machine onboarding and native-marketplace financial writes remain unproven. The current USDC/x402 flow has its own evidence and should not be conflated with those earlier runs.
+Earlier browser-wallet and real-model evidence is retained in [ACCEPTANCE.md](ACCEPTANCE.md) as historical verification, not as a supported legacy product. Mock native inference routing has passed, but native-login financial end-to-end verification, independent external-machine onboarding and native-marketplace financial writes remain unproven. The current USDC/x402 flow has its own evidence and should not be conflated with those earlier runs.
 
 [PLAN.md](PLAN.md) records product decisions. [STATUS.md](STATUS.md) tracks completed deployment/tests and remaining work. [Submission requirements](docs/ethglobal-requirements.md) and [AI-use provenance](docs/ai-use.md) are documented for the team. The Uniswap feedback form and ETHGlobal submission still require team details and an explicit submission instruction.
 

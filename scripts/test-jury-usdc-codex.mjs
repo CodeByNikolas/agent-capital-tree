@@ -183,7 +183,7 @@ try {
   if (resume) assert.equal((await readFile(providerTokenFile, 'utf8')).trim(), token);
   else await writeFile(providerTokenFile, token, { mode: 0o600, flag: 'wx' });
   const config = { runtimeRoot, rootId: String(rootId), rpcUrl, controller: controllerAddress,
-    upstream: 'http://100.91.160.81:8317/v1', providerTokenFile, imageId, models: ['gpt-6-sol', 'gpt-6-luna'],
+    inference: 'cliproxyapi', upstream: 'http://100.91.160.81:8317/v1', providerTokenFile, imageId, models: ['gpt-6-sol', 'gpt-6-luna'],
     childGasWei: '3000000000000000', paymentServices: [{ id: 'research', url: seller.url, payTo: owner.address, maxAmount: '10000' }] };
   const configPath = join(base, `companion-config${suffix}.json`);
   await writeFile(configPath, JSON.stringify(config), { mode: 0o600, flag: 'wx' });

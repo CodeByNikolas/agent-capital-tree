@@ -7,8 +7,10 @@
     "build": "tsc -p tsconfig.json",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "test": "pnpm build && node --test test/*.test.mjs",
+    "test:native": "pnpm build && node test/native-live.integration.mjs",
     "test:chain": "pnpm build && node test/chain.integration.mjs",
-    "test:workers": "node test/worker.integration.mjs && node test/model.integration.mjs"
+    "test:workers": "node test/worker.integration.mjs && node test/model.integration.mjs",
+    "test:native-protocol": "pnpm build && node test/native-protocol.integration.mjs"
   },
   "dependencies": {
     "@agent-capital-tree/multibaas": "workspace:*",
@@ -17,10 +19,13 @@
     "@x402/core": "2.27.0",
     "@x402/evm": "2.27.0",
     "ethers": "6.17.0",
-    "viem": "2.56.9"
+    "viem": "2.56.9",
+    "ws": "8.21.0",
+    "zod": "4.6.5"
   },
   "devDependencies": {
     "@types/node": "22.15.30",
+    "@types/ws": "8.18.1",
     "typescript": "5.9.3"
   }
 }

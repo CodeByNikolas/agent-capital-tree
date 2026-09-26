@@ -73,7 +73,7 @@ test('depth grants leave a depth-2 worker room for its own spawn and child grant
 test('companion refuses transaction tools while Sepolia writes are disabled', async () => {
   const directory = await mkdtemp(join(tmpdir(), 'act-readonly-'));
   const companion = new RuntimeCompanion({ runtimeRoot: directory, rootId: '1', rpcUrl: 'http://127.0.0.1:1',
-    controller: controllerA, upstream: 'http://127.0.0.1:1/v1', upstreamKey: 'synthetic-host-only',
+    controller: controllerA, inference: 'cliproxyapi', upstream: 'http://127.0.0.1:1/v1', upstreamKey: 'synthetic-host-only',
     imageId: `sha256:${'a'.repeat(64)}`, models: ['gpt-6-luna'], workerUid: process.getuid(),
     workerGid: process.getgid(), childGasWei: 0n, writesEnabled: false });
   await new Promise(resolve => companion.tools.listen(0, '127.0.0.1', resolve));
@@ -107,7 +107,7 @@ test('companion refuses transaction tools while Sepolia writes are disabled', as
 test('activity is unavailable without configuration and cannot read another root', async () => {
   const directory = await mkdtemp(join(tmpdir(), 'act-activity-'));
   const base = { runtimeRoot: directory, rootId: '1', rpcUrl: 'http://127.0.0.1:1',
-    controller: controllerA, upstream: 'http://127.0.0.1:1/v1', upstreamKey: 'synthetic-host-only',
+    controller: controllerA, inference: 'cliproxyapi', upstream: 'http://127.0.0.1:1/v1', upstreamKey: 'synthetic-host-only',
     imageId: `sha256:${'a'.repeat(64)}`, models: ['gpt-6-luna'], workerUid: process.getuid(),
     workerGid: process.getgid(), childGasWei: 0n, writesEnabled: false };
   const request = async (companion, rootId) => {
@@ -129,4 +129,35 @@ test('activity is unavailable without configuration and cannot read another root
     try { assert.equal(await request(configured, '2'), 409); }
     finally { await new Promise(resolve => configured.tools.close(resolve)); }
   } finally { await rm(directory, { recursive: true, force: true }); }
+});
+
+test('native inference is the default and failed preflight cannot allocate capital', async () => {
+  const directory = await mkdtemp(join(tmpdir(), 'act-native-preflight-'));
+  const companion = new RuntimeCompanion({ runtimeRoot: directory, rootId: '1', rpcUrl: 'http://127.0.0.1:1',
+    controller: controllerA, codexBinary: '/nonexistent/codex', codexHome: join(directory, 'codex'),
+    imageId: `sha256:${'a'.repeat(64)}`, models: ['native-test-model'], workerUid: process.getuid(),
+    workerGid: process.getgid(), childGasWei: 0n, writesEnabled: true });
+  assert.equal(companion.broker, undefined);
+  assert.equal(companion.brokerServer, undefined);
+  let allocations = 0;
+  companion.coordinator.spawn = async () => { allocations++; throw new Error('must not allocate'); };
+  companion.launcher.ensureAvailable = async model => {
+    assert.equal(model, 'native-test-model');
+    throw new Error('normal Codex login unavailable');
+  };
+  await new Promise(resolve => companion.tools.listen(0, '127.0.0.1', resolve));
+  const token = companion.sessions.issue(scope, Date.now() + 10000);
+  try {
+    const response = await fetch(`http://127.0.0.1:${companion.tools.address().port}/v1/tools/spawnChild`, {
+      method: 'POST', headers: { authorization: `Bearer ${token}` },
+      body: JSON.stringify({ operationKey, task: 'synthetic', model: 'native-test-model', asset: controllerB,
+        amount: '10000000', restrictions: {} })
+    });
+    assert.equal(response.status, 409);
+    assert.equal(allocations, 0);
+    assert.deepEqual(await readdir(directory), []);
+  } finally {
+    await new Promise(resolve => companion.tools.close(resolve));
+    await rm(directory, { recursive: true, force: true });
+  }
 });

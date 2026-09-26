@@ -1,5 +1,11 @@
 # Acceptance evidence — Agent Capital Tree
 
+## Native Codex runtime — 26 September 2026
+
+The default local setup now uses a dedicated normal Codex login without CLIProxyAPI. [Protocol evidence](deployments/native-codex-protocol.json) records a deterministic local Responses fixture driving the real pinned Codex app-server and Docker exec-server: scoped finance reads, isolated shell/file execution, host-file protection and expiry passed. The test-only executable substitutes fixture provider metadata; no real inference credential was used. All 24 runtime and seven plugin tests passed, and a fresh same-host installation passed the full build.
+
+**Normal-account inference and native financial E2E remain open.** The real-login smoke is implemented and awaits a separate Codex authentication. The earlier x402/swap receipts below prove the proxy-based financial flow and are not native-login evidence. Independent-machine, Codex desktop and Claude Code acceptance also remain open.
+
 ## Current clone/USDC jury flow — 26 September 2026
 
 Current controller: `0x7eDFa3D484d64b6bA3b5b2bcef51147E57133FFB`, namespace `agentcapitalvault.eth`. The [local setup guide](docs/local-setup.md) was exercised with two fresh local clones, a real MetaMask owner flow on the public dashboard, and a fresh Codex CLI profile through CLIProxyAPI.
@@ -10,7 +16,7 @@ Current controller: `0x7eDFa3D484d64b6bA3b5b2bcef51147E57133FFB`, namespace `age
 - [Public browser report](artifacts/ui/jury-dashboard-report.json): all eight desktop/mobile checks passed on the new tree, including exact spawn/payment/swap links and long ENS names contained within payment cells. The layout correction is live from source `18260a8`, production deployment `dpl_DMuNfp4xtJUgCafddnFxXFUdVEZW`; both CI jobs passed.
 - [Current contract verification](deployments/usdc-sepolia.json) includes all six nodes and their EIP-1167 associations. Runtime tests/build/typecheck and plugin tests pass; see [STATUS.md](STATUS.md) for publication and dashboard checks.
 
-**Independent external-user onboarding remains open.** This was a fresh installation/profile on the same Linux host, with a controlled loopback seller and Sepolia test funds. CLIProxyAPI is required; Codex desktop, no-proxy Codex and Claude Code flows are not proven. Existing historical LP evidence below is not a repeated LP acceptance run.
+**Independent external-user onboarding remains open.** This was a fresh installation/profile on the same Linux host, with a controlled loopback seller and Sepolia test funds. That recorded run used CLIProxyAPI; Codex desktop, native-login financial and Claude Code flows are not proven. Existing historical LP evidence below is not a repeated LP acceptance run.
 
 ## Historical first USDC release — 26 September 2026
 

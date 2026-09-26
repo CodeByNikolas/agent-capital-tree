@@ -54,7 +54,7 @@ try{
     await send('fund-runtime-root',owner,await controller.fundRoot.populateTransaction(state.rootId,[parseEther('100'),parseEther('100')]));
     // Four separately journaled transfers stay below the existing 0.01 ETH value ceiling.
     for(const [i,amount]of ['0.01','0.01','0.01','0.005'].entries())await send(`operator-gas-${i}`,deployer,{to:state.operator,value:parseEther(amount)});
-    const config={runtimeRoot,rootId:state.rootId,rpcUrl,controller:controllerAddress,upstream:'http://100.91.160.81:8317/v1',imageId,models:['gpt-6-luna','gpt-6-sol'],childGasWei:'20000000000000000'};
+    const config={runtimeRoot,rootId:state.rootId,rpcUrl,controller:controllerAddress,inference:'cliproxyapi',upstream:'http://100.91.160.81:8317/v1',imageId,models:['gpt-6-luna','gpt-6-sol'],childGasWei:'20000000000000000'};
     await mkdir(privateBase,{recursive:true,mode:0o700});
     await writeFile(configPath,JSON.stringify(config,null,2)+'\n',{mode:0o600,flag:'wx'}).catch(async error=>{
       if(error.code!=='EEXIST'||await readFile(configPath,'utf8')!==JSON.stringify(config,null,2)+'\n')throw error;

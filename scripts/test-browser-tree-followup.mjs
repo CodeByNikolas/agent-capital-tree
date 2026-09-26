@@ -166,7 +166,7 @@ try {
     await save();
     const { stdout } = await promisify(execFile)('/usr/local/bin/codexops-proxy-token', [], { encoding: 'utf8', maxBuffer: 4096 });
     if (!stdout.trim()) throw new Error('CLIProxyAPI token unavailable');
-    companion = new RuntimeCompanion({ runtimeRoot: config.runtimeRoot, rootId: config.rootId,
+    companion = new RuntimeCompanion({ inference: 'cliproxyapi', runtimeRoot: config.runtimeRoot, rootId: config.rootId,
       rpcUrl: config.rpcUrl, controller: config.controller, upstream: config.upstream, upstreamKey: stdout.trim(),
       imageId: config.imageId, models: config.models, workerUid: process.getuid(), workerGid: process.getgid(),
       childGasWei: siblingGrant, writesEnabled: true });
@@ -316,7 +316,7 @@ try {
     const save = () => writeFile(reportPath, JSON.stringify(report, null, 2) + '\n');
     const { stdout } = await promisify(execFile)('/usr/local/bin/codexops-proxy-token', [], { encoding: 'utf8', maxBuffer: 4096 });
     if (!stdout.trim()) throw new Error('CLIProxyAPI token unavailable');
-    companion = new RuntimeCompanion({ runtimeRoot: config.runtimeRoot, rootId: config.rootId,
+    companion = new RuntimeCompanion({ inference: 'cliproxyapi', runtimeRoot: config.runtimeRoot, rootId: config.rootId,
       rpcUrl: config.rpcUrl, controller: config.controller, upstream: config.upstream, upstreamKey: stdout.trim(),
       imageId: config.imageId, models: config.models, workerUid: process.getuid(), workerGid: process.getgid(),
       childGasWei: siblingGrant, writesEnabled: false });

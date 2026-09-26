@@ -1,0 +1,33 @@
+{
+  "date": "2026-09-26",
+  "codexVersion": "0.154.0",
+  "workerImageId": "sha256:f4d84013a02c2ca7347f26f5284f06679586c67204b6242818de535570606f6d",
+  "mode": "deterministic-local-responses-fixture",
+  "realInference": false,
+  "realAccountAuthentication": false,
+  "financialWrites": false,
+  "fixtureProviderMetadataShim": true,
+  "checks": {
+    "nativeDefaultWithoutProxyCredential": true,
+    "preflightBeforeAllocation": true,
+    "isolatedShell": true,
+    "isolatedApplyPatch": true,
+    "hostFileWriteAbsent": true,
+    "workspaceOnlyMount": true,
+    "noContainerNetworkRoute": true,
+    "scopedFinanceRead": true,
+    "expiryRevocation": true,
+    "repeatedGeneratedProfileValidation": true,
+    "unexpectedHostToolInventoryAbsent": true
+  },
+  "runtimeTestsPassed": 24,
+  "pluginTestsPassed": 7,
+  "freshFrozenInstallAndFullBuild": true,
+  "openGates": [
+    "normal-account inference",
+    "native funded spawn/x402/Uniswap E2E",
+    "independent-machine installation",
+    "Codex desktop",
+    "Claude Code"
+  ]
+}

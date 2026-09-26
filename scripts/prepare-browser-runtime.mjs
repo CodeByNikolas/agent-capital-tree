@@ -42,7 +42,7 @@ try {
       await writeFile(new URL('../deployments/browser-runtime-funding.json', import.meta.url), JSON.stringify(report, null, 2) + '\n');
     }
     const config = { runtimeRoot, rootId: owner.rootId, rpcUrl, controller: owner.controller,
-      upstream: 'http://100.91.160.81:8317/v1',
+      inference: 'cliproxyapi', upstream: 'http://100.91.160.81:8317/v1',
       imageId: 'sha256:e18863655ebc0b6daf3b4ebb87851d1ffc8504db7c497bc0252fa9d07ca874b0',
       models: ['gpt-6-luna', 'gpt-6-sol'], childGasWei: parseEther('0.018').toString() };
     const encoded = JSON.stringify(config, null, 2) + '\n';

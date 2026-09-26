@@ -110,7 +110,7 @@ try {
     controller: config.controller, upstream: config.upstream, upstreamKey, imageId: config.imageId,
     models: config.models, workerUid: process.getuid(), workerGid: process.getgid(),
     childGasWei: BigInt(config.childGasWei), writesEnabled: true };
-  companion = new RuntimeCompanion(runtimeConfig);
+  companion = new RuntimeCompanion({ ...runtimeConfig, inference: 'cliproxyapi' });
   stage = 'companion-start';
   const ready = await companion.start();
   const rootToken = (await readPrivate(ready.rootTokenFile)).trim();

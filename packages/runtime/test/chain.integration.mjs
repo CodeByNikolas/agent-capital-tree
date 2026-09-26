@@ -166,7 +166,7 @@ try {
         amount: '5', restrictions: { maxPerAction: { [token0.address]: '20', [token1.address]: '20' } } };
       const grant = parseEther('0.0001');
       const runtimeConfig = { runtimeRoot, rootId: '1', rpcUrl, controller: controller.address,
-        upstream: 'http://127.0.0.1:1/v1', upstreamKey: 'synthetic-host-only',
+        inference: 'cliproxyapi', upstream: 'http://127.0.0.1:1/v1', upstreamKey: 'synthetic-host-only',
         imageId: `sha256:${'a'.repeat(64)}`, models: ['gpt-6-luna'], workerUid: process.getuid(),
         workerGid: process.getgid(), childGasWei: grant, writesEnabled: true };
       let dispatches = 0;
@@ -246,7 +246,7 @@ syncBuiltinESMExports();
       const cliEnv = { ...process.env, PATH: `${dockerBin}:${process.env.PATH}`,
         NODE_OPTIONS: [process.env.NODE_OPTIONS, `--import=${preloadPath}`].filter(Boolean).join(' ') };
       await writeFile(cliConfigPath, JSON.stringify({ runtimeRoot, rootId: '1', rpcUrl, controller: controller.address,
-        upstream: 'http://127.0.0.1:1/v1', providerTokenFile: providerTokenPath, imageId: `sha256:${'a'.repeat(64)}`,
+        inference: 'cliproxyapi', upstream: 'http://127.0.0.1:1/v1', providerTokenFile: providerTokenPath, imageId: `sha256:${'a'.repeat(64)}`,
         models: ['gpt-6-luna'], childGasWei: '0' }), { mode: 0o600 });
       const cli = spawn(process.execPath, [new URL('../cli.mjs', import.meta.url).pathname, 'start', cliConfigPath], {
         env: cliEnv, stdio: ['ignore', 'pipe', 'pipe']
@@ -291,7 +291,7 @@ syncBuiltinESMExports();
       const invalidProviderFiles = [join(cliDirectory, 'missing-token'), '', null, false, 17, looseToken, emptyToken, linkedToken];
       for (const providerTokenFile of invalidProviderFiles) {
         await writeFile(cliConfigPath, JSON.stringify({ runtimeRoot, rootId: '1', rpcUrl, controller: controller.address,
-          upstream: 'http://127.0.0.1:1/v1', providerTokenFile,
+          inference: 'cliproxyapi', upstream: 'http://127.0.0.1:1/v1', providerTokenFile,
           imageId: `sha256:${'a'.repeat(64)}`, models: ['gpt-6-luna'], childGasWei: '0' }), { mode: 0o600 });
         const deniedCli = spawn(process.execPath, [new URL('../cli.mjs', import.meta.url).pathname, 'start', cliConfigPath], {
           env: cliEnv, stdio: ['ignore', 'ignore', 'ignore']

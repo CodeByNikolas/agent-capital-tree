@@ -4,11 +4,11 @@ This is the Linux/Codex CLI path for the current **Circle USDC deployment on Eth
 
 Desktop-app environment inheritance and a native macOS runtime have not been independently verified. Independent setup on another person's machine is still an acceptance gate; follow the checks below and report where your environment differs.
 
-A same-host acceptance run has now completed the browser setup, funded MCP spawn, x402 payment and Uniswap swap after the fixes recorded in [the acceptance report](../ACCEPTANCE.md). Keep the owner wallet separate from the runtime operator; never import your owner key into the companion.
+A same-host acceptance run using the earlier CLIProxyAPI path completed browser setup, funded MCP spawn, x402 payment and Uniswap swap after the fixes recorded in [the acceptance report](../ACCEPTANCE.md). The native-login financial path still needs end-to-end verification. Keep the owner wallet separate from the runtime operator; never import your owner key into the companion.
 
 ## 1. Prepare the checkout and worker
 
-You need a Sepolia-capable browser wallet, Sepolia ETH for wallet and operator transactions, a Sepolia RPC URL, your own reachable **CLIProxyAPI** endpoint and credential, and access to `gpt-6-sol` and `gpt-6-luna` through that endpoint. The endpoint must support the Responses API at `/v1/responses`. A Codex login does not supply worker inference. Do not use another inference provider or a direct OpenAI API credential for this setup.
+You need a Sepolia-capable browser wallet, Sepolia ETH for wallet and operator transactions, a Sepolia RPC URL, and a ChatGPT account with access to Codex CLI. The default worker inference path uses that account's **native Codex login** on the host. Choose a model available to your account; the CLIProxyAPI aliases `gpt-6-sol` and `gpt-6-luna` are not assumed to be available through native login. HomeBox operators can instead select the optional CLIProxyAPI configuration below. Do not use a direct OpenAI API credential for this setup.
 
 On a Linux host, install Node 22, pnpm 11.13.1, Docker accessible to your non-root user, and **Codex CLI 0.154.0**. Check the prerequisites before continuing:
 
@@ -19,34 +19,31 @@ codex --version
 docker info --format '{{.Architecture}}'
 ```
 
-Use the [official Codex CLI installation guide](https://developers.openai.com/codex/cli/) to obtain the CLI, but pin version `0.154.0` for this worker image. Do not run an unreviewed install script. The image builder requires the **Linux ELF executable**, not an npm shell wrapper, for the same architecture as the Docker daemon. Locate it and independently verify its SHA-256 against your trusted release source. The hash printed by your own downloaded file is not an independent expected hash.
+Use the [official Codex CLI installation guide](https://developers.openai.com/codex/cli/) to obtain the CLI, but pin version `0.154.0` for this worker image. Do not run an unreviewed install script. The image builder and native launcher require the **same Linux ELF executable**, not an npm shell wrapper, for the same architecture as the Docker daemon. Locate it and independently verify its SHA-256 against your trusted release source. The hash printed by your own downloaded file is not an independent expected hash.
 
 ```sh
 git clone https://github.com/CodeByNikolas/agent-capital-tree.git
 cd agent-capital-tree
 pnpm install --frozen-lockfile --ignore-scripts
 pnpm build
-node packages/runtime/build-worker-image.mjs /absolute/path/to/linux-codex TRUSTED_64_CHARACTER_SHA256
+ACT_CODEX_BINARY=/absolute/path/to/linux-codex
+node packages/runtime/build-worker-image.mjs "$ACT_CODEX_BINARY" TRUSTED_64_CHARACTER_SHA256
 ```
 
 Record the immutable `sha256:` image ID printed by the builder for the config in step 3. Rebuild after plugin/runtime changes; an old image contains the old MCP tool schemas. See the [runtime guide](../packages/runtime/README.md) for isolation and image details.
 
 The companion and `pnpm build` use the checked-in SDK ABI and need no contract submodules. If you also build or test the Solidity contracts, run `git submodule update --init --recursive` in this checkout first; the nested ENS and Uniswap dependencies make that a larger download.
 
-Configure the **root Codex CLI** to use that same CLIProxyAPI endpoint. In your user-level `~/.codex/config.toml` (or a separate user-level Codex profile), add the following values, merging them with existing settings rather than replacing the whole file. Provider settings in a repository `.codex/config.toml` are ignored. Load the key from a private file in the shell that launches Codex; keep it out of TOML and Git.
+Create a dedicated private Codex home for the **host companion** and sign in with your ChatGPT account using the verified `ACT_CODEX_BINARY` from the image build. Keep this worker login profile pristine: do not add manual configuration, MCP registrations, apps or plugins there. The runtime permits only the pinned CLI’s automatically generated `/workspace` trust entry and bundled `.system` skills. The root interactive Codex CLI uses its own normal profile; check that profile's login separately with `CODEX_HOME="$HOME/.codex" codex login status`, and run `CODEX_HOME="$HOME/.codex" codex login` if needed. [Official Codex CLI commands](https://learn.chatgpt.com/docs/developer-commands#codex-login) document `codex login`, `--device-auth`, and `codex login status`. Use device authentication if the host has no browser. Do not copy another profile's auth files into the worker image or checkout.
 
-```toml
-model = "gpt-6-sol"
-model_provider = "act_cliproxyapi"
-
-[model_providers.act_cliproxyapi]
-name = "My CLIProxyAPI"
-base_url = "https://your-cliproxyapi.example/v1"
-env_key = "ACT_INFERENCE_KEY"
-wire_api = "responses"
+```sh
+ACT_SETUP_DIR="$HOME/.agent-capital-tree-local"
+install -d -m 700 "$ACT_SETUP_DIR" "$ACT_SETUP_DIR/codex-home"
+CODEX_HOME="$ACT_SETUP_DIR/codex-home" "$ACT_CODEX_BINARY" -c 'cli_auth_credentials_store="file"' login
+CODEX_HOME="$ACT_SETUP_DIR/codex-home" "$ACT_CODEX_BINARY" login status
 ```
 
-The `base_url` must point to **your CLIProxyAPI**, including `/v1`, and the model aliases must exist on that service. [Official Codex configuration](https://learn.chatgpt.com/docs/config-file/config-advanced#custom-model-providers) describes user-level custom providers. Test it with a real model call after creating the credential file in step 3.
+The login commands authenticate only this host profile. They do not register MCP tools or authorize wallet actions. In the root interactive CLI, use `/model` to inspect account-available model names. Copy the exact chosen name into `models` below, then run `check-codex` to verify it through the dedicated worker login before binding an operator.
 
 ## 2. Create your root
 
@@ -56,27 +53,16 @@ The browser navigates by ENS name or vault contract address, but the local compa
 
 ## 3. Configure and prepare the operator
 
-Outside the checkout, create a private directory (mode `0700`), a JSON config (mode `0600`), and a file containing **only** your raw CLIProxyAPI credential (mode `0600`), all owned by your user. For example, create the files without printing the secret:
+Outside the checkout, create a JSON config (mode `0600`) in the private directory from step 1. Keep the dedicated Codex home private and owned by your user:
 
 ```sh
-ACT_SETUP_DIR="$HOME/.agent-capital-tree-local"
 install -d -m 700 "$ACT_SETUP_DIR"
-(umask 077; touch "$ACT_SETUP_DIR/provider-token" "$ACT_SETUP_DIR/config.json")
-chmod 600 "$ACT_SETUP_DIR/provider-token" "$ACT_SETUP_DIR/config.json"
-${EDITOR:-vi} "$ACT_SETUP_DIR/provider-token"
+(umask 077; touch "$ACT_SETUP_DIR/config.json")
+chmod 600 "$ACT_SETUP_DIR/config.json"
 ${EDITOR:-vi} "$ACT_SETUP_DIR/config.json"
 ```
 
-With the user-level Codex provider configured in step 1, confirm model access before starting the companion:
-
-```sh
-export ACT_INFERENCE_KEY="$(< "$ACT_SETUP_DIR/provider-token")"
-codex exec --ephemeral "Reply with READY."
-```
-
-The companion uses the same raw credential through `providerTokenFile`; its workers receive only short-lived scoped broker tokens. Reload `ACT_INFERENCE_KEY` in any new shell that launches root Codex.
-
-Use the resulting absolute paths for `providerTokenFile` and the CLI commands below. Do not put the credential, the operator key, or `root-session.token` in chat, shell arguments, logs, or Git. Example config; replace every placeholder and make `runtimeRoot` a **new, persistent** private directory for this one root and controller:
+Use absolute paths for `codexBinary`, `codexHome`, and the CLI commands below. Set `codexBinary` to the same verified `ACT_CODEX_BINARY` used to build the image and sign in to the worker profile; do not use a `command -v codex` path that resolves to a wrapper. Do not put the Codex home, operator key, or `root-session.token` in Git. Example config; replace every placeholder and make `runtimeRoot` a **new, persistent** private directory for this one root and controller:
 
 ```json
 {
@@ -84,15 +70,24 @@ Use the resulting absolute paths for `providerTokenFile` and the CLI commands be
   "rootId": "YOUR_NEW_ROOT_ID",
   "rpcUrl": "https://your-sepolia-rpc.example",
   "controller": "0x7eDFa3D484d64b6bA3b5b2bcef51147E57133FFB",
-  "upstream": "https://your-cliproxyapi.example/v1",
-  "providerTokenFile": "/absolute/private/provider-token",
+  "inference": "codex",
+  "codexBinary": "/absolute/path/to/linux-codex",
+  "codexHome": "/absolute/private/codex-home",
   "imageId": "sha256:YOUR_BUILT_IMAGE_ID",
-  "models": ["gpt-6-luna", "gpt-6-sol"],
+  "models": ["YOUR_AVAILABLE_CODEX_MODEL"],
   "childGasWei": "0"
 }
 ```
 
-`upstream` must be your CLIProxyAPI `/v1` URL, not a `/responses` URL. The runtime uses the credential file for this endpoint. Preserve `runtimeRoot`, including its encrypted key files and `keys/master.password`; losing either makes the bound operator key unavailable. Do not reuse that directory for another root or controller.
+Check the native login, every configured model and Docker before creating or binding the operator:
+
+```sh
+node packages/runtime/cli.mjs check-codex /absolute/private/config.json
+```
+
+This preflight checks account and model metadata; it does not make a model inference or a financial call. The companion also checks native availability before allocating capital. The host Codex app-server uses `codexHome` for authentication. The Docker worker stays network isolated and receives only scoped finance tools; it does not receive the host's Codex credentials. Preserve `runtimeRoot`, including its encrypted key files and `keys/master.password`; losing either makes the bound operator key unavailable. Do not reuse that directory for another root or controller.
+
+**Optional HomeBox CLIProxyAPI path:** set `"inference": "cliproxyapi"` instead of `"codex"`; remove `codexBinary` and `codexHome`; add `"upstream": "http://your-cliproxyapi-host:8317/v1"` and `"providerTokenFile": "/absolute/private/provider-token"`. The provider token file contains only the raw CLIProxyAPI credential, is owned by your user, and has mode `0600`. The endpoint must support `/v1/responses`; use model names available there. Configure the root CLI's user-level custom provider separately if it should also use CLIProxyAPI. See [official custom provider configuration](https://learn.chatgpt.com/docs/config-file/config-advanced#custom-model-providers). This optional path is the HomeBox configuration, not a prerequisite for the native jury flow.
 
 ```sh
 node packages/runtime/cli.mjs prepare-root /absolute/private/config.json
@@ -110,7 +105,7 @@ This starts with public-chain writes disabled. Keep this terminal running. It pr
 
 ## 5. Register MCP in Codex CLI
 
-In the Codex profile's `config.toml`, add this single registration; replace the repository path. Do not also enable the marketplace installation in the same profile.
+In the **root interactive profile's** `~/.codex/config.toml`, add this single registration; replace the repository path. Do not put it in the companion's `codexHome`, and do not also enable the marketplace installation in the root profile.
 
 ```toml
 [mcp_servers.capital_tree_root]
@@ -120,16 +115,15 @@ tool_timeout_sec = 300
 env_vars = ["ACT_RUNTIME_URL", "ACT_MCP_TOKEN"]
 ```
 
-In a second Bash terminal, load the CLIProxyAPI credential and the companion's printed loopback URL and private token without displaying either credential, then launch Codex using your existing CLIProxyAPI configuration:
+In a second Bash terminal, load the companion's printed loopback URL and private MCP token without displaying the token, then launch your root Codex CLI:
 
 ```sh
 export ACT_RUNTIME_URL='http://127.0.0.1:PORT_PRINTED_BY_COMPANION'
 export ACT_MCP_TOKEN="$(< /absolute/private/runtime/root-session.token)"
-export ACT_INFERENCE_KEY="$(< /absolute/private/provider-token)"
-codex
+CODEX_HOME="$HOME/.codex" codex
 ```
 
-Use `codex mcp get capital_tree_root --json` to check the registration and 300-second timeout. See the [plugin guide](../packages/plugin/README.md) for installation details and the marketplace-write limitation.
+Use `CODEX_HOME="$HOME/.codex" codex mcp get capital_tree_root --json` to check the registration and 300-second timeout in the root profile. See the [plugin guide](../packages/plugin/README.md) for installation details and the marketplace-write limitation.
 
 ## 6. Read, then perform one controlled spawn
 
@@ -148,7 +142,7 @@ Refresh the printed URL/token in the launching terminal and restart the Codex se
   "operationKey": "0xYOUR_64_HEX_CHARACTERS",
   "name": "researcher",
   "task": "Read your own vault and effective policy with Capital Tree MCP, then report the result. Do not send transactions.",
-  "model": "gpt-6-luna",
+  "model": "YOUR_AVAILABLE_CODEX_MODEL",
   "asset": "0x1c7D4B196Cb0C7B01d743Fbc6116a902379C7238",
   "amount": "10000",
   "restrictions": {

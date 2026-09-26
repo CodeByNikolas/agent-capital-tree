@@ -572,7 +572,7 @@ try {
     checkpointBehindVerifiedEvents: indexed.indexing.latestIndexedBlock < Math.max(...indexed.items.map(item => item.provenance.blockNumber)) };
   stage = 'companion-prep'; report.stage = stage; await save();
   const tokenOutput = providerToken;
-  companion = new RuntimeCompanion({ runtimeRoot, rootId: report.rootId, rpcUrl: config.rpcUrl,
+  companion = new RuntimeCompanion({ inference: 'cliproxyapi', runtimeRoot, rootId: report.rootId, rpcUrl: config.rpcUrl,
     controller: config.controller, upstream: config.upstream, upstreamKey: tokenOutput,
     imageId: config.imageId, models: ['gpt-6-sol'], workerUid: process.getuid(), workerGid: process.getgid(),
     childGasWei: 0n, writesEnabled: true,

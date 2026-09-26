@@ -32,7 +32,7 @@ const deadline=(await rpc.getBlock('latest')).timestamp+3600;
 const evidence={chainId:11155111,controller:config.controller,rootId:config.rootId,imageId:config.imageId,status:'running',startedAt:new Date().toISOString(),transactions:{}};
 const save=()=>writeFile(reportPath,JSON.stringify(evidence,null,2)+'\n');await save();
 const {stdout:providerToken}=await promisify(execFile)('/usr/local/bin/codexops-proxy-token',[],{encoding:'utf8'});
-const companion=new RuntimeCompanion({...config,upstreamKey:providerToken.trim(),workerUid:process.getuid(),workerGid:process.getgid(),childGasWei:BigInt(config.childGasWei),writesEnabled:true});
+const companion=new RuntimeCompanion({...config,inference:'cliproxyapi',upstreamKey:providerToken.trim(),workerUid:process.getuid(),workerGid:process.getgid(),childGasWei:BigInt(config.childGasWei),writesEnabled:true});
 const requirePlugin=createRequire(new URL('../packages/plugin/package.json',import.meta.url));
 const {Client}=requirePlugin('@modelcontextprotocol/sdk/client/index.js');
 const {StdioClientTransport}=requirePlugin('@modelcontextprotocol/sdk/client/stdio.js');
