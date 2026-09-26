@@ -1,3 +1,7 @@
+## Observable dashboard metrics — 27 September 2026
+
+- Removed the unobservable Runtime/Unknown overview metric and MCP connection/runtime status. Overview now has three summary columns, with matching initial skeleton count and responsive layout. Production build/TypeScript passed.
+
 ## Overview vault ENS — 27 September 2026
 
 - The Overview/Setup funding section now displays the full vault ENS name alongside its contract address. Both have independent copy buttons.

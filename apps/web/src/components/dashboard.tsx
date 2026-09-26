@@ -603,7 +603,7 @@ function DashboardLoading({ view, error, onRetry }: { view: DashboardProps["view
   return <div className="dashboard-loading" aria-busy={!error} aria-label={error ? "Vault unavailable" : "Loading vault data"}>
     {error ? <div className="live-read-notice live-read-notice-error" role="alert"><AlertCircle size={20} aria-hidden="true" /><p><strong>Vault data unavailable.</strong> {error}</p><Button variant="outline" onClick={onRetry}>Try again</Button></div> : <>
       <div className="page-heading"><span className="page-kicker">{views.find((item) => item.id === view)?.title}</span><Skeleton className="loading-heading" /><Skeleton className="loading-description" /></div>
-      <div className="loading-grid">{Array.from({ length: view === "overview" ? 4 : 2 }, (_, index) => <div className="loading-panel" key={index}><Skeleton className="loading-label" /><Skeleton className="loading-value" /><Skeleton className="loading-line" /></div>)}</div>
+      <div className="loading-grid">{Array.from({ length: view === "overview" ? 3 : 2 }, (_, index) => <div className="loading-panel" key={index}><Skeleton className="loading-label" /><Skeleton className="loading-value" /><Skeleton className="loading-line" /></div>)}</div>
     </>}
   </div>;
 }
@@ -690,12 +690,10 @@ function SummaryMetrics({ data }: { data: DashboardData }) {
   const assets = uniqueAssets(holdings);
   const usdc = assets.find(asset => asset.symbol === "USDC");
   const demo = assets.find(asset => asset.symbol === "DEMO-USD");
-  const runtimeKnown = data.nodes.every(node => node.runtime !== "unknown");
   return <dl className="summary-ledger" aria-label={data.source === "preview" ? "Preview summary" : "Capital summary"}>
     <div><dt>Vault balances</dt><dd className="usdc-amount">{usdc ? formatAmount(sumAsset(holdings, usdc)) + " USDC" : "Unavailable"}</dd>{demo && <small className="test-amount">{formatAmount(sumAsset(holdings, demo))} DEMO-USD</small>}</div>
     <div><dt>Nodes</dt><dd>{data.nodes.length} / 32</dd><small>{data.nodes.filter(node => node.state === "active").length} active · three levels maximum</small></div>
     <div><dt>Open positions</dt><dd>{data.positions.filter(position => position.state === "open").length}</dd><small>Uniswap v4</small></div>
-    <div><dt>Runtime <InfoHint term="runtime" /></dt><dd>{runtimeKnown ? data.nodes.filter(node => node.runtime === "connected").length + " connected" : "Unknown"}</dd><small>{runtimeKnown ? "Local companion connections" : "Not observable onchain"}</small></div>
   </dl>;
 }
 
@@ -1321,7 +1319,6 @@ export function Dashboard({ data: initialData, deployment, vaultQuery, nodeQuery
   if (!selectedNode) return null;
 
   const liveError = currentReadState.status === "error" ? currentReadState.error : null;
-  const runtimeLabel = !vaultQuery ? "No vault selected" : data.nodes.every((node) => node.runtime === "unknown") ? "Local companion status unavailable on-chain" : `${data.nodes.filter((node) => node.runtime === "connected").length} connected`;
 
   const requestAction = (mode: Exclude<WalletActionMode, null>) => {
     setDetailOpen(false);
@@ -1473,7 +1470,7 @@ export function Dashboard({ data: initialData, deployment, vaultQuery, nodeQuery
             <X402Panel node={selectedNode} actions={actions} walletOnSepolia={walletOnSepolia} canPay={selectedAgentConnected} />
 
           </>}
-          {view === "mcp" && <McpPanel deployment={deployment} selectedNode={vaultQuery ? selectedNode : undefined} runtimeLabel={vaultQuery ? runtimeLabel : "No vault selected"} />}
+          {view === "mcp" && <McpPanel deployment={deployment} selectedNode={vaultQuery ? selectedNode : undefined} />}
           {view === "setup" && <>
             <div className="setup-selected"><strong>Root vault</strong><span className="setup-root-name">{rootNode?.ensName ?? "Unknown root"}</span><span>{sourceLabel(data.source)}</span><Button className="setup-create-root" onClick={() => setWalletActionMode("create-root")}>Create another root</Button></div>
             <WalletControlsPanel
