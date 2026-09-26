@@ -57,7 +57,7 @@ import type {
   VaultState,
 } from "@/lib/dashboard-types";
 import type { PublicDeployment } from "@/lib/deployment";
-import { formatAmount, formatCompactAmount } from "@/lib/format-display-amount";
+import { formatAmount, formatCompactAmount, formatRoundedAmount } from "@/lib/format-display-amount";
 import { mobileTreeOrder } from "@/lib/mobile-tree-order";
 
 type InjectedProvider = Parameters<typeof custom>[0] & {
@@ -899,7 +899,7 @@ function AddressLine({ label, value, source }: { label: string; value: string; s
   return (
     <div>
       <span>{label}</span>
-      <code>{value}</code>
+      <code title={value}>{shortAddress(value)}</code>
       <button type="button" onClick={copyPreviewValue} aria-label={`Copy ${source === "preview" ? "preview " : ""}${label.toLowerCase()}`} title={source === "preview" ? "Copy preview string" : "Copy address"}>
         {copied ? <Check size={13} /> : <Copy size={13} />}
       </button>
@@ -925,15 +925,15 @@ function CapitalLedger({ data, node }: { data: DashboardData; node: VaultNode })
         {assets.map((asset) => (
           <div className="capital-ledger-row" role="row" key={asset.key}>
             <span className="capital-ledger-asset" role="cell"><i />{asset.symbol}</span>
-            <strong role="cell">{formatAmount(sumAsset(node.tokenHoldings, asset))}</strong>
-            <span role="cell">{formatAmount(sumAsset(node.freeCapital, asset))}</span>
-            <span role="cell">{allocationHistoryAvailable ? formatAmount(sumAsset(outgoing, asset)) : "—"}</span>
+            <strong role="cell" title={`Exact: ${formatAmount(sumAsset(node.tokenHoldings, asset))}`}>{formatRoundedAmount(sumAsset(node.tokenHoldings, asset))}</strong>
+            <span role="cell" title={`Exact: ${formatAmount(sumAsset(node.freeCapital, asset))}`}>{formatRoundedAmount(sumAsset(node.freeCapital, asset))}</span>
+            <span role="cell" title={allocationHistoryAvailable ? `Exact: ${formatAmount(sumAsset(outgoing, asset))}` : undefined}>{allocationHistoryAvailable ? formatRoundedAmount(sumAsset(outgoing, asset)) : "—"}</span>
           </div>
         ))}
       </div>
       <div className="capital-origin">
         <span>{parent ? `Gross assigned in by ${parent.label}` : "Root funding origin"}</span>
-        <strong>{parent ? node.capitalReceivedFromParent === null ? "Not indexed" : node.capitalReceivedFromParent.map(formatAmount).join(" · ") || "0" : "Owner wallet · no parent vault"}</strong>
+        <strong title={parent && node.capitalReceivedFromParent ? node.capitalReceivedFromParent.map((amount) => `${formatAmount(amount)} ${amount.symbol}`).join(" · ") : undefined}>{parent ? node.capitalReceivedFromParent === null ? "Not indexed" : node.capitalReceivedFromParent.map((amount) => `${formatRoundedAmount(amount)} ${amount.symbol}`).join(" · ") || "0" : "Owner wallet · no parent vault"}</strong>
       </div>
       <p className="capital-ledger-note">{allocationHistoryAvailable ? "Assignments are transfers between vaults. They are tracked separately from current holdings." : "Balances come from direct RPC. Allocation totals require the separate MultiBaas activity source."}</p>
     </section>

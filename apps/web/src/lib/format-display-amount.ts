@@ -10,6 +10,14 @@ export function formatAmount(amount: TokenAmount): string {
   return visibleFraction ? `${groupedWhole}.${visibleFraction}` : groupedWhole;
 }
 
+export function formatRoundedAmount(amount: TokenAmount): string {
+  const raw = BigInt(amount.rawAmount);
+  const scale = 10n ** BigInt(amount.decimals);
+  const rounded = (raw * 1000n + scale / 2n) / scale;
+  const whole = (rounded / 1000n).toLocaleString("en-US");
+  return `${whole}.${(rounded % 1000n).toString().padStart(3, "0")}`;
+}
+
 export function formatCompactAmount(amount: TokenAmount): string {
   const raw = BigInt(amount.rawAmount);
   const scale = 10n ** BigInt(amount.decimals);
