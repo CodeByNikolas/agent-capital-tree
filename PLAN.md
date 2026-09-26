@@ -1,6 +1,10 @@
-# Agent Capital Tree — verbindlicher Implementierungsplan
+# Kanoki — verbindlicher Implementierungsplan
 
 Stand: 26. September 2026. Produktentscheidungen sind festgelegt; Implementierung läuft, der tatsächliche Abnahmestand steht in STATUS.md. Dieser Plan ersetzt frühere Brainstorming-Varianten. Nach Kontextkomprimierung zuerst diesen Plan und STATUS.md lesen.
+
+## Aktuelle Gestaltung und Veröffentlichung
+
+Der korrigierte Kanoki-Brief und `KANOKI_DESIGN.md` ersetzen ältere Gestaltungsentscheidungen unten: Header-Navigation statt Sidebar, explizites dunkles/helles Theme, Fraunces/IBM Plex und die vorgegebenen Tokens. Bestehende Onchain- und MCP-Schnittstellen bleiben erhalten. Die gelieferten PNG-Logos werden unverändert eingebunden. README und GIF zeigen Kanoki; die GIF-Aufnahme ist ausdrücklich illustrativ. Der Nutzer verlangt nach jedem geprüften Änderungsblock Commit als CodeByNikolas, Push und Deployment. Release-Arbeit liegt wegen paralleler Branchwechsel isoliert auf `work/kanoki`; freigegebenes bestehendes Vercel-Ziel bleibt `raglibol/agent-capital-tree`.
 
 ## Demo-Priorität: Chat-gesteuerter Sepolia-Vault (neuer Nutzerauftrag)
 

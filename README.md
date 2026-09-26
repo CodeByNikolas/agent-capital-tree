@@ -1,12 +1,14 @@
-# Agent Capital Tree
+# Kanoki
 
-**Give AI agents capital without giving them the whole wallet.** A human funds a root vault, then agents delegate smaller amounts into separate child vaults. ENSv2 roles and contract-enforced ancestor policies narrow what each child can do. The owner retains an independent recovery path.
+Agent Capital Tree
 
-![Animated illustration of owner authorization, capital delegation, narrower child permissions, and owner recovery](assets/agent-capital-tree-flow.gif)
+**Capital follows a mandate.** A human funds a root vault, then agents delegate smaller amounts into separate child vaults. ENSv2 roles and contract-enforced ancestor policies narrow what each child can do. The owner retains an independent recovery path.
 
-*Illustrative flow. The dashboard and MCP read current Ethereum Sepolia state independently.*
+![Kanoki preview: overview, vault tree, applications and indexed activity](assets/agent-capital-tree-flow.gif)
 
-[Live dashboard](https://agent-capital-tree-silk.vercel.app) · [Explore the sample tree](https://agent-capital-tree-silk.vercel.app/tree?preview=1) · [Current branch](https://github.com/CodeByNikolas/agent-capital-tree/tree/work/rami) · [MCP guide](https://agent-capital-tree-silk.vercel.app/mcp) · [Local setup](docs/local-setup.md) · [Jury walkthrough](docs/jury-demo.md) · [Current status](STATUS.md)
+*Read-only preview recording. Balances, nodes and activity in the GIF are illustrative. The live dashboard and MCP read Ethereum Sepolia independently.*
+
+[Live dashboard](https://agent-capital-tree-silk.vercel.app) · [Explore the sample tree](https://agent-capital-tree-silk.vercel.app/tree?preview=1) · [Current branch](https://github.com/CodeByNikolas/agent-capital-tree/tree/work/kanoki) · [MCP guide](https://agent-capital-tree-silk.vercel.app/mcp) · [Local setup](docs/local-setup.md) · [Jury walkthrough](docs/jury-demo.md) · [Current status](STATUS.md)
 
 The prototype runs on **Ethereum Sepolia (chain 11155111)** with official Circle **Test-USDC**. **Uniswap v4** supports bounded swaps and vault-owned liquidity positions. **x402** supports scoped service purchases. **Curvegrid MultiBaas** indexes controller capital and strategy events. Public contract addresses are in [usdc-sepolia.json](deployments/usdc-sepolia.json). This is an unaudited hackathon prototype using testnet assets.
 
@@ -17,7 +19,7 @@ Open the [live root vault](https://agent-capital-tree-silk.vercel.app/tree?vault
 To check the keyless local MCP from this branch, use Node 22+, pnpm and Codex CLI. From an existing checkout, start at `pnpm install`; clone only when you need a new checkout:
 
 ```sh
-git clone --branch work/rami https://github.com/CodeByNikolas/agent-capital-tree.git
+git clone --branch work/kanoki https://github.com/CodeByNikolas/agent-capital-tree.git
 cd agent-capital-tree
 pnpm install --frozen-lockfile --ignore-scripts
 pnpm --filter @agent-capital-tree/sdk build
@@ -35,17 +37,17 @@ These checks need internet access for the public app and Sepolia RPC. They use a
 2. The master transfers part of its capital into a child vault. Children may delegate again within a three-level tree.
 3. Each node has a real ENS subname and EAC roles. Our controller explicitly checks ancestor policies, current authority, expiry and revocation.
 4. Each runtime worker has its own key, workspace and authenticated MCP context in a separate Docker container. Model-supplied IDs cannot select a parent’s signer.
-5. The human retains an independent recovery path for remaining assets, including closing existing LP positions.
+5. The human retains an independent recovery path for remaining assets, including closing existing LP positions. Revocation stops management; funds stay in the vault until recovery.
 
 Capital allocation is an actual transfer, not an overbookable allowance. Amount ceilings are **per action**, not cumulative spending limits. The vault’s allocated balance bounds total exposure. Model intelligence is not a security boundary; recovery does not guarantee the original dollar value.
 
-Native Codex subagents do not automatically become capital workers. For the short demo, use `createChildVault`: the current chat manages a real ENS/vault/budget without Docker or another model process. `spawnChild` is the separate autonomous-worker option. No automatic Codex hooks are enabled.
+Native Codex subagents do not automatically become capital workers. For the short demo, use `createChildVault`: the current chat manages a real ENS node, vault and allocation without Docker or another model process. `spawnChild` is the separate autonomous-worker option. No automatic Codex hooks are enabled.
 
 ## Applications
 
 **Service purchases:** `getPaymentServices` lists explicitly configured services. `purchaseService` follows x402 v2’s HTTP402 flow. The agent signs an exact EIP-3009 authorization for its vault, recipient, amount, validity window and nonce. The vault’s ERC-1271 verifier checks the current ENS/PAY mandate at settlement. Nonces bind the authority generation, and retries retain the same authorization. The companion independently verifies Circle’s `Transfer` and `AuthorizationUsed` receipt events.
 
-The supported payment token is Circle Sepolia USDC at [`0x1c7D4B196Cb0C7B01d743Fbc6116a902379C7238`](https://sepolia.etherscan.io/token/0x1c7D4B196Cb0C7B01d743Fbc6116a902379C7238), with six decimals. `10000` raw units is **0.01 Test-USDC**. Obtain test tokens from [Circle’s faucet](https://faucet.circle.com/); the app cannot mint Circle USDC.
+The supported payment token is Circle Sepolia USDC at [`0x1c7D4B196Cb0C7B01d743Fbc6116a902379C7238`](https://sepolia.etherscan.io/token/0x1c7D4B196Cb0C7B01d743Fbc6116a902379C7238), with six decimals. `10000` raw units is **0.010000 USDC**. Obtain test tokens from [Circle’s faucet](https://faucet.circle.com/); the app cannot mint Circle USDC.
 
 **Uniswap:** typed swaps and vault-owned LP positions use one fixed v4 pool. Management, fee collection and exit are separate permissions. The quote token is **DEMO-USD**, a clearly valueless six-decimal demo asset. Its pool price is not a real USD valuation. Agents cannot supply arbitrary router commands or redirect outputs.
 
@@ -53,7 +55,9 @@ The supported payment token is Circle Sepolia USDC at [`0x1c7D4B196Cb0C7B01d743F
 
 ## Dashboard
 
-Five pages separate overview, agent tree, activity, applications and setup. A shadcn/ui sidebar, readable typography, mobile layouts and system light/dark themes keep navigation focused. Selecting a node opens its capital, ENS name and inherited permissions.
+Five pages separate overview, agent tree, activity, applications and setup. Header navigation, Fraunces and IBM Plex typography, responsive layouts and explicit dark/light themes follow the Kanoki design system. Selecting a node opens its capital, ENS name and inherited permissions. All four capabilities stay visible. USDC and DEMO-USD balances remain separate. See [the corrected design scope](KANOKI_DESIGN.md).
+
+The browser service adapter debits the connected agent wallet; vault-bound purchases use MCP. Swap and Add liquidity are visible but disabled in the browser because those adapters are not implemented. Revocation and position exit require confirmation.
 
 Enter a vault contract address or a registered name under **`agentcapitalusdc.eth`** in **Open vault**. Internal numeric IDs are not accepted in this field. Without a selected vault, the app shows onboarding; illustrative data requires explicit preview mode. An active mandate does not imply an agent process is running.
 
@@ -88,10 +92,10 @@ node scripts/test-usdc-fork.mjs --payments
 
 The fork test uses the actual Circle proxy and deployed Uniswap contracts on a disposable local Sepolia fork. It checks delegation, signatures, inherited restrictions, revocation, x402 settlement, retry behavior, LP opening/closure and recovery. It does not send public transactions or override token balances. See [fork evidence](deployments/usdc-x402-fork.json) and [STATUS.md](STATUS.md) for the exact completed checks and current public acceptance.
 
-The controlled x402 seller is loopback-only, charges0.01USDC, and uses the test owner as recipient. It demonstrates the real protocol; it is not an independent commercial merchant. The companion’s service allowlist is a runtime restriction, not an onchain merchant allowlist. Service content remains untrusted.
+The controlled x402 seller is loopback-only, charges 0.010000 USDC, and uses the test owner as recipient. It demonstrates the real protocol; it is not an independent commercial merchant. The companion’s service allowlist is a runtime restriction, not an onchain merchant allowlist. Service content remains untrusted.
 
 Earlier browser-wallet and real-model evidence is retained in [ACCEPTANCE.md](ACCEPTANCE.md) as historical verification, not as a supported legacy product. Independent external-machine onboarding and native-marketplace financial writes remain unproven. The current USDC/x402 flow has its own evidence and should not be conflated with those earlier runs.
 
 [PLAN.md](PLAN.md) records product decisions. [STATUS.md](STATUS.md) tracks completed deployment/tests and remaining work. The Uniswap feedback form and ETHGlobal submission still require team details and an explicit submission instruction.
 
-Public Sepolia x402 proof: [`deployments/usdc-payment.json`](deployments/usdc-payment.json). A PAY-only researcher spent **0.01 official Test-USDC** from its vault; retry did not charge again. [Settlement transaction](https://sepolia.etherscan.io/tx/0xf91a8d6619bc3f36f33c4dad8855c777c8e96bbcd451d76eba31d131155e55eb). This was a controlled local seller, not an independent merchant or autonomous model run. Controller history is separately verified in [`deployments/usdc-multibaas.json`](deployments/usdc-multibaas.json).
+Public Sepolia x402 proof: [`deployments/usdc-payment.json`](deployments/usdc-payment.json). A PAY-only researcher spent **0.010000 USDC** from its vault; retry did not charge again. [Settlement transaction](https://sepolia.etherscan.io/tx/0xf91a8d6619bc3f36f33c4dad8855c777c8e96bbcd451d76eba31d131155e55eb). This was a controlled local seller, not an independent merchant or autonomous model run. Controller history is separately verified in [`deployments/usdc-multibaas.json`](deployments/usdc-multibaas.json).

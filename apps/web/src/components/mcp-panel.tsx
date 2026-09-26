@@ -13,7 +13,7 @@ pnpm mcp:verify
 pnpm mcp:chat-verify
 pnpm mcp:settings`;
 
-const cloneSnippet = `git clone --branch work/rami https://github.com/CodeByNikolas/agent-capital-tree.git
+const cloneSnippet = `git clone --branch work/kanoki https://github.com/CodeByNikolas/agent-capital-tree.git
 cd agent-capital-tree`;
 
 const installPwsh = `$actScript = (Resolve-Path -LiteralPath 'scripts/mcp-readonly-server.mjs').Path

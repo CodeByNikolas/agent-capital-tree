@@ -1,5 +1,5 @@
 {
-  "base": "http://localhost:3040",
+  "base": "https://agent-capital-tree-silk.vercel.app",
   "checks": [
     {
       "width": 1280,

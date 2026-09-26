@@ -11,7 +11,7 @@ try {
  for(const [width,height] of [[1280,720],[380,820]]) {
   const page=await browser.newPage({viewport:{width,height},reducedMotion:'reduce'});const errors=[];page.on('pageerror',e=>errors.push(e.message));
   for(const theme of ['dark','light']) {
-   await page.goto(base+'/tree?preview=1',{waitUntil:'domcontentloaded'});
+   await page.goto(base+'/tree?preview=1',{waitUntil:'networkidle'});
    await page.getByRole('button',{name:'Use light theme'}).click();
    await expect(page.locator('html')).toHaveAttribute('data-theme','light');
    await page.evaluate(theme=>document.documentElement.dataset.theme=theme,theme);
@@ -34,7 +34,7 @@ try {
    checks.push({width,theme,contrast:'all 8 text pairs >= 4.5',keyboard:'Tab, Enter, Escape, restored focus',overflow:false});
   }
   for(const route of ['/', '/applications','/activity','/setup','/mcp']) {
-   await page.goto(base+route+(route==='/'?'?preview=1':'?preview=1'),{waitUntil:'domcontentloaded'});await expect(page.locator('h1')).toHaveCount(1);
+   await page.goto(base+route+'?preview=1',{waitUntil:'networkidle'});await expect(page.locator('h1')).toHaveCount(1);
    assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),route+' overflow');
    if(width===1280 && ['/applications','/activity','/setup'].includes(route)) await page.screenshot({path:fileURLToPath(new URL('kanoki-'+route.slice(1)+'.png',out)),fullPage:true,animations:'disabled'});
   }

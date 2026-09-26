@@ -72,7 +72,7 @@ function resolveState(props: ViewerStatusProps): ViewerState {
     return {
       tone: "authorized",
       role: `Connected as this vault's AGENT`,
-      detail: `You can act for ${props.vaultLabel} within its mandate — spawn children and manage capital it is authorized for.`,
+      detail: `You can delegate to child vaults and manage capital for ${props.vaultLabel} within its mandate.`,
       icon: <UserCog size={15} aria-hidden="true" />,
     };
   }
