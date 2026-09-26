@@ -7,18 +7,20 @@ import { isAbsolute, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { promisify } from 'node:util';
 import { setTimeout as delay } from 'node:timers/promises';
-import { Contract, JsonRpcProvider, Wallet, id, parseEther } from 'ethers';
+import { Contract, JsonRpcProvider, Transaction, Wallet, id, parseEther } from 'ethers';
 import { RuntimeCompanion, WorkerKeyStore, prepareRootOperator } from '../packages/runtime/dist/index.js';
 import { capitalClient, financeRoles } from '../packages/sdk/dist/index.js';
 import { createMultiBaasHistoryClient } from '../packages/multibaas/dist/index.js';
 import { journaledTransaction } from './lib/sepolia-transactions.mjs';
 
-// One fresh Sepolia attempt. Existing reports or transaction journals require manual reconciliation.
+// One fresh Sepolia attempt; only an indexed-history failure may resume without setup writes.
 const [configArg, mode] = process.argv.slice(2);
-if (!configArg || !isAbsolute(configArg) || (mode && mode !== '--execute') || process.argv.length > 4) {
-  throw new Error('usage: node scripts/test-multibaas-master.mjs /absolute/private-config.json [--execute]');
+if (!configArg || !isAbsolute(configArg) ||
+  (mode && !['--execute', '--resume-indexed', '--inspect-resume'].includes(mode)) || process.argv.length > 4) {
+  throw new Error('usage: node scripts/test-multibaas-master.mjs /absolute/private-config.json [--execute|--inspect-resume|--resume-indexed]');
 }
-const execute = mode === '--execute';
+const resume = mode === '--resume-indexed' || mode === '--inspect-resume';
+const execute = mode === '--execute' || mode === '--resume-indexed';
 const privateBase = join(homedir(), '.agent-capital-tree');
 const readPrivate = async path => {
   assert.ok(isAbsolute(path), 'Private path must be absolute');
@@ -73,11 +75,11 @@ try {
     token.allowance(config.ownerAddress, config.controller), rpc.getFeeData()
   ]);
   const blockers = [];
-  if (tokenBalance < rootAmount) blockers.push('owner needs 4 existing ACT-A');
+  if (!resume && tokenBalance < rootAmount) blockers.push('owner needs 4 existing ACT-A');
   if (!fees.maxFeePerGas || fees.maxFeePerGas > 20_000_000_000n) blockers.push('Sepolia max fee unavailable or above 20 gwei');
-  if (ownerEth < maxSpend) blockers.push('owner balance lacks configured spend cap');
+  if (!resume && ownerEth < maxSpend) blockers.push('owner balance lacks configured spend cap');
   if (BigInt(config.indexingStartBlock) > BigInt(await rpc.getBlockNumber())) blockers.push('indexing start is in future');
-  const summary = { mode: execute ? 'execute' : 'inspect', ready: false,
+  const summary = { mode: mode ?? 'inspect', ready: false,
     runId: config.runId, controller: config.controller, owner: config.ownerAddress,
     tokenBalance: tokenBalance.toString(), allowance: allowance.toString(),
     ownerEth: ownerEth.toString(), maxSpendWei: maxSpend.toString(), operatorGrantWei: gasGrant.toString(),
@@ -123,17 +125,25 @@ try {
     assert.equal(image, config.imageId);
     assert.ok((await stat(new URL('../packages/plugin/bundle/server.mjs', import.meta.url))).size > 0);
   } catch { blockers.push('pinned worker image or plugin bundle unavailable'); }
-  try { await lstat(runtimeRoot); blockers.push('run directory exists; reconcile before retrying'); }
-  catch (error) { if (error.code !== 'ENOENT') blockers.push('run directory cannot be checked safely'); }
+  try {
+    const info = await lstat(runtimeRoot);
+    if (!resume || !info.isDirectory() || info.isSymbolicLink() || info.uid !== process.getuid() ||
+      (info.mode & 0o777) !== 0o700) blockers.push('run directory exists or is unsafe');
+  } catch (error) {
+    if (error.code !== 'ENOENT') blockers.push('run directory cannot be checked safely');
+    else if (resume) blockers.push('resume run directory is missing');
+  }
   summary.ready = blockers.length === 0;
-  if (!execute) { console.log(JSON.stringify(summary)); process.exit(0); }
+  if (!execute && !resume) { console.log(JSON.stringify(summary)); process.exit(0); }
   assert.equal(blockers.length, 0, `Preflight blocked: ${blockers.join('; ')}`);
-  await mkdir(runtimeRoot, { mode: 0o700 });
-  report = { status: 'running', stage, runId: config.runId, chainId: 11155111,
-    controller: config.controller, owner: owner.address, startedAt: new Date().toISOString(),
-    transactions: {}, checks: {}, model: { name: 'gpt-6-sol', reasoning: 'medium' },
-    limitations: ['Programmatic owner setup and final recovery; browser owner flow is evidenced separately.'] };
-  await writeFile(reportPath, JSON.stringify(report, null, 2) + '\n', { mode: 0o600, flag: 'wx' });
+  if (!resume) {
+    await mkdir(runtimeRoot, { mode: 0o700 });
+    report = { status: 'running', stage, runId: config.runId, chainId: 11155111,
+      controller: config.controller, owner: owner.address, startedAt: new Date().toISOString(),
+      transactions: {}, checks: {}, model: { name: 'gpt-6-sol', reasoning: 'medium' },
+      limitations: ['Programmatic owner setup and final recovery; browser owner flow is evidenced separately.'] };
+    await writeFile(reportPath, JSON.stringify(report, null, 2) + '\n', { mode: 0o600, flag: 'wx' });
+  }
   let spentOwnerGas = 0n;
   let spentOperatorGas = 0n;
   let granted = 0n;
@@ -164,53 +174,220 @@ try {
     report.grantedOperatorWei = granted.toString(); await save();
     return receipt;
   };
-  const expiry = BigInt((await rpc.getBlock('latest')).timestamp + 24 * 3600);
-  const policy = { capabilities: financeRoles.delegate | financeRoles.reclaim,
-    maxAmounts: [rootAmount, 0n], expiry, tokenMask: 1, poolId: manifest.uniswap.poolId };
-  stage = 'create-root';
-  const created = await send('create-root', owner,
-    await controller.connect(owner).createRoot.populateTransaction(`mm${config.runId}`, policy));
-  const rootEvent = created.logs.map(log => { try { return controller.interface.parseLog(log); } catch { return null; } })
-    .find(event => event?.name === 'NodeCreated' && event.args.parentId === 0n);
-  assert.ok(rootEvent, 'Root creation receipt lacks NodeCreated');
-  const rootId = rootEvent.args.rootId;
-  assert.ok(![1n, 2n, 5n].includes(rootId), 'Existing test roots are excluded');
-  report.rootId = rootId.toString(); await save();
-  const operatorAddress = await prepareRootOperator(runtimeRoot, report.rootId, config.controller);
-  const keys = new WorkerKeyStore(join(runtimeRoot, 'keys'));
-  const operator = (await keys.wallet(`root-${rootId}`)).connect(rpc);
-  assert.equal(operator.address.toLowerCase(), operatorAddress.toLowerCase());
-  report.operator = operatorAddress; await save();
-  await send('bind-operator', owner,
-    await controller.connect(owner).setRootOperator.populateTransaction(rootId, operatorAddress, policy));
-  if (allowance < rootAmount) await send('approve-act-a', owner,
-    await token.connect(owner).approve.populateTransaction(config.controller, rootAmount));
-  await send('fund-root', owner,
-    await controller.connect(owner).fundRoot.populateTransaction(rootId, [rootAmount, 0n]));
-  for (let remaining = gasGrant, index = 0; remaining > 0n; index++) {
-    const amount = remaining > parseEther('0.01') ? parseEther('0.01') : remaining;
-    await send(`operator-gas-${index}`, owner, { to: operatorAddress, value: amount });
-    remaining -= amount;
-  }
-  const generation = await controller.rootGeneration(rootId);
-  const childPolicy = { ...policy, capabilities: 0n, maxAmounts: [0n, 0n] };
-  for (const side of ['idle', 'sibling']) {
-    const child = await keys.account(`master-${config.runId}-${side}`, true);
-    const operationKey = id(`act-multibaas-master-${config.runId}-${side}`);
-    const receipt = await send(`spawn-${side}`, operator,
-      await controller.connect(operator).spawnChild.populateTransaction(rootId, `${side}${config.runId}`,
-        child.address, childPolicy, [childAmount, 0n], operationKey));
-    const event = receipt.logs.map(log => { try { return controller.interface.parseLog(log); } catch { return null; } })
-      .find(item => item?.name === 'NodeCreated' && item.args.parentId === rootId);
-    assert.ok(event, `Missing ${side} child event`);
-    report[`${side}Id`] = event.args.nodeId.toString(); await save();
-    assert.equal((await controller.getOperation(rootId, rootId, generation, operationKey)).nodeId, event.args.nodeId);
+  let rootId, operatorAddress, keys, operator, generation, created;
+  if (!resume) {
+    const expiry = BigInt((await rpc.getBlock('latest')).timestamp + 24 * 3600);
+    const policy = { capabilities: financeRoles.delegate | financeRoles.reclaim,
+      maxAmounts: [rootAmount, 0n], expiry, tokenMask: 1, poolId: manifest.uniswap.poolId };
+    stage = 'create-root';
+    created = await send('create-root', owner,
+      await controller.connect(owner).createRoot.populateTransaction(`mm${config.runId}`, policy));
+    const rootEvent = created.logs.map(log => { try { return controller.interface.parseLog(log); } catch { return null; } })
+      .find(event => event?.name === 'NodeCreated' && event.args.parentId === 0n);
+    assert.ok(rootEvent, 'Root creation receipt lacks NodeCreated');
+    rootId = rootEvent.args.rootId;
+    assert.ok(![1n, 2n, 5n].includes(rootId), 'Existing test roots are excluded');
+    report.rootId = rootId.toString(); await save();
+    operatorAddress = await prepareRootOperator(runtimeRoot, report.rootId, config.controller);
+    keys = new WorkerKeyStore(join(runtimeRoot, 'keys'));
+    operator = (await keys.wallet(`root-${rootId}`)).connect(rpc);
+    assert.equal(operator.address.toLowerCase(), operatorAddress.toLowerCase());
+    report.operator = operatorAddress; await save();
+    await send('bind-operator', owner,
+      await controller.connect(owner).setRootOperator.populateTransaction(rootId, operatorAddress, policy));
+    if (allowance < rootAmount) await send('approve-act-a', owner,
+      await token.connect(owner).approve.populateTransaction(config.controller, rootAmount));
+    await send('fund-root', owner,
+      await controller.connect(owner).fundRoot.populateTransaction(rootId, [rootAmount, 0n]));
+    for (let remaining = gasGrant, index = 0; remaining > 0n; index++) {
+      const amount = remaining > parseEther('0.01') ? parseEther('0.01') : remaining;
+      await send(`operator-gas-${index}`, owner, { to: operatorAddress, value: amount });
+      remaining -= amount;
+    }
+    generation = await controller.rootGeneration(rootId);
+    const childPolicy = { ...policy, capabilities: 0n, maxAmounts: [0n, 0n] };
+    for (const side of ['idle', 'sibling']) {
+      const child = await keys.account(`master-${config.runId}-${side}`, true);
+      const operationKey = id(`act-multibaas-master-${config.runId}-${side}`);
+      const receipt = await send(`spawn-${side}`, operator,
+        await controller.connect(operator).spawnChild.populateTransaction(rootId, `${side}${config.runId}`,
+          child.address, childPolicy, [childAmount, 0n], operationKey));
+      const event = receipt.logs.map(log => { try { return controller.interface.parseLog(log); } catch { return null; } })
+        .find(item => item?.name === 'NodeCreated' && item.args.parentId === rootId);
+      assert.ok(event, `Missing ${side} child event`);
+      report[`${side}Id`] = event.args.nodeId.toString(); await save();
+      assert.equal((await controller.getOperation(rootId, rootId, generation, operationKey)).nodeId, event.args.nodeId);
+    }
+  } else {
+    // Every setup write is already final. Verify the signed journal and canonical chain before trusting it.
+    const previous = JSON.parse(await readPrivate(reportPath));
+    assert.equal(previous.status, 'incomplete');
+    assert.equal(previous.stage, 'indexed-history');
+    assert.equal(previous.runId, config.runId);
+    assert.equal(previous.chainId, 11155111);
+    assert.equal(previous.controller.toLowerCase(), config.controller.toLowerCase());
+    assert.equal(previous.owner.toLowerCase(), owner.address.toLowerCase());
+    assert.match(previous.rootId, /^[1-9]\d*$/);
+    rootId = BigInt(previous.rootId);
+    assert.ok(![1n, 2n, 5n].includes(rootId));
+    assert.ok(previous.idleId !== previous.siblingId && previous.idleId !== previous.rootId &&
+      previous.siblingId !== previous.rootId);
+    operatorAddress = previous.operator;
+    keys = new WorkerKeyStore(join(runtimeRoot, 'keys'));
+    operator = (await keys.wallet(`root-${rootId}`)).connect(rpc);
+    assert.equal(operator.address.toLowerCase(), operatorAddress.toLowerCase());
+    generation = await controller.rootGeneration(rootId);
+    const expected = ['create-root', 'bind-operator', 'fund-root', 'spawn-idle', 'spawn-sibling'];
+    if (previous.transactions['approve-act-a']) expected.push('approve-act-a');
+    for (let remaining = gasGrant, index = 0; remaining > 0n; index++) {
+      expected.push(`operator-gas-${index}`);
+      remaining -= remaining > parseEther('0.01') ? parseEther('0.01') : remaining;
+    }
+    assert.deepEqual(Object.keys(previous.transactions).sort(), expected.sort(), 'Unexpected or missing setup receipts');
+    const verified = {};
+    for (const name of expected) {
+      const signed = Transaction.from(JSON.parse(await readPrivate(join(journal, `${name}.json`))).signed);
+      const recorded = previous.transactions[name];
+      assert.equal(signed.chainId, 11155111n);
+      assert.equal(signed.hash.toLowerCase(), recorded.transactionHash.toLowerCase());
+      const [transaction, receipt] = await Promise.all([
+        rpc.getTransaction(signed.hash), rpc.getTransactionReceipt(signed.hash)
+      ]);
+      assert.ok(transaction && receipt && receipt.status === 1);
+      assert.equal(recorded.status, 1);
+      assert.equal(transaction.from.toLowerCase(), signed.from.toLowerCase());
+      assert.equal(transaction.to.toLowerCase(), signed.to.toLowerCase());
+      assert.equal(transaction.data, signed.data);
+      assert.equal(transaction.value, signed.value);
+      assert.equal(receipt.blockNumber, recorded.blockNumber);
+      assert.equal(receipt.blockHash, recorded.blockHash);
+      assert.equal((await rpc.getBlock(receipt.blockNumber)).hash, receipt.blockHash);
+      assert.equal(receipt.gasUsed.toString(), recorded.gasUsed);
+      verified[name] = { signed, receipt };
+    }
+    created = verified['create-root'].receipt;
+    const parse = name => {
+      assert.equal(verified[name].signed.to.toLowerCase(), config.controller.toLowerCase());
+      return controller.interface.parseTransaction({ data: verified[name].signed.data });
+    };
+    const rootCall = parse('create-root');
+    assert.equal(verified['create-root'].signed.from.toLowerCase(), owner.address.toLowerCase());
+    assert.equal(rootCall.name, 'createRoot');
+    assert.equal(rootCall.args[0], `mm${config.runId}`);
+    const rootEvent = created.logs.map(log => { try { return controller.interface.parseLog(log); } catch { return null; } })
+      .find(event => event?.name === 'NodeCreated' && event.args.parentId === 0n);
+    assert.equal(rootEvent?.args.rootId, rootId);
+    const rootPolicy = rootCall.args[1];
+    assert.equal(rootPolicy.capabilities, financeRoles.delegate | financeRoles.reclaim);
+    assert.equal(rootPolicy.maxAmounts[0], rootAmount);
+    assert.equal(rootPolicy.maxAmounts[1], 0n);
+    assert.equal(rootPolicy.tokenMask, 1n);
+    assert.equal(rootPolicy.poolId, manifest.uniswap.poolId);
+    assert.ok(rootPolicy.expiry > BigInt((await rpc.getBlock('latest')).timestamp + 3600));
+    const bind = parse('bind-operator');
+    assert.equal(verified['bind-operator'].signed.from.toLowerCase(), owner.address.toLowerCase());
+    assert.equal(bind.name, 'setRootOperator');
+    assert.equal(bind.args[0], rootId);
+    assert.equal(bind.args[1].toLowerCase(), operatorAddress.toLowerCase());
+    assert.deepEqual(bind.args[2].toArray(), rootPolicy.toArray());
+    if (verified['approve-act-a']) {
+      const approved = token.interface.parseTransaction({ data: verified['approve-act-a'].signed.data });
+      assert.equal(verified['approve-act-a'].signed.from.toLowerCase(), owner.address.toLowerCase());
+      assert.equal(verified['approve-act-a'].signed.to.toLowerCase(), tokenA.toLowerCase());
+      assert.equal(approved?.name, 'approve');
+      assert.equal(approved.args[0].toLowerCase(), config.controller.toLowerCase());
+      assert.equal(approved.args[1], rootAmount);
+    }
+    const funded = parse('fund-root');
+    assert.equal(verified['fund-root'].signed.from.toLowerCase(), owner.address.toLowerCase());
+    assert.equal(funded.name, 'fundRoot');
+    assert.equal(funded.args[0], rootId);
+    assert.deepEqual(funded.args[1].toArray(), [rootAmount, 0n]);
+    let totalGrant = 0n;
+    for (const name of expected.filter(item => item.startsWith('operator-gas-'))) {
+      const transaction = verified[name].signed;
+      assert.equal(transaction.from.toLowerCase(), owner.address.toLowerCase());
+      assert.equal(transaction.to.toLowerCase(), operatorAddress.toLowerCase());
+      assert.equal(transaction.data, '0x');
+      assert.ok(transaction.value > 0n && transaction.value <= parseEther('0.01'));
+      totalGrant += transaction.value;
+    }
+    assert.equal(totalGrant, gasGrant);
+    const rootNode = await controller.getNode(rootId);
+    assert.equal(rootNode.policy.expiry, rootPolicy.expiry);
+    assert.equal(rootNode.agent.toLowerCase(), operatorAddress.toLowerCase());
+    assert.equal((await controller.rootOwner(rootId)).toLowerCase(), owner.address.toLowerCase());
+    assert.equal((await controller.rootOperator(rootId)).toLowerCase(), operatorAddress.toLowerCase());
+    assert.equal(rootNode.generation, generation);
+    assert.ok(!rootNode.revoked);
+    for (const side of ['idle', 'sibling']) {
+      const name = `spawn-${side}`;
+      const transaction = verified[name].signed;
+      const child = await keys.account(`master-${config.runId}-${side}`);
+      const operationKey = id(`act-multibaas-master-${config.runId}-${side}`);
+      const call = parse(name);
+      assert.equal(transaction.from.toLowerCase(), operatorAddress.toLowerCase());
+      assert.equal(call.name, 'spawnChild');
+      assert.equal(call.args[0], rootId);
+      assert.equal(call.args[1], `${side}${config.runId}`);
+      assert.equal(call.args[2].toLowerCase(), child.address.toLowerCase());
+      assert.equal(call.args[3].capabilities, 0n);
+      assert.deepEqual(call.args[3].maxAmounts.toArray(), [0n, 0n]);
+      assert.equal(call.args[3].expiry, rootPolicy.expiry);
+      assert.deepEqual(call.args[4].toArray(), [childAmount, 0n]);
+      assert.equal(call.args[5].toLowerCase(), operationKey.toLowerCase());
+      const childId = BigInt(previous[`${side}Id`]);
+      assert.ok(![1n, 2n, 5n, rootId].includes(childId));
+      assert.equal((await controller.getOperation(rootId, rootId, generation, operationKey)).nodeId, childId);
+      const childNode = await controller.getNode(childId);
+      assert.equal(childNode.parentId, rootId);
+      assert.equal(childNode.agent.toLowerCase(), child.address.toLowerCase());
+    }
+    spentOwnerGas = 0n;
+    spentOperatorGas = 0n;
+    granted = 0n;
+    for (const { signed, receipt } of Object.values(verified)) {
+      const cost = receipt.gasUsed * receipt.gasPrice;
+      if (signed.from.toLowerCase() === owner.address.toLowerCase()) {
+        spentOwnerGas += cost;
+        granted += signed.value;
+      } else {
+        assert.equal(signed.from.toLowerCase(), operatorAddress.toLowerCase());
+        spentOperatorGas += cost;
+      }
+    }
+    assert.equal(spentOwnerGas, BigInt(previous.spentOwnerGasWei));
+    assert.equal(spentOperatorGas, BigInt(previous.spentOperatorGasWei));
+    assert.equal(granted, BigInt(previous.grantedOperatorWei));
+    assert.equal(granted, gasGrant);
+    assert.ok(spentOwnerGas + granted <= maxSpend && spentOwnerGas + spentOperatorGas <= maxSpend);
+    if (mode === '--inspect-resume') {
+      console.log(JSON.stringify({ ...summary, ready: true, rootId: previous.rootId,
+        idleId: previous.idleId, siblingId: previous.siblingId, verifiedSetupReceipts: expected.length,
+        writes: 'disabled' }));
+      process.exit(0);
+    }
+    report = previous;
+    stage = 'indexed-history';
+    report.status = 'running'; report.resumedAt = new Date().toISOString(); await save();
   }
   const sdk = capitalClient(config.rpcUrl, config.controller);
   const tree = await sdk.getTree(rootId);
   assert.equal(tree.nodes.length, 3);
+  assert.equal(tree.owner.toLowerCase(), owner.address.toLowerCase());
+  assert.equal(tree.operator.toLowerCase(), operatorAddress.toLowerCase());
+  assert.equal(tree.generation, generation);
+  assert.deepEqual(tree.totalBalances, [rootAmount, 0n]);
+  const rootTreeNode = tree.nodes.find(node => node.id === rootId);
+  assert.equal(rootTreeNode.balances[0], rootAmount - 2n * childAmount);
+  assert.ok((rootTreeNode.authorizedCapabilities & (financeRoles.delegate | financeRoles.reclaim)) ===
+    (financeRoles.delegate | financeRoles.reclaim));
   assert.equal(tree.nodes.find(node => node.id.toString() === report.idleId).balances[0], childAmount);
   assert.equal(tree.nodes.find(node => node.id.toString() === report.siblingId).balances[0], childAmount);
+  assert.ok(tree.nodes.every(node => !node.revoked && node.position.tokenId === 0n &&
+    node.position.liquidity === 0n && node.balances[1] === 0n));
+  assert.ok([report.idleId, report.siblingId].every(childId =>
+    tree.nodes.find(node => node.id.toString() === childId).parentId === rootId));
   const reclaimRequest = await controller.connect(operator).reclaimAssets.populateTransaction(rootId, report.idleId);
   const allocateRequest = await controller.connect(operator).allocateCapital.populateTransaction(rootId, report.siblingId,
     [reallocation, 0n]);
@@ -257,7 +434,7 @@ try {
   report.checks.indexedSetup = { itemCount: indexed.items.length,
     latestIndexedBlock: indexed.indexing.latestIndexedBlock,
     source: indexed.source.provider, coverageFromBlock: indexed.indexing.indexingStartBlock };
-  await save();
+  stage = 'companion-prep'; report.stage = stage; await save();
   const tokenOutput = providerToken;
   companion = new RuntimeCompanion({ runtimeRoot, rootId: report.rootId, rpcUrl: config.rpcUrl,
     controller: config.controller, upstream: config.upstream, upstreamKey: tokenOutput,
