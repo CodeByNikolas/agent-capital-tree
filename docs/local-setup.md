@@ -4,7 +4,7 @@ This is the Linux/Codex CLI path for the current **Circle USDC deployment on Eth
 
 Desktop-app environment inheritance and a native macOS runtime have not been independently verified. Independent setup on another person's machine is still an acceptance gate; follow the checks below and report where your environment differs.
 
-A same-host acceptance run using the earlier CLIProxyAPI path completed browser setup, funded MCP spawn, x402 payment and Uniswap swap after the fixes recorded in [the acceptance report](../ACCEPTANCE.md). The native-login financial path still needs end-to-end verification. Keep the owner wallet separate from the runtime operator; never import your owner key into the companion.
+A same-host acceptance run using the earlier CLIProxyAPI path completed browser setup, funded MCP spawn, x402 payment and Uniswap swap after the fixes recorded in [the acceptance report](../ACCEPTANCE.md). A subsequent native OpenAI API-key run with real `gpt-6-luna` / `high` responses passed funded MCP spawn, x402 payment and Uniswap swap; see [native evidence](../deployments/jury-openai-native.json). ChatGPT-login financial E2E remains unverified. Keep the owner wallet separate from the runtime operator; never import your owner key into the companion.
 
 ## 1. Prepare the checkout and worker
 
@@ -93,10 +93,13 @@ Use absolute paths for `codexBinary`, `codexHome`, and the CLI commands below. S
   "codexHome": "/absolute/private/codex-home",
   "openaiApiKeyFile": "/absolute/private/openai-api-key",
   "imageId": "sha256:YOUR_BUILT_IMAGE_ID",
-  "models": ["YOUR_AVAILABLE_CODEX_MODEL"],
+  "models": ["gpt-6-luna"],
+  "reasoningEffort": "high",
   "childGasWei": "0"
 }
 ```
+
+The example selects `gpt-6-luna` with `reasoningEffort: "high"` for every native worker. The optional `reasoningEffort` override currently accepts `high`; omit it to use the model default. API-key preflight uses OpenAI’s live model endpoint, because the pinned CLI’s built-in catalog can lag newly released models. ChatGPT mode still checks the CLI account catalog.
 
 Check the configured authentication, every configured model and Docker before creating or binding the operator:
 
@@ -104,7 +107,7 @@ Check the configured authentication, every configured model and Docker before cr
 node packages/runtime/cli.mjs check-codex /absolute/private/config.json
 ```
 
-This preflight checks account and model metadata (including the official OpenAI models endpoint in API-key mode); it does not make a model inference or a financial call. The companion also checks native availability before allocating capital. It does not establish inference quota or billing credit. API-key mode uses the private key file and ephemeral app-server authentication; ChatGPT mode uses the dedicated `codexHome` login. The Docker worker stays network isolated and receives only scoped finance tools; it does not receive the host's Codex credentials. Preserve `runtimeRoot`, including its encrypted key files and `keys/master.password`; losing either makes the bound operator key unavailable. Do not reuse that directory for another root or controller.
+This preflight checks account and model metadata (using the official OpenAI models endpoint in API-key mode); it does not make a model inference or a financial call. The companion also checks native availability before allocating capital. It does not establish inference quota or billing credit. API-key mode uses the private key file and ephemeral app-server authentication; ChatGPT mode uses the dedicated `codexHome` login. The Docker worker stays network isolated and receives only scoped finance tools; it does not receive the host's Codex credentials. Preserve `runtimeRoot`, including its encrypted key files and `keys/master.password`; losing either makes the bound operator key unavailable. Do not reuse that directory for another root or controller.
 
 **Optional HomeBox CLIProxyAPI path:** set `"inference": "cliproxyapi"` instead of `"codex"`; remove `codexBinary`, `codexHome` and `openaiApiKeyFile`; add `"upstream": "http://your-cliproxyapi-host:8317/v1"` and `"providerTokenFile": "/absolute/private/provider-token"`. The provider token file contains only the raw CLIProxyAPI credential, is owned by your user, and has mode `0600`. The endpoint must support `/v1/responses`; use model names available there. Configure the root CLI's user-level custom provider separately if it should also use CLIProxyAPI. See [official custom provider configuration](https://learn.chatgpt.com/docs/config-file/config-advanced#custom-model-providers). This optional path is the HomeBox configuration, not a prerequisite for the native jury flow.
 

@@ -14,6 +14,7 @@ assert.ok(info.isFile() && !info.isSymbolicLink() && info.uid === process.getuid
 const config = JSON.parse(await readFile(configPath, 'utf8'));
 assert.ok(config.inference === undefined || config.inference === 'codex', 'native mode required');
 const launcher = new NativeCodexLauncher({ codexBinary: config.codexBinary, codexHome: config.codexHome,
+  ...(config.reasoningEffort ? { reasoningEffort: config.reasoningEffort } : {}),
   ...(config.openaiApiKeyFile === undefined ? {} : { openaiApiKeyFile: config.openaiApiKeyFile }) });
 const model = config.models?.[0];
 assert.equal(typeof model, 'string', 'configure a native account model');

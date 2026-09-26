@@ -102,7 +102,7 @@ export type CompanionConfig = Readonly<{
   paymentServices?: readonly PaymentService[];
   multibaas?: { deploymentUrl: string; controllerLabel: string; apiKey: string };
 } & ({ inference: 'cliproxyapi'; upstream: string; upstreamKey: string } |
-  { inference?: 'codex'; codexBinary: string; codexHome: string; openaiApiKeyFile?: string })>;
+  { inference?: 'codex'; codexBinary: string; codexHome: string; openaiApiKeyFile?: string; reasoningEffort?: 'high' })>;
 
 type Grant = { context: WorkerContext; brokerToken: string | undefined; mcpToken: string; keyFile: string };
 
@@ -142,6 +142,7 @@ export class RuntimeCompanion {
       this.launcher = new DockerWorkerLauncher();
     } else {
       this.launcher = new NativeCodexLauncher({ codexBinary: config.codexBinary, codexHome: config.codexHome,
+        ...(config.reasoningEffort === undefined ? {} : { reasoningEffort: config.reasoningEffort }),
         ...(config.openaiApiKeyFile === undefined ? {} : { openaiApiKeyFile: config.openaiApiKeyFile }) });
     }
     this.gas = new ChildGasFunding(config.rpcUrl, join(config.runtimeRoot, 'gas'));

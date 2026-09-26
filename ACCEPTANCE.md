@@ -1,5 +1,17 @@
 # Acceptance evidence — Agent Capital Tree
 
+## Real native OpenAI API-key financial flow — 26 September 2026
+
+**Passed:** real `gpt-6-luna` / `high` inference through the official OpenAI API, native Codex and isolated Docker execution. A fresh root Codex profile chose MCP spawn with 10 Sepolia test USDC; child 7 then autonomously paid 0.01 USDC through x402 and swapped 0.01 USDC through Uniswap. Its final balances were 9.98 USDC and 0.009965 valueless DEMO-USD. Canonical receipts, exact parameters, separate custody, narrower rights and over-limit rejection passed. No model-response fixture or inference proxy was used.
+
+- [API authentication, model response and worker smoke](deployments/openai-api-check.json).
+- [Funded spawn, payment, swap and policy evidence](deployments/jury-openai-native.json).
+- The live test found and fixed a stale CLI model-catalog rejection; API-key mode now trusts the official API model-access check. Runtime build and all 26 runtime tests passed.
+
+Scope: same Linux host and existing root/operator, fresh root CLI profile, controlled local merchant with real Circle settlement, testnet assets. Independent-machine onboarding, ChatGPT-login financial E2E, desktop, Claude Code and marketplace financial writes remain open. Earlier statements below record the state before this live run.
+
+- All eight public dashboard checks passed at 1440px/light and 390px/dark: tree balances, spawn/payment/swap receipt links, payment name containment, no page errors and no horizontal overflow. [Browser evidence](artifacts/ui/jury-openai-dashboard-report.json).
+
 ## OpenAI API-key setup — 26 September 2026
 
 The preferred local setup now uses `openaiApiKeyFile` with ephemeral host app-server authentication. ChatGPT login remains an alternative. All 26 runtime tests passed, and the real pinned Codex/Docker protocol fixture passed in both authentication modes. The API-key mode uses a synthetic credential and simulated Responses output; it verifies routing, credential isolation, no auth.json persistence and expiry, not real API authentication or inference. **Real API-key inference and native financial E2E remain open.** API billing is separate from onchain allowances.

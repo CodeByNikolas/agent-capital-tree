@@ -39,6 +39,14 @@ test('CLI defaults to native Codex even when legacy provider fields exist', asyn
         return true;
       });
     }
+    for (const reasoningEffort of [null, '', 'invalid']) {
+      await writeFile(path, JSON.stringify({ codexBinary: '/nonexistent/codex', codexHome: directory,
+        reasoningEffort }), { mode: 0o600 });
+      await assert.rejects(run(process.execPath, [cli, 'check-codex', path], { timeout: 10000 }), error => {
+        assert.match(error.stderr, /reasoningEffort must be high when configured/);
+        return true;
+      });
+    }
     await writeFile(path, JSON.stringify({ inference: 'unknown' }), { mode: 0o600 });
     await assert.rejects(run(process.execPath, [cli, 'start', path], { timeout: 10000 }), error => {
       assert.match(error.stderr, /inference must be codex or cliproxyapi/);

@@ -2,6 +2,15 @@
 
 As of 26 September 2026. Read this together with PLAN.md after context compaction.
 
+## Real OpenAI API-key / Luna High acceptance — 26 September
+
+- The supplied project key passed the official models endpoints and a real Responses request with `gpt-6-luna` / `high`. The native Docker worker smoke also passed with real inference, scoped tools and isolated execution. [API and smoke evidence](deployments/openai-api-check.json). Credentials remain in an owned 0600 file outside Git; existing HomeBox providers were unchanged.
+- Live testing exposed a stale pinned-CLI model catalog: it rejected Luna despite successful API access and inference. API-key preflight now uses OpenAI’s live model endpoint as authoritative; ChatGPT mode retains its account catalog check. Native `reasoningEffort: "high"` is forwarded to each worker turn, and the documented config selects Luna High. All 26 runtime tests and the runtime build passed.
+- A fresh root Codex profile, using the official API directly, chose MCP `spawnChild` and allocated 10 Sepolia test USDC to child **7**, `luna-api-worker`, under existing root 4. The child autonomously paid 0.01 USDC via x402 and swapped 0.01 USDC through Uniswap, leaving **9.98 USDC + 0.009965 DEMO-USD**. Canonical receipts, Circle authorization/transfer events, exact swap limits, separate custody and rejection of a 10001-raw-unit action all passed. Existing child balances were unchanged. [Native financial evidence](deployments/jury-openai-native.json).
+- This run used real model responses throughout, no inference proxy and no simulated model output. The merchant was the controlled local x402 research service with real onchain settlement. The host reused the existing jury root/operator and installed checkout; independent-machine onboarding, ChatGPT-login E2E, desktop, Claude Code and marketplace-installed financial writes remain open.
+
+- All eight public dashboard checks passed at 1440px/light and 390px/dark: tree balances, spawn/payment/swap receipt links, payment name containment, no page errors and no horizontal overflow. [Browser evidence](artifacts/ui/jury-openai-dashboard-report.json).
+
 ## Preferred OpenAI API-key setup — 26 September
 
 - Native Codex now accepts `openaiApiKeyFile`; the setup guide and README show this as the preferred path. ChatGPT login remains available by omitting that field, and CLIProxyAPI remains explicit. Existing HomeBox inference and control-plane profiles were not modified.

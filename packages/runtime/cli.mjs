@@ -32,7 +32,10 @@ if (command === 'prepare-root') {
         (typeof config.openaiApiKeyFile !== 'string' || !isAbsolute(config.openaiApiKeyFile))) {
       throw new Error('openaiApiKeyFile must be an absolute private file path');
     }
-    provider = { inference, codexBinary: config.codexBinary, codexHome: config.codexHome,
+    if (Object.hasOwn(config, 'reasoningEffort') && config.reasoningEffort !== 'high') {
+      throw new Error('reasoningEffort must be high when configured');
+    }
+    provider = { inference, ...(config.reasoningEffort ? { reasoningEffort: config.reasoningEffort } : {}), codexBinary: config.codexBinary, codexHome: config.codexHome,
       ...(Object.hasOwn(config, 'openaiApiKeyFile') ? { openaiApiKeyFile: config.openaiApiKeyFile } : {}) };
   } else if (inference === 'cliproxyapi') {
     let upstreamKey;

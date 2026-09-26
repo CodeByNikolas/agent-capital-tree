@@ -3,7 +3,9 @@ import assert from 'node:assert/strict';
 import { readFile, writeFile, mkdir } from 'node:fs/promises';
 import { chromium, expect } from '@playwright/test';
 const owner = JSON.parse(await readFile(new URL('../deployments/usdc-jury-owner.json', import.meta.url)));
-const flow = JSON.parse(await readFile(new URL('../deployments/jury-usdc-codex.json', import.meta.url)));
+const native = process.argv.includes('--native-openai');
+const flow = JSON.parse(await readFile(new URL(native ? '../deployments/jury-openai-native.json' : '../deployments/jury-usdc-codex.json', import.meta.url)));
+const prefix = native ? 'jury-openai' : 'jury';
 assert.equal(flow.status, 'passed');
 const base = 'https://agent-capital-tree.vercel.app';
 const query = `vault=${encodeURIComponent(owner.vault)}`;
@@ -40,12 +42,12 @@ try {
         assert(!overflow, 'Payment vault name must stay inside its cell');
       }
       assert(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth));
-      await page.screenshot({ path: new URL(`jury-${route}-${width}.png`, output).pathname, fullPage: true });
+      await page.screenshot({ path: new URL(`${prefix}-${route}-${width}.png`, output).pathname, fullPage: true });
       checks.push({ route, width, colorScheme, status: 'passed', ...(route === 'payments' ? { vaultNameWithinCell: true } : {}) });
     }
   }
   assert.deepEqual(errors, []);
   const report = { status: 'passed', checkedAt: new Date().toISOString(), rootId: flow.rootId, childId: flow.childId, base, checks, transactionsSent: 0 };
-  await writeFile(new URL('jury-dashboard-report.json', output), JSON.stringify(report, null, 2) + '\n');
+  await writeFile(new URL(`${prefix}-dashboard-report.json`, output), JSON.stringify(report, null, 2) + '\n');
   console.log(JSON.stringify(report));
 } finally { await browser.close(); }

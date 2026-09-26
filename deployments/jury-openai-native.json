@@ -1,0 +1,88 @@
+{
+  "status": "passed",
+  "startedAt": "2026-09-26T19:12:14.396Z",
+  "controller": "0x7eDFa3D484d64b6bA3b5b2bcef51147E57133FFB",
+  "rootId": "4",
+  "operationKey": "0x7b546d4eb413d2830c6eef141463e22874c85de71b367aeae1dd7f750c030b18",
+  "paymentKey": "0x2238efade2cdd9d0bab32874a7994aefb7f68a4eeb034d20b0f917101e2041ea",
+  "imageId": "sha256:f4d84013a02c2ca7347f26f5284f06679586c67204b6242818de535570606f6d",
+  "models": {
+    "root": "gpt-6-luna",
+    "child": "gpt-6-luna",
+    "reasoning": "high"
+  },
+  "checks": {
+    "readOnlyCliStartup": true,
+    "modelConverted10USDC": true,
+    "rootTools": [
+      "getPaymentServices",
+      "getEffectivePolicy",
+      "getTree",
+      "spawnChild",
+      "getOperationStatus",
+      "getTree",
+      "getOperationStatus"
+    ],
+    "separateVaultAndNarrowMandate": true,
+    "existingChildBalancesUnchanged": true,
+    "directOpenAiInference": true,
+    "childCompleted": true,
+    "canonicalPaymentAndSwap": true
+  },
+  "transactions": {
+    "approve-10-usdc": {
+      "hash": "0x8ddaff5cefb6a99f342d4c818233c71fbbe51db1e5b97d16906a75eec6aa64fb",
+      "blockNumber": 11788178
+    },
+    "fund-10-usdc": {
+      "hash": "0xdfee735c115be8a8b94418fa085aa683c0f2df6f0628fd195dec11cfae95aede",
+      "blockNumber": 11788181
+    },
+    "spawn": {
+      "hash": "0x3abbe2d3d2d6e26cf68e71f5a040b5f6b1c9eb64b118b282161a722e2535d973",
+      "blockNumber": 11788187,
+      "gasUsed": "3597274"
+    },
+    "swap": {
+      "hash": "0x302f44354ee7b8d23ddde78cbcf49163bb06aef534efd79116297ba41c7b4f81",
+      "blockNumber": 11788195,
+      "gasUsed": "293281"
+    },
+    "payment": {
+      "hash": "0xfc622924ca4a4ea6f6c0cdf96f784114367b027a75eb9fd7a5ab37de2b86f0a0",
+      "blockNumber": 11788193,
+      "gasUsed": "252702"
+    }
+  },
+  "limitations": [
+    "Same-host Linux installation.",
+    "Controlled loopback x402 seller, not an independent commercial merchant.",
+    "Sepolia test assets only."
+  ],
+  "swapDeadline": 1790450904,
+  "rootCli": {
+    "code": 0,
+    "signal": null,
+    "transcriptSha256": "b6a8e6f673f9a81907af4bc7196eac4b0d3114d0f9e47944ecc0a7139f6dfab2"
+  },
+  "nodeCount": 4,
+  "childName": "luna-api-worker",
+  "childId": "7",
+  "childVault": "0xf7c2317f3275A465d5a42b74dcF4Db130F21df84",
+  "childBalances": [
+    "9980000",
+    "9965"
+  ],
+  "childPolicy": {
+    "capabilities": [
+      "swap",
+      "pay"
+    ],
+    "maxAmounts": [
+      "10000",
+      "0"
+    ],
+    "tokenMask": 3
+  },
+  "finishedAt": "2026-09-26T19:16:20.042Z"
+}

@@ -245,7 +245,7 @@ async function run(binary: string, args: string[]): Promise<{ code: number; outp
 export class NativeCodexLauncher {
   #active = new Map<string, Active>();
   #starting = new Map<string, Promise<void>>();
-  constructor(private readonly options: { codexBinary: string; codexHome: string; openaiApiKeyFile?: string; docker?: string }) {}
+  constructor(private readonly options: { codexBinary: string; codexHome: string; openaiApiKeyFile?: string; reasoningEffort?: 'high'; docker?: string }) {}
 
   async ensureAvailable(model?: string): Promise<void> {
     const { codexBinary, codexHome } = this.options;
@@ -269,7 +269,8 @@ export class NativeCodexLauncher {
       const account = await app.request('account/read', { refreshToken: true });
       if (account?.account?.type !== (apiKey === undefined ? 'chatgpt' : 'apiKey')) throw new Error('configured Codex authentication is unavailable');
       if (apiKey !== undefined) await verifyOpenAiModelAccess(apiKey, model);
-      if (model) {
+      // API model access is authoritative; the pinned CLI catalog may lag newly released models.
+      if (model && apiKey === undefined) {
         let cursor: string | null = null;
         let found = false;
         for (let page = 0; page < 20; page++) {
@@ -453,6 +454,7 @@ export class NativeCodexLauncher {
       }
       const turn = await app.request('turn/start', {
         threadId, input: [{ type: 'text', text: spec.task }], approvalPolicy: 'never',
+        ...(this.options.reasoningEffort ? { effort: this.options.reasoningEffort } : {}),
         sandboxPolicy: { type: 'externalSandbox', networkAccess: 'restricted' }
       });
       turnId = turn?.turn?.id;
