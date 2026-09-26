@@ -38,6 +38,18 @@ test('explicit root selection, owner-bound recovery, no refund, snapshot and sig
     closeRuntime: async () => { closed++; } });
   try {
     const absent = await session.inspect();
+    const policy = await session.policy('3');
+    assert.deepEqual(policy.maxAmounts, [100000n, 0n]);
+    assert.equal(policy.source.blockNumber, 42n);
+    await assert.rejects(session.policy('4'), /NODE_NOT_IN_ACTIVE_ROOT/);
+    await assert.rejects(session.policy('bad-id'), /INVALID_NODE/);
+    roots.get('3').nodes[0].revoked = true;
+    assert.equal((await session.policy('3')).revoked, true, 'Revoked policy is public and needs no signer');
+    assert.equal((await session.inspect()).writeReady, false);
+    await assert.rejects(session.prepare({openBrowser:false}), /ROOT_REVOKED/);
+    await assert.rejects(session.prepare({recovery:true,expectedBoundOperator:owner,openBrowser:false}), /ROOT_REVOKED/);
+    assert.deepEqual(await readdir(base), [], 'Revoked preparation creates no private key');
+    roots.get('3').nodes[0].revoked = false;
     assert.equal(absent.operatorGasWei, null); assert.equal(gasCalls,0); assert.equal(absent.writeReady,false);
     const viewed = await session.tree('4');
     assert.equal(viewed.mcp.activeMcpRootId,'3'); assert.equal(viewed.mcp.writeReady,false);

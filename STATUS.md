@@ -1,3 +1,11 @@
+## Kanoki MCP repair — 26 September, 20:58 UTC
+
+- All generated MCP registrations, plugin/marketplace IDs and displayed MCP names now use `kanoki` (plugin ID `kanoki@kanoki`). The actual Windows Codex registration is enabled as `kanoki`; an existing GUI session still needs reconnection. Existing technical paths and keys are preserved.
+- Plugin build and 19/19 tests passed, including manifest consistency and the actual bundled MCP handshake name.
+- Public `getEffectivePolicy` now reads the selected root directly without starting the signing companion. Invalid node IDs and nodes outside the selected root have explicit errors. History and purchases are marked UNAVAILABLE in the capital-mode catalog.
+- Runtime build and 14/14 Linux tests passed. Live MCP returned 23 tools and two successful policy reads for historical root 4 at block **11788701**. It remains revoked; no financial write or worker run occurred.
+- Restored the revoked-root setup guard and verified both normal/recovery preparation reject before key creation. Full wallet/child E2E remains blocked on choosing an active root.
+
 # Agent Capital Tree — Status
 
 As of 26 September 2026. Read this together with PLAN.md after context compaction. Older sections below retain the evidence and acceptance limits known at the time; the newest E2E status is first.

@@ -60,6 +60,16 @@ export class CapitalSession {
     return this.inspect('100000', resolved.tree);
   }
   async initialize() { if (!this.rootId) await this.select(this.query); }
+  async policy(nodeId) {
+    if (!/^[1-9]\d*$/.test(String(nodeId))) throw new SetupError('INVALID_NODE', 'Use a positive numeric nodeId from getTree.');
+    await this.initialize();
+    const tree = await this.client.getTree(BigInt(this.rootId));
+    const node = tree.nodes.find(item => String(item.id) === String(nodeId));
+    if (!node) throw new SetupError('NODE_NOT_IN_ACTIVE_ROOT', `Node is not in active root #${this.rootId}. Select the intended root explicitly before reading its policy.`);
+    return { ...node.effectivePolicy, nodeId: node.id, rootId: tree.rootId,
+      controller: this.controller, activeMcpRootId: this.rootId, revoked: Boolean(node.revoked),
+      authorizedActions: node.authorizedActions, source: tree.source };
+  }
   async localOperator(rootId = this.rootId, path = this.runtimeRoot) {
     const file = join(path, 'keys', `root-${rootId}.keystore.json`);
     try { await access(file); } catch (error) { if (error.code === 'ENOENT') return undefined; throw error; }
@@ -94,6 +104,7 @@ export class CapitalSession {
   async prepare({ budgetRaw = '100000', openBrowser = true, expectedBoundOperator, recovery = false }) {
     await this.initialize();
     const tree = await this.client.getTree(BigInt(this.rootId));
+    if (tree.nodes.find(node => String(node.id) === this.rootId)?.revoked) throw new SetupError('ROOT_REVOKED', 'This root is permanently revoked. No key or wallet handoff was created. Do not fund it or top up its signer. Select an active root or explicitly create a new one.');
     let operator = await this.localOperator();
     const mismatched = tree.operator.toLowerCase() !== operator?.toLowerCase() && tree.operator !== ZERO;
     if (mismatched && !recovery) throw new SetupError('OPERATOR_RECOVERY_REQUIRED', 'The onchain operator is not this local signer. Call prepareOperatorRecovery with the currently bound operator address. It prepares an OWNER-REVIEWED rebind only; no key import or automatic replacement.');

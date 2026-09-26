@@ -61,6 +61,9 @@ if (command === 'settings') {
       !spec.readOnly || name === 'getOperationStatus' ? { ...spec, schema: spec.schema.extend({ expectedRootId }),
         description: `${spec.description} Explicit expectedRootId must match the selected MCP root. ${name === 'spawnChild' ? 'UNAVAILABLE in capital mode: use createChildVault; no autonomous worker is configured.' : ''}` } : spec]));
     const specs = { ...scoped,
+      getEffectivePolicy: { ...scoped.getEffectivePolicy, description: 'Read inherited policy and actual onchain rights for a node in the selected root. No local signer, gas, authorization or running companion is required; revoked roots remain readable.' },
+      getCapitalActivity: { ...scoped.getCapitalActivity, description: 'UNAVAILABLE in capital demo mode: indexed activity history is not configured. Use getTree and getEffectivePolicy for current chain state. Worker mode can configure MultiBaas history separately.' },
+      purchaseService: { ...scoped.purchaseService, description: 'UNAVAILABLE in capital demo mode: no paid services are configured. Requires separate worker-mode service configuration.' },
       visualizeTree: { ...toolSpecs.getTree, description: 'Alias of getTree. Return data and dashboard images from the same Sepolia snapshot.' },
       prepareRootSetup: rootSetupSpec,
       selectCapitalRoot: { readOnly: false, schema: z.object({ query: z.string().min(1).max(253) }).strict(), description: 'Explicitly switch THIS MCP session to a confirmed root ENS/vault/ID. Closes the old companion safely, preserves all profiles, sends no transaction. No restart/config edit needed. New sessions start at the configured root; call this tool again if needed.' },
@@ -90,6 +93,7 @@ if (command === 'settings') {
     let queue = Promise.resolve();
     const execute = async (name, input) => {
         if (name === 'getCapitalSetup') return session.inspect(input.budgetRaw);
+        if (name === 'getEffectivePolicy') return session.policy(input.nodeId);
         if (name === 'selectCapitalRoot') return session.select(input.query);
         if (name === 'prepareRootSetup') {
           if (recoveryDeployment) return { status: 'unavailable', transactionSubmitted: false, next: 'This connection explicitly targets the historical USDC controller for existing-vault recovery. Create new roots with the normal current-deployment capital MCP; never confuse equally numbered roots across controllers.' };
