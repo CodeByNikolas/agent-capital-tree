@@ -52,6 +52,8 @@ The demo budget maximum is **100000 raw units = 0.10 Test-USDC across the whole 
 
 The user's funded historical root is `root-agent.agentcapitalusdc.eth`, vault `0xC9c7926191b7928F838579D74CdA380A66A8CD9A`, **controller `0x17a932987f3cAcFec067c4C1bbE6946963d87F13`**, root 4. It is NOT root 4 on the current `agentcapitalvault.eth` deployment. Its explicit recovery registration adds `--deployment usdc-full-vaults`:
 
+On the current Windows machine the repaired, registered checkout is `.main-onboarding` on **main**. The outer checkout contains another contributor's in-progress changes and is not the MCP source. Run commands below from the repaired checkout. The recovery wallet UI is deployed at `https://agent-capital-tree-silk.vercel.app`; it preserves the historical controller and disables new-root creation. Use the canonical current deployment for a genuinely new root, not this recovery connection. A host restart is only needed to load an updated server/catalog; `selectCapitalRoot` switches roots within an already-running capital session.
+
 ```powershell
 codex mcp add capital_tree_demo -- $actNode $actScript stdio root-agent.agentcapitalusdc.eth --deployment usdc-full-vaults --enable-sepolia-writes
 ```

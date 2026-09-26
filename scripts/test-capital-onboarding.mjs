@@ -37,6 +37,7 @@ try {
   assert.deepEqual(before.data.mcp.source,before.data.source);
   assert.equal(before.data.totalBalances[0],'100000','Do not add funds or use another root to force the demo.');
   await call('selectCapitalRoot',{query:'not-created-onboarding-proof.agentcapitalusdc.eth'},/ROOT_NOT_FOUND/);
+  await call('getTree',{rootId:'999999999'},/ROOT_NOT_FOUND/);
   assert.equal((await call('getCapitalSetup',{})).data.activeMcpRootId,'4','Failed selection must preserve scope.');
   if (flags.includes('--prepare-recovery')) {
     const setup = await call('prepareOperatorRecovery',{expectedRootId:'4',expectedBoundOperator:owner,budgetRaw:'100000',openBrowser:flags.includes('--open-browser')});

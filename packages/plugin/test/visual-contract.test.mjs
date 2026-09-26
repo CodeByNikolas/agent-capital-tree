@@ -7,6 +7,15 @@ import { EventEmitter } from 'node:events';
 import { Client } from '@modelcontextprotocol/sdk/client/index.js';
 import { StdioClientTransport } from '@modelcontextprotocol/sdk/client/stdio.js';
 import { toolView, toolAsSvg } from '../tool-visual.mjs';
+
+test('setup graphics preserve unavailable and known failure states', () => {
+  const blocked=toolView('prepareRootSetup',{}, {status:'unavailable',transactionSubmitted:false,next:'Existing-vault recovery only'}, {readOnly:false});
+  assert.equal(blocked.status,'NOT EXECUTED');
+  assert.ok(blocked.rows.some(([label,value])=>label==='Details'&&value==='Existing-vault recovery only'));
+  assert.doesNotMatch(toolAsSvg(blocked),/undefined Test-USDC|AWAITING WALLET/);
+  assert.equal(toolView('getTree',{},'ROOT_NOT_FOUND: No confirmed root',{readOnly:true,isError:true}).status,'ROOT NOT FOUND');
+  assert.equal(toolView('createChildVault',{},'SIGNER_MISMATCH: Owner authorization required',{readOnly:false,isError:true}).status,'SIGNER MISMATCH');
+});
 import { dashboardTokens } from '../dashboard-theme.mjs';
 import { financeRoles } from '../../sdk/dist/policy.js';
 import { browserCommand, openWalletBrowser } from '../../../scripts/open-wallet-browser.mjs';

@@ -1,0 +1,13 @@
+{
+  "host": "Codex CLI",
+  "query": "root-agent.agentcapitalusdc.eth",
+  "rootId": "4",
+  "chainId": 11155111,
+  "blockNumber": "11788499",
+  "controller": "0x17a932987f3cAcFec067c4C1bbE6946963d87F13",
+  "activeMcpRootId": "4",
+  "imageDelivered": true,
+  "realImageLinkInAnswer": true,
+  "writes": "none",
+  "desktopGui": "not verified"
+}

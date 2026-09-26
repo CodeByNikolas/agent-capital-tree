@@ -1,5 +1,5 @@
 {
-  "observedAt": "2026-09-26T19:56:45.282Z",
+  "observedAt": "2026-09-26T20:19:06.647Z",
   "controller": "0x17a932987f3cAcFec067c4C1bbE6946963d87F13",
   "root": "root-agent.agentcapitalusdc.eth",
   "transactions": [],
@@ -45,14 +45,15 @@
     "source": {
       "kind": "rpc",
       "chainId": 11155111,
-      "blockNumber": "11788401",
-      "blockHash": "0xde52ddd9a169ecc618c3bafaaea9b919de52fdcd818922409dce2d9dd7a9efe3",
-      "timestamp": "1790452620",
-      "observedAt": "2026-09-26T19:57:03.735Z"
+      "blockNumber": "11788512",
+      "blockHash": "0x5fd9e3e1e48ba2bc6dc78281248d9c5e8d17f887c8e705c70512df49aa119995",
+      "timestamp": "1790453952",
+      "observedAt": "2026-09-26T20:19:19.175Z"
     },
     "gasNote": "A positive ETH balance is not a gas estimate. Each transaction still requires simulation and sufficient fees. USDC approval is not an ETH transfer.",
     "inference": "Current chat; no background worker, Docker, CLIProxyAPI or model API key required.",
     "controller": "0x17a932987f3cAcFec067c4C1bbE6946963d87F13",
+    "authorityGeneration": "1",
     "namespace": "agentcapitalusdc.eth",
     "activeMcpRootId": "4",
     "writesEnabled": false,
@@ -163,10 +164,10 @@
     "source": {
       "kind": "rpc",
       "chainId": 11155111,
-      "blockNumber": "11788401",
-      "blockHash": "0xde52ddd9a169ecc618c3bafaaea9b919de52fdcd818922409dce2d9dd7a9efe3",
-      "timestamp": "1790452620",
-      "observedAt": "2026-09-26T19:57:07.477Z"
+      "blockNumber": "11788512",
+      "blockHash": "0x5fd9e3e1e48ba2bc6dc78281248d9c5e8d17f887c8e705c70512df49aa119995",
+      "timestamp": "1790453952",
+      "observedAt": "2026-09-26T20:19:21.034Z"
     },
     "selectedNodeId": "4",
     "mcp": {
@@ -209,14 +210,15 @@
       "source": {
         "kind": "rpc",
         "chainId": 11155111,
-        "blockNumber": "11788401",
-        "blockHash": "0xde52ddd9a169ecc618c3bafaaea9b919de52fdcd818922409dce2d9dd7a9efe3",
-        "timestamp": "1790452620",
-        "observedAt": "2026-09-26T19:57:07.477Z"
+        "blockNumber": "11788512",
+        "blockHash": "0x5fd9e3e1e48ba2bc6dc78281248d9c5e8d17f887c8e705c70512df49aa119995",
+        "timestamp": "1790453952",
+        "observedAt": "2026-09-26T20:19:21.034Z"
       },
       "gasNote": "A positive ETH balance is not a gas estimate. Each transaction still requires simulation and sufficient fees. USDC approval is not an ETH transfer.",
       "inference": "Current chat; no background worker, Docker, CLIProxyAPI or model API key required.",
       "controller": "0x17a932987f3cAcFec067c4C1bbE6946963d87F13",
+      "authorityGeneration": "1",
       "namespace": "agentcapitalusdc.eth",
       "activeMcpRootId": "4",
       "writesEnabled": false,

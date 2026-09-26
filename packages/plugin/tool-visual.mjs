@@ -37,10 +37,17 @@ export function toolView(name, args, data, { readOnly = true, isError = false, p
     error: isError, rows: [], next: readOnly ? 'Use the returned data with its stated coverage and freshness.' : 'Read the updated tree before the next action.' };
   const row = (label, value) => { if (scalar(value)) view.rows.push([label, short(value, 240)]); };
   if (isError) {
+    const known = String(data).split(':')[0];
+    if (['ROOT_NOT_FOUND','SIGNER_MISMATCH','PROFILE_MISSING','GAS_MISSING','WRONG_TARGET_ROOT','WRONG_CHAIN','OPERATOR_RECOVERY_REQUIRED','BINDING_CHANGED'].includes(known)) view.status = known.replaceAll('_',' ');
     row('Details', data);
     view.next = phase === 'validation' ? 'Correct the arguments. The handler was not executed.' : readOnly
       ? 'Retry the read once the connection is available.'
       : 'Reconcile operation status and chain state before retrying. A timeout does not prove failure.';
+    return view;
+  }
+  if (d.status === 'blocked' || d.status === 'unavailable') {
+    view.status = 'NOT EXECUTED'; row('Details', d.next); row('Transaction submitted', d.transactionSubmitted);
+    view.next = d.next ?? view.next;
     return view;
   }
   if (['getCapitalSetup','prepareCapitalSetup','selectCapitalRoot','prepareOperatorRecovery'].includes(name)) {
@@ -63,9 +70,9 @@ export function toolView(name, args, data, { readOnly = true, isError = false, p
     view.status = d.browser?.opened ? 'AWAITING WALLET' : 'OPEN WALLET IN BROWSER';
     row('ENS name', d.ensName); row('Demo budget', `${d.budgetUSDC} Test-USDC`);
     row('Browser', d.browser?.opened ? 'Launch requested in your normal browser profile' : 'Open the setup link below in your wallet-enabled browser');
-    row('Wallet steps', 'Create root → approve exact budget → fund vault → bind operator');
+    row('Wallet steps', 'Create root → select root in capital MCP → prepare local signer → authorize → fund only shortfall → check native gas');
     row('Signing', 'Owner reviews and signs each setup transaction in their wallet.');
-    view.next = 'No transaction submitted by this MCP. After setup, return to chat and open the new ENS tree.';
+    view.next = 'No transaction submitted by this MCP. Return to the capital-mode chat after root creation. Select its ENS explicitly before preparing local signer authorization.';
   } else {
     if (d.status === 'blocked' || d.status === 'unavailable') {
       view.status = 'NOT EXECUTED'; row('Details', d.next); row('Transaction submitted', d.transactionSubmitted);

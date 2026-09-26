@@ -31014,7 +31014,7 @@ function treeAsSvg(tree, page = 0) {
   const all = sortedNodes(tree), pages = Math.ceil(all.length / NODES_PER_PAGE);
   if (!Number.isInteger(page) || page < 0 || page >= pages) throw new Error("Invalid tree page");
   const ordered = all.slice(page * NODES_PER_PAGE, (page + 1) * NODES_PER_PAGE);
-  let cursor = tree.mcp ? 454 : 266;
+  let cursor = tree.mcp ? 480 : 266;
   const positions = /* @__PURE__ */ new Map();
   for (const { node: node2, depth } of ordered) {
     const nameLines = lines(node2.ensName, 58 - depth * 4);
@@ -31033,13 +31033,14 @@ function treeAsSvg(tree, page = 0) {
   body += text(622, 218, tree.source.observedAt, { size: 12, mono: true, color: theme.mutedForeground });
   if (tree.mcp) {
     const m = tree.mcp;
-    body += rect(32, 257, 976, 176, theme.card, m.writeReady ? theme.ring : theme.border);
+    body += rect(32, 257, 976, 202, theme.card, m.writeReady ? theme.ring : theme.border);
     body += text(52, 282, `MCP ROOT #${m.activeMcpRootId} \xB7 VIEWED ROOT #${tree.rootId} \xB7 ${m.writeReady ? "SETUP READY / ACTION CHECK REQUIRED" : "NOT WRITE-READY"}`, { size: 13, weight: 800, color: m.writeReady ? theme.primary : theme.destructive });
     body += text(52, 309, `Onchain operator  ${tree.operator}`, { size: 13, mono: true });
     body += text(52, 334, `Local MCP signer  ${m.localOperator ?? "Not prepared / not selected for this tree"}`, { size: 13, mono: true });
     body += text(52, 359, `Signer match: ${m.checks?.operatorBound ? "YES" : "NO"}   Local gas (wei): ${m.operatorGasWei ?? "NOT CHECKED"}`, { size: 13, mono: true, color: theme.mutedForeground });
     body += text(52, 384, `Missing: ${m.missing?.join(", ") || (String(m.activeMcpRootId) !== String(tree.rootId) ? "Explicitly select this root before actions" : "None; per-action simulation remains required")}`, { size: 12, color: theme.mutedForeground });
     body += text(52, 410, "Chat-managed vaults \xB7 This MCP launches no autonomous worker process", { size: 13, color: theme.primary });
+    body += text(52, 436, `Controller ${m.controller ?? "See deployment manifest"}`, { size: 12, mono: true, color: theme.mutedForeground });
   }
   for (const { node: node2, depth } of ordered) {
     const p = positions.get(String(node2.id)), parent = positions.get(String(node2.parentId));
@@ -31130,8 +31131,17 @@ function toolView(name, args, data, { readOnly = true, isError = false, phase, r
     if (scalar(value)) view.rows.push([label, short(value, 240)]);
   };
   if (isError) {
+    const known = String(data).split(":")[0];
+    if (["ROOT_NOT_FOUND", "SIGNER_MISMATCH", "PROFILE_MISSING", "GAS_MISSING", "WRONG_TARGET_ROOT", "WRONG_CHAIN", "OPERATOR_RECOVERY_REQUIRED", "BINDING_CHANGED"].includes(known)) view.status = known.replaceAll("_", " ");
     row("Details", data);
     view.next = phase === "validation" ? "Correct the arguments. The handler was not executed." : readOnly ? "Retry the read once the connection is available." : "Reconcile operation status and chain state before retrying. A timeout does not prove failure.";
+    return view;
+  }
+  if (d.status === "blocked" || d.status === "unavailable") {
+    view.status = "NOT EXECUTED";
+    row("Details", d.next);
+    row("Transaction submitted", d.transactionSubmitted);
+    view.next = d.next ?? view.next;
     return view;
   }
   if (["getCapitalSetup", "prepareCapitalSetup", "selectCapitalRoot", "prepareOperatorRecovery"].includes(name)) {
@@ -31157,9 +31167,9 @@ function toolView(name, args, data, { readOnly = true, isError = false, phase, r
     row("ENS name", d.ensName);
     row("Demo budget", `${d.budgetUSDC} Test-USDC`);
     row("Browser", d.browser?.opened ? "Launch requested in your normal browser profile" : "Open the setup link below in your wallet-enabled browser");
-    row("Wallet steps", "Create root \u2192 approve exact budget \u2192 fund vault \u2192 bind operator");
+    row("Wallet steps", "Create root \u2192 select root in capital MCP \u2192 prepare local signer \u2192 authorize \u2192 fund only shortfall \u2192 check native gas");
     row("Signing", "Owner reviews and signs each setup transaction in their wallet.");
-    view.next = "No transaction submitted by this MCP. After setup, return to chat and open the new ENS tree.";
+    view.next = "No transaction submitted by this MCP. Return to the capital-mode chat after root creation. Select its ENS explicitly before preparing local signer authorization.";
   } else {
     if (d.status === "blocked" || d.status === "unavailable") {
       view.status = "NOT EXECUTED";

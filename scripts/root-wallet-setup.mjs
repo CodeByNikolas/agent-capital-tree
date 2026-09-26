@@ -17,5 +17,5 @@ export async function prepareRootSetup({ label, budgetRaw, openBrowser }) {
   return { network: 'Ethereum Sepolia', chainId: 11155111, ensName: `${label}.${manifest.ensNamespace.name}`, budgetRaw,
     budgetUSDC: (Number(budgetRaw) / 1000000).toString(), url: url.href, browser,
     transactionSubmitted: false,
-    next: 'After the root creation receipt confirms, call selectCapitalRoot with this ENS, then prepareCapitalSetup. Do not edit MCP settings or restart for a root switch. Review funding already present before adding anything. No owner key enters the chat.' };
+    next: 'After the root creation receipt confirms, use the capital-mode MCP: selectCapitalRoot with this ENS, then prepareCapitalSetup (or prepareOperatorRecovery if already bound to another signer). The keyless three-tool MCP does not expose these finance setup tools. No restart is needed for root selection inside capital mode. Review existing funding before adding anything. No owner key enters the chat.' };
 }

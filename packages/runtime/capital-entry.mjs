@@ -11,7 +11,7 @@ const [command, query] = args;
 const packageBase = new URL(import.meta.url.endsWith('/bundle/capital.mjs') ? '../' : './', import.meta.url);
 const script = fileURLToPath(new URL('capital.mjs', packageBase));
 const repo = fileURLToPath(new URL('../..', packageBase));
-const usage = 'node packages/runtime/capital.mjs prepare|check|settings|stdio <ENS-name|vault-address|root-id> [--runtime-root /private/linux/path] [--enable-sepolia-writes]';
+const usage = 'node packages/runtime/capital.mjs prepare|check|settings|stdio <ENS-name|vault-address|root-id> [--runtime-root /private/linux/path] [--deployment usdc-full-vaults] [--enable-sepolia-writes]';
 if (!['prepare', 'check', 'settings', 'stdio'].includes(command) || !query) throw new Error(usage);
 let explicitRoot, writesEnabled = false, recoveryDeployment = false;
 for (let i = 2; i < args.length; i++) {

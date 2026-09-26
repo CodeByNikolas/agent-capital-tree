@@ -28,7 +28,7 @@ try {
   assert.equal(setup.data.chainId, 11155111);
   assert.equal(setup.data.mode, 'capital');
   assert.equal(setup.data.writesEnabled, false);
-  const blocked = await call('createChildVault', { expectedRootId: '3', operationKey: `0x${'b'.repeat(64)}`, name: 'read-proof-not-sent',
+  const blocked = await call('createChildVault', { expectedRootId: '1', operationKey: `0x${'b'.repeat(64)}`, name: 'read-proof-not-sent',
     asset: '0x1c7D4B196Cb0C7B01d743Fbc6116a902379C7238', amount: '50000', restrictions: {} });
   assert.equal(blocked.data.status, 'blocked');
   assert.equal(blocked.data.transactionSubmitted, false);
