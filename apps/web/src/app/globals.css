@@ -114,10 +114,15 @@ button:disabled { cursor: not-allowed; opacity: .55; }
 .payment-status { margin: 0 0 20px; padding: 13px 15px; border-radius: 8px; background: var(--soft); color: var(--quiet); font-size: 14px; line-height: 1.6; }
 .payment-status-error { border: 1px solid var(--destructive); color: var(--foreground); }
 .payment-table-scroll { overflow-x: auto; }
-.payment-table { min-width: 690px; }
+.payment-table { min-width: 690px; table-layout: fixed; }
 .payment-table th { font-size: 14px; }
+.payment-table th:first-child { width: 36%; }
+.payment-table th:nth-child(2) { width: 16%; }
+.payment-table th:nth-child(3) { width: 20%; }
+.payment-table th:nth-child(4) { width: 15%; }
+.payment-table th:nth-child(5) { width: 13%; }
 .payment-table td { font-size: 15px; vertical-align: middle; }
-.payment-table td:first-child { max-width: 280px; }
+.payment-table td:first-child { white-space: normal; }
 .payment-table td:first-child strong { display: block; overflow-wrap: anywhere; }
 .payment-table td:first-child small { display: block; margin-top: 3px; color: var(--quiet); font-family: var(--font-mono); font-size: 13px; }
 .payment-address { display: inline-flex; align-items: center; gap: 4px; white-space: nowrap; font-family: var(--font-mono); }
