@@ -1508,16 +1508,18 @@ export function Dashboard({ data: initialData, deployment, vaultQuery, nodeQuery
           <PreviewNotice data={data} deployment={deployment} />
           <RootAccessBar vault={vaultQuery} path={path} walletAddress={wallet.address} />
           {vaultQuery && <LiveReadNotice rootId={currentSnapshot?.rootId ?? null} vaultQuery={vaultQuery} data={data} loading={currentReadState.status === "loading"} error={liveError} onRetry={() => setTreeRetry((value) => value + 1)} />}
-          <ViewerStatusBar
-            source={data.source}
-            vaultLabel={selectedNode.label}
-            walletConnected={wallet.address !== null}
-            walletOnSepolia={walletOnSepolia}
-            liveStateReady={liveStateReady}
-            ownerConnected={ownerConnected}
-            selectedAgentConnected={selectedAgentConnected}
-            parentCanRestrict={parentCanRestrict}
-          />
+          {data.source !== "preview" && (
+            <ViewerStatusBar
+              source={data.source}
+              vaultLabel={selectedNode.label}
+              walletConnected={wallet.address !== null}
+              walletOnSepolia={walletOnSepolia}
+              liveStateReady={liveStateReady}
+              ownerConnected={ownerConnected}
+              selectedAgentConnected={selectedAgentConnected}
+              parentCanRestrict={parentCanRestrict}
+            />
+          )}
           {view === "overview" && <>
             <div className="page-heading"><span className="page-kicker">Delegated capital · Sepolia</span><h1>Each AI agent gets its own wallet — and strict limits.</h1><p>See what each vault holds, which mandates are active, and where owner control stands.</p></div>
             {!tour && <OnboardingHero />}
