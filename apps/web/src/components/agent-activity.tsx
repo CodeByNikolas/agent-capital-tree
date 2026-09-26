@@ -12,7 +12,7 @@ export function AgentActivity({ data, node, feed, loading, error, onSelect, onRe
   const failure = error ?? (feed?.source === "unavailable" ? feed.message : null);
   const totals = page ? summarizeAgentEvents(page.items, node.id, data.rootId) : [];
   return <>
-    <div className="page-heading"><h1>Agent activity</h1><p>Allocations, delegation and swaps for one vault.</p></div>
+    <div className="page-heading"><h1>Curvegrid</h1><p>Agent activity indexed by MultiBaas: allocations, delegation and swaps for one vault.</p></div>
     <section className="agent-report" aria-label="Agent activity report">
       <label className="agent-report-picker">Agent vault<select value={node.id} onChange={event => onSelect(event.target.value)}>{data.nodes.map(agent => <option key={agent.id} value={agent.id}>{agent.ensName}</option>)}</select></label>
       <p className="agent-report-note">This vault’s direct activity only. x402 settlements are shown separately on x402 Pay. Swap input is trading volume, not a loss. LP and policy events appear in the event log below.</p>

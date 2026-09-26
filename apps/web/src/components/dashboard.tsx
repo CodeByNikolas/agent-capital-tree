@@ -68,7 +68,7 @@ import type {
 } from "@/lib/dashboard-types";
 import type { PublicDeployment } from "@/lib/deployment";
 import { formatAmount, formatExactAmount } from "@/lib/format-display-amount";
-import { ThemeControl, StatusPill, CapabilityPill, Brand, EmptyState } from "@/components/kanoki";
+import { ThemeControl, StatusPill, CapabilityPill, Brand } from "@/components/kanoki";
 import { layoutTree, relativeExpiry } from "@/lib/tree-layout";
 import { AgentActivity } from "@/components/agent-activity";
 import { agentEvents } from "@/lib/agent-activity";
@@ -497,10 +497,10 @@ function WalletControl({ wallet }: { wallet: InjectedWalletState }) {
 const views = [
   { id: "overview", title: "Overview", path: "/", icon: Layers3 },
   { id: "tree", title: "Agent tree", path: "/tree", icon: GitBranch },
-  { id: "agent-activity", title: "Agent activity", path: "/agent-activity", icon: Fingerprint },
   { id: "activity", title: "Activity", path: "/activity", icon: ActivityIcon },
   { id: "uniswap", title: "Uniswap", path: "/uniswap", icon: ArrowLeftRight },
   { id: "payments", title: "x402 Pay", path: "/payments", icon: Coins },
+  { id: "agent-activity", title: "Curvegrid", path: "/agent-activity", icon: Fingerprint },
   { id: "applications", title: "Applications", path: "/applications", icon: Coins },
   { id: "mcp", title: "MCP", path: "/mcp", icon: Plug },
   { id: "setup", title: "Setup & control", path: "/setup", icon: ShieldCheck },
@@ -1292,7 +1292,20 @@ export function Dashboard({ data: initialData, deployment, vaultQuery, nodeQuery
       <main className="onboarding-page">
         <header className="app-topbar"><Link href="/" aria-label="Kanoki overview"><Brand /></Link><div className="app-topbar-actions"><ThemeControl /><WalletControl wallet={wallet} /></div></header>
         <div className="dashboard-content">
-          <EmptyState onCreate={() => setWalletActionMode("create-root")} />
+          <div className="page-heading">
+            <h1>Create your root vault.</h1>
+            <p>Create a Sepolia USDC vault for your agent team, or open an existing vault by its ENS name or contract address.</p>
+          </div>
+          <Card>
+            <CardHeader>
+              <CardTitle>Start with your own capital tree</CardTitle>
+              <CardDescription>Your wallet owns the main vault. Each agent receives only the capital and permissions you delegate.</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <Button onClick={() => setWalletActionMode("create-root")}>Launch a new root vault</Button>
+              <p className="onboarding-create-help">Connect your wallet, choose a name and permissions, then confirm in your wallet. Creation uses Sepolia ETH for gas. You can add USDC after your vault is ready.</p>
+            </CardContent>
+          </Card>
           <RootAccessBar vault={null} path="/setup" walletAddress={wallet.address} />
           {walletActionMode === "create-root" && <WalletControlsPanel
             creationOnly

@@ -1,5 +1,11 @@
 ## Kanoki MCP repair — 26 September, 20:58 UTC
 
+## Partner navigation and onboarding restoration (26 September)
+
+- Uniswap, x402 Pay and Curvegrid appear as consecutive sidebar entries. Curvegrid names the existing MultiBaas agent activity page; its route, coverage boundaries and separate x402 history remain intact.
+- Restored the pre-redesign root-creation introduction and explanatory launch card, retaining Kanoki branding and themes.
+- Verification: web production build and TypeScript passed; dashboard restoration browser suite passed; targeted desktop/mobile checks passed for all three links, the onboarding launch form and horizontal overflow. No financial transactions were sent.
+
 - All generated MCP registrations, plugin/marketplace IDs and displayed MCP names now use `kanoki` (plugin ID `kanoki@kanoki`). The actual Windows Codex registration is enabled as `kanoki`; an existing GUI session still needs reconnection. Existing technical paths and keys are preserved.
 - Plugin build and 22/22 tests passed after main integration, including manifest consistency and the actual bundled MCP handshake name.
 - Public `getEffectivePolicy` now reads the selected root directly without starting the signing companion. Invalid node IDs and nodes outside the selected root have explicit errors. History and purchases are marked UNAVAILABLE in the capital-mode catalog.
