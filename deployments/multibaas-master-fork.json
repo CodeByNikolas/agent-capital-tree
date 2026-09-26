@@ -1,0 +1,23 @@
+{
+  "status": "passed",
+  "scope": "disposable-local-Sepolia-fork",
+  "forkBlock": 11784078,
+  "rootId": "9",
+  "idleId": "10",
+  "siblingId": "11",
+  "gas": {
+    "createRoot": "5343475",
+    "setRootOperator": "244823",
+    "mint": "72995",
+    "approve": "46367",
+    "fundRoot": "73752",
+    "spawn-idle": "5439957",
+    "spawn-sibling": "5439993",
+    "reclaimAssets": "166028",
+    "allocateCapital": "202361",
+    "recover-sibling": "74979",
+    "recover-idle": "55988",
+    "recover-root": "72670"
+  },
+  "limitation": "Synthetic local history and programmatic decision; live MultiBaas and actual model remain untested."
+}
