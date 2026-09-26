@@ -2,7 +2,7 @@ import type { Address, Hex } from 'viem';
 
 export const financeRoles = {
   delegate: 1n << 40n, swap: 1n << 44n, lpManage: 1n << 48n,
-  collectFees: 1n << 52n, exit: 1n << 56n, restrict: 1n << 60n, reclaim: 1n << 64n,
+  collectFees: 1n << 52n, exit: 1n << 56n, restrict: 1n << 60n, reclaim: 1n << 64n, pay: 1n << 68n,
 } as const;
 export type Capability = keyof typeof financeRoles;
 export type Policy = {

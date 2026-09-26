@@ -9,6 +9,7 @@ import { WorkerKeyStore } from './keys.js';
 import { WorkerSessions, type WorkerContext } from './context.js';
 import { InferenceBroker } from './broker.js';
 import { companionServer, type ToolHandler } from './server.js';
+import { paymentHandler, type PaymentService } from './payments.js';
 import { chainHandlers } from './chain.js';
 import { OnchainSpawnChain, childKeyId } from './spawn-chain.js';
 import { SpawnCoordinator, type SpawnRequest } from './spawn.js';
@@ -99,6 +100,7 @@ export type CompanionConfig = Readonly<{
   childGasWei: bigint;
   writesEnabled: boolean;
   monitorIntervalMs?: number;
+  paymentServices?: readonly PaymentService[];
   multibaas?: { deploymentUrl: string; controllerLabel: string; apiKey: string };
 }>;
 
@@ -141,6 +143,10 @@ export class RuntimeCompanion {
       keyIdFor: context => this.identities.keyId(context), serialize: (address, action) => this.serialize(address, action) });
     const handlers = chainHandlers({ rpcUrl: config.rpcUrl, controller: config.controller,
       accountFor: async context => this.keys.account(await this.identities.keyId(context)) });
+    if (config.paymentServices?.length) handlers.purchaseService = paymentHandler({ rpcUrl: config.rpcUrl, controller: config.controller,
+      directory: join(config.runtimeRoot, 'payments'), services: config.paymentServices,
+      accountFor: async context => this.keys.account(await this.identities.keyId(context)) });
+    handlers.getPaymentServices = async () => ({ network: 'eip155:11155111', asset: '0x1c7D4B196Cb0C7B01d743Fbc6116a902379C7238', decimals: 6, services: config.paymentServices ?? [] });
     const wrapped: Partial<Record<ToolName, ToolHandler>> = {};
     for (const [name, handler] of Object.entries(handlers) as [ToolName, ToolHandler][]) {
       wrapped[name] = toolSpecs[name].readOnly ? handler : async (context, args) => {

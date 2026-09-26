@@ -6,6 +6,7 @@ Stand: 26. September 2026 (Europe/Berlin). Nach Kontextkomprimierung zusammen mi
 
 -20 offizielle Circle-Test-USDC auf Ethereum Sepolia beim Test-Owner verifiziert; sechs Dezimalstellen. Öffentliche Mittel bislang unberührt. Manifest `deployments/usdc-sepolia.json` ist ausdrücklich noch kein Contract-Deployment.
 - Lokaler Fork11784932 mit echtem Circle-Proxy bestanden:10USDC Root,2USDC Child,8USDC Root-Rest; falscher Signer/Betragsüberschreitung abgewiesen; komplette Rückholung und Wiederherstellung des lokalen Spenderbestands. `scripts/test-usdc-fork.mjs`, Nachweis `deployments/usdc-fork.json`. Keine öffentlichen Transaktionen, keine USDC-Storage-Overrides. Test ersetzt ENS-Verknüpfung ausschließlich im wegwerfbaren Fork.
+- Companion/MCP unterstützt vorbereitete `getPaymentServices`/`purchaseService`-Werkzeuge mit fester Dienst-/Empfänger-Konfiguration, privatem Retry-Journal und unabhängiger USDC-Receipt-Prüfung.18Runtime-,7Plugin- und2SDK-Tests bestanden. Ohne USDC-Deployment plus explizite Servicekonfiguration sind keine Zahlungen verfügbar; vollständiger Circle/x402-Forknachweis steht noch aus.
 - ERC1271/PAY-Contract-Erweiterung in isoliertem Worktree in Arbeit. x402-HTTP-Flow, neues öffentliches Deployment, USDC-UI und neue MultiBaas-Indexierung noch offen. Offizieller gehosteter x402-Facilitator bewirbt Ethereum Sepolia derzeit nicht; eigener begrenzter Demo-Facilitator erforderlich. Recherche: `docs/usdc-x402-feasibility.md`.
 
 ## Aktueller Stand

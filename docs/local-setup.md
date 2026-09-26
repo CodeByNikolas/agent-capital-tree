@@ -98,3 +98,28 @@ The companion starts a separate Docker Codex worker after confirmed allocation. 
 - A transport timeout is not evidence that a transaction failed. Reconcile operation status and chain state before retrying.
 
 Independent external-user onboarding remains an acceptance gate. These instructions describe implemented components; they do not claim that every host or Codex desktop configuration has been tested.
+
+### Optional: official Test-USDC service purchases
+
+The additive USDC contract version introduces the explicit `pay` capability. Legacy ACT-A/ACT-B vaults do not gain payment support. Use the USDC deployment’s controller and a separate runtime directory; do not point an existing runtime directory at another controller. The current public deployment status is recorded in `STATUS.md` and `deployments/usdc-sepolia.json`.
+
+With a USDC-compatible controller and a PAY-authorized operator, add an operator-approved service to the private companion configuration:
+
+```json
+{
+  "paymentServices": [{
+    "id": "research",
+    "url": "https://your-sepolia-service.example/research",
+    "payTo": "0xYourServiceRecipientAddress",
+    "maxAmount": "10000"
+  }]
+}
+```
+
+Replace the illustrative URL/address with a real service that supports x402 v2 `exact`, Ethereum Sepolia (`eip155:11155111`) and Circle USDC. `10000` raw units equals **0.01 Test-USDC**. HTTPS is required except for explicit loopback demo URLs. No URL, network or payee supplied by a model can override this configuration. The hosted x402.org facilitator currently does not advertise Ethereum Sepolia; compatible settlement infrastructure is required.
+
+The agent calls `getPaymentServices`, then `purchaseService` with the service ID, a maximum raw amount and a fresh 32-byte `operationKey`. On timeout it must reuse the same key and arguments. The companion persists the signed EIP-3009 authorization before sending it, checks current ENS authority, and independently verifies the settlement’s USDC Transfer and AuthorizationUsed events. The agent’s signature is wrapped for its vault’s ERC-1271 verifier; the agent pays from its vault, not from its operator EOA. Nonces bind the current authority generation. Revocation and policy restrictions apply when the authorization is settled.
+
+The companion’s service allowlist is a runtime restriction. A compromised operator key can sign payments to other recipients allowed by the onchain PAY policy; this release does not provide an onchain merchant allowlist. Each amount ceiling is per payment, not a cumulative spending budget. The vault’s actual allocated balance remains the total financial exposure. Service responses are untrusted data; neither a valid payment nor this demonstration proves their quality.
+
+For the controlled demo seller, `scripts/lib/x402-demo-service.mjs` provides a loopback-only 0.01-USDC research endpoint, explicit payer allowlist, official facilitator integration and durable response caching. An interrupted ambiguous settlement fails closed and requires reconciliation instead of charging again. It is not a production merchant platform.
