@@ -72,6 +72,7 @@ declare global {
 }
 
 interface DashboardProps {
+  onboarding?: boolean;
   data: DashboardData;
   deployment: PublicDeployment;
   rootQuery: string | null;
@@ -1167,7 +1168,7 @@ function Footer({ source, walletConnected, rootQuery }: { source: DataSource; wa
   );
 }
 
-export function Dashboard({ data: initialData, deployment, rootQuery, nodeQuery, actionQuery, view }: DashboardProps) {
+export function Dashboard({ data: initialData, deployment, rootQuery, nodeQuery, actionQuery, view, onboarding = false }: DashboardProps) {
   const router = useRouter();
   const [selectedId, setSelectedId] = useState(nodeQuery ?? initialData.rootId);
   const [detailOpen, setDetailOpen] = useState(false);
@@ -1367,6 +1368,8 @@ export function Dashboard({ data: initialData, deployment, rootQuery, nodeQuery,
     setWalletActionMode(mode);
     router.push(`${routeHref("/setup", rootQuery, selectedNode.id)}&action=${mode}`);
   };
+
+  if (onboarding) return <main className="onboarding-page"><header className="app-topbar"><Link href="/" className="app-brand">agent capital tree</Link><WalletControl wallet={wallet} /></header><div className="dashboard-content"><div className="page-heading"><span className="page-kicker">Your agent capital workspace</span><h1>Create your root vault.</h1><p>No root vault selected. Create your own vault or open an existing root. Connecting a wallet does not yet search all of its roots.</p></div><Card><CardHeader><CardTitle>Start with your own capital tree</CardTitle><CardDescription>Your wallet owns the root. Agents receive only the capital and permissions you delegate.</CardDescription></CardHeader><CardContent><Button onClick={() => setWalletActionMode("create-root")}>Launch a new root vault</Button><p>Connect your wallet on Sepolia to create a vault. Test assets have no monetary value.</p></CardContent></Card><RootAccessBar rootId={null} defaultRootId={null} path="/setup" />{walletActionMode === "create-root" && <WalletControlsPanel data={data} deployment={deployment} selectedNode={selectedNode} walletAddress={wallet.address} walletOnSepolia={walletOnSepolia} liveStateReady={false} actions={actions} notice={notice} mode="create-root" onModeChange={setWalletActionMode} onRootCreated={(id) => router.push(`/setup?root=${encodeURIComponent(id)}`)} />}<p><Link href="/tree?root=5">Explore a completed public tree</Link> · <Link href="/tree?preview=1">Open illustrative preview</Link> · <a href="https://github.com/CodeByNikolas/agent-capital-tree/blob/main/packages/runtime/README.md">Companion setup guide</a></p></div></main>;
 
   return (
     <SidebarProvider>

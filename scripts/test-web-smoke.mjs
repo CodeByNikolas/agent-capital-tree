@@ -26,6 +26,12 @@ try {
     checks.push(`root ${root}: HTTP ${status}`);
   }
   await page.goto(base);
+  await expect(page.getByRole("heading", { name: "Create your root vault." })).toBeVisible();
+  await expect(page.getByText("Preview workspace.", { exact: true })).toHaveCount(0);
+  await page.getByRole("button", { name: "Launch a new root vault" }).click();
+  await expect(page.locator("#wallet-controls")).toBeVisible();
+  checks.push("Default entry shows root onboarding, not sample data");
+  await page.goto(`${base}/?root=1`);
   await expect(page.getByText('Live root 1.', { exact: true })).toBeVisible({ timeout: 60000 });
   await expect(page.locator('#capital-tree')).toHaveCount(0);
   await expect(page.locator('#activity')).toHaveCount(0);

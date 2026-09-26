@@ -355,3 +355,6 @@ button:disabled { cursor: not-allowed; opacity: .55; }
 .future-module p { margin: 14px 0 0; }
 .future-module-badge { color: #854300; background: #fff1d6; border-color: #c88d38; }
 @media (prefers-color-scheme: dark) { .future-module-badge { color: #ffd18b; background: #392a17; border-color: #9e753b; } }
+
+.onboarding-page { max-width: 1080px; margin: 0 auto; min-height: 100vh; }
+.onboarding-page .root-access-bar { margin-top: 24px; }
