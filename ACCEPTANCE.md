@@ -9,6 +9,10 @@ Production [kanoki-app.vercel.app](https://kanoki-app.vercel.app) is READY from 
 - Public desktop/mobile E2E passed after deployment: all five nodes and two LP positions, the x402 receipt, all new MultiBaas controller transactions, persistent sidebar/header, sticky header, wallet menu/sign-out/reconnect and dashboard-only guidance. Wallet interaction tests use a controlled injected provider; the live demo reads real public APIs.
 - Production build/TypeScript, 38 contract tests and 71 workspace tests (36 runtime, 22 plugin, 11 MultiBaas, 2 SDK) passed. Live default MCP: 19 tools, current-root reads, generated graphics and disabled-write guard. No autonomous model worker was launched during this release.
 
+### Native macOS capital signing
+
+[Native signing CI](https://github.com/CodeByNikolas/agent-capital-tree/actions/runs/36277933910) passed at source `1675b18` on macOS 15 Apple Silicon and Intel: 13 runtime tests plus 22 plugin tests on each. These exercise encrypted key persistence/permissions, actual EIP-1559 and USDC typed-data signatures, packaged MCP startup and setup/recovery against controlled chain boundaries. No transaction was broadcast. The autonomous Docker-worker stack and browser-wallet financial E2E on a user Mac are not covered by this result.
+
 ### Remaining acceptance
 
 Fresh external-machine wallet onboarding, marketplace-installed financial writes, desktop/Claude Code financial flows, native macOS live wallet/financial E2E, ChatGPT-login financial E2E and an intentionally induced live MultiBaas outage remain open. Earlier native API-key worker evidence below belongs to a retired controller. It is not a new autonomous-worker test of Kanoki. The current existing-root demo does not close the fresh-user onboarding gate.

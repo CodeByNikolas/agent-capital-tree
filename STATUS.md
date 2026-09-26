@@ -1,13 +1,13 @@
 ## Overview vault ENS — 27 September 2026
 
 - The Overview/Setup funding section now displays the full vault ENS name alongside its contract address. Both have independent copy buttons.
-- Production build/TypeScript and the background-refresh browser regression passed locally, including ENS/address clipboard checks and mobile overflow. Vercel release evidence follows after publication.
+- Production build/TypeScript and the background-refresh browser regression passed locally, including ENS/address clipboard checks and mobile overflow. Frontend source `7b7d9d1` is live at https://kanoki-app.vercel.app in READY deployment `dpl_9YZCtpvvNpd8R5AgZFi8ro8ic14a`. Public background-refresh/clipboard, wallet-session, persistent-shell and live demo tests passed. Later release-note commits do not change the deployed frontend.
 
 ## Native macOS capital signing — 27 September 2026
 
 - The standalone capital MCP now accepts macOS alongside Linux/WSL. Private owner/mode/symlink checks remain enforced; the separate autonomous Docker-worker stack is not included in this support claim. The existing system-browser adapter uses /usr/bin/open on macOS.
 - Reused the encrypted operator keystore and signing implementation. New tests exercise actual EIP-1559 transaction and USDC typed-data signatures, signer recovery after reload, and startup of the packaged capital MCP without provider credentials. Existing onboarding/recovery and private-permission tests now run on Darwin too, using canonical temporary paths to account for macOS filesystem aliases.
-- Local validation: 13 focused runtime tests and 22 plugin tests passed on Linux. A new Native signing CI workflow runs these checks on macOS Apple Silicon and Intel; native runner results will be recorded after publication. Fresh macOS browser-wallet/onchain financial E2E remains a separate open acceptance gate.
+- Local validation: 13 focused runtime tests and 22 plugin tests passed on Linux. Native macOS CI passed on Apple Silicon (macos-15-arm64) and Intel (macos-15-intel): each ran 13 runtime tests and 22 plugin tests with no failures or skipped tests. Evidence: https://github.com/CodeByNikolas/agent-capital-tree/actions/runs/36277933910, source `1675b18`. Fresh macOS browser-wallet/onchain financial E2E remains a separate open acceptance gate.
 
 ## MCP validation and concurrent onboarding review — 27 September
 

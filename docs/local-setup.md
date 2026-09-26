@@ -37,6 +37,8 @@ codex mcp add kanoki -- "$(command -v node)" "$PWD/packages/runtime/capital.mjs"
 
 macOS signing runs locally through Node.js: no WSL, Docker, CLIProxyAPI or model API key is required by the capital MCP. The encrypted operator key stays under `~/.agent-capital-tree` with owner-only directory/file permissions (0700/0600); the owner wallet stays in your browser. The setup link opens with macOS `/usr/bin/open`. Custom signing-profile paths must be outside the checkout on private local storage, without symlinks; avoid macOS's `/tmp` and `/var` aliases. Reconnect the MCP after updating the bundle. This does not enable the separate autonomous Docker-worker stack on macOS.
 
+Native signing, encrypted key persistence, recovery and packaged MCP tests passed on both Apple Silicon and Intel macOS runners; see [acceptance evidence](../ACCEPTANCE.md#native-macos-capital-signing). These are local-signing and controlled-protocol tests, not a claimed live browser-wallet financial E2E on a user Mac.
+
 On Windows:
 
 ```powershell
