@@ -1,5 +1,7 @@
 # Runtime companion and isolated workers
 
+[Step-by-step companion and MCP setup](../../docs/local-setup.md): checkout, worker image, root, operator, private configuration and first agent task.
+
 The companion owns the child signer, worker session, inference grant, and Docker process. `SpawnCoordinator` reconciles the onchain operation before launching a child. The trusted caller must prepare a private worker directory at `<runtimeRoot>/workers/<workerId>/` with mode `0700`, a `0700` workspace, a disposable `0400` or `0600` key file, and a unique gateway socket path. The files must belong to the UID/GID that runs the container. Decrypted keys and provider credentials stay outside this repository.
 
 `startWorkerGateway` binds that socket and replaces all incoming authorization headers with the worker's own broker or MCP token. It accepts only `POST /v1/responses` and `POST /v1/tools/<name>` and forwards to host loopback `InferenceBroker` and `companionServer` origins. `InferenceBroker` keeps the CLIProxyAPI provider key in host memory and enforces one fixed model, expiry, request size and call budget. `WorkerSessions` binds MCP calls to the actual child context; handlers check current chain authority. The worker receives neither bearer token nor provider key.

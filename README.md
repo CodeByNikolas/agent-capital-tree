@@ -1,5 +1,7 @@
 # Agent Capital Tree
 
+[Step-by-step companion and MCP setup](docs/local-setup.md): checkout, worker image, root, operator, private configuration and first agent task.
+
 Give agents their own capital, delegate smaller amounts to sub-agents, and enforce narrower permissions at every level of the tree.
 
 Agent Capital Tree combines **ENSv2 Enhanced Access Control**, separate onchain vaults, isolated agent workers, and **Curvegrid MultiBaas** activity indexing. **Uniswap v4** is the implemented application for bounded swaps and liquidity management. Payments and service purchases are future extensions.
