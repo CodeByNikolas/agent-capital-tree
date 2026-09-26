@@ -9,24 +9,20 @@ import {
   ArrowUpRight,
   Check,
   CircleDashed,
-  CircleHelp,
   Clock3,
   Coins,
-  Command,
   Copy,
   ExternalLink,
   Fingerprint,
   GitBranch,
   Layers3,
   LockKeyhole,
-  Menu,
   MoreHorizontal,
   Network,
   Plus,
   Shield,
   ShieldAlert,
   ShieldCheck,
-  Unplug,
   WalletCards,
   Zap,
 } from "lucide-react";
@@ -398,14 +394,6 @@ async function requestLiveTree(rootId: string, signal?: AbortSignal): Promise<Da
   return body as DashboardData;
 }
 
-function IconButton({ label, children }: { label: string; children: React.ReactNode }) {
-  return (
-    <button className="icon-button" type="button" aria-label={label} title="This control is not integrated yet" disabled>
-      {children}
-    </button>
-  );
-}
-
 function PreviewFlag({ source, compact = false }: { source: DataSource; compact?: boolean }) {
   if (source !== "preview") return null;
   return (
@@ -586,32 +574,6 @@ function LiveReadNotice({
       </p>
       <button className="button button-secondary button-small" type="button" disabled={loading} onClick={onRetry}>{loading ? "Refreshing…" : "Refresh"}</button>
     </div>
-  );
-}
-
-function OverviewHeader({ activeVaults, positions, source }: { activeVaults: number; positions: number; source: DataSource }) {
-  return (
-    <section className="overview-heading" id="overview">
-      <div>
-        <div className="eyebrow"><span className="eyebrow-dash" /> SEPOLIA · CAPITAL CONTROL</div>
-        <h1>Capital, on a<br className="heading-break" /> shorter leash.</h1>
-        <p className="hero-copy">One clear view of delegated capital, agent mandates, and owner control.</p>
-        <div className="hero-meta">
-          <span className="hero-meta-item"><GitBranch size={14} aria-hidden="true" /> {activeVaults}{source === "preview" ? " example vaults" : " active vaults"}</span>
-          <span className="hero-meta-separator" />
-          <span className="hero-meta-item"><Layers3 size={14} aria-hidden="true" /> {positions}{source === "preview" ? " example LP position" : " LP positions"}</span>
-        </div>
-      </div>
-      <div className="hero-emblem" aria-hidden="true">
-        <div className="orbit orbit-outer" />
-        <div className="orbit orbit-inner" />
-        <div className="orbit-node orbit-node-root" />
-        <div className="orbit-node orbit-node-left" />
-        <div className="orbit-node orbit-node-right" />
-        <div className="orbit-node orbit-node-bottom" />
-        <span className="orbit-label">capital<br />flows down</span>
-      </div>
-    </section>
   );
 }
 
@@ -843,7 +805,6 @@ function CapitalTree({ data, selectedId, onSelect, canSpawnVault, onRequestSpawn
           <button className="button button-secondary button-small" disabled={!canSpawnVault} onClick={onRequestSpawn} title={canSpawnVault ? "Create a child vault with a narrower policy and initial allocation" : "Connect the active agent assigned to this vault on Sepolia"}>
             <Plus size={14} aria-hidden="true" /> Add a vault
           </button>
-          <IconButton label="Tree options"><MoreHorizontal size={18} aria-hidden="true" /></IconButton>
         </div>
       </div>
 
@@ -976,7 +937,6 @@ function MandatePanel({ data, node, canTighten, canRevoke, canRecover, onRequest
           <div className="panel-overline">SELECTED VAULT <PreviewFlag source={node.source} compact /></div>
           <h2 id="mandate-title">Effective mandate</h2>
         </div>
-        <IconButton label="Mandate details"><MoreHorizontal size={18} aria-hidden="true" /></IconButton>
       </div>
 
       <div className="selected-vault-summary">
@@ -1132,7 +1092,6 @@ function PositionsPanel({ data, actions, walletOnSepolia }: { data: DashboardDat
           <div className="panel-overline">LIQUIDITY BOOK <PreviewFlag source={data.source} compact /></div>
           <h2 id="positions-title">LP positions</h2>
         </div>
-        <IconButton label="Position options"><MoreHorizontal size={18} aria-hidden="true" /></IconButton>
       </div>
       {data.positions.length > 0 ? data.positions.map((position) => (
         <div className="position-record" key={position.id}>
@@ -1159,9 +1118,9 @@ function PositionsPanel({ data, actions, walletOnSepolia }: { data: DashboardDat
   );
 }
 
-function ContractSetupPanel({ data, deployment, actions, wallet, liveStateReady }: { data: DashboardData; deployment: PublicDeployment; actions: DashboardActions; wallet: InjectedWalletState; liveStateReady: boolean }) {
+function ContractSetupPanel({ data, deployment, actions, wallet, liveStateReady, historyError }: { data: DashboardData; deployment: PublicDeployment; actions: DashboardActions; wallet: InjectedWalletState; liveStateReady: boolean; historyError: string | null }) {
   const { contractsConfigured } = deployment;
-  const indexerConnected = data.activitySource === "multi-baas";
+  const indexerConnected = data.activitySource === "multi-baas" && !historyError;
   const walletOnSepolia = wallet.address !== null && wallet.chainId === sepolia.id;
   const ownerRecoveryReady = liveStateReady && data.source === "direct-rpc" && contractsConfigured && walletOnSepolia &&
     wallet.address?.toLowerCase() === data.rootOwner?.toLowerCase() && Boolean(actions?.ownerEmergencyRecover);
@@ -1185,7 +1144,7 @@ function ContractSetupPanel({ data, deployment, actions, wallet, liveStateReady 
       <div className="setup-steps" aria-label="Setup status">
         <div className={walletStepReady ? "setup-step setup-step-complete" : "setup-step setup-step-pending"}><span>{walletStepReady ? <Check size={12} /> : "1"}</span><div><strong>{walletStepReady ? "Wallet connected" : wallet.address ? "Switch to Sepolia" : "Connect wallet"}</strong><small>{walletStepReady ? shortAddress(wallet.address ?? "") : wallet.address ? "Connected on another network" : "Injected wallet · Sepolia"}</small></div></div>
         <div className={contractsConfigured ? "setup-step setup-step-complete" : "setup-step setup-step-pending"}><span>{contractsConfigured ? <Check size={12} /> : "2"}</span><div><strong>Controller deploy</strong><small>{contractsConfigured ? "Address configuration present" : "Contract address pending"}</small></div></div>
-        <div className={indexerConnected ? "setup-step setup-step-complete" : "setup-step setup-step-pending"}><span>{indexerConnected ? <Check size={12} /> : "3"}</span><div><strong>Indexer connect</strong><small>{indexerConnected ? "MultiBaas activity source active" : "MultiBaas activity source pending"}</small></div></div>
+        <div className={indexerConnected ? "setup-step setup-step-complete" : "setup-step setup-step-pending"}><span>{indexerConnected ? <Check size={12} /> : "3"}</span><div><strong>Indexer connect</strong><small>{historyError && data.activitySource === "multi-baas" ? "Last indexed data retained; history refresh unavailable" : indexerConnected ? "MultiBaas activity source active" : "MultiBaas activity source pending"}</small></div></div>
         <div className="setup-step setup-step-pending"><span>4</span><div><strong>Codex plugin</strong><small>Independent setup pending</small></div></div>
       </div>
       <div className="setup-border" aria-hidden="true" />
@@ -1462,7 +1421,7 @@ export function Dashboard({ data: initialData, deployment, rootQuery, nodeQuery,
               router.push(`/setup?root=${encodeURIComponent(rootId)}`);
             }}
           />
-          <ContractSetupPanel data={dashboardData} deployment={deployment} actions={actions} wallet={wallet} liveStateReady={liveStateReady} />
+          <ContractSetupPanel data={dashboardData} deployment={deployment} actions={actions} wallet={wallet} liveStateReady={liveStateReady} historyError={activeActivityState.loadMoreError} />
           </>}
           <Footer source={data.source} walletConnected={walletOnSepolia} rootQuery={rootQuery} />
         </div>
