@@ -346,3 +346,12 @@ button:disabled { cursor: not-allowed; opacity: .55; }
 }
 @media (max-width: 420px) { .root-access-bar { align-items: flex-start; flex-direction: column; } .panel-heading { flex-wrap: wrap; } .address-pair > div { grid-template-columns: 1fr 28px; } .address-pair > div span { grid-column: 1 / -1; } }
 @media (prefers-reduced-motion: reduce) { *, *::before, *::after { scroll-behavior: auto !important; transition-duration: .01ms !important; animation-duration: .01ms !important; } }
+
+.future-module { border-top: 1px solid var(--border); padding: 16px 0; }
+.future-module summary { display: flex; align-items: center; flex-wrap: wrap; gap: 12px; cursor: pointer; font-size: 16px; font-weight: 600; }
+.future-module summary::before { content: "+"; width: 1em; }
+.future-module[open] summary::before { content: "−"; }
+.future-module summary:focus-visible { outline: 2px solid var(--ring); outline-offset: 4px; border-radius: 4px; }
+.future-module p { margin: 14px 0 0; }
+.future-module-badge { color: #854300; background: #fff1d6; border-color: #c88d38; }
+@media (prefers-color-scheme: dark) { .future-module-badge { color: #ffd18b; background: #392a17; border-color: #9e753b; } }

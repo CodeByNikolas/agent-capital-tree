@@ -9,6 +9,12 @@ Stand: 26. September 2026 (Europe/Berlin). Nach Kontextkomprimierung zusammen mi
 - ENSv2/Uniswap und der echte Browser→Codex→Child→Grandchild-Ablauf sind nachgewiesen. Live-MultiBaas, tatsächlicher Master-Modell-Ablauf und vollständige Root9-Rückholung sind ebenfalls nachgewiesen. Gesamtabnahme bleibt für unabhängiges Fremdnutzer-Onboarding und die unten genannten Grenzen offen. Die letzte echte Browser-Owner-Rückholung ist bestanden.
 - Root1 ist der finanzierte Seed und bleibt unberührt. Root2 ist widerrufen und leer. Root5 ist der vollständig widerrufene und geleerte Browser-/Modell-Testbaum; nicht erneut als Runtime starten. Root9 mit Child10/11 ist ebenfalls widerrufen und leer. Abgeschlossene Finanzrunner niemals blind wiederholen.
 
+## Modul-Roadmap
+
+- Applications enthält aufklappbare, orange markierte Future-Work-Einträge für x402-Servicezahlungen, Contract-Transaktionen und Währungsumrechnung. Keine ausführbaren oder bereits integrierten Fähigkeiten suggeriert.
+- Nutzerwunsch für die nächste Zahlungsintegration: Test-USDC. Bestehende ACT-A/ACT-B bleiben als tatsächliche Demo-Assets benannt; offizielles Test-USDC ist nicht durch Umbenennung integriert.
+- Gemeinsamer Treasury-Vault mit überbuchbaren Ausgabelimits wird als Architekturvariante diskutiert; bestehendes Deployment und separate Vaults bleiben unverändert.
+
 ## README für Nutzer und Jury
 
 - Einstieg nach Produktablauf, fünf Dashboard-Seiten, Partnerbeiträgen, Setup und überprüfbaren Nachweisen gegliedert. Offene Abnahmen bleiben explizit; alte Funding-Aufforderung entfernt. Alle26 lokalen README-Linkziele und git diff --check geprüft. Reine Dokumentationsänderung, keine erneuten Finanzläufe.
