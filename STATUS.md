@@ -4,6 +4,8 @@ As of 26 September 2026. Read this together with PLAN.md after context compactio
 
 ## Root creation onboarding clarification
 
+- Source `78b824b` (including the Rami merge) is deployed to production: `dpl_F7SQeo8Pbzuk8wL4AegcpAg7Me43`, aliased to `https://agent-capital-tree.vercel.app`. The production build passed. Public browser checks confirmed suggested names, 24px card spacing, absent creation shortcuts/faucet links and the merged MCP guide without page errors or wallet transactions.
+
 - The entry flow now separates the vault lookup and creation panel by 24px. Root creation displays only its form; funding, operator, child, recovery and faucet shortcuts remain in dashboard management. The entry card explains creation, Sepolia gas, later USDC funding and agent authorization.
 - Creation explains the public ENS name, per-action limits (including zero), optional DEMO-USD and policy expiry. Names are editable suggestions from two 64-word lists with a 24-bit cryptographic suffix (36 bits total); a new suggestion leaves other inputs intact. MCP-provided names and budgets retain priority. Existing contract validation and transaction simulation remain authoritative for name availability.
 - Web production build and TypeScript passed. Browser checks passed at 1440px/light and 390px/dark: exact 24px gap, no overflow/page errors, hidden management/faucet shortcuts, generated/editable names, preserved MCP values and retained dashboard faucet. [Report](artifacts/ui/root-setup-report.json). The test used a read-only injected wallet stub and sent no transactions. Generated names also passed ENS label format/length checks.
