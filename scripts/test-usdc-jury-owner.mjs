@@ -10,7 +10,9 @@ import { Contract, Interface, JsonRpcProvider } from 'ethers';
 // One new, deliberately non-restartable public owner flow. Reconcile any incomplete
 // journal and chain receipts before allowing another financial run.
 const execute = process.argv.includes('--execute');
-if (process.argv.some(arg => arg.startsWith('--') && arg !== '--execute')) throw new Error('Unknown argument');
+const resume = process.argv.includes('--resume');
+if (resume && !execute) throw new Error('Resume requires --execute');
+if (process.argv.some(arg => arg.startsWith('--') && !['--execute', '--resume'].includes(arg))) throw new Error('Unknown argument');
 const label = 'jury-flow-20260926';
 const appUrl = 'https://agent-capital-tree.vercel.app';
 const privateBase = join(homedir(), '.agent-capital-tree');
@@ -27,7 +29,8 @@ const namespaceExpiry = BigInt(manifest.ensNamespace.expiry);
 const poolId = manifest.uniswap.poolId;
 const owner = `0x${JSON.parse(await readFile(join(privateBase, 'keys/jury-e2e.keystore.json'), 'utf8')).address}`;
 const controllerAbi = new Interface(JSON.parse(await readFile(new URL('../contracts/out/CapitalController.sol/CapitalController.json', import.meta.url), 'utf8')).abi);
-const erc20Abi = new Interface(['function approve(address spender,uint256 amount)', 'function balanceOf(address owner) view returns(uint256)', 'function allowance(address owner,address spender) view returns(uint256)']);
+const erc20Abi = new Interface(['function approve(address spender,uint256 amount)', 'function balanceOf(address owner) view returns(uint256)', 'function allowance(address owner,address spender) view returns(uint256)', 'event Approval(address indexed owner,address indexed spender,uint256 value)']);
+const delegationAbi = new Interface(['function redeemDelegations(bytes[] permissionContexts,bytes32[] modes,bytes[] executionCalldatas)']);
 const rpc = new JsonRpcProvider('https://ethereum-sepolia.publicnode.com');
 const capabilities = (1n << 40n) | (1n << 44n) | (1n << 68n);
 const assertAddress = (actual, expected) => assert.equal(actual.toLowerCase(), expected.toLowerCase());
@@ -48,11 +51,30 @@ assertAddress(usdc, '0x1c7D4B196Cb0C7B01d743Fbc6116a902379C7238');
 assert.equal(manifest.tokens[1].symbol, 'DEMO-USD');
 assert.equal(manifest.tokens[1].decimals, 6);
 assert.equal(manifest.tokens[1].valueless, true);
+const published = await (await fetch(`${appUrl}/api/deployment`, { signal: AbortSignal.timeout(15000) })).json();
+assertAddress(published.controllerAddress, controller);
+assertAddress(published.tokenAddresses[0], usdc);
+assertAddress(published.tokenAddresses[1], quote);
+assert.equal(published.poolId.toLowerCase(), poolId.toLowerCase());
+assert.equal(published.namespaceName, manifest.ensNamespace.name);
 assert.equal((await rpc.getNetwork()).chainId, 11155111n);
 assert((await new Contract(usdc, erc20Abi, rpc).balanceOf(owner)) >= 10000000n, 'Owner needs at least 10 USDC');
 assert((await rpc.getBalance(owner)) > 10000000000000000n, 'Owner needs Sepolia gas');
-try { await readFile(reportUrl, 'utf8'); throw new Error('Jury report already exists; reconcile it before any rerun'); }
+let previous;
+try { previous = JSON.parse(await readFile(reportUrl, 'utf8')); }
 catch (error) { if (error.code !== 'ENOENT') throw error; }
+if (Boolean(previous) !== resume) throw new Error(previous ? 'Jury report already exists; use reviewed --resume only' : 'No jury report to resume');
+if (resume) {
+  assert.equal(previous.status, 'incomplete');
+  assert.equal(previous.transactions.length, 1);
+  assert.equal(previous.transactions[0].phase, 'create');
+  assert.equal(previous.transactions[0].functionName, 'createRoot');
+  assert(/^0x[0-9a-fA-F]{64}$/.test(previous.transactions[0].transactionHash));
+  assertAddress(previous.controller, controller);
+  assertAddress(previous.owner, owner);
+  assert.equal(previous.label, label);
+  assert.equal(previous.fundingRaw, '10000000');
+}
 if (!execute) {
   console.log(JSON.stringify({ status: 'ready', financialWrites: false, owner, controller, token: usdc, label, runtimeRoot }));
   rpc.destroy();
@@ -112,13 +134,15 @@ try {
   assertAddress((await app.evaluate(() => window.ethereum.request({ method: 'eth_accounts' })))[0], owner);
   assert.equal(await app.evaluate(() => window.ethereum.request({ method: 'eth_chainId' })), '0xaa36a7');
   stage = 'create';
-  const date = new Date(Date.now() + 7 * 86400000).toISOString().slice(0, 10);
+  const date = resume ? new Date(Number(previous.policyExpiry) * 1000).toISOString().slice(0, 10)
+    : new Date(Date.now() + 7 * 86400000).toISOString().slice(0, 10);
   const expiry = BigInt(Math.floor(Date.parse(`${date}T23:59:59.000Z`) / 1000));
   assert(expiry > BigInt(Math.floor(Date.now() / 1000)) && expiry < namespaceExpiry);
-  report = { status: 'running', chainId: 11155111, appUrl, owner, controller, label, namespace: manifest.ensNamespace.name,
+  report = previous ?? { status: 'running', chainId: 11155111, appUrl, owner, controller, label, namespace: manifest.ensNamespace.name,
     usdc, quote, policyExpiry: expiry.toString(), fundingRaw: '10000000', runtimeRoot, transactions: [], startedAt: new Date().toISOString() };
-  await writeFile(reportUrl, `${JSON.stringify(report, null, 2)}\n`, { flag: 'wx' });
-  const pending = [];
+  if (resume) assert.equal(report.policyExpiry, expiry.toString());
+  else await writeFile(reportUrl, `${JSON.stringify(report, null, 2)}\n`, { flag: 'wx' });
+  const pending = report.transactions;
   await app.exposeFunction('actReviewUnsigned', async tx => {
     assertAddress(tx.from, owner);
     assert.equal(BigInt(tx.value ?? 0), 0n);
@@ -148,10 +172,9 @@ try {
       assertAddress(parsed.args[1], report.operator);
       assertPolicy(parsed.args[2], expiry);
     } else throw new Error('Unexpected financial write phase');
-    const transaction = { phase, functionName: parsed.name, to: tx.to, status: 'awaiting-wallet' };
-    report.transactions.push(transaction);
-    await save(report);
+    const transaction = { phase, functionName: parsed.name, to: tx.to, calldata: tx.data, status: 'awaiting-wallet' };
     pending.push(transaction);
+    await save(report);
     return pending.length - 1;
   });
   await app.exposeFunction('actRecordHash', async (index, hash) => {
@@ -194,20 +217,57 @@ try {
     const mined = await rpc.waitForTransaction(tx.transactionHash, 1, 120000);
     assert(mined && mined.status === 1);
     assertAddress(mined.from, owner);
-    assertAddress(mined.to, tx.to);
+    const raw = await rpc.getTransaction(tx.transactionHash);
+    assert(raw && raw.hash === tx.transactionHash);
+    assertAddress(raw.from, owner);
+    assert.equal(raw.value, 0n);
+    if (raw.to.toLowerCase() === tx.to.toLowerCase()) assert.equal(raw.data.toLowerCase(), tx.calldata.toLowerCase());
+    else {
+      // The existing MetaMask owner account is EIP-7702 delegated. Its reviewed
+      // eth_sendTransaction can be packaged into this observed execution wrapper.
+      assertAddress(raw.to, '0xdb9B1e94B5b69Df7e401DDbedE43491141047dB3');
+      assert((await rpc.getCode(owner)).toLowerCase().startsWith('0xef010063c0c19a282a1b52b07dd5a65b58948a07dae32b'));
+      const redeemed = delegationAbi.parseTransaction({ data: raw.data });
+      assert.equal(redeemed?.name, 'redeemDelegations');
+      assert.equal(redeemed.args.permissionContexts.length, 1);
+      assert.deepEqual([...redeemed.args.modes], [`0x${'00'.repeat(32)}`]);
+      assert.deepEqual([...redeemed.args.executionCalldatas], [
+        `${tx.to.toLowerCase()}${'00'.repeat(32)}${tx.calldata.slice(2).toLowerCase()}`,
+      ]);
+    }
+    const logs = mined.logs.filter(log => log.address.toLowerCase() === tx.to.toLowerCase());
+    const parsed = logs.map(log => { try { return (tx.functionName === 'approve' ? erc20Abi : controllerAbi).parseLog(log); } catch { return null; } }).filter(Boolean);
+    if (tx.functionName === 'createRoot') assert(parsed.some(event => event.name === 'NodeCreated' && event.args.parentId === 0n));
+    if (tx.functionName === 'approve') assert(parsed.some(event => event.name === 'Approval' && event.args.owner.toLowerCase() === owner.toLowerCase() && event.args.spender.toLowerCase() === controller.toLowerCase() && event.args.value === 10000000n));
+    if (tx.functionName === 'fundRoot') assert(parsed.some(event => event.name === 'RootFunded' && event.args.rootId.toString() === report.rootId && event.args.token.toLowerCase() === usdc.toLowerCase() && event.args.amount === 10000000n));
+    if (tx.functionName === 'setRootOperator') assert(parsed.some(event => event.name === 'OperatorChanged' && event.args.rootId.toString() === report.rootId && event.args.operator.toLowerCase() === report.operator.toLowerCase()));
     tx.status = 'confirmed';
     tx.blockNumber = mined.blockNumber;
     tx.blockHash = mined.blockHash;
     await save(report);
     return mined;
   };
-  await instrument();
-  await app.getByRole('button', { name: 'Launch a new root vault', exact: true }).click();
-  await app.getByLabel('Root ENS label', { exact: true }).fill(label);
-  await fillPolicy(app, date);
-  await app.getByRole('button', { name: 'Create root vault', exact: true }).click();
-  await confirmUntil(async () => pending.some(tx => tx.phase === 'create' && tx.transactionHash));
   const createTx = pending.find(tx => tx.phase === 'create');
+  if (!resume) {
+    await instrument();
+    await app.getByRole('button', { name: 'Launch a new root vault', exact: true }).click();
+    await app.getByLabel('Root ENS label', { exact: true }).fill(label);
+    await fillPolicy(app, date);
+    await app.getByRole('button', { name: 'Create root vault', exact: true }).click();
+    await confirmUntil(async () => pending.some(tx => tx.phase === 'create' && tx.transactionHash));
+  } else {
+    const priorReceipt = await rpc.getTransactionReceipt(createTx.transactionHash);
+    assert(priorReceipt && priorReceipt.status === 1);
+    const priorCreated = priorReceipt.logs.filter(log => log.address.toLowerCase() === controller.toLowerCase())
+      .map(log => { try { return controllerAbi.parseLog(log); } catch { return null; } })
+      .find(event => event?.name === 'NodeCreated' && event.args.parentId === 0n);
+    assert(priorCreated, 'Prior transaction did not create a root on the current controller');
+    const oldNode = await new Contract(controller, controllerAbi, rpc).getNode(priorCreated.args.rootId);
+    assert.equal(oldNode.label, label);
+    assertPolicy(oldNode.policy, expiry);
+    createTx.calldata = controllerAbi.encodeFunctionData('createRoot', [label, oldNode.policy]);
+    assertAddress(createTx.to, controller);
+  }
   const createReceipt = await receipt(createTx);
   const createdLog = createReceipt.logs.find(log => log.address.toLowerCase() === controller.toLowerCase() && controllerAbi.parseLog(log)?.name === 'NodeCreated');
   assert(createdLog, 'Root creation receipt has no NodeCreated event');
