@@ -299,3 +299,13 @@ input[type="checkbox"] { accent-color: var(--moss); }
 .help-links { display: flex; flex-wrap: wrap; gap: var(--space-4); margin-bottom: var(--space-6); font: 400 13px/20px var(--font-sans); color: var(--moss); }
 .help-links a:hover { text-decoration: underline; text-underline-offset: var(--space-1); }
 .onboarding-hero { margin-top: var(--space-6); margin-bottom: var(--space-6); scroll-margin-top: var(--space-12); }
+
+/* Persistent dashboard controls remain visible and clearly interactive. */
+.app-topbar { flex-shrink: 0; }
+.setup-selected .setup-create-root { margin-left: auto; }
+.setup-disclosure > h2 { margin: 0 0 var(--space-4); font-size: 16px; }
+.wallet-address { display: inline-flex; align-items: center; gap: var(--space-2); padding: var(--space-2) var(--space-3); min-height: 36px; border: 1px solid #7FC8A0; border-radius: var(--radius-md); background: #7FC8A0; color: #0F1A14; cursor: pointer; }
+.wallet-address:hover { background: #91D3AF; }
+.wallet-address > svg { display: block; }
+.app-topbar-actions > .theme-control { min-height: 36px; padding: var(--space-2) var(--space-3); border: 1px solid var(--ink-muted); background: var(--surface-raised); }
+@media (max-width: 767px) { .wallet-address { gap: 4px; padding: 6px; } .wallet-address > svg { display: none; } .app-topbar-actions > .theme-control { padding: 6px; } }

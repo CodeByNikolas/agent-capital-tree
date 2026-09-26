@@ -473,10 +473,10 @@ function WalletControl({ wallet }: { wallet: InjectedWalletState }) {
             sepolia
           </span>
         )}
-        <span className="wallet-address" aria-label={`Connected wallet ${shortAddress(address)}`}>
+        <a className="wallet-address" href={`https://sepolia.etherscan.io/address/${address}`} target="_blank" rel="noreferrer" title="View connected wallet on Sepolia Etherscan" aria-label={`View connected wallet ${shortAddress(address)} on Etherscan`}>
           <WalletCards size={15} aria-hidden="true" />
           <span>{shortAddress(address)}</span>
-        </span>
+        </a>
         {error && <span className="wallet-error" role="status">{error}</span>}
       </div>
     );
@@ -1149,6 +1149,11 @@ export function Dashboard({ data: initialData, deployment, vaultQuery, nodeQuery
   });
 
   useEffect(() => {
+    setWalletActionMode(actionQuery ?? null);
+    setDetailOpen(false);
+  }, [actionQuery, view, vaultQuery]);
+
+  useEffect(() => {
     if (nodeQuery) setSelectedId(nodeQuery);
   }, [nodeQuery]);
 
@@ -1437,7 +1442,7 @@ export function Dashboard({ data: initialData, deployment, vaultQuery, nodeQuery
           </>}
           {view === "mcp" && <McpPanel deployment={deployment} selectedNode={vaultQuery ? selectedNode : undefined} runtimeLabel={vaultQuery ? runtimeLabel : "No vault selected"} />}
           {view === "setup" && <>
-            <div className="setup-selected"><strong>Root vault</strong><span className="setup-root-name">{rootNode?.ensName ?? "Unknown root"}</span><span>{sourceLabel(data.source)}</span><Button variant="outline" onClick={() => setWalletActionMode("create-root")}>Create another root</Button></div>
+            <div className="setup-selected"><strong>Root vault</strong><span className="setup-root-name">{rootNode?.ensName ?? "Unknown root"}</span><span>{sourceLabel(data.source)}</span><Button className="setup-create-root" onClick={() => setWalletActionMode("create-root")}>Create another root</Button></div>
             <WalletControlsPanel
             data={data}
             deployment={deployment}
@@ -1457,10 +1462,10 @@ export function Dashboard({ data: initialData, deployment, vaultQuery, nodeQuery
             demoBudget={demoBudget}
             setupOperator={setupOperator}
           />
-          <details className="setup-disclosure">
-            <summary>Deployment &amp; integration status</summary>
+          <section className="setup-disclosure" aria-labelledby="integration-status-title">
+            <h2 id="integration-status-title">Deployment &amp; integration status</h2>
             <ContractSetupPanel data={dashboardData} deployment={deployment} actions={actions} wallet={wallet} liveStateReady={liveStateReady} historyError={activeActivityState.loadMoreError} />
-          </details>
+          </section>
           </>}
           <Footer source={data.source} vaultQuery={vaultQuery} />
           </div>

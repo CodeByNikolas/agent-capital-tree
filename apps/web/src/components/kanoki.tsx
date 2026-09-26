@@ -18,7 +18,7 @@ export function Brand() {
 
 export function ThemeControl() {
   const [light, setLight] = useState(false);
-  return <Button variant="ghost" onClick={() => { const next = !light; setLight(next); document.documentElement.dataset.theme = next ? "light" : "dark"; }} aria-label={light ? "Use dark theme" : "Use light theme"}>{light ? "Dark" : "Light"}</Button>;
+  return <Button variant="outline" className="theme-control" onClick={() => { const next = !light; setLight(next); document.documentElement.dataset.theme = next ? "light" : "dark"; }} aria-label={light ? "Use dark theme" : "Use light theme"}>{light ? "Dark" : "Light"}</Button>;
 }
 export function StatusPill({ status }: { status: string }) {
   const tone = status === "active" || status === "settled" ? "active" : status === "revoked" ? "revoked" : status === "expiring" ? "expiring" : "neutral";

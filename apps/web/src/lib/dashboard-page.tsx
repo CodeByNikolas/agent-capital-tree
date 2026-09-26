@@ -1,15 +1,24 @@
+"use client";
 import { Dashboard } from "@/components/dashboard";
-import { getPublicDeployment } from "@/lib/deployment";
+import type { PublicDeployment } from "@/lib/deployment";
+import { usePathname, useSearchParams } from "next/navigation";
 import { previewDashboard } from "@/lib/preview-data";
 import { notFound } from "next/navigation";
 
 export type DashboardView = "overview" | "tree" | "activity" | "agent-activity" | "uniswap" | "payments" | "applications" | "mcp" | "setup";
 export type DashboardSearchParams = Promise<{ root?: string | string[]; vault?: string | string[]; preview?: string | string[]; node?: string | string[]; action?: string | string[]; label?: string | string[]; budget?: string | string[]; operator?: string | string[]; tour?: string | string[]; step?: string | string[] }>;
 
-export async function renderDashboard(view: DashboardView, searchParams: DashboardSearchParams) {
-  const params = await searchParams;
+export function DashboardRoute({ deployment }: { deployment: PublicDeployment }) {
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+  const view = pathname === "/" ? "overview" : pathname.slice(1) as DashboardView;
+  const allowed = ["overview", "tree", "activity", "agent-activity", "uniswap", "payments", "applications", "mcp", "setup"];
+  if (!allowed.includes(view)) notFound();
+  const params: Awaited<DashboardSearchParams> = Object.fromEntries(Array.from(new Set(searchParams.keys()), key => {
+    const values = searchParams.getAll(key);
+    return [key, values.length > 1 ? values : values[0]];
+  }));
   if (params.root !== undefined || Array.isArray(params.vault)) notFound();
-  const deployment = getPublicDeployment();
   const vault = params.preview === "1" ? null : typeof params.vault === "string" ? params.vault : null;
   const node = typeof params.node === "string" ? params.node : null;
   const actions = ["create-root", "fund-root", "set-root-operator", "fund-operator-gas", "spawn-child", "tighten-policy", "revoke-subtree", "owner-recovery"] as const;

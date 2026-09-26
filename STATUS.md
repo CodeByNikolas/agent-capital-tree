@@ -1,5 +1,11 @@
 # Current release: kanoki.eth and sidebar repair
 
+## Dashboard shell and controls — 27 September 2026
+
+- Moved dashboard rendering into a shared App Router route-group layout. Client navigation preserves sidebar/header DOM, wallet/theme state and the loaded vault snapshot; URL actions still update the selected control mode. Existing query and section validation remains in place.
+- Kept the header sticky with a non-shrinking height. Root creation is right aligned and green; the wallet address is a green Sepolia explorer link; the theme toggle has an explicit border/background. Deployment and integration status is always expanded.
+- Verification: production build/TypeScript; new desktop/mobile shell regression (original version failed on header remount), live snapshot navigation with one tree read and browser Back; nine-route skeleton/layout regression; owner-only root suggestions; six-step tour; guided setup browser. No wallet transactions. Vercel publication follows the checked main commit.
+
 Concurrent main updates are integrated: unbound capital-MCP startup, help links on all pages, tour context preservation, restart-safe guided wallet setup and the standalone 19-tool plugin. The bundled manifest is rebuilt for Kanoki.
 
 - Registered `kanoki.eth` on ENSv2 Sepolia (not Ethereum mainnet); current controller `0xeB2041B486D66aB91140FFcF54B66513D8eC40c8`, ProjectRegistry `0x5bbCfab760376d2E419FC42DA63fA4C5e434DBF6`.
