@@ -29,6 +29,9 @@ try {
   const result = await client.callTool({ name: 'getTree', arguments: { rootId: manifest.bootstrap.rootId } });
   assert.equal(result.isError, undefined, result.content?.[0]?.text);
   const tree = result.structuredContent;
+  assert.match(result.content[0].text, /^\*\*kanoki\*\* · sepolia · /);
+  assert.match(result.content[0].text, /USDC · capabilities .+ · (expires in|expired|expiry unavailable).+ · (active|inactive|revoked|expired)/);
+  assert.match(result.content[0].text, /```text\n/);
   assert.equal(tree.rootId, manifest.bootstrap.rootId);
   assert.equal(tree.source.chainId, manifest.chainId);
   assert.equal(tree.tokens[0].toLowerCase(), manifest.token.address.toLowerCase());

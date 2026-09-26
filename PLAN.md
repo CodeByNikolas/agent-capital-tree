@@ -1,6 +1,10 @@
-# Agent Capital Tree — Binding implementation plan
+# Kanoki — Binding implementation plan
 
 As of 26 September 2026. Product decisions are fixed; implementation is in progress, and actual acceptance status is in STATUS.md. This plan supersedes earlier brainstorming. Read it with STATUS.md after context compaction.
+
+## Aktuelle Gestaltung und Veröffentlichung
+
+Der korrigierte Kanoki-Brief und `KANOKI_DESIGN.md` ersetzen ältere Gestaltungsentscheidungen unten: Header-Navigation statt Sidebar, explizites dunkles/helles Theme, Fraunces/IBM Plex und die vorgegebenen Tokens. Bestehende Onchain- und MCP-Schnittstellen bleiben erhalten. Die gelieferten PNG-Logos werden unverändert eingebunden. README und GIF zeigen Kanoki; die GIF-Aufnahme ist ausdrücklich illustrativ. Der Nutzer verlangt nach jedem geprüften Änderungsblock Commit als CodeByNikolas, Push und Deployment. Veröffentlichung erfolgt auf `main`; neuestes freigegebenes Deployment-Ziel ist `https://kanoki-app.vercel.app/`.
 
 ## Current demo: chat-managed capital and autonomous workers
 

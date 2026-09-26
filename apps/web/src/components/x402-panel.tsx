@@ -1,7 +1,8 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { ExternalLink, ShoppingCart, Sparkles } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
+import { ExternalLink, ShoppingCart } from "lucide-react";
+import { ServiceCard } from "./treasury-records";
 import { Badge } from "@/components/ui/badge";
 import type { DashboardActions, VaultNode } from "@/lib/dashboard-types";
 import type { ServiceListing, X402PurchaseResult } from "@/lib/x402";
@@ -42,18 +43,25 @@ export function X402Panel({
     return () => { active = false; };
   }, []);
 
-  const purchasable = Boolean(actions?.payForService && walletOnSepolia && canPay);
+  const [repeated, setRepeated] = useState<Record<string, boolean>>({});
+  const requestPending = useRef(false);
+  const purchaseKey = (serviceId: string) => node.vaultAddress.toLowerCase() + ":" + serviceId;
+  const purchasable = Boolean(actions?.payForService && walletOnSepolia && canPay && node.state === "active" && node.authorizedPermissions.includes("pay"));
 
   async function buy(serviceId: string) {
-    if (!actions?.payForService || pendingId) return;
+    const key = purchaseKey(serviceId);
+    if (purchases[key]) { setRepeated(current => ({ ...current, [key]: true })); return; }
+    if (!actions?.payForService || requestPending.current || !purchasable) return;
+    requestPending.current = true;
     setPendingId(serviceId);
     setErrors((current) => { const next = { ...current }; delete next[serviceId]; return next; });
     try {
       const result = await actions.payForService(node.id, serviceId);
-      setPurchases((current) => ({ ...current, [serviceId]: result }));
+      setPurchases((current) => ({ ...current, [key]: result }));
     } catch (cause) {
       setErrors((current) => ({ ...current, [serviceId]: cause instanceof Error ? cause.message : "Payment failed." }));
     } finally {
+      requestPending.current = false;
       setPendingId(null);
     }
   }
@@ -70,8 +78,9 @@ export function X402Panel({
       <p className="x402-lede">
         Each service is addressed by an ENS name and priced in USDC. The paying agent is
         identified by its capital-tree ENS name, and the payment only settles when the agent&apos;s
-        on-chain mandate covers it. Paying as <strong>{node.ensName}</strong>.
+        on-chain mandate covers it. Paying as <code>{node.ensName.toLowerCase()}</code>.
       </p>
+      <p className="small muted">Browser purchases debit the connected agent wallet. The service checks its node mandate.</p>
       {!purchasable && (
         <p className="x402-hint">
           {!walletOnSepolia
@@ -84,51 +93,7 @@ export function X402Panel({
       {catalogError && <p className="x402-hint">Service catalog unavailable: {catalogError}</p>}
       {services === null && !catalogError && <p className="x402-hint">Loading services…</p>}
       <div className="x402-services">
-        {services?.map((service) => {
-          const purchase = purchases[service.id];
-          const error = errors[service.id];
-          const pending = pendingId === service.id;
-          return (
-            <div className="x402-service" key={service.id}>
-              <div className="x402-service-head">
-                <Sparkles size={16} aria-hidden="true" />
-                <div>
-                  <strong>{service.name}</strong>
-                  <small>{service.ensName}</small>
-                </div>
-                <span className="x402-price">{service.priceDisplay} <small>USDC</small></span>
-              </div>
-              <p className="x402-service-desc">{service.description}</p>
-              <div className="x402-service-actions">
-                <button
-                  className="button button-secondary button-small"
-                  disabled={!purchasable || pending}
-                  onClick={() => void buy(service.id)}
-                  title={purchasable ? "Pay in USDC and unlock" : "Connect the agent wallet on Sepolia to pay"}
-                >
-                  <ShoppingCart size={13} aria-hidden="true" /> {pending ? "Paying…" : purchase ? "Buy again" : `Pay ${service.priceDisplay} USDC`}
-                </button>
-              </div>
-              {error && <p className="x402-error">{error}</p>}
-              {purchase && (
-                <div className="x402-result">
-                  <div className="x402-result-head">
-                    <Badge variant="outline">Paid by {purchase.paidBy}</Badge>
-                    <a
-                      className="x402-tx"
-                      href={`https://sepolia.etherscan.io/tx/${purchase.receipt.txHash}`}
-                      target="_blank"
-                      rel="noreferrer"
-                    >
-                      View settlement <ExternalLink size={11} aria-hidden="true" />
-                    </a>
-                  </div>
-                  <pre className="x402-content">{JSON.stringify(purchase.content, null, 2)}</pre>
-                </div>
-              )}
-            </div>
-          );
-        })}
+        {services?.map(service => <ServiceCard key={purchaseKey(service.id)} service={service} node={node} purchase={purchases[purchaseKey(service.id)]} pending={pendingId === service.id} error={errors[service.id]} canPurchase={purchasable} repeated={!!repeated[purchaseKey(service.id)]} onPurchase={() => void buy(service.id)} />)}
       </div>
     </section>
   );

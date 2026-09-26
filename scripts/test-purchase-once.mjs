@@ -1,0 +1,12 @@
+import assert from 'node:assert/strict';
+import { purchaseOnce } from '../apps/web/src/lib/purchase-once.ts';
+const values = new Map(), storage = {getItem:key=>values.get(key)??null,setItem:(key,value)=>values.set(key,value)};
+let charges = 0;
+const pay = async()=>{charges++;return {receipt:{txHash:'0x123'}};};
+const first = await purchaseOnce(storage,'one',pay);
+const retry = await purchaseOnce(storage,'one',pay);
+assert.equal(charges,1);assert.equal(retry.repeated,true);assert.deepEqual(first.result,retry.result);
+await assert.rejects(purchaseOnce(storage,'uncertain',async()=>{charges++;throw new Error('timeout after submit');}));
+await assert.rejects(purchaseOnce(storage,'uncertain',pay),/unconfirmed/);assert.equal(charges,2);
+await assert.rejects(purchaseOnce({getItem:()=>null,setItem:()=>{throw new Error('storage denied');}},'blocked',pay));assert.equal(charges,2);
+console.log('Receipt reuse, uncertain outcomes and unavailable storage: passed.');

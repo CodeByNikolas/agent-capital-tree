@@ -49,7 +49,7 @@ try {
   const registeredServers = await run(['mcp', 'list', '--json']);
   assert.equal(registeredServers.length, 1, 'fresh profile must register exactly one MCP server');
   const registered = registeredServers[0];
-  assert.equal(registered.name, 'capital-tree');
+  assert.equal(registered.name, 'kanoki');
   assert.ok(registered.enabled, 'installed MCP server is disabled');
   assert.equal(registered.transport.cwd, install.installedPath);
   assert.equal(registered.transport.command, 'node');

@@ -12,4 +12,7 @@ assert.equal(formatCompactAmount(amount("0")), "0");
 assert.equal(formatRoundedAmount(amount("52234945604314151595")), "52.235");
 assert.equal(formatRoundedAmount(amount("999500", 6)), "1.000");
 assert.equal(formatRoundedAmount(amount("0", 6)), "0.000");
+assert.equal(formatAmount(amount("750000", 6)), "0.750000");
+assert.equal(formatCompactAmount(amount("1", 6)), "0.000001");
+assert.equal(formatAmount(amount("0", 6)), "0.000000");
 console.log("Compact display amounts passed");

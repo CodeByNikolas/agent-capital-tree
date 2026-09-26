@@ -64,8 +64,8 @@ pnpm mcp:capital settings ${demoRoot}${deploymentFlag} --enable-sepolia-writes`;
   return (
     <>
       <div className="page-heading">
-        <span className="page-kicker">Agent interface</span>
-        <h1>MCP integration</h1>
+        <span className="page-kicker">Agent Capital Tree</span>
+        <h1>Kanoki in your chat.</h1>
         <p>
           Codex can read the capital tree through a local MCP. The dashboard reads Sepolia independently; it cannot
           see a local Codex session. Chat-managed capital needs one wallet authorization, but no Docker or model API key.

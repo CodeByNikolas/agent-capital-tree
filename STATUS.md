@@ -1,7 +1,34 @@
-# Agent Capital Tree — Status
+# Kanoki — Status
 
 As of 26 September 2026. Read this together with PLAN.md after context compaction. Older sections below retain the evidence and acceptance limits known at the time; the newest E2E status is first.
 
+## Kanoki — current main reconciliation
+
+The newer per-agent activity report and Curvegrid documentation are preserved alongside the Kanoki header and tokens. Agent activity is reachable under Activity. Production build, TypeScript and exact agent-event totals passed after the merge. Unrelated browser/runtime working files were not staged.
+
+## Kanoki — main integration
+
+The user now requires all publication from `main` to `https://kanoki-app.vercel.app/`. The integrated source preserves main’s proxy contracts/deployment, native workers, explicit recovery selection, owner-filtered vault suggestions and verified payment history. Uniswap and payment routes remain available under Applications. No contract or deployment manifest changed in this integration. Earlier branch/deployment records below are historical.
+
+20 plugin tests pass, including original-data preservation and the same presentation in Markdown and structured results. The original checkout is now on main; temporary worktrees were not added to Git. Final main production build and TypeScript passed. The 1280×720 / 380px dark/light browser suite passed, including contrast, keyboard focus, six routes and no overflow. Existing owner-only suggestion tests passed. The keyless MCP read passed at block11788663 with three tools and a PNG; no writes. GIF recaptured from the integrated main production build: four 1280×720 frames, 125,684 bytes.
+
+The user confirmed that `kanoki-app.vercel.app` belongs to `codebynikolas`, which this CLI account cannot access, and delegated deployment to someone with that access. No further deployment to raglibol is requested. The deliverable here is commit/push on main and the local production preview at `http://localhost:3044/tree?preview=1`, opened in the normal browser. Actual wallet signing, new financial E2E and final publication at the new URL remain outside these read-only checks.
+
+## Kanoki — Veröffentlichung in geprüften Schritten
+
+- Neueste Gestaltungsvorgaben ersetzen Sidebar und systemabhängiges Theme: Header-Navigation, explizit dunkles/helles Theme, Fraunces/IBM Plex, unveränderte Kanoki-Tokens, dagre-Baum, alle vier Capabilities, getrennte sechsstellige USDC-/DEMO-USD-Bestände. Die gelieferten PNG-Logos aus `packages/export` werden unverändert verwendet; SVG-Dateien wurden nicht geliefert.
+- UI-Abnahme: Produktionsbuild und TypeScript grün. Chromium 1280×720 und 380×820, jeweils dunkel/hell: acht Text-/Flächenpaare ≥4,5:1, kein Seitenüberlauf, Tab→Enter→Escape mit wiederhergestelltem Fokus. Alle fünf Ansichten plus MCP-Guide ohne Browserfehler. Bericht `artifacts/ui/kanoki-ui-report.json`.
+- Revoke bestätigt den betroffenen Teilbaum und lässt Guthaben im Vault. Service-Belege bleiben bei Wiederholung erhalten; unklarer Zahlungsstatus sperrt eine weitere Zahlung. Tests `test-purchase-once` und `test-display-amount` grün. Der vorhandene Browser-Payment-Adapter zahlt aus der verbundenen Agent-Wallet; Vault-Payment läuft über MCP. Swap/Add-liquidity haben weiterhin keinen Browser-Adapter und sind sichtbar deaktiviert.
+- Keine Contract-, ABI-, Deployment-, Namespace- oder Env-Umbenennung. Keine Walletsignatur oder Finanztransaktion für dieses Redesign. Echter Wallet-/Plugin-Write-E2E bleibt offen.
+- Separater Release-Worktree `work/kanoki` schützt diese Arbeit vor parallelen Branchwechseln. Vorhandene fremde Runtime-Arbeit bleibt auf `wip/mcp-inflight` erhalten. Nächste Schritte: MCP-Grafiken, README-GIF, öffentliche Read-Prüfung.
+- UI-Commit `49ef8d5` gepusht und auf Vercel `dpl_En5Ubiws6mGNFSDqJk2p2yZQDptz` veröffentlicht (READY), Alias `https://agent-capital-tree-silk.vercel.app`.
+- MCP: 17/17 Plugin-Tests bestanden; bestehende Toolnamen und Schemas gegenüber `be10418` unverändert. Neue Textausgaben beginnen mit Kanoki-Header, fester Statusreihenfolge und ausgerichtetem Box-Tree; JSON bleibt `structuredContent`. Toolliste bleibt vollständig, Rollen stehen in Beschreibungen. Grafiken nutzen dieselben Tokens, geliefertes Logo und sechsstellige getrennte Assets. Keyless-Live-Test Block11788536 und temporäre Codex-Plugin-Installation mit Servername `kanoki`, 17 Tools, Block11788545 grün. Keine Writes. GUI-Hostrendering bleibt separat offen.
+- Vorschau-Abgleich: NodeCards und Übersicht verwenden konsistente Vault-Bestände; USDC ist einheitlich beschriftet und Kapitalbeträge goldfarben. Vorschau-Indexstatus verwendet keinen Fehlerton. Typecheck, Betrags-/Receipt-Tests und alle vier Browserkombinationen erneut grün.
+- Commits `2f32337` und `4992462` jeweils gepusht und direkt deployt: Vercel `dpl_CWeRRFYigYZHoxX9SkoUMsdh1UV2` und `dpl_HzQ1YcWF9rV6D6PWs4iQQzeP2Bmy`, beide READY. Öffentlicher Chromium-Test auf dem Alias mit beiden Themes/Größen, Fokus und sechs Routen bestanden. Der Test wartet auf vollständig geladene Client-Komponenten.
+- README-GIF ersetzt: vier echte Preview-Aufnahmen vom veröffentlichten Kanoki-Dashboard, 1280×720, 143.030 Bytes, alle Frames decodiert. Übersicht, Baum, Anwendungen und Aktivität; keine Wallet-Aktion. README/Jury-Anleitung und korrigierter Designumfang synchronisiert. Reproduzierbar mit `capture-kanoki-demo.mjs` und `generate-readme-gif.py`.
+- Echter Codex-CLI-Read bestätigt Kanoki-Header, Textbaum und PNG-Link. Claude Code erhielt den Live-Tree auf Block11788596, bevorzugte aber `structuredContent` und ließ den Markdown-Header weg. Diese Host-Darstellung wird noch abgeglichen; kein fertiger Claude-GUI-Nachweis.
+
+## Aktiver Abschluss: Circle USDC und x402
 ## Curvegrid submission documentation
 
 - README now explains actual MultiBaas usage, the agent report, observed checkpoint lag, pagination/availability, and Default-plan backfill, rate, API-call and retention limits. The 100-block limit is explicitly historical backfill, not a rolling query visibility limit. Setup/tests and the separately sourced x402 history are linked.
