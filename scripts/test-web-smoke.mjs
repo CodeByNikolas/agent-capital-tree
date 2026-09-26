@@ -27,9 +27,16 @@ try {
   }
   await page.goto(base);
   await expect(page.getByText('Live root 1.', { exact: true })).toBeVisible({ timeout: 60000 });
+  await expect(page.locator('#capital-tree')).toHaveCount(0);
+  await expect(page.locator('#activity')).toHaveCount(0);
+  await page.goto(`${base}/setup?root=1`);
+  await expect(page.getByText('Live root 1.', { exact: true })).toBeVisible({ timeout: 60000 });
   await expect(page.getByRole('button', { name: 'Claim demo tokens', exact: true })).toBeDisabled();
   await page.getByLabel('Root ID to load').fill('2');
   await page.getByRole('button', { name: 'Load root', exact: true }).click();
+  await expect(page.getByText('Live root 2.', { exact: true })).toBeVisible({ timeout: 60000 });
+  assert.equal(new URL(page.url()).pathname, '/setup', 'Root picker preserves current page');
+  await page.goto(`${base}/?root=2`);
   await expect(page.getByText('Live root 2.', { exact: true })).toBeVisible({ timeout: 60000 });
   const metric = page.locator('article').filter({ has: page.getByText('Vaults in tree', { exact: true }) });
   await expect(metric.locator('.metric-value')).toContainText('3');
@@ -50,6 +57,8 @@ try {
   const root5Metric = page.locator('article').filter({ has: page.getByText('Vaults in tree', { exact: true }) });
   await expect(root5Metric.locator('.metric-value')).toContainText('4');
   await expect(root5Metric.locator('.metric-detail')).toContainText(`${root5.nodes.filter(node => node.state === 'active').length} active`);
+  await page.goto(`${base}/tree?root=5`);
+  await expect(page.getByText('Live root 5.', { exact: true })).toBeVisible({ timeout: 60000 });
   const expectedNames = ['5', '6', '7', '8'].map(id => {
     const node = root5.nodes.find(node => node.id === id);
     assert(node, `root 5 node ${id}`);
@@ -61,7 +70,7 @@ try {
     assert(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth), `root 5 ${name} overflow`);
     await page.screenshot({ path: new URL(`root5-current-${name}.png`, output).pathname, fullPage: true });
     // Start at document focus; reach and select a grandchild using only Tab/Enter.
-    await page.goto(`${base}/?root=5`);
+    await page.goto(`${base}/tree?root=5`);
     await expect(page.getByText('Live root 5.', { exact: true })).toBeVisible({ timeout: 60000 });
     const grandchild = page.locator('.tree-node:visible').filter({ has: page.getByText(expectedNames[2], { exact: true }) });
     for (let tabs = 0; tabs < 80 && !await grandchild.evaluate(node => node === document.activeElement); tabs++) {
@@ -74,8 +83,15 @@ try {
     }), `${name} keyboard focus must remain visible`);
     await page.keyboard.press('Enter');
     await expect(grandchild).toHaveAttribute('aria-pressed', 'true');
-    await expect(page.locator('.selected-vault-summary')).toContainText(expectedNames[2]);
-    checks.push(`${name}: keyboard-only grandchild selection updates mandate with visible focus`);
+    const detail = page.getByRole('dialog');
+    await expect(detail).toBeVisible();
+    await expect(detail).toContainText(expectedNames[2]);
+    assert(await detail.evaluate(node => node.scrollWidth <= node.clientWidth + 1), `${name} detail overflow`);
+    await page.screenshot({ path: new URL(`root5-detail-${name}.png`, output).pathname, fullPage: true });
+    await page.keyboard.press('Escape');
+    await expect(detail).toHaveCount(0);
+    await expect(grandchild).toBeFocused();
+    checks.push(`${name}: keyboard selection opens agent details; Escape restores node focus`);
   }
   checks.push('live root 5: mobile descendants stay with their parent; desktop/mobile without overflow');
   const root9TreeResponse = await page.request.get(`${base}/api/tree?root=9`);
@@ -102,7 +118,7 @@ try {
   for (const nodeId of ['9', '10', '11']) assert(createdNodeIds.has(nodeId), `indexed node-created event for ${nodeId}`);
   checks.push(`root 9 API: ${root9Activity.page.items.length} indexed rows, ${verifiedRoot9Items.length} receipt-verified, from block 11783944`);
 
-  await page.goto(`${base}/?root=9`);
+  await page.goto(`${base}/activity?root=9`);
   await expect(page.getByText('Live root 9.', { exact: true })).toBeVisible({ timeout: 60000 });
   const root9ActivityPanel = page.locator('#activity');
   const root9HistoryCoverage = 'History indexed from block 11,783,944; earlier activity is not included.';
@@ -113,12 +129,107 @@ try {
     await expect(root9ActivityPanel.locator('.activity-finality-confirmed, .activity-finality-finalized').first()).toBeVisible({ timeout: 60000 });
     await expect(root9ActivityPanel.locator('.activity-provenance')).toContainText(root9HistoryCoverage);
     assert(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth), `root 9 ${name} overflow`);
+    if (name === 'mobile') {
+      assert(await root9ActivityPanel.locator('.activity-list').evaluate(table => table.scrollWidth <= table.clientWidth + 1), 'Mobile activity must expose amounts and receipts without horizontal scrolling');
+    }
     await page.screenshot({ path: new URL(`root9-history-${name}.png`, output).pathname, fullPage: true });
     checks.push(`root 9 ${name}: indexed history and coverage status visible without overflow`);
   }
   await page.goto(`${base}/?preview=1`);
   await expect(page.getByText('Preview workspace.', { exact: true })).toBeVisible();
   await expect(page.getByRole('link', { name: 'Open live root', exact: true })).toBeVisible();
+  const pageLabels = [['/', 'Overview'], ['/tree', 'Agent tree'], ['/activity', 'Activity'], ['/applications', 'Applications'], ['/setup', 'Setup & control']];
+  for (const theme of ['light', 'dark']) {
+    await page.emulateMedia({ colorScheme: theme, reducedMotion: 'reduce' });
+    for (const [name, width, height] of [['desktop', 1440, 1100], ['mobile', 390, 844]]) {
+      await page.setViewportSize({ width, height });
+      for (const [path, label] of pageLabels) {
+        await page.goto(`${base}${path}?preview=1`);
+        await expect(page.getByText('Preview workspace.', { exact: true })).toBeVisible();
+        await expect(page.locator('h1')).toHaveCount(1);
+        assert(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth), `${theme} ${name} ${path} overflow`);
+        if (path === '/tree' && name === 'desktop') {
+          const geometry = await page.locator('.tree-canvas-desktop').evaluate(canvas => {
+            const cards = [...canvas.querySelectorAll('.tree-node')].map(node => node.getBoundingClientRect());
+            const overlaps = cards.some((a, i) => cards.slice(i + 1).some(b => a.left < b.right && a.right > b.left && a.top < b.bottom && a.bottom > b.top));
+            const svg = canvas.querySelector('svg');
+            const endpoints = [...svg.querySelectorAll('path')].every(path => {
+              const first = path.getPointAtLength(0).matrixTransform(path.getScreenCTM());
+              const last = path.getPointAtLength(path.getTotalLength()).matrixTransform(path.getScreenCTM());
+              const near = (a, b) => Math.abs(a - b) < 3;
+              return cards.some(card => near(card.right, first.x) && near((card.top + card.bottom) / 2, first.y)) &&
+                cards.some(card => near(card.left, last.x) && near((card.top + card.bottom) / 2, last.y));
+            });
+            return { overlaps, endpoints };
+          });
+          assert.equal(geometry.overlaps, false, 'Readable tree cards must not overlap');
+          assert.equal(geometry.endpoints, true, 'Tree connections must meet their parent and child cards');
+        }
+        assert(await page.evaluate(() => parseFloat(getComputedStyle(document.body).fontSize) >= 16), `${theme} body font too small`);
+        const readability = await page.evaluate(() => {
+          const canvas = document.createElement('canvas');
+          canvas.width = canvas.height = 1;
+          const context = canvas.getContext('2d', { willReadFrequently: true });
+          const color = value => {
+            context.clearRect(0, 0, 1, 1);
+            context.fillStyle = value;
+            context.fillRect(0, 0, 1, 1);
+            return [...context.getImageData(0, 0, 1, 1).data];
+          };
+          const blend = (front, back) => front.slice(0, 3).map((channel, index) => channel * front[3] / 255 + back[index] * (1 - front[3] / 255));
+          const luminance = rgb => rgb.slice(0, 3).map(channel => channel / 255).map(channel => channel <= 0.04045 ? channel / 12.92 : ((channel + 0.055) / 1.055) ** 2.4).reduce((sum, channel, i) => sum + channel * [0.2126, 0.7152, 0.0722][i], 0);
+          const violations = [];
+          for (const element of document.querySelectorAll('body *')) {
+            if (!(element instanceof HTMLElement) || !element.checkVisibility() || element.closest('[disabled], [aria-hidden="true"], .sr-only')) continue;
+            const directText = [...element.childNodes].filter(node => node.nodeType === Node.TEXT_NODE).map(node => node.textContent).join('').trim();
+            if (!directText) continue;
+            const style = getComputedStyle(element);
+            const size = parseFloat(style.fontSize);
+            if (size < 14) violations.push({ text: directText.slice(0, 50), fontSize: size });
+            const ancestors = [];
+            for (let parent = element; parent; parent = parent.parentElement) ancestors.unshift(parent);
+            let background = [255, 255, 255];
+            for (const parent of ancestors) background = blend(color(getComputedStyle(parent).backgroundColor), background);
+            const foreground = blend(color(style.color), background);
+            const a = luminance(foreground), b = luminance(background);
+            const ratio = (Math.max(a, b) + 0.05) / (Math.min(a, b) + 0.05);
+            const required = size >= 24 || (size >= 18.66 && parseInt(style.fontWeight, 10) >= 700) ? 3 : 4.5;
+            if (ratio + 0.05 < required) violations.push({ text: directText.slice(0, 50), contrast: Math.round(ratio * 100) / 100, required });
+          }
+          return { violations, backgroundLuminance: luminance(color(getComputedStyle(document.body).backgroundColor)) };
+        });
+        assert.deepEqual(readability.violations, [], `${theme} ${name} ${path}: readable text size and contrast`);
+        assert(theme === 'dark' ? readability.backgroundLuminance < 0.1 : readability.backgroundLuminance > 0.8, `${theme}: OS preference changes the surface`);
+        await page.screenshot({ path: new URL(`redesign-${path === '/' ? 'overview' : path.slice(1)}-${theme}-${name}.png`, output).pathname, fullPage: true });
+      }
+      checks.push(`${theme} ${name}: five readable routes without viewport overflow`);
+    }
+  }
+  // Exercise real navigation, including mobile Sheet dismissal and query context.
+  for (const [name, width] of [['desktop', 1440], ['mobile', 390]]) {
+    await page.setViewportSize({ width, height: 1000 });
+    await page.goto(`${base}/?preview=1`);
+    for (const [path, label] of pageLabels.slice(1)) {
+      if (name === 'mobile') await page.getByRole('button', { name: 'Toggle navigation', exact: true }).click();
+      const navigation = page.getByLabel('Primary navigation');
+      await navigation.getByRole('link', { name: label, exact: true }).click();
+      await expect.poll(() => new URL(page.url()).pathname).toBe(path);
+      assert.equal(new URL(page.url()).searchParams.get('preview'), '1');
+      if (name === 'mobile') await expect(page.getByRole('dialog')).toHaveCount(0);
+    }
+    checks.push(`${name}: sidebar navigation preserves preview mode and closes mobile menu`);
+  }
+  await page.setViewportSize({ width: 1440, height: 1100 });
+  await page.goto(`${base}/tree?root=5&node=7`);
+  await expect(page.getByText('Live root 5.', { exact: true })).toBeVisible({ timeout: 60000 });
+  await page.getByLabel('Primary navigation').getByRole('link', { name: 'Setup & control', exact: true }).click();
+  await expect.poll(() => new URL(page.url()).pathname).toBe('/setup');
+  assert.equal(new URL(page.url()).searchParams.get('root'), '5');
+  assert.equal(new URL(page.url()).searchParams.get('node'), '7');
+  checks.push('Live root and selected agent remain selected between tree and setup');
+  await page.goto(`${base}/tree?root=99999`);
+  await expect(page.getByText('Root 99999 was not found.', { exact: true })).toBeVisible({ timeout: 60000 });
+  checks.push('Missing live root shows an explicit error');
   assert.deepEqual(errors, []);
   checks.push('explicit sample preview; no browser JavaScript errors');
   const report = { base, checkedAt: new Date().toISOString(), checks, walletTested: false };

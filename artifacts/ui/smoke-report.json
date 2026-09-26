@@ -1,6 +1,6 @@
 {
-  "base": "https://agent-capital-tree.vercel.app",
-  "checkedAt": "2026-09-26T05:56:01.939Z",
+  "base": "http://127.0.0.1:3040",
+  "checkedAt": "2026-09-26T06:36:37.424Z",
   "checks": [
     "root 1: HTTP 200",
     "root 2: HTTP 200",
@@ -9,12 +9,20 @@
     "live default, root navigation, revoked tree count and disconnected faucet",
     "desktop: no horizontal overflow",
     "mobile: no horizontal overflow",
-    "desktop: keyboard-only grandchild selection updates mandate with visible focus",
-    "mobile: keyboard-only grandchild selection updates mandate with visible focus",
+    "desktop: keyboard selection opens agent details; Escape restores node focus",
+    "mobile: keyboard selection opens agent details; Escape restores node focus",
     "live root 5: mobile descendants stay with their parent; desktop/mobile without overflow",
     "root 9 API: 14 indexed rows, 14 receipt-verified, from block 11783944",
     "root 9 desktop: indexed history and coverage status visible without overflow",
     "root 9 mobile: indexed history and coverage status visible without overflow",
+    "light desktop: five readable routes without viewport overflow",
+    "light mobile: five readable routes without viewport overflow",
+    "dark desktop: five readable routes without viewport overflow",
+    "dark mobile: five readable routes without viewport overflow",
+    "desktop: sidebar navigation preserves preview mode and closes mobile menu",
+    "mobile: sidebar navigation preserves preview mode and closes mobile menu",
+    "Live root and selected agent remain selected between tree and setup",
+    "Missing live root shows an explicit error",
     "explicit sample preview; no browser JavaScript errors"
   ],
   "walletTested": false
