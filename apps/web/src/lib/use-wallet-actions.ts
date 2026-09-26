@@ -20,6 +20,13 @@ import { sepolia } from "viem/chains";
 import { useRef, useState } from "react";
 import type { DashboardActions, DashboardData, Permission, Policy, PolicyDraft } from "@/lib/dashboard-types";
 import type { PublicDeployment } from "@/lib/deployment";
+import {
+  encodePaymentHeader,
+  USDC_SEPOLIA,
+  X402_VERSION,
+  type X402Challenge,
+  type X402PurchaseResult,
+} from "@/lib/x402";
 
 export type WalletActionStage = "simulating" | "awaiting-wallet" | "confirming" | "confirmed" | "error";
 
@@ -588,6 +595,88 @@ export function useWalletActions({
         awaitingWallet();
         return context.walletClient.writeContract(request);
       });
+    },
+
+    async payForService(nodeId, serviceId) {
+      if (busy.current) throw new Error("Another wallet action is still in progress.");
+      busy.current = true;
+      try {
+        const context = await createContext();
+        // ENS identity gate: only the agent bound to this vault may spend under its mandate.
+        await requireNodeAgent(context, nodeId);
+        const agentEnsName = data.nodes.find((node) => node.id === nodeId)?.ensName ?? "";
+
+        // x402 handshake: an unpaid request returns the 402 payment terms.
+        setNotice({ stage: "simulating", label: "Load service price", message: "Requesting x402 payment terms." });
+        const challengeResponse = await fetch(`/api/x402/services/${encodeURIComponent(serviceId)}`, { cache: "no-store" });
+        if (challengeResponse.status !== 402) {
+          throw new Error("The service did not return x402 payment terms.");
+        }
+        const challenge = (await challengeResponse.json()) as X402Challenge;
+        const requirements = challenge.accepts?.[0];
+        if (!requirements) throw new Error("The service advertised no payment requirements.");
+        const asset = getAddress(requirements.asset);
+        if (asset !== USDC_SEPOLIA.address) throw new Error("This service must be paid in Sepolia USDC.");
+        const payTo = getAddress(requirements.payTo);
+        const amount = BigInt(requirements.maxAmountRequired);
+        if (amount <= 0n) throw new Error("The service returned a non-positive price.");
+
+        // Settlement: transfer USDC from the agent wallet to the service recipient.
+        const settlement = await submitWithContext<{ transactionHash: Hash }>(
+          context,
+          "Pay service in USDC",
+          async (tx, awaitingWallet) => {
+            const { request } = await tx.publicClient.simulateContract({
+              account: tx.account,
+              address: asset,
+              abi: erc20Abi,
+              functionName: "transfer",
+              args: [payTo, amount],
+            });
+            awaitingWallet();
+            return tx.walletClient.writeContract(request);
+          },
+          false,
+        );
+        const txHash = settlement.transactionHash;
+
+        // Redeem: resend the request with proof of payment + the agent's ENS identity.
+        setNotice({
+          stage: "confirming",
+          label: "Unlock service",
+          message: "Submitting payment proof to the service.",
+          transactionHash: txHash,
+        });
+        const header = encodePaymentHeader({
+          x402Version: X402_VERSION,
+          scheme: "exact",
+          network: requirements.network,
+          resource: serviceId,
+          payload: { txHash, from: context.account, payTo, asset, amount: amount.toString(), nodeId, agentEnsName },
+        });
+        const paidResponse = await fetch(`/api/x402/services/${encodeURIComponent(serviceId)}`, {
+          cache: "no-store",
+          headers: { "X-PAYMENT": header },
+        });
+        if (!paidResponse.ok) {
+          const detail = (await paidResponse.json().catch(() => null)) as { error?: { message?: string } } | null;
+          throw new Error(detail?.error?.message ?? "The service rejected the payment proof.");
+        }
+        const result = (await paidResponse.json()) as X402PurchaseResult;
+        setNotice({
+          stage: "confirmed",
+          label: "Service unlocked",
+          message: `Paid in USDC; ${result.service.name} delivered to ${result.paidBy}.`,
+          transactionHash: txHash,
+        });
+        onConfirmed();
+        return result;
+      } catch (cause) {
+        setNotice({ stage: "error", label: "Pay for service", message: errorMessage(cause) });
+        throw cause;
+      } finally {
+        busy.current = false;
+      }
     },
   };
 

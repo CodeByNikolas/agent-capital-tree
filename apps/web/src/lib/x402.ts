@@ -92,6 +92,14 @@ export interface X402PaymentPayload {
   };
 }
 
+/** What a completed purchase returns to the browser: the resource plus its receipt. */
+export interface X402PurchaseResult {
+  service: { id: string; ensName: string; name: string };
+  paidBy: string;
+  content: Record<string, unknown>;
+  receipt: X402Receipt;
+}
+
 /** Settlement receipt returned in the `X-PAYMENT-RESPONSE` header after verification. */
 export interface X402Receipt {
   settled: true;

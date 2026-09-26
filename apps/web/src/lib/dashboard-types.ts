@@ -1,3 +1,5 @@
+import type { X402PurchaseResult } from "@/lib/x402";
+
 export type DataSource = "preview" | "direct-rpc" | "local-diagnostic";
 export type ActivitySource = "preview" | "multi-baas" | "local-diagnostic" | "unavailable";
 export type ActivityRecordSource = Exclude<ActivitySource, "unavailable">;
@@ -197,4 +199,6 @@ export interface DashboardActions {
   closePosition?: (positionId: string) => void | Promise<void>;
   ownerEmergencyRecover?: (nodeId: string) => void | Promise<void>;
   ownerEmergencyClosePosition?: (nodeId: string, minimumOutputs: readonly [string, string], deadline: string) => Promise<void>;
+  /** Pay for an x402 service in USDC from the connected agent's wallet, bound to its ENS mandate. */
+  payForService?: (nodeId: string, serviceId: string) => Promise<X402PurchaseResult>;
 }
