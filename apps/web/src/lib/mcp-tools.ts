@@ -105,5 +105,5 @@ export const mcpServerMeta = {
   auth: "Authorization: Bearer <ACT_MCP_TOKEN>",
   readTimeout: "30 s (reads)",
   writeTimeout: "300 s (writes)",
-  codexVerified: "Codex CLI 0.154.0",
+  codexVerified: "Host 0.157.0 · worker 0.154.0",
 } as const;

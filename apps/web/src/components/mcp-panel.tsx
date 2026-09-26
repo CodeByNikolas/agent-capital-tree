@@ -1,17 +1,29 @@
-import { Check, CircleDashed, Plug, ShieldCheck } from "lucide-react";
+import { CircleDashed, Plug, ShieldCheck } from "lucide-react";
 import { CopyBlock } from "@/components/copy-block";
 import { InfoHint } from "@/components/info-hint";
 import { mcpServerMeta, mcpTools } from "@/lib/mcp-tools";
 import type { PublicDeployment } from "@/lib/deployment";
 import type { VaultNode } from "@/lib/dashboard-types";
 
-const verifySnippet = `git clone --branch work/rami https://github.com/CodeByNikolas/agent-capital-tree.git
-cd agent-capital-tree
-pnpm install --frozen-lockfile --ignore-scripts
+const verifySnippet = `pnpm install --frozen-lockfile --ignore-scripts
 pnpm --filter @agent-capital-tree/sdk build
 pnpm --filter @agent-capital-tree/plugin build
 pnpm mcp:doctor
-pnpm mcp:verify`;
+pnpm mcp:verify
+pnpm mcp:chat-verify`;
+
+const cloneSnippet = `git clone --branch work/rami https://github.com/CodeByNikolas/agent-capital-tree.git
+cd agent-capital-tree`;
+
+const installPwsh = `$actRepo = (Get-Location).Path
+$actNode = (Get-Command node).Source
+codex mcp add capital_tree_readonly -- $actNode (Join-Path $actRepo 'scripts/mcp-readonly-server.mjs')
+codex mcp get capital_tree_readonly --json`;
+
+const installBash = `codex mcp add capital_tree_readonly -- "$(command -v node)" "$PWD/scripts/mcp-readonly-server.mjs"
+codex mcp get capital_tree_readonly --json`;
+
+const chatPrompt = `Use the capital_tree_readonly MCP server's getTree tool with rootId "1". Report source.chainId, source.blockNumber, source.observedAt, node count and root vault. Do not use shell, web browsing, another tool or any write action.`;
 
 export function McpPanel({
   deployment,
@@ -22,10 +34,6 @@ export function McpPanel({
   selectedNode: VaultNode | undefined;
   runtimeLabel: string;
 }) {
-  const statusTone =
-    runtimeLabel === "Runtime connected" ? "ok" : runtimeLabel === "Runtime status unknown" ? "warn" : "idle";
-  const StatusIcon = statusTone === "ok" ? Check : CircleDashed;
-
   const serverFacts: [string, string][] = [
     ["Server name", mcpServerMeta.name],
     ["Transport", mcpServerMeta.transport],
@@ -33,6 +41,7 @@ export function McpPanel({
     ["Auth", mcpServerMeta.auth],
     ["Timeouts", `${mcpServerMeta.readTimeout} · ${mcpServerMeta.writeTimeout}`],
     ["Verified with", mcpServerMeta.codexVerified],
+    ["Vault runtime", runtimeLabel],
   ];
 
   const deploymentFacts: [string, string][] = [
@@ -48,25 +57,24 @@ export function McpPanel({
         <span className="page-kicker">Agent interface</span>
         <h1>MCP integration</h1>
         <p>
-          Agents don&apos;t call the contracts directly — they drive the tree through these MCP tools, served by
-          <em> your own</em> local companion runtime. This dashboard holds no wallet key and no runtime token.
+          Codex can read the capital tree through a local MCP. The dashboard reads Sepolia independently; it cannot
+          see a local Codex session. Financial actions require a separate companion and your own wallet authority.
         </p>
       </div>
 
       {/* Identity + connection status */}
       <section className="panel mcp-panel" aria-labelledby="mcp-server-title">
         <div className="panel-heading">
-          <span className="panel-overline">Server</span>
+          <span className="panel-overline">Full companion</span>
           <h2 id="mcp-server-title">
             <Plug size={18} aria-hidden="true" /> capital-tree
           </h2>
         </div>
-        <div className={`mcp-status mcp-status-${statusTone}`} role="status">
-          <StatusIcon size={16} className="mcp-status-icon" aria-hidden="true" />
-          <span>{runtimeLabel}</span>
-          <InfoHint term="runtime" />
+        <div className="mcp-status mcp-status-idle" role="status">
+          <CircleDashed size={16} className="mcp-status-icon" aria-hidden="true" />
+          <span>Local Codex MCP connection not observable here</span>
         </div>
-        <p className="mcp-lede">This is dashboard data, not a live check of a Codex MCP process on your laptop.</p>
+        <p className="mcp-lede">Vault runtime state comes from dashboard data <InfoHint term="runtime" />; it does not prove your Codex MCP is connected.</p>
         <div className="mcp-facts-groups">
           <dl className="mcp-facts">
             {serverFacts.map(([key, value]) => (
@@ -87,14 +95,31 @@ export function McpPanel({
         </div>
       </section>
 
+      <section className="panel mcp-panel" aria-labelledby="mcp-connection-title">
+        <div className="panel-heading">
+          <span className="panel-overline">Connection path</span>
+          <h2 id="mcp-connection-title">What actually connects</h2>
+        </div>
+        <div className="mcp-connection-flow" aria-label="Codex uses the local MCP to read Sepolia; the dashboard reads Sepolia independently">
+          <div className="mcp-connection-node"><strong>Codex chat</strong><span>Check <code>/mcp</code> in the desktop app</span></div>
+          <span className="mcp-connection-arrow" aria-hidden="true">→</span>
+          <div className="mcp-connection-node"><strong>Local read-only MCP</strong><span><code>getTree</code> only · no signer</span></div>
+          <span className="mcp-connection-arrow" aria-hidden="true">→</span>
+          <div className="mcp-connection-node"><strong>Sepolia</strong><span>Current block and vaults</span></div>
+        </div>
+        <p className="mcp-lede">This website also reads Sepolia. A successful <code>getTree</code> call in Codex and a matching vault here demonstrate the shared chain state; there is no browser-to-Codex connection or automatic live badge.</p>
+      </section>
+
       {/* Tool catalog */}
       <section className="panel mcp-panel" aria-labelledby="mcp-tools-title">
         <div className="panel-heading">
           <span className="panel-overline">Catalog</span>
-          <h2 id="mcp-tools-title">Tools ({mcpTools.length})</h2>
+          <h2 id="mcp-tools-title">Full companion tools ({mcpTools.length})</h2>
         </div>
         <p className="mcp-lede">
-          Read tools inspect chain state; write tools request bounded on-chain actions. Every schema is strict — a
+          The simple Codex chat setup below exposes only <code>getTree</code>. These 16 tools belong to the separate
+          authenticated Linux companion; discovery in the temporary verifier does not make them all usable. Read tools
+          inspect chain state; write tools request bounded on-chain actions. Every schema is strict — a
           model-supplied <code>agentId</code> is rejected, and node IDs in arguments are targets, never proof of authority.
         </p>
         <ul className="mcp-tools" aria-label="MCP tools">
@@ -116,48 +141,66 @@ export function McpPanel({
       <section className="panel mcp-panel" aria-labelledby="mcp-setup-title">
         <div className="panel-heading">
           <span className="panel-overline">Setup guide</span>
-          <h2 id="mcp-setup-title">Verify the MCP, then enable actions</h2>
+          <h2 id="mcp-setup-title">Use it in a Codex chat</h2>
         </div>
         <p className="mcp-lede">
-          Clone the public repository and run these commands from its root in PowerShell or Bash. The read-only check
-          creates a temporary Codex profile, installs the marketplace plugin, discovers all 16 tools, and calls
-          <code> getTree</code> on the live USDC Sepolia tree. It uses a local bridge that refuses writes; no wallet,
-          operator key, runtime token, Docker, or team laptop is needed.
+          Run these commands from a checkout containing <code>package.json</code>. If you are already in the project,
+          do not clone it again. The automated checks are temporary; the next step registers a persistent one-tool
+          read-only MCP for Codex in the ChatGPT desktop app.
         </p>
 
         <ol className="setup-steps mcp-steps">
           <li className="setup-step">
             <span>1</span>
             <div>
-              <strong>Read-only verification</strong>
+              <strong>Build and verify</strong>
               <small>
-                Install Node 22 or newer, pnpm and Codex CLI. Internet access to the published app and Sepolia RPC is
-                required. The host Codex version may be newer than the pinned 0.154.0 worker image.
+                Install Node 22 or newer, pnpm and Codex CLI. Internet access to the public app and Sepolia RPC is
+                required. No wallet, Docker, runtime token or team laptop is needed.
               </small>
+              <details className="setup-disclosure mcp-path">
+                <summary>New laptop only: clone the project once</summary>
+                <small>If you already see <code>package.json</code> in this folder, skip this step.</small>
+                <CopyBlock code={cloneSnippet} label="clone the current branch once" />
+              </details>
               <CopyBlock code={verifySnippet} label="read-only MCP verification commands" />
             </div>
           </li>
           <li className="setup-step">
             <span>2</span>
             <div>
-              <strong>Interpret the result</strong>
+              <strong>Register in your personal Codex profile</strong>
               <small>
-                Look for <code>toolCount: 16</code>, <code>chainId: 11155111</code> and <code>writes: disabled</code>.
-                This proves packaging, installation, MCP handshake and a current chain read. The temporary profile
-                is removed afterwards; it does not install a persistent personal companion.
+                Run one shell-specific block from the checkout root. CLI and ChatGPT desktop share MCP configuration.
+                Alternatively use desktop Settings → MCP servers → Add server → STDIO with Node and the script&apos;s
+                absolute path, then restart. Do not register both routes under different names.
               </small>
+              <span className="mcp-shell-tag">PowerShell · Windows</span>
+              <CopyBlock code={installPwsh} label="register read-only MCP in PowerShell" />
+              <span className="mcp-shell-tag">Bash · macOS / Linux</span>
+              <CopyBlock code={installBash} label="register read-only MCP in Bash" />
             </div>
           </li>
           <li className="setup-step">
             <span>3</span>
             <div>
-              <strong>Enable agent actions separately</strong>
+              <strong>Call it from a new Codex chat</strong>
               <small>
-                Financial writes are a separate Linux companion setup with your own Sepolia wallet, RPC and CLIProxyAPI
-                access. On Windows, run that Linux setup in WSL2; native PowerShell cannot run the current companion.
-                Follow <code>docs/local-setup.md</code> and <code>packages/plugin/README.md</code>. Do not reuse the
-                completed demo root or payment runner. Containerized cross-platform onboarding and fresh-laptop write
-                verification are still open.
+                Type <code>/mcp</code> in Codex and confirm <code>capital_tree_readonly</code>, then send this prompt.
+                Expect chain 11155111, two demo nodes and a recent block. This is a real MCP tool call, not a dashboard
+                connection indicator.
+              </small>
+              <CopyBlock code={chatPrompt} label="read-only Codex chat prompt" />
+            </div>
+          </li>
+          <li className="setup-step">
+            <span>4</span>
+            <div>
+              <strong>Financial actions are a separate setup</strong>
+              <small>
+                The full 16-tool plugin needs the authenticated Linux companion, your own wallet/operator, Sepolia RPC
+                and CLIProxyAPI. On Windows use WSL2. Follow <code>docs/local-setup.md</code>; do not reuse the completed
+                demo root. ChatGPT web does not run this local STDIO MCP.
               </small>
             </div>
           </li>
@@ -173,7 +216,7 @@ export function McpPanel({
           </h2>
         </div>
         <ul className="mcp-security-list">
-          <li>Holds no wallet key and no provider credential — it only forwards requests to your companion.</li>
+          <li>The read-only chat server holds no wallet key or provider credential and exposes no write tools.</li>
           <li>In full Linux companion mode, the MCP token is a local <code>0600</code> file, re-issued on every start and never printed to the terminal.</li>
           <li>The companion binds the bearer to the real root/worker context; a model-supplied <code>agentId</code> is rejected.</li>
           <li>On an uncertain write, tools never claim success — reconcile with <code>getOperationStatus</code> or the chain before retrying.</li>

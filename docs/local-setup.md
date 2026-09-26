@@ -2,19 +2,55 @@
 
 ## Fast jury check: read-only MCP on Windows, macOS or Linux
 
-With Node 22+, pnpm and Codex CLI installed, run the following in PowerShell or Bash. The `work/rami` branch contains this current proof until it is integrated into the default branch. No wallet, private configuration, Docker, runtime bearer, operator or team laptop is needed. Internet access to the public app and Sepolia RPC is required.
+With Node 22+, pnpm and Codex CLI installed, run the following in PowerShell or Bash. The `work/rami` branch contains this current proof until it is integrated into the default branch. **If you are already in a checkout containing `package.json`, do not clone again**; run the `pnpm` commands there. A second `git clone` inside the project creates an unnecessary nested repository. No wallet, private configuration, Docker, runtime bearer, operator or team laptop is needed. Internet access to the public app and Sepolia RPC is required.
 
-```sh
+For a new checkout only:
+
+```text
 git clone --branch work/rami https://github.com/CodeByNikolas/agent-capital-tree.git
 cd agent-capital-tree
+```
+
+From the checkout root:
+
+```sh
 pnpm install --frozen-lockfile --ignore-scripts
 pnpm --filter @agent-capital-tree/sdk build
 pnpm --filter @agent-capital-tree/plugin build
 pnpm mcp:doctor
 pnpm mcp:verify
+pnpm mcp:chat-verify
 ```
 
-`mcp:verify` creates a fresh temporary Codex profile, installs the local marketplace plugin, confirms exactly one enabled `capital-tree` MCP and all 16 tools, then calls the installed server's `getTree` on the current public USDC root. Its temporary loopback bridge implements **only** `getTree`; a write request is rejected. The profile is removed afterwards. This proves install, discovery, handshake and a live chain read, **not** a persistent personal install, autonomous worker or financial write. The host Codex CLI may be newer than the separately pinned Linux worker CLI 0.154.0. `ACT_APP_URL` and `ACT_SEPOLIA_RPC_URL` optionally override the public endpoints for controlled verification; neither is a secret. Do not use this test to replay the completed payment/root.
+`mcp:verify` creates a fresh temporary Codex profile, installs the local marketplace plugin, confirms exactly one enabled `capital-tree` MCP and all 16 tools, then calls the installed server's `getTree` on the current public USDC root. Its temporary loopback bridge implements **only** `getTree`; a write request is rejected. The profile is removed afterwards. `mcp:chat-verify` separately starts the permanent-use read-only STDIO server, confirms it advertises **only** `getTree`, and performs a live chain read. Both prove MCP mechanics, not a personal app connection or financial write. The host Codex CLI may be newer than the separately pinned Linux worker CLI 0.154.0. `ACT_APP_URL` and `ACT_SEPOLIA_RPC_URL` optionally override public test endpoints; neither is a secret. Do not use these tests to replay the completed payment/root.
+
+## Use the read-only MCP in Codex inside the ChatGPT desktop app
+
+The proof above does **not** leave an MCP installed in your personal profile. To use `getTree` in an actual Codex chat, stay in the checkout root and register the local STDIO server once. In PowerShell:
+
+```powershell
+$actRepo = (Get-Location).Path
+$actNode = (Get-Command node).Source
+codex mcp add capital_tree_readonly -- $actNode (Join-Path $actRepo 'scripts/mcp-readonly-server.mjs')
+codex mcp get capital_tree_readonly --json
+```
+
+In Bash:
+
+```sh
+codex mcp add capital_tree_readonly -- "$(command -v node)" "$PWD/scripts/mcp-readonly-server.mjs"
+codex mcp get capital_tree_readonly --json
+```
+
+The resulting configuration contains only the Node executable and an absolute path to the script; no bearer or wallet key is needed. If `capital_tree_readonly` already exists, inspect it with `codex mcp get capital_tree_readonly --json` before changing anything. For a GUI-only route, use ChatGPT desktop **Settings → MCP servers → Add server → STDIO**, choose `node` as command and the script's absolute path as its argument, then Save and Restart. [OpenAI's MCP documentation](https://learn.chatgpt.com/docs/extend/mcp?surface=cli) says the desktop app and Codex CLI share MCP configuration and `/mcp` in the composer lists connected servers. Do not add both GUI and CLI registrations under different names in the same profile.
+
+Open a **new Codex chat** in the ChatGPT desktop app, select this project, type `/mcp` and confirm `capital_tree_readonly` is enabled. Then ask:
+
+> Use the `capital_tree_readonly` MCP server's `getTree` tool with `rootId: "1"`. Report `source.chainId`, `source.blockNumber`, `source.observedAt`, the node count and the root vault. Do not use the shell, web browsing, another tool or any write action.
+
+The answer should name Sepolia chain `11155111`, two nodes in the current demo tree and a recent block. Check the block and vault against the [public dashboard](https://agent-capital-tree-silk.vercel.app/tree?vault=0xAc5378EdA34f38A7fd34BB808B1b5492aF499bcf). The dashboard and Codex independently read Sepolia; the browser **cannot inspect the local STDIO session**, so its `/mcp` page shows the connection path and instructions, not an automatic live-connected badge. To remove this personal read-only registration later, run `codex mcp remove capital_tree_readonly` after confirming its name with `codex mcp list`.
+
+This is **Codex in the ChatGPT desktop app**, not a normal chat at chatgpt.com. ChatGPT web does not read local Codex config or start this STDIO process; it requires a remote MCP-backed plugin or tunnel, neither of which this project currently provides. The [official distinction](https://learn.chatgpt.com/docs/extend/mcp?surface=cli) matters for jury instructions. Do not confuse this one-tool read-only server with the full 16-tool companion plugin; keep them in separate Codex profiles to avoid duplicate `getTree` tools.
 
 ## Full agent actions: Linux companion only
 
@@ -25,7 +61,7 @@ The remainder is the Linux/Codex CLI path. On Windows, use WSL2 with Linux-local
 Install Node 22, pnpm 11.13.1 and Docker accessible to your non-root user. Your worker inference needs your own reachable CLIProxyAPI endpoint and credential; a Codex login alone is not sufficient.
 
 ```sh
-git clone --recurse-submodules https://github.com/CodeByNikolas/agent-capital-tree.git
+git clone --branch work/rami --recurse-submodules https://github.com/CodeByNikolas/agent-capital-tree.git
 cd agent-capital-tree
 pnpm install --frozen-lockfile --ignore-scripts
 pnpm build

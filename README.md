@@ -50,12 +50,12 @@ ENS roles are actual authorization, not descriptive text metadata. MultiBaas is 
 
 ## Run and test
 
-For the keyless MCP jury proof, use Node22+, pnpm and Codex CLI on Windows, macOS or Linux: clone the current `work/rami` branch, run `pnpm install --frozen-lockfile --ignore-scripts`, build the SDK and plugin, then run `pnpm mcp:doctor` and `pnpm mcp:verify`. The latter installs the plugin into a disposable Codex profile, discovers all 16 tools and reads the live USDC tree; it cannot send a write. See [the exact commands and limits](docs/local-setup.md).
+For the keyless MCP jury proof, use Node22+, pnpm and Codex CLI on Windows, macOS or Linux: clone the current `work/rami` branch **only if you do not already have a checkout**, install dependencies, build the SDK and plugin, then run `pnpm mcp:doctor`, `pnpm mcp:verify` and `pnpm mcp:chat-verify`. The first MCP test installs the plugin into a disposable Codex profile and discovers all 16 tools; the second tests the persistent-use read-only STDIO server. To call `getTree` in Codex inside the ChatGPT desktop app, register that one-tool server using the [exact commands and prompt](docs/local-setup.md). Neither path can send a write.
 
 Full agent actions are separate and currently Linux-only (Windows through WSL2). They additionally require Docker, a wallet/operator setup, a reachable Sepolia RPC and CLIProxyAPI access; a Codex login alone does not provide inference for the worker. Native Windows financial writes and fresh external-laptop write onboarding are not verified. For the full development suite, use Node22, pnpm11.13.1, Docker and Foundry1.8.3:
 
 ```sh
-git clone --recurse-submodules https://github.com/CodeByNikolas/agent-capital-tree.git
+git clone --branch work/rami --recurse-submodules https://github.com/CodeByNikolas/agent-capital-tree.git # new checkout only
 cd agent-capital-tree
 pnpm install --frozen-lockfile --ignore-scripts
 pnpm build
