@@ -1,7 +1,8 @@
+import { TypedDataEncoder } from 'ethers';
 import { randomBytes, createHash } from 'node:crypto';
 import { mkdir, readFile, writeFile, rename } from 'node:fs/promises';
 import { join } from 'node:path';
-import { createPublicClient, encodeAbiParameters, hashDomain, http, parseAbi, type Address, type Hex, type LocalAccount } from 'viem';
+import { createPublicClient, encodeAbiParameters, http, parseAbi, type Address, type Hex, type LocalAccount } from 'viem';
 import { sepolia } from 'viem/chains';
 import { capitalClient } from '@agent-capital-tree/sdk';
 import { decodePaymentRequiredHeader, decodePaymentResponseHeader, encodePaymentSignatureHeader } from '@x402/core/http';
@@ -99,7 +100,7 @@ export function paymentHandler(config: PaymentConfig): ToolHandler {
         rpc.readContract({ address: SEPOLIA_USDC, abi: usdcAbi, functionName: 'DOMAIN_SEPARATOR' }),
       ]);
       if (!same(account.address, node.agent) || node.rootId.toString() !== context.rootId || node.generation !== generation ||
-          generation.toString() !== context.authorityGeneration || domainSeparator !== hashDomain({ domain })) throw new Error('Invalid or stale USDC mandate');
+          generation.toString() !== context.authorityGeneration || domainSeparator !== TypedDataEncoder.hashDomain(domain)) throw new Error('Invalid or stale USDC mandate');
       if (!purchase) {
         const quote = await fetch(service.url, { redirect: 'error', signal: AbortSignal.timeout(20_000) });
         await boundedText(quote);

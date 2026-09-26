@@ -4,6 +4,8 @@ Stand: 26. September 2026. Produktentscheidungen sind festgelegt; Implementierun
 
 ## Aktuelle Erweiterung: offizielles Sepolia-USDC und x402
 
+Nutzerkorrektur26.09.: Rapid Prototyping ohne Abwärtskompatibilität. Das Frontend wird ausschließlich auf die neue USDC-Version umgestellt; keine Versionsauswahl, keine Legacy-Linkauflösung oder Migration. Bereits vorhandenes Onchain-Kapital wird dadurch nicht verändert.
+
 Nutzerauftrag26.09.: Die bestätigten20 Circle-Test-USDC werden für eine additive USDC-Version genutzt. Bestehende ACT-A/B-Contracts, ENS-Verknüpfungen und Root1 bleiben erhalten. Eine neue Version benötigt einen eigenen ENS-Namespace und neue unveränderliche Factories/Controller. Offizieller Token: `0x1c7D4B196Cb0C7B01d743Fbc6116a902379C7238`, sechs Dezimalstellen, Chain11155111.
 
 Reihenfolge: (1) Kapitaldelegation/Rückholung mit echtem Circle-Vertrag lokal forken; (2) enges PAY-Recht und EIP-3009/ERC-1271-Verifikation mit aktuellem ENS-Mandat, exakt gebundenem Empfänger/Betrag/Nonce/Zeitfenster; (3) standardkonformer HTTP402-Ablauf mit ausdrücklich Sepolia-fähigem Facilitator; (4) öffentliche additive Deployment-/Indexierungsabnahme; (5) UI, Companion, Anleitung und Vercel aktualisieren. Keine allgemeinen Transaktionen, keine stillschweigende PAY-Erweiterung vorhandener Policies, kein mint-Aufruf auf Circle-USDC. Bestehende Regeln für Aktionslimits gelten weiterhin; tatsächlicher Vault-Bestand begrenzt Gesamtverbrauch. USDC allein ist noch keine x402-Integration.

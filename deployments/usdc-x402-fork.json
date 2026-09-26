@@ -1,0 +1,76 @@
+{
+  "checkedAt": "2026-09-26T08:20:23.705Z",
+  "network": "disposable Ethereum Sepolia fork",
+  "forkBlock": 11785005,
+  "token": {
+    "address": "0x1c7D4B196Cb0C7B01d743Fbc6116a902379C7238",
+    "symbol": "USDC",
+    "decimals": 6,
+    "issuerAddressSource": "https://developers.circle.com/stablecoins/usdc-contract-addresses",
+    "testnetOnly": true
+  },
+  "checks": [
+    "Real Circle USDC proxy reports 6 decimals",
+    "Root funded with 10 USDC; child receives 2; root retains 8",
+    "SDK preserves raw balances and readable ENS child name",
+    "Excess amount and wrong signer rejected",
+    "Owner recovers remaining USDC; fork donor balance restored",
+    "Official x402 exact facilitator accepts vault ERC1271 and settles 0.01 USDC",
+    "HTTP402 to signed request to independently confirmed Transfer and AuthorizationUsed",
+    "Restart retry reuses receipt without another charge; conflicting operation and unconfigured service rejected"
+  ],
+  "transactions": [
+    {
+      "name": "fork-only-namespace-attachment",
+      "gas": "40432"
+    },
+    {
+      "name": "fork-only-test-funding",
+      "gas": "62147"
+    },
+    {
+      "name": "create-root",
+      "gas": "5728395"
+    },
+    {
+      "name": "bind-operator",
+      "gas": "244380"
+    },
+    {
+      "name": "approve-usdc",
+      "gas": "55437"
+    },
+    {
+      "name": "fund-10-usdc",
+      "gas": "82979"
+    },
+    {
+      "name": "delegate-2-usdc",
+      "gas": "5913340"
+    },
+    {
+      "name": "x402-research-payment",
+      "transactionHash": "0xe6236cf548a5ca09a13d5d025ca39fb8e473b5e9e6e426f5526b0e604390b568",
+      "amountRaw": "10000",
+      "retryChargedAgain": false
+    },
+    {
+      "name": "recover-child",
+      "gas": "88970"
+    },
+    {
+      "name": "recover-root",
+      "gas": "103761"
+    },
+    {
+      "name": "restore-fork-funding",
+      "gas": "40259"
+    }
+  ],
+  "publicTransactionsSent": 0,
+  "limitations": [
+    "No public deployment or token movement",
+    "USDC Uniswap pool not tested; local demo seller only",
+    "Namespace replaced only inside disposable fork; public deployment must preserve existing namespace"
+  ]
+}
