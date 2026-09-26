@@ -2,6 +2,11 @@
 
 As of 26 September 2026. Read this together with PLAN.md after context compaction. Older sections below retain the evidence and acceptance limits known at the time; the newest E2E status is first.
 
+## Owner-only vault suggestions
+
+- Root suggestions in onboarding and the dashboard sidebar now filter the RPC directory by the connected wallet's address and the controller's onchain `rootOwner`, rather than sorting owned roots ahead of everyone else's. Disconnected wallets and wallets with no matching roots see no suggestions. Account changes immediately recompute the filter; manual ENS/address lookup remains available.
+- Web production build and TypeScript passed. `node scripts/test-owned-roots.mjs` passed browser checks for both surfaces, case-insensitive ownership, filtering before the eight-item limit, account switches, no-owned wallets and disconnect. The test uses directory/wallet fixtures and sends no transactions.
+
 ## Root creation onboarding clarification
 
 - Source `78b824b` (including the Rami merge) is deployed to production: `dpl_F7SQeo8Pbzuk8wL4AegcpAg7Me43`, aliased to `https://agent-capital-tree.vercel.app`. The production build passed. Public browser checks confirmed suggested names, 24px card spacing, absent creation shortcuts/faucet links and the merged MCP guide without page errors or wallet transactions.

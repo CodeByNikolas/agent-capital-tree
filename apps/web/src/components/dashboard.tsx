@@ -584,22 +584,20 @@ function RootAccessBar({ vault, path, walletAddress }: { vault: string | null; p
   const walletLower = walletAddress?.toLowerCase() ?? null;
   const vaultLower = vault?.toLowerCase() ?? null;
   const chips = discovered
+    .filter((root) => walletLower !== null && root.owner.toLowerCase() === walletLower)
     .map((root) => {
-      const owned = Boolean(walletLower && root.owner && root.owner.toLowerCase() === walletLower);
       const leaf = root.ensName ? root.ensName.split(".")[0] : "";
       return {
         id: root.id,
         vault: root.vault,
-        owned,
         active: Boolean(vaultLower && root.vault && root.vault.toLowerCase() === vaultLower),
         // Read the label straight from ENS/chain rather than a hardcoded list.
         label: leaf || `Root ${root.id}`,
-        sub: owned ? "Your vault" : root.revoked ? "Revoked" : `${root.nodeCount} vault${root.nodeCount === 1 ? "" : "s"}`,
+        sub: root.revoked ? "Revoked" : `${root.nodeCount} vault${root.nodeCount === 1 ? "" : "s"}`,
       };
     })
-    .sort((left, right) => (left.owned === right.owned ? Number(BigInt(left.id) - BigInt(right.id)) : left.owned ? -1 : 1))
+    .sort((left, right) => Number(BigInt(left.id) - BigInt(right.id)))
     .slice(0, 8);
-  const hasOwned = chips.some((chip) => chip.owned);
 
   return <div className="root-access-bar" aria-label="Vault navigation">
     <form className="root-access-form" onSubmit={async (event) => {
@@ -624,12 +622,12 @@ function RootAccessBar({ vault, path, walletAddress }: { vault: string | null; p
     </form>
     {chips.length > 0 && (
       <div className="root-quick-start">
-        <span className="root-quick-label">{hasOwned ? "Your roots" : "Roots on-chain"}</span>
-        <div className="demo-root-chips" role="group" aria-label="Roots on Sepolia">
+        <span className="root-quick-label">Your root vaults</span>
+        <div className="demo-root-chips" role="group" aria-label="Your root vaults on Sepolia">
           {chips.map((chip) => (
             <a
               key={chip.id}
-              className={`demo-root-chip${chip.active ? " demo-root-chip-active" : ""}${chip.owned ? " demo-root-chip-owned" : ""}`}
+              className={`demo-root-chip demo-root-chip-owned${chip.active ? " demo-root-chip-active" : ""}`}
               href={`${path}?vault=${encodeURIComponent(chip.vault)}&node=${encodeURIComponent(chip.id)}`}
               aria-current={chip.active ? "true" : undefined}
             >
