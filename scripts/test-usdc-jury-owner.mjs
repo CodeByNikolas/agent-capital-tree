@@ -247,7 +247,7 @@ try {
     await save(report);
     return mined;
   };
-  const createTx = pending.find(tx => tx.phase === 'create');
+  let createTx = pending.find(tx => tx.phase === 'create');
   if (!resume) {
     await instrument();
     await app.getByRole('button', { name: 'Launch a new root vault', exact: true }).click();
@@ -255,6 +255,7 @@ try {
     await fillPolicy(app, date);
     await app.getByRole('button', { name: 'Create root vault', exact: true }).click();
     await confirmUntil(async () => pending.some(tx => tx.phase === 'create' && tx.transactionHash));
+    createTx = pending.find(tx => tx.phase === 'create');
   } else {
     const priorReceipt = await rpc.getTransactionReceipt(createTx.transactionHash);
     assert(priorReceipt && priorReceipt.status === 1);
@@ -277,6 +278,8 @@ try {
   report.rootId = created.args.rootId.toString();
   report.vault = created.args.vault;
   assertAddress(await new Contract(controller, controllerAbi, rpc).rootOwner(report.rootId), owner);
+  report.status = 'running';
+  delete report.failedStage;
   await save(report);
   await app.goto(`${appUrl}/setup?vault=${report.vault}`);
   await expect(app.getByText(`${label}.${manifest.ensNamespace.name}`, { exact: true }).first()).toBeVisible({ timeout: 60000 });
@@ -314,6 +317,7 @@ try {
   assertAddress(await new Contract(controller, controllerAbi, rpc).rootOperator(report.rootId), report.operator);
   assertPolicy(node.policy, expiry);
   report.status = 'passed';
+  delete report.failedStage;
   report.finishedAt = new Date().toISOString();
   await save(report);
   console.log(JSON.stringify({ status: report.status, rootId: report.rootId, vault: report.vault, operator: report.operator, transactions: report.transactions.map(tx => tx.transactionHash) }));
