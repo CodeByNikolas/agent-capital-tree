@@ -43,6 +43,8 @@
 
 ### Hackathon-Schnitt (26.09., vorrangig vor L0–L8)
 
+- Auslieferungsnachweis: Kapitalmodus `8c472ab`, Web `2df723a`, beide gepusht. Persönlicher Codex-MCP heißt jetzt `capital_tree_demo` (21 Tools), alte Read-only-Registrierung entfernt; Scope hello, vorhandener WSL-Schlüssel unverändert. Echter Codex-CLI-Bildnachweis und 21-Tool-Read-Proof bestanden. Vercel `dpl_AQTKgUwp6JBMSsjiimzTrJUP41XD` READY; öffentlicher Mobile/Desktop-Live-Vault-Smoke grün. Operator-Gas war 0; keine Child-/Recovery-Transaktion behaupten oder alte Seeds wiederholen. Native Wallet- und unabhängige Desktop-GUI-Abnahme weiter offen.
+
 - Aktueller Demo-Standard: `pnpm mcp:capital settings <ENS>` nach SDK-/MultiBaas-/Plugin-/Runtime-Build. Kapital-MCP = 21 Tools (17 Companion-Tools + `getCapitalSetup`/`prepareCapitalSetup`/`prepareRootSetup`/`visualizeTree`). Kein Docker/CLIProxyAPI/Companion-JSON für chatverwaltete Vaults; `createChildVault` statt `spawnChild`. Windows delegiert automatisch an Standard-WSL mit Node 22+. Owner autorisiert einmal den lokalen Agent-Schlüssel; keinesfalls Owner-Key exportieren oder gebundenen Operator automatisch ersetzen. `hello` besitzt bereits einen passenden privaten Schlüssel in WSL; bei Prüfung fehlte nur natives Sepolia-Gas. Bisher keine öffentliche Child-/Recovery-Transaktion durch diesen Modus. Historische 16-Tool-/Worker-Voraussetzungen unten nicht als aktuellen Kapitalmodus ausgeben.
 
 - `pnpm mcp:doctor` prüft Node, pnpm, Host-Codex und Plattform ohne Secrets. `pnpm mcp:verify` installiert in ein temporäres Codex-Profil und beweist alle 16 Tools plus aktuellen USDC-`getTree` über eine strikt read-only Bridge; kein Wallet, Docker oder Team-Rechner erforderlich. Vorher SDK und Plugin bauen. Genaues Verfahren: `docs/local-setup.md`.

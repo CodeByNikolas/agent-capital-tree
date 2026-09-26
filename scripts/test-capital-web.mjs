@@ -17,6 +17,7 @@ try {
   checks.push('Capital guide and explicit no-background-worker distinction visible');
   await page.goto(`${base}/setup?vault=hello.agentcapitalusdc.eth&action=set-root-operator&operator=${address}&budget=50000`);
   await expect(page.getByLabel('Agent signing address (operator)')).toHaveValue(address, { timeout: 60000 });
+  if (process.env.ACT_REQUIRE_LIVE === '1') await expect(page.getByText('Live vault.', { exact: true })).toBeVisible({ timeout: 60000 });
   await expect(page.getByLabel(/Maximum .*USDC per action/)).toHaveValue('0.05');
   await expect(page.getByRole('button', { name: 'Authorize agent for this vault' })).toBeDisabled();
   checks.push('Public address and 0.05 USDC per-action limit prefilled; disconnected wallet cannot submit');
@@ -26,7 +27,8 @@ try {
     await page.screenshot({ path: fileURLToPath(new URL(`../artifacts/ui/capital-setup-${width}.png`, import.meta.url)), fullPage: true });
   }
   assert.deepEqual(errors, []);
-  const report = { base, checkedAt: new Date().toISOString(), checks, widths: [1440, 390], transactionsSent: 0, walletConnected: false };
+  const report = { base, checkedAt: new Date().toISOString(), checks, widths: [1440, 390],
+    liveVaultRequired: process.env.ACT_REQUIRE_LIVE === '1', transactionsSent: 0, walletConnected: false };
   await writeFile(new URL('../artifacts/ui/capital-web-report.json', import.meta.url), JSON.stringify(report, null, 2));
   console.log(JSON.stringify(report));
 } finally { await browser.close(); }
