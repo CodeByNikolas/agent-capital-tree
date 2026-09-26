@@ -51,6 +51,7 @@ import { ViewerStatusBar } from "@/components/viewer-status";
 import { McpPanel } from "@/components/mcp-panel";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import type { GlossaryTerm } from "@/lib/glossary";
+import { useDiscoveredRoots } from "@/lib/use-roots";
 import { useWalletActions } from "@/lib/use-wallet-actions";
 import type {
   ActivityFeedResult,
@@ -534,10 +535,31 @@ function PreviewNotice({ data, deployment }: { data: DashboardData; deployment: 
   );
 }
 
-function RootAccessBar({ vault, path }: { vault: string | null; path: string }) {
+const demoLabels: Record<string, string> = { "1": "Seed liquidity", "5": "4-node hierarchy", "9": "Indexed activity" };
+
+function RootAccessBar({ vault, path, walletAddress }: { vault: string | null; path: string; walletAddress: string | null }) {
   const router = useRouter();
   const [lookupError, setLookupError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const { roots: discovered } = useDiscoveredRoots();
+
+  const walletLower = walletAddress?.toLowerCase() ?? null;
+  const vaultLower = vault?.toLowerCase() ?? null;
+  const chips = discovered
+    .map((root) => {
+      const owned = Boolean(walletLower && root.owner && root.owner.toLowerCase() === walletLower);
+      return {
+        id: root.id,
+        vault: root.vault,
+        owned,
+        active: Boolean(vaultLower && root.vault && root.vault.toLowerCase() === vaultLower),
+        sub: owned ? "Your vault" : demoLabels[root.id] ?? (root.revoked ? "Revoked" : root.nodeCount ? `${root.nodeCount} vault${root.nodeCount === 1 ? "" : "s"}` : "Live root"),
+      };
+    })
+    .sort((left, right) => (left.owned === right.owned ? Number(BigInt(left.id) - BigInt(right.id)) : left.owned ? -1 : 1))
+    .slice(0, 8);
+  const hasOwned = chips.some((chip) => chip.owned);
+
   return <div className="root-access-bar" aria-label="Vault navigation">
     <form className="root-access-form" onSubmit={async (event) => {
       event.preventDefault();
@@ -557,6 +579,24 @@ function RootAccessBar({ vault, path }: { vault: string | null; path: string }) 
       <button className="button button-secondary button-small" type="submit" disabled={loading}>{loading ? "Looking up…" : "Open vault"}</button>
       {lookupError && <span role="alert" className="vault-lookup-error">{lookupError}</span>}
     </form>
+    {chips.length > 0 && (
+      <div className="root-quick-start">
+        <span className="root-quick-label">{hasOwned ? "Your roots" : "Roots on-chain"}</span>
+        <div className="demo-root-chips" role="group" aria-label="Roots on Sepolia">
+          {chips.map((chip) => (
+            <a
+              key={chip.id}
+              className={`demo-root-chip${chip.active ? " demo-root-chip-active" : ""}${chip.owned ? " demo-root-chip-owned" : ""}`}
+              href={`${path}?vault=${encodeURIComponent(chip.vault)}&node=${encodeURIComponent(chip.id)}`}
+              aria-current={chip.active ? "true" : undefined}
+            >
+              <strong>Root {chip.id}</strong>
+              <span>{chip.sub}</span>
+            </a>
+          ))}
+        </div>
+      </div>
+    )}
     {vault && <a className="root-preview-link" href={`${path}?preview=1`}>Preview sample</a>}
   </div>;
 }
@@ -1433,7 +1473,7 @@ export function Dashboard({ data: initialData, deployment, vaultQuery, nodeQuery
               <a className="button button-secondary button-small" href="https://faucet.circle.com/" target="_blank" rel="noreferrer">Get Test USDC <ArrowUpRight size={13} aria-hidden="true" /></a>
             </CardContent>
           </Card>
-          <RootAccessBar vault={null} path="/setup" />
+          <RootAccessBar vault={null} path="/setup" walletAddress={wallet.address} />
           {walletActionMode === "create-root" && <WalletControlsPanel
             data={data}
             deployment={deployment}
@@ -1465,7 +1505,7 @@ export function Dashboard({ data: initialData, deployment, vaultQuery, nodeQuery
         <div className="dashboard-content">
           <GuidedTour active={tour} step={step} />
           <PreviewNotice data={data} deployment={deployment} />
-          <RootAccessBar vault={vaultQuery} path={path} />
+          <RootAccessBar vault={vaultQuery} path={path} walletAddress={wallet.address} />
           {vaultQuery && <LiveReadNotice rootId={currentSnapshot?.rootId ?? null} vaultQuery={vaultQuery} data={data} loading={currentReadState.status === "loading"} error={liveError} onRetry={() => setTreeRetry((value) => value + 1)} />}
           <ViewerStatusBar
             source={data.source}
