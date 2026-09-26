@@ -1,4 +1,5 @@
 "use client";
+import { ActivityRow, PositionCard } from "@/components/treasury-records";
 
 import {
   AlertCircle,
@@ -1124,42 +1125,8 @@ function ActivityPanel({
           {(feed?.source === "unavailable" || loadMoreError) && <button className="button button-secondary button-small" type="button" disabled={loading} onClick={onRetry}>{loading ? "Checking…" : "Retry history"}</button>}
         </div>
       </div>
-      <Table className="activity-list" id="activity-list">
-        <TableHeader><TableRow><TableHead>Event</TableHead><TableHead>Vault and details</TableHead><TableHead>Amount and block</TableHead><TableHead>Source</TableHead></TableRow></TableHeader>
-        <TableBody>
-        {data.activity.map((activity, index) => {
-          const icon = activity.kind === "capital-assigned"
-            ? <ArrowDownLeft size={15} />
-            : activity.kind === "swap"
-              ? <ArrowLeftRight size={15} />
-              : activity.kind === "position-opened" || activity.kind === "position-increased" || activity.kind === "position-closed" || activity.kind === "node-created"
-                ? <Layers3 size={15} />
-                : activity.kind === "policy-tightened" || activity.kind === "subtree-revoked" || activity.kind === "operator-changed" || activity.kind === "owner-recovered"
-                  ? <ShieldCheck size={15} />
-                  : <Coins size={15} />;
-          return (
-            <TableRow className="activity-row" key={activity.id}>
-              <TableCell><span className={`activity-icon activity-icon-${index}`}>{icon}</span><span className="sr-only">{activityLabels[activity.kind]}</span></TableCell>
-              <TableCell><div className="activity-copy">
-                <strong>{activityLabels[activity.kind]} <span>· {activity.nodeLabel}</span></strong>
-                <small>{activity.description}</small>
-              </div></TableCell>
-              <TableCell><div className="activity-meta">
-                {activity.amount && <strong>{formatAmount(activity.amount)} <span>{activity.amount.symbol}</span></strong>}
-                <time dateTime={activity.timestamp}>{activity.timestamp ? `${new Date(activity.timestamp).toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit", timeZone: "UTC" })} UTC` : activity.blockNumber !== undefined ? `Block ${activity.blockNumber.toLocaleString()}` : ""}</time>
-                {activity.finality && <small className={`activity-finality activity-finality-${activity.finality}`}>{activity.finality.replaceAll("_", " ")}</small>}
-                {activity.transactionHash && activity.source === "multi-baas" && data.chainId === sepolia.id && (
-                  <a className="activity-transaction-link" href={`https://sepolia.etherscan.io/tx/${activity.transactionHash}`} target="_blank" rel="noreferrer">
-                    Receipt <ExternalLink size={9} aria-hidden="true" />
-                  </a>
-                )}
-              </div></TableCell>
-              <TableCell><Badge variant="outline">{activity.source === "preview" ? "Preview" : activity.source === "multi-baas" ? "Indexed" : "Local"}</Badge></TableCell>
-            </TableRow>
-          );
-        })}
-        </TableBody>
-      </Table>
+      <p className="index-status"><span className={"index-dot index-" + (page ? indexLag === 0 ? "synced" : "lagging" : "unreachable")} />{page ? "Indexed by MultiBaas � block " + page.indexing.latestIndexedBlock : data.activitySource === "preview" ? "Illustrative activity" : "MultiBaas unreachable"}<span className="small">{page ? indexLag === 0 ? "in sync" : "lagging" : ""}</span></p>
+      <Table className="activity-list"><TableHeader><TableRow><TableHead>Time</TableHead><TableHead>Event</TableHead><TableHead>Node</TableHead><TableHead>Amount</TableHead><TableHead>Transaction</TableHead></TableRow></TableHeader><TableBody>{data.activity.map(activity => <ActivityRow key={activity.id} activity={activity} event={activityLabels[activity.kind]} node={nodeById(data, activity.nodeId)} />)}</TableBody></Table>
       {data.activity.length === 0 && <p className="activity-empty">{loading ? "Loading activity history…" : data.activitySource === "preview" ? "Preview records are shown above when available." : feed?.source === "unavailable" ? "Indexed activity is unavailable for this root." : page ? "No indexed activity is available for this root within the covered block range." : "No activity records are available for this root yet."}</p>}
       {loadMoreError && feed?.source !== "unavailable" && <p className="activity-load-error" role="alert">{loadMoreError}</p>}
       {page?.hasMore && <button className="button button-secondary button-small activity-load-more" type="button" disabled={loadingMore} onClick={onLoadMore}>{loadingMore ? "Loading…" : "Load more activity"}</button>}
@@ -1168,38 +1135,12 @@ function ActivityPanel({
   );
 }
 
-function PositionsPanel({ data, actions, walletOnSepolia }: { data: DashboardData; actions?: DashboardActions; walletOnSepolia: boolean }) {
-  return (
-    <section className="panel positions-panel" id="positions" aria-labelledby="positions-title">
-      <div className="panel-heading">
-        <div>
-          <div className="panel-overline">LIQUIDITY BOOK <PreviewFlag source={data.source} compact /></div>
-          <h2 id="positions-title">LP positions</h2>
-        </div>
-      </div>
-      {data.positions.length > 0 ? data.positions.map((position) => (
-        <div className="position-record" key={position.id}>
-          <div className="position-pool-row">
-            <span className="token-pair-icon"><span>{position.token0?.symbol.slice(0, 1) ?? "?"}</span><span>{position.token1?.symbol.slice(0, 1) ?? "?"}</span></span>
-            <div><strong>{position.poolLabel}</strong><small>Vault-owned NFT · {position.source === "preview" ? "example " : ""}position {position.id}</small></div>
-            <span className={`position-open-pill position-state-${position.state}`}><span />{position.source === "preview" ? `Example ${position.state}` : position.state === "unknown" ? "Status unknown" : position.state}</span>
-          </div>
-      <div className="position-stats">
-            <div><span>Liquidity</span><strong>{position.liquidity}<small> units</small></strong></div>
-            <div><span>Position principal</span><strong>{position.token0 ? `${formatAmount(position.token0)} ${position.token0.symbol}` : "Not queried"}</strong><strong>{position.token1 ? `${formatAmount(position.token1)} ${position.token1.symbol}` : "Not queried"}</strong></div>
-            <div><span>Uncollected fees</span><strong>{position.fees0 ? `${formatAmount(position.fees0)} ${position.fees0.symbol}` : "Not queried"}</strong><strong>{position.fees1 ? `${formatAmount(position.fees1)} ${position.fees1.symbol}` : "Not queried"}</strong></div>
-          </div>
-          <div className="position-separation"><LockKeyhole size={13} aria-hidden="true" /><span>{position.source === "direct-rpc" ? "Position NFT and liquidity are read from Sepolia; principal and fees are not queried." : "Fee collection, routine exit, and owner recovery are separate permissions."}</span></div>
-          <div className="position-actions">
-            <button className="button button-secondary button-small" disabled={data.source === "preview" || !data.contractsConfigured || !walletOnSepolia || !actions?.collectFees} onClick={() => void actions?.collectFees?.(position.id)} title="Available after live Sepolia wallet and fee integration">Collect fees</button>
-            <button className="button button-secondary button-small" disabled={data.source === "preview" || !data.contractsConfigured || !walletOnSepolia || !actions?.closePosition} onClick={() => void actions?.closePosition?.(position.id)} title="Available after live Sepolia wallet and exit integration">Close position</button>
-          </div>
-        </div>
-      )) : (
-        <div className="empty-position"><Layers3 size={18} /><span>No position is present in this data source.</span></div>
-      )}
-    </section>
-  );
+function PositionsPanel({ data, actions, walletOnSepolia, walletAddress }: { data: DashboardData; actions?: DashboardActions; walletOnSepolia: boolean; walletAddress: string | null }) {
+  return <section className="panel positions-panel" id="positions"><div className="panel-heading"><h2>Uniswap v4 positions</h2></div>{data.positions.length ? data.positions.map(position => {
+    const node = nodeById(data, position.nodeId);
+    const authorized = Boolean(data.source === "direct-rpc" && data.contractsConfigured && walletOnSepolia && node?.agentAddress.toLowerCase() === walletAddress?.toLowerCase());
+    return <PositionCard key={position.id} position={position} node={node} actions={actions} authorized={authorized} />;
+  }) : <p>No position in this vault.</p>}</section>;
 }
 
 function ContractSetupPanel({ data, deployment, actions, wallet, liveStateReady, historyError }: { data: DashboardData; deployment: PublicDeployment; actions: DashboardActions; wallet: InjectedWalletState; liveStateReady: boolean; historyError: string | null }) {
@@ -1555,7 +1496,7 @@ export function Dashboard({ data: initialData, deployment, vaultQuery, nodeQuery
           </>}
           {view === "applications" && <>
             <div className="page-heading"><span className="page-kicker">Bounded applications</span><h1>Applications</h1><p>Agents can only act inside their mandate. Built-in actions today are bounded Uniswap v4 activity and x402 service payments settled in USDC.</p></div>
-            <PositionsPanel data={data} actions={actions} walletOnSepolia={walletOnSepolia} />
+            <PositionsPanel data={data} actions={actions} walletOnSepolia={walletOnSepolia} walletAddress={wallet.address} />
             <X402Panel node={selectedNode} actions={actions} walletOnSepolia={walletOnSepolia} canPay={selectedAgentConnected} />
             <Card className="future-applications"><CardHeader><CardTitle>Future modules</CardTitle><CardDescription>Planned capabilities. Expand an item to see its scope; these modules cannot execute actions.</CardDescription></CardHeader><CardContent>
               <details className="future-module"><summary><span>Contract transactions</span><Badge variant="outline" className="future-module-badge">Future work</Badge></summary><p>Not implemented. Execute approved contract functions with recipient, token, and spending checks. A balance-delta check alone cannot prevent unsafe approvals or future liabilities.</p></details>
