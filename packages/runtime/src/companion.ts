@@ -266,6 +266,11 @@ export class RuntimeCompanion {
     const temp = `${tokenFile}.${randomBytes(8).toString('hex')}.tmp`;
     await writeFile(temp, token, { mode: 0o600, flag: 'wx' });
     await rename(temp, tokenFile);
+    const readyFile = join(this.config.runtimeRoot, 'mcp-ready.json');
+    const readyTemp = `${readyFile}.${randomBytes(8).toString('hex')}.tmp`;
+    await writeFile(readyTemp, JSON.stringify({ chainId: 11155111, controller: this.config.controller.toLowerCase(), rootId: this.config.rootId,
+      toolsOrigin: this.#toolsOrigin, writesEnabled: this.config.writesEnabled }), { mode: 0o600, flag: 'wx' });
+    await rename(readyTemp, readyFile);
     this.#rootSession = { token, context };
     const interval = this.config.monitorIntervalMs ?? 10_000;
     if (!Number.isSafeInteger(interval) || interval < 1000 || interval > 60_000) throw new Error('invalid monitor interval');
@@ -380,6 +385,7 @@ export class RuntimeCompanion {
     await this.launcher.close();
     if (this.#rootSession) this.sessions.revoke(this.#rootSession.token);
     await rm(join(this.config.runtimeRoot, 'root-session.token'), { force: true });
+    await rm(join(this.config.runtimeRoot, 'mcp-ready.json'), { force: true });
     if (this.#lockPath) await rm(this.#lockPath, { force: true });
     await Promise.all([new Promise<void>(resolve => this.tools.close(() => resolve())),
       new Promise<void>(resolve => this.brokerServer.close(() => resolve()))]);
