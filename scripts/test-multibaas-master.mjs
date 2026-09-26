@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { createHash } from 'node:crypto';
 import { execFile, spawn } from 'node:child_process';
-import { mkdir, lstat, open, readFile, stat, writeFile } from 'node:fs/promises';
+import { mkdir, lstat, open, readFile, readdir, rename, stat, writeFile } from 'node:fs/promises';
 import { homedir } from 'node:os';
 import { isAbsolute, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -15,7 +15,7 @@ import { journaledTransaction } from './lib/sepolia-transactions.mjs';
 
 function expectedResumeTransactions(previous, grant) {
   assert.equal(previous.status, 'incomplete');
-  assert.equal(previous.stage, 'indexed-history');
+  assert.ok(previous.stage === 'indexed-history' || previous.stage === 'master-model');
   const expected = ['create-root', 'bind-operator', 'fund-root', 'spawn-idle', 'spawn-sibling'];
   if (previous.transactions?.['approve-act-a']) expected.push('approve-act-a');
   for (let remaining = grant, index = 0; remaining > 0n; index++) {
@@ -25,25 +25,73 @@ function expectedResumeTransactions(previous, grant) {
   assert.deepEqual(Object.keys(previous.transactions).sort(), expected.sort(), 'Unexpected or missing setup receipts');
   return expected;
 }
+function readOnlyAttempt(transcript, rootId) {
+  assert.ok(transcript.length > 0 && transcript[0].type === 'thread.started');
+  assert.equal(transcript.at(-1).type, 'turn.completed', 'Prior turn did not complete');
+  assert.equal(transcript.filter(event => event.type === 'thread.started').length, 1);
+  assert.equal(transcript.filter(event => event.type === 'turn.started').length, 1);
+  assert.equal(transcript.filter(event => event.type === 'turn.completed').length, 1);
+  const calls = new Map();
+  for (const event of transcript) {
+    assert.ok(['thread.started', 'turn.started', 'turn.completed', 'item.started', 'item.completed'].includes(event.type),
+      'Unexpected transcript event');
+    if (!event.type.startsWith('item.')) continue;
+    const item = event.item;
+    assert.ok(item && ['reasoning', 'agent_message', 'error', 'mcp_tool_call'].includes(item.type),
+      'Prior attempt used an unapproved action');
+    if (item.type !== 'mcp_tool_call') continue;
+    assert.ok(['getCapitalActivity', 'getTree'].includes(item.tool), 'Prior attempt attempted a financial or unknown tool');
+    assert.deepEqual(item.arguments, { rootId }, 'Prior read belongs to another root');
+    assert.ok(typeof item.id === 'string' && item.id, 'Missing tool call ID');
+    const state = calls.get(item.id) ?? { tool: item.tool, started: false, completed: false };
+    assert.equal(state.tool, item.tool);
+    if (event.type === 'item.started') { assert.ok(!state.started); state.started = true; }
+    else {
+      assert.ok(state.started && !state.completed && item.status === 'completed' && !item.error,
+        'Prior read did not complete cleanly');
+      const result = item.result ?? item.output;
+      assert.ok(result && !result.isError && Array.isArray(result.content));
+      const pages = result.content.filter(part => part.type === 'text').map(part => JSON.parse(part.text));
+      assert.ok(pages.length > 0 && pages.every(page => page.rootId === rootId));
+      state.completed = true;
+    }
+    calls.set(item.id, state);
+  }
+  assert.ok([...calls.values()].every(call => call.started && call.completed));
+  assert.ok([...calls.values()].some(call => call.tool === 'getCapitalActivity'));
+  assert.ok([...calls.values()].some(call => call.tool === 'getTree'));
+  return [...calls.values()].map(call => call.tool);
+}
 if (process.argv[2] === '--self-test-resume') {
   const fixture = { status: 'incomplete', stage: 'indexed-history', transactions: Object.fromEntries(
     ['create-root', 'bind-operator', 'fund-root', 'spawn-idle', 'spawn-sibling',
       'operator-gas-0', 'operator-gas-1', 'operator-gas-2'].map(name => [name, {}])) };
   assert.equal(expectedResumeTransactions(fixture, parseEther('0.03')).length, 8);
-  assert.throws(() => expectedResumeTransactions({ ...fixture, stage: 'master-model' }, parseEther('0.03')));
+  assert.equal(expectedResumeTransactions({ ...fixture, stage: 'master-model' }, parseEther('0.03')).length, 8);
   assert.throws(() => expectedResumeTransactions({ ...fixture, transactions: {} }, parseEther('0.03')));
+  const call = (type, tool, id) => ({ type, item: { type: 'mcp_tool_call', id, tool,
+    arguments: { rootId: '9' }, status: 'completed', result: { content: [{ type: 'text', text: '{"rootId":"9"}' }] } } });
+  const safe = [{ type: 'thread.started' }, { type: 'turn.started' }, call('item.started', 'getTree', 'a'),
+    call('item.completed', 'getTree', 'a'), call('item.started', 'getCapitalActivity', 'b'),
+    call('item.completed', 'getCapitalActivity', 'b'), { type: 'turn.completed' }];
+  assert.equal(readOnlyAttempt(safe, '9').length, 2);
+  assert.throws(() => readOnlyAttempt(safe.map((event, index) => index === 4 ? call('item.started', 'reclaimAssets', 'b') : event), '9'));
+  assert.throws(() => readOnlyAttempt([...safe, { type: 'item.completed', item: { type: 'command_execution' } }], '9'));
+  assert.throws(() => readOnlyAttempt(safe.slice(0, -2).concat({ type: 'turn.completed' }), '9'));
+  assert.throws(() => readOnlyAttempt(safe, '10'));
   console.log('resume stage and receipt guards passed');
   process.exit(0);
 }
 
-// One fresh Sepolia attempt; only an indexed-history failure may resume without setup writes.
+// One fresh Sepolia attempt; a model stop may resume only after verified read-only calls.
 const [configArg, mode] = process.argv.slice(2);
 if (!configArg || !isAbsolute(configArg) ||
-  (mode && !['--execute', '--resume-indexed', '--inspect-resume'].includes(mode)) || process.argv.length > 4) {
-  throw new Error('usage: node scripts/test-multibaas-master.mjs /absolute/private-config.json [--execute|--inspect-resume|--resume-indexed]');
+  (mode && !['--execute', '--resume-indexed', '--inspect-resume', '--inspect-readonly-resume', '--resume-readonly-model'].includes(mode)) || process.argv.length > 4) {
+  throw new Error('usage: node scripts/test-multibaas-master.mjs /absolute/private-config.json [--execute|--inspect-resume|--resume-indexed|--inspect-readonly-resume|--resume-readonly-model]');
 }
-const resume = mode === '--resume-indexed' || mode === '--inspect-resume';
-const execute = mode === '--execute' || mode === '--resume-indexed';
+const readOnlyResume = mode === '--inspect-readonly-resume' || mode === '--resume-readonly-model';
+const resume = readOnlyResume || mode === '--resume-indexed' || mode === '--inspect-resume';
+const execute = mode === '--execute' || mode === '--resume-indexed' || mode === '--resume-readonly-model';
 const privateBase = join(homedir(), '.agent-capital-tree');
 const readPrivate = async path => {
   assert.ok(isAbsolute(path), 'Private path must be absolute');
@@ -245,13 +293,14 @@ try {
     // Every setup write is already final. Verify the signed journal and canonical chain before trusting it.
     const previous = JSON.parse(await readPrivate(reportPath));
     assert.equal(previous.status, 'incomplete');
-    assert.equal(previous.stage, 'indexed-history');
+    assert.equal(previous.stage, readOnlyResume ? 'master-model' : 'indexed-history');
     assert.equal(previous.runId, config.runId);
     assert.equal(previous.chainId, 11155111);
     assert.equal(previous.controller.toLowerCase(), config.controller.toLowerCase());
     assert.equal(previous.owner.toLowerCase(), owner.address.toLowerCase());
     assert.ok(!previous.model?.transcriptSha256 && !previous.checks?.model &&
-      !previous.checks?.indexedSetup, 'Model or companion preparation may already have started');
+      (readOnlyResume ? previous.checks?.indexedSetup?.source === 'multibaas' : !previous.checks?.indexedSetup),
+    'Unexpected model or indexed setup state');
     assert.match(previous.rootId, /^[1-9]\d*$/);
     rootId = BigInt(previous.rootId);
     assert.ok(![1n, 2n, 5n].includes(rootId));
@@ -265,15 +314,51 @@ try {
       rpc.getTransactionCount(operatorAddress, 'latest'), rpc.getTransactionCount(operatorAddress, 'pending')
     ]);
     assert.equal(pendingNonce, latestNonce, 'Operator has an unresolved pending transaction');
-    for (const name of ['profile', 'workspace', 'codex.jsonl', 'codex.stderr', 'companion.lock',
-      'identities', 'workers', 'spawn-journal']) {
+    if (readOnlyResume) assert.equal(latestNonce, 2, 'Operator nonce changed since the two setup spawns');
+    for (const name of readOnlyResume ? ['companion.lock', 'root-session.token', 'spawn-journal', 'previous-model-attempt'] :
+      ['profile', 'workspace', 'codex.jsonl', 'codex.stderr', 'companion.lock',
+        'identities', 'workers', 'spawn-journal']) {
       const exists = await lstat(join(runtimeRoot, name)).then(() => true, error => {
         if (error.code === 'ENOENT') return false;
         throw error;
       });
       assert.ok(!exists, `Runtime/model artifact ${name} exists; refuse resume`);
     }
+    if (readOnlyResume) {
+      const domain = JSON.parse(await readPrivate(join(runtimeRoot, 'domain.json')));
+      assert.deepEqual(domain, { chainId: 11155111, rootId: previous.rootId,
+        controller: config.controller.toLowerCase() });
+      for (const name of ['identities', 'workers', 'profile', 'workspace']) {
+        const info = await lstat(join(runtimeRoot, name));
+        assert.ok(info.isDirectory() && !info.isSymbolicLink() && info.uid === process.getuid() &&
+          (info.mode & 0o777) === 0o700, `Unsafe ${name} directory`);
+      }
+      assert.deepEqual(await readdir(join(runtimeRoot, 'workers')), [], 'Prior workers remain');
+      assert.deepEqual(await readdir(join(runtimeRoot, 'workspace')), [], 'Prior workspace was used');
+      const identityNames = await readdir(join(runtimeRoot, 'identities'));
+      assert.equal(identityNames.length, 1, 'Unexpected worker identities');
+      const identity = JSON.parse(await readPrivate(join(runtimeRoot, 'identities', identityNames[0])));
+      const workerId = `node-${createHash('sha256').update(config.controller.toLowerCase()).digest('hex').slice(0, 12)}-${rootId}-${rootId}-g${identity.context.authorityGeneration}`;
+      assert.equal(identityNames[0], `${workerId}.json`);
+      assert.deepEqual(identity, { context: { workerId, rootId: previous.rootId,
+        nodeId: previous.rootId, authorityGeneration: identity.context.authorityGeneration },
+      keyId: `root-${rootId}` });
+      assert.ok((await stat(join(runtimeRoot, 'codex.jsonl'))).size <= 10_000_000);
+      readOnlyAttempt((await readPrivate(join(runtimeRoot, 'codex.jsonl'))).trim().split('\n').map(JSON.parse), previous.rootId);
+      await readPrivate(join(runtimeRoot, 'codex.stderr'));
+      const priorProfile = await readPrivate(join(runtimeRoot, 'profile', 'config.toml'));
+      assert.ok(priorProfile.includes('model_provider = "homebox_clip"') &&
+        priorProfile.includes('sandbox_mode = "read-only"') &&
+        priorProfile.includes(`base_url = ${JSON.stringify(config.upstream)}`) &&
+        priorProfile.includes('enabled_tools = ["getTree", "getCapitalActivity", "reclaimAssets", "allocateCapital"]'),
+      'Prior model profile does not match this attempt');
+    }
     generation = await controller.rootGeneration(rootId);
+    if (readOnlyResume) {
+      const identityNames = await readdir(join(runtimeRoot, 'identities'));
+      const identity = JSON.parse(await readPrivate(join(runtimeRoot, 'identities', identityNames[0])));
+      assert.equal(identity.context.authorityGeneration, generation.toString());
+    }
     const expected = expectedResumeTransactions(previous, gasGrant);
     const verified = {};
     for (const name of expected) {
@@ -417,13 +502,23 @@ try {
   assert.ok([state.idleId, state.siblingId].every(childId =>
     tree.nodes.find(node => node.id.toString() === childId).parentId === rootId &&
     tree.nodes.find(node => node.id.toString() === childId).authorizedCapabilities === 0n));
-  if (mode === '--inspect-resume') {
+  if (mode === '--inspect-resume' || mode === '--inspect-readonly-resume') {
     console.log(JSON.stringify({ ...summary, ready: true, rootId: state.rootId,
       idleId: state.idleId, siblingId: state.siblingId, verifiedSetupReceipts: Object.keys(state.transactions).length,
       treeBlock: tree.source.blockNumber.toString(), writes: 'disabled' }));
     process.exit(0);
   }
   if (resumeReport) {
+    if (readOnlyResume) {
+      const archive = join(runtimeRoot, 'previous-model-attempt');
+      await mkdir(archive, { mode: 0o700 });
+      for (const name of ['profile', 'workspace', 'codex.jsonl', 'codex.stderr']) {
+        await rename(join(runtimeRoot, name), join(archive, name));
+      }
+      report = resumeReport;
+      report.model.previousTranscriptSha256 = createHash('sha256').update(
+        await readFile(join(archive, 'codex.jsonl'))).digest('hex');
+    }
     report = resumeReport;
     stage = 'indexed-history';
     report.status = 'running'; report.resumedAt = new Date().toISOString(); await save();
