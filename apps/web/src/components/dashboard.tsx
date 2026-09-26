@@ -79,6 +79,7 @@ declare global {
 }
 
 interface DashboardProps {
+  onboarding?: boolean;
   data: DashboardData;
   deployment: PublicDeployment;
   rootQuery: string | null;
@@ -524,29 +525,27 @@ const demoRoots = [
 ] as const;
 
 function RootAccessBar({ rootId, defaultRootId, path }: { rootId: string | null; defaultRootId: string | null; path: string }) {
-  const alternateHref = rootId
-    ? `${path}?preview=1`
-    : defaultRootId
-      ? `${path}?root=${encodeURIComponent(defaultRootId)}`
-      : null;
+  const router = useRouter();
+  const [lookupError, setLookupError] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
   return (
     <div className="root-access-bar" aria-label="Root navigation">
-      <form action={path} method="get" className="root-access-form">
-        <label htmlFor="root-id">Root ID</label>
-        <input
-          id="root-id"
-          name="root"
-          type="text"
-          inputMode="numeric"
-          pattern="[1-9][0-9]*"
-          maxLength={78}
-          defaultValue={rootId ?? ""}
-          placeholder={defaultRootId ?? "e.g. 1"}
-          aria-label="Root ID to load"
-          autoComplete="off"
-          required
-        />
-        <button className="button button-secondary button-small" type="submit">Load root</button>
+      <form className="root-access-form" onSubmit={async (event) => {
+        event.preventDefault();
+        const query = String(new FormData(event.currentTarget).get("lookup") ?? "").trim();
+        setLoading(true); setLookupError(null);
+        try {
+          const response = await fetch(`/api/resolve-root?q=${encodeURIComponent(query)}`, { signal: AbortSignal.timeout(30000) });
+          const result = await response.json();
+          if (!response.ok) throw new Error(result.error ?? "Lookup failed.");
+          router.push(`${path}?root=${encodeURIComponent(result.rootId)}&node=${encodeURIComponent(result.nodeId)}`);
+        } catch (cause) { setLookupError(cause instanceof Error ? cause.message : "Lookup failed. Please try again."); }
+        finally { setLoading(false); }
+      }}>
+        <label htmlFor="root-id">Open vault</label>
+        <input id="root-id" name="lookup" type="text" maxLength={253} placeholder="ENS name or vault contract address" aria-label="ENS name or vault contract address" autoComplete="off" required disabled={loading} />
+        <button className="button button-secondary button-small" type="submit" disabled={loading}>{loading ? "Looking up…" : "Open vault"}</button>
+        {lookupError && <span role="alert" className="vault-lookup-error">{lookupError}</span>}
       </form>
       <div className="root-quick-start">
         <span className="root-quick-label">Demo roots</span>
@@ -567,14 +566,7 @@ function RootAccessBar({ rootId, defaultRootId, path }: { rootId: string | null;
           })}
         </div>
       </div>
-      {alternateHref && (
-        <div className="source-toggle">
-          <span className="source-toggle-current">{rootId ? "Live chain" : "Preview data"}</span>
-          <a className="root-preview-link" href={alternateHref}>
-            {rootId ? "Preview sample" : "Open live root"}
-          </a>
-        </div>
-      )}
+      <a className="root-preview-link" href={rootId ? `${path}?preview=1` : defaultRootId ? `${path}?root=${defaultRootId}` : "/tree?root=5"}>{rootId ? "Preview sample" : "Open live root"}</a>
     </div>
   );
 }
@@ -1217,7 +1209,7 @@ function Footer({ source, walletConnected, rootQuery }: { source: DataSource; wa
   );
 }
 
-export function Dashboard({ data: initialData, deployment, rootQuery, nodeQuery, actionQuery, view, tour = false, step = 1 }: DashboardProps) {
+export function Dashboard({ data: initialData, deployment, rootQuery, nodeQuery, actionQuery, view, onboarding = false, tour = false, step = 1 }: DashboardProps) {
   const router = useRouter();
   const [selectedId, setSelectedId] = useState(nodeQuery ?? initialData.rootId);
   const [detailOpen, setDetailOpen] = useState(false);
@@ -1417,6 +1409,8 @@ export function Dashboard({ data: initialData, deployment, rootQuery, nodeQuery,
     setWalletActionMode(mode);
     router.push(`${routeHref("/setup", rootQuery, selectedNode.id)}&action=${mode}`);
   };
+
+  if (onboarding) return <main className="onboarding-page"><header className="app-topbar"><Link href="/" className="app-brand">agent capital tree</Link><WalletControl wallet={wallet} /></header><div className="dashboard-content"><div className="page-heading"><span className="page-kicker">Your agent capital workspace</span><h1>Create your root vault.</h1><p>Create a vault for your agent team, or open an existing one using its ENS name or contract address.</p></div><Card><CardHeader><CardTitle>Start with your own capital tree</CardTitle><CardDescription>Your wallet owns the main vault. Each agent receives only the capital and permissions you delegate.</CardDescription></CardHeader><CardContent><Button onClick={() => setWalletActionMode("create-root")}>Launch a new root vault</Button><p>Connect your wallet on Sepolia to create a vault. Test assets have no monetary value.</p></CardContent></Card><RootAccessBar rootId={null} defaultRootId={null} path="/setup" />{walletActionMode === "create-root" && <WalletControlsPanel data={data} deployment={deployment} selectedNode={selectedNode} walletAddress={wallet.address} walletOnSepolia={walletOnSepolia} liveStateReady={false} actions={actions} notice={notice} mode="create-root" onModeChange={setWalletActionMode} onRootCreated={(id) => router.push(`/setup?root=${encodeURIComponent(id)}`)} />}<nav className="onboarding-links" aria-label="Explore and get started"><Link href="/tree?root=5"><GitBranch size={18} aria-hidden="true" /><span>Explore a live example</span><ArrowRight size={16} aria-hidden="true" /></Link><Link href="/tree?preview=1"><Layers3 size={18} aria-hidden="true" /><span>Explore sample data</span><ArrowRight size={16} aria-hidden="true" /></Link><a href="https://github.com/CodeByNikolas/agent-capital-tree/blob/main/docs/local-setup.md"><ExternalLink size={18} aria-hidden="true" /><span>Install companion &amp; MCP</span><ArrowUpRight size={16} aria-hidden="true" /></a></nav></div></main>;
 
   return (
     <TooltipProvider delay={150}>

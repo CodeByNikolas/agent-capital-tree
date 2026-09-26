@@ -128,6 +128,12 @@ importers:
       '@agent-capital-tree/sdk':
         specifier: workspace:*
         version: link:../sdk
+      '@x402/core':
+        specifier: 2.27.0
+        version: 2.27.0
+      '@x402/evm':
+        specifier: 2.27.0
+        version: 2.27.0(typescript@5.9.3)
       ethers:
         specifier: 6.17.0
         version: 6.17.0
@@ -923,6 +929,12 @@ packages:
 
   '@types/validate-npm-package-name@4.0.2':
     resolution: {integrity: sha512-lrpDziQipxCEeK5kWxvljWYhUvOiB2A9izZd9B2AFarYAkqZshb4lPbRs7zKEic6eGtH8V/2qJW+dPp9OtF6bw==}
+
+  '@x402/core@2.27.0':
+    resolution: {integrity: sha512-UbxCKnoTsg5nQX9fYER3g9tt5l80jHm1IZOmDczQRqE0cwskls5r+VAAj0iUQfHVshnpv0qo/rLFI7UntqL96g==}
+
+  '@x402/evm@2.27.0':
+    resolution: {integrity: sha512-WKVFq5VaSrDJfo6lHNG7/4hT0iZdpsmd53W/a+gZqmE1CiVT8wyRpwIPue4f/YKqNfgHHhZ00AcfPho0xLr2eQ==}
 
   abitype@1.2.3:
     resolution: {integrity: sha512-Ofer5QUnuUdTFsBRwARMoWKOH1ND5ehwYhJ3OJ/BQO+StkwQjHw0XyVh4vDttzHB7QOFhPHa/o413PJ82gU/Tg==}
@@ -2987,6 +2999,20 @@ snapshots:
       csstype: 3.2.3
 
   '@types/validate-npm-package-name@4.0.2': {}
+
+  '@x402/core@2.27.0':
+    dependencies:
+      zod: 3.25.76
+
+  '@x402/evm@2.27.0(typescript@5.9.3)':
+    dependencies:
+      '@x402/core': 2.27.0
+      viem: 2.56.9(typescript@5.9.3)(zod@3.25.76)
+      zod: 3.25.76
+    transitivePeerDependencies:
+      - bufferutil
+      - typescript
+      - utf-8-validate
 
   abitype@1.2.3(typescript@5.9.3)(zod@3.25.76):
     optionalDependencies:

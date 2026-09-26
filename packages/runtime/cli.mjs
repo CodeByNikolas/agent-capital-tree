@@ -38,7 +38,7 @@ if (command === 'prepare-root') {
     rpcUrl: config.rpcUrl, controller: config.controller, upstream: config.upstream,
     upstreamKey, imageId: config.imageId, models: config.models,
     workerUid: process.getuid(), workerGid: process.getgid(),
-    childGasWei: BigInt(config.childGasWei ?? '0'), writesEnabled: flag === '--enable-sepolia-writes', multibaas });
+    childGasWei: BigInt(config.childGasWei ?? '0'), paymentServices: config.paymentServices, writesEnabled: flag === '--enable-sepolia-writes', multibaas });
   const ready = await companion.start();
   process.stdout.write(`Companion listening at ${ready.toolsOrigin}; root token file: ${ready.rootTokenFile}; Sepolia writes ${flag ? 'enabled' : 'disabled'}\n`);
   const shutdown = () => { void companion.close().then(() => process.exit(0)); };

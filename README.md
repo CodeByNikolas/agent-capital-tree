@@ -1,5 +1,7 @@
 # Agent Capital Tree
 
+[Step-by-step companion and MCP setup](docs/local-setup.md): checkout, worker image, root, operator, private configuration and first agent task.
+
 Give agents their own capital, delegate smaller amounts to sub-agents, and enforce narrower permissions at every level of the tree.
 
 Agent Capital Tree combines **ENSv2 Enhanced Access Control**, separate onchain vaults, isolated agent workers, and **Curvegrid MultiBaas** activity indexing. **Uniswap v4** is the implemented application for bounded swaps and liquidity management. Payments and service purchases are future extensions.
@@ -31,6 +33,8 @@ The interface uses a shadcn/ui sidebar, readable typography, desktop/mobile layo
 | [Activity](https://agent-capital-tree.vercel.app/activity?root=9) | Indexed capital movements, coverage status and verified transaction links |
 | [Applications](https://agent-capital-tree.vercel.app/applications?root=1) | Bounded Uniswap swaps and vault-owned liquidity |
 | [Setup & control](https://agent-capital-tree.vercel.app/setup?root=5) | Wallet management, owner recovery and plugin/runtime instructions |
+
+Use **Open vault** at the top of the dashboard to enter a Sepolia vault contract address or a registered name under `agentcapitaltree.eth`. A child lookup opens its root tree with that child selected. Legacy numeric IDs still work. This is a lookup within this deployment, not a general Ethereum address or mainnet ENS explorer.
 
 No wallet or model credential is needed to inspect the public demo. [Preview mode](https://agent-capital-tree.vercel.app/tree?preview=1) contains explicitly labeled illustrative records.
 

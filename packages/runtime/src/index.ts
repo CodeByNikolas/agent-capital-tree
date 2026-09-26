@@ -11,3 +11,4 @@ export * from './keys.js';
 export * from './spawn-chain.js';
 export * from './gas.js';
 export * from './companion.js';
+export * from './payments.js';

@@ -2,12 +2,40 @@
 
 Stand: 26. September 2026 (Europe/Berlin). Nach Kontextkomprimierung zusammen mit PLAN.md lesen.
 
+## USDC-Erweiterung: in Arbeit
+
+-20 offizielle Circle-Test-USDC auf Ethereum Sepolia beim Test-Owner verifiziert; sechs Dezimalstellen. Öffentliche Mittel bislang unberührt. Manifest `deployments/usdc-sepolia.json` ist ausdrücklich noch kein Contract-Deployment.
+- Lokaler Fork11784932 mit echtem Circle-Proxy bestanden:10USDC Root,2USDC Child,8USDC Root-Rest; falscher Signer/Betragsüberschreitung abgewiesen; komplette Rückholung und Wiederherstellung des lokalen Spenderbestands. `scripts/test-usdc-fork.mjs`, Nachweis `deployments/usdc-fork.json`. Keine öffentlichen Transaktionen, keine USDC-Storage-Overrides. Test ersetzt ENS-Verknüpfung ausschließlich im wegwerfbaren Fork.
+- Companion/MCP unterstützt vorbereitete `getPaymentServices`/`purchaseService`-Werkzeuge mit fester Dienst-/Empfänger-Konfiguration, privatem Retry-Journal und unabhängiger USDC-Receipt-Prüfung.18Runtime-,7Plugin- und2SDK-Tests bestanden. Ohne USDC-Deployment plus explizite Servicekonfiguration sind keine Zahlungen verfügbar; vollständiger Circle/x402-Forknachweis steht noch aus.
+- ERC1271/PAY-Contract-Erweiterung in isoliertem Worktree in Arbeit. x402-HTTP-Flow, neues öffentliches Deployment, USDC-UI und neue MultiBaas-Indexierung noch offen. Offizieller gehosteter x402-Facilitator bewirbt Ethereum Sepolia derzeit nicht; eigener begrenzter Demo-Facilitator erforderlich. Recherche: `docs/usdc-x402-feasibility.md`.
+
 ## Aktueller Stand
 
 - Public Repository: https://github.com/CodeByNikolas/agent-capital-tree.
-- Live-Dashboard: https://agent-capital-tree.vercel.app. Aktuelles Deployment `dpl_8c4tsppjGfNxLEDLTNnW6UsViPTJ`, https://agent-capital-tree-3yholcb6f-tumblockchains-projects.vercel.app (Source1a5ef1e). Fünf echte Seiten mit shadcn Sidebar/Badge/Button/Card/Sheet/Table, Agentendetails, System-Hell-/Dunkelmodus und größerer Schrift. Mit frontend-design/impeccable und shadcn-MCP umgesetzt; Sol-High-Subagent und Hauptagent-Review. Kapitaldelegation steht im Mittelpunkt; Uniswap ist eine Anwendung, Payments bleiben Zukunftsumfang.
+- Live-Dashboard: https://agent-capital-tree.vercel.app. Aktuelles Deployment `dpl_9JTa95pckip7PT2EbAVyZYVToTMp`, https://agent-capital-tree-6p497n2k9-tumblockchains-projects.vercel.app (Source6897392). Fünf echte Seiten mit shadcn Sidebar/Badge/Button/Card/Sheet/Table, Agentendetails, System-Hell-/Dunkelmodus und größerer Schrift. Mit frontend-design/impeccable und shadcn-MCP umgesetzt; Sol-High-Subagent und Hauptagent-Review. Kapitaldelegation steht im Mittelpunkt; Uniswap ist eine Anwendung, Payments bleiben Zukunftsumfang.
 - ENSv2/Uniswap und der echte Browser→Codex→Child→Grandchild-Ablauf sind nachgewiesen. Live-MultiBaas, tatsächlicher Master-Modell-Ablauf und vollständige Root9-Rückholung sind ebenfalls nachgewiesen. Gesamtabnahme bleibt für unabhängiges Fremdnutzer-Onboarding und die unten genannten Grenzen offen. Die letzte echte Browser-Owner-Rückholung ist bestanden.
 - Root1 ist der finanzierte Seed und bleibt unberührt. Root2 ist widerrufen und leer. Root5 ist der vollständig widerrufene und geleerte Browser-/Modell-Testbaum; nicht erneut als Runtime starten. Root9 mit Child10/11 ist ebenfalls widerrufen und leer. Abgeschlossene Finanzrunner niemals blind wiederholen.
+
+## Einstieg: erkennbare Links
+
+- Die drei Einstiegslinks sind umrandete, unterstrichene Navigationselemente mit Icons und Fokuszustand; mobil untereinander. Copy erklärt ENS-/Adresszugang ohne interne IDs. Setup-Link führt direkt zur vollständigen Anleitung.
+- Build und lokale Desktop-/Mobil-/Hell-/Dunkel-Browserprüfung inklusive Tastatur und Preview-Navigation bestanden. Öffentliche Mobilansicht mit drei Links und ENS-/Adressfeld nach Deployment geprüft.
+
+## Vault-Suche
+
+- Lokaler und veröffentlichter API-/Browsertest bestanden (Root-/Child-Namen und Adressen, Normalisierung, Fehler, Mobil/Desktop). Produktionsbuild inklusive TypeScript bestanden; keine Signaturen/Transaktionen.
+
+- Kopfzeile akzeptiert ENS-Namen unter agentcapitaltree.eth und Vault-Contract-Adressen auf Sepolia; Child-Suche öffnet Root und selektiert Child. Legacy-IDs bleiben unterstützt. Fehler sichtbar, keine Wallet-/Signeroperation.
+- Serverseitige Zuordnung liest Controller-Knoten an einem Block. Bounded Demo-Scan bis512 Knoten, darüber expliziter Kapazitätsfehler statt falschem Nichtgefunden. Keine generische Mainnet-ENS-Auflösung.
+- Regression: scripts/test-vault-lookup.mjs prüft Name/Adresse für Root und Child, Normalisierung, ungültige/fremde Eingaben und Desktop-/Mobilnavigation.
+
+## Persönlicher Einstieg und lesbare Namen
+
+- Öffentlicher Vercel-Onboarding-/Create-Entry-Browsertest bestanden; keine Signaturen oder neuen Finanztransaktionen.
+- Ohne root-Parameter und ohne explizite Preview startet die Oberfläche mit Root-Onboarding statt Seed-/Beispieldaten. Neuer Root kann nach Wallet-Verbindung erstellt werden. Keine ungeprüfte Aussage über vorhandene Wallet-Roots; Suche nach Vault-Adresse noch nicht implementiert.
+- MCP spawnChild akzeptiert optional name (z.B. researcher); Runtime bindet ihn an den dauerhaften Spawn-Intent und die tatsächliche ENS-Registrierung. Alte namenlose Wiederholungen behalten ihr bisheriges Label. Sieben Plugin- und16 Runtime-Tests bestanden. Neuer Name noch nicht mit einem frischen Sepolia-Spawn abgenommen; Worker-Image muss für neue Tool-Schemas neu gebaut werden.
+- Zusammenhängende Anleitung: [docs/local-setup.md](docs/local-setup.md), Links geprüft. Frontend-Produktionsbuild und Desktop-/Mobil-Onboarding inklusive expliziter Preview bestanden.
+- Serverseitiger Testtoken-Faucet ist nicht implementiert. fundRoot ist Owner-only; direkte Faucet-Transfers benötigen eigene Quoten-/Retry-Sicherung und ehrliche Eventdarstellung. Keine Owner-Schlüssel auf Vercel kopiert.
 
 ## Modul-Roadmap
 

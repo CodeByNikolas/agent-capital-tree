@@ -1,3 +1,4 @@
+import { journaledTransaction } from './lib/sepolia-transactions.mjs';
 import { readFile, writeFile, mkdir } from 'node:fs/promises';
 import { homedir } from 'node:os';
 import { join } from 'node:path';
@@ -5,15 +6,16 @@ import { randomBytes } from 'node:crypto';
 import { Contract, JsonRpcProvider, Wallet, ZeroAddress, ZeroHash, id } from 'ethers';
 
 const action = process.argv[2] ?? 'inspect';
+const usdcVersion = process.argv.includes('--usdc');
 if (!['inspect', 'commit', 'register'].includes(action)) throw new Error('Use inspect, commit or register');
 const broadcast = process.argv.includes('--broadcast');
 if (action !== 'inspect' && !broadcast) throw new Error('Writing requires --broadcast');
 const rpc = new JsonRpcProvider('https://ethereum-sepolia.publicnode.com');
 if ((await rpc.getNetwork()).chainId !== 11155111n) throw new Error('Refusing non-Sepolia network');
-const manifestPath = new URL('../deployments/sepolia.json', import.meta.url);
+const manifestPath = new URL(usdcVersion ? '../deployments/usdc-sepolia.json' : '../deployments/sepolia.json', import.meta.url);
 const manifest = JSON.parse(await readFile(manifestPath, 'utf8'));
 const directory = join(homedir(), '.agent-capital-tree');
-const label = 'agentcapitaltree';
+const label = usdcVersion ? 'agentcapitalusdc' : 'agentcapitaltree';
 const duration = 365n * 24n * 60n * 60n;
 
 async function artifact(name, expectedAddress) {
@@ -50,6 +52,13 @@ console.log(JSON.stringify({ action, chainId: 11155111, name: `${label}.eth`, av
 if (!available) {
   const state = await registry.getState(id(label));
   if (state.latestOwner.toLowerCase() !== manifest.deployer.toLowerCase()) throw new Error('Namespace belongs to another owner');
+  if (broadcast) {
+    manifest.ensNamespace ??= { name: `${label}.eth`, registrar: registrarData.address, registry: registryData.address, transactions: {} };
+    manifest.ensNamespace.resource = state.resource.toString();
+    manifest.ensNamespace.expiry = state.expiry.toString();
+    manifest.ensNamespace.subregistry = await registry.getSubregistry(label);
+    await writeFile(manifestPath, `${JSON.stringify(manifest, null, 2)}\n`);
+  }
   console.log('Namespace already owned by the deployment wallet.');
   process.exit(0);
 }
@@ -60,7 +69,7 @@ console.log('Registration price in raw mock USDC:', price.toString());
 if (action === 'inspect') process.exit(0);
 
 await mkdir(join(directory, 'registration'), { recursive: true, mode: 0o700 });
-const secretPath = join(directory, 'registration/namespace-secret');
+const secretPath = join(directory, usdcVersion ? 'registration/usdc-namespace-secret' : 'registration/namespace-secret');
 let secret;
 try { secret = await readFile(secretPath, 'utf8'); }
 catch (error) {
@@ -70,15 +79,11 @@ catch (error) {
 }
 const commitment = await registrar.makeCommitment(label, signer.address, secret, ZeroAddress, ZeroAddress, duration, ZeroHash);
 async function send(contract, method, args) {
-  const gas = await contract[method].estimateGas(...args);
-  const fees = await rpc.getFeeData();
-  if (!fees.maxFeePerGas || gas * fees.maxFeePerGas > 1_000_000_000_000_000n) throw new Error('Transaction exceeds 0.001 Sepolia ETH fee ceiling');
-  const tx = await contract[method](...args, { gasLimit: gas * 12n / 10n });
-  console.log(`${method} submitted: ${tx.hash}`);
-  const receipt = await tx.wait();
-  if (receipt.status !== 1) throw new Error(`${method} reverted`);
+  const { receipt, transaction } = await journaledTransaction({ rpc, signer,
+    directory: join(directory, 'registration', label), name: method,
+    request: await contract[method].populateTransaction(...args), maxGasCostWei: 1_000_000_000_000_000n });
   manifest.ensNamespace ??= { name: `${label}.eth`, registrar: registrarData.address, registry: registryData.address, transactions: {} };
-  manifest.ensNamespace.transactions[method] = { hash: tx.hash, block: receipt.blockNumber };
+  manifest.ensNamespace.transactions[method] = { hash: transaction.hash, block: receipt.blockNumber };
   await writeFile(manifestPath, `${JSON.stringify(manifest, null, 2)}\n`);
 }
 if (action === 'commit') {

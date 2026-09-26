@@ -457,3 +457,17 @@ button:disabled { cursor: not-allowed; opacity: .55; }
 .x402-result-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
 .x402-tx { display: inline-flex; align-items: center; gap: 4px; font-size: 0.8rem; color: var(--muted-foreground); }
 .x402-content { margin: 10px 0 0; padding: 12px; border-radius: 8px; background: var(--muted, rgba(127,127,127,0.08)); overflow-x: auto; font-size: 0.8rem; line-height: 1.5; }
+.onboarding-page { max-width: 1080px; margin: 0 auto; min-height: 100vh; }
+.onboarding-page .root-access-bar { margin-top: 24px; }
+
+.root-access-form { flex: 1; min-width: 0; }
+.root-access-form input { width: min(460px, 100%); min-width: 0; flex: 1 1 230px; }
+.vault-lookup-error { flex-basis: 100%; color: var(--destructive); font-size: 14px; overflow-wrap: anywhere; }
+
+.onboarding-links { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 24px; }
+.onboarding-links a { display: inline-flex; align-items: center; gap: 10px; min-height: 46px; padding: 12px 16px; border: 1px solid var(--border); border-radius: 8px; background: var(--surface); color: var(--foreground); font-size: 15px; font-weight: 600; }
+.onboarding-links a span { text-decoration: underline; text-underline-offset: 4px; }
+.onboarding-links a:hover { background: var(--accent); border-color: var(--ring); }
+.onboarding-links a:focus-visible { outline: 2px solid var(--ring); outline-offset: 3px; }
+.onboarding-page .onboarding-links + p { margin-top: 16px; }
+@media (max-width: 600px) { .onboarding-links a { width: 100%; } .onboarding-links a span { flex: 1; } }
