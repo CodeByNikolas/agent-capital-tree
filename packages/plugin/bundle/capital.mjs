@@ -164,9 +164,9 @@ var init_usdc_sepolia = __esm({
       },
       vaultArchitecture: "eip1167",
       verification: {
-        checkedAt: "2026-09-26T21:38:26.919Z",
+        checkedAt: "2026-09-26T22:15:19.099Z",
         chainId: 11155111,
-        nodeCount: "1",
+        nodeCount: "3",
         records: [
           {
             address: "0xD1f801BeccF97efF6AAd63EE90688B660F30E522",
@@ -216,6 +216,32 @@ var init_usdc_sepolia = __esm({
             status: "proxy-verified",
             runtimeBytes: 45,
             explorer: "https://sepolia.etherscan.io/address/0x42d383397ad51B56f0Fa55c3Aa29b85659D279cB#code"
+          },
+          {
+            address: "0xc4c62d210089e5a8e0b7Dca66F5124cd2266c4a9",
+            contract: "src/ens/ManagedRegistry.sol:ManagedRegistry",
+            status: "source-verified",
+            explorer: "https://sepolia.etherscan.io/address/0xc4c62d210089e5a8e0b7Dca66F5124cd2266c4a9#code"
+          },
+          {
+            address: "0x74bFD71cBbd608158f7598539AF42Ac0E00522A7",
+            implementation: "0xD1f801BeccF97efF6AAd63EE90688B660F30E522",
+            status: "proxy-verified",
+            runtimeBytes: 45,
+            explorer: "https://sepolia.etherscan.io/address/0x74bFD71cBbd608158f7598539AF42Ac0E00522A7#code"
+          },
+          {
+            address: "0xbF349F13a31c6854c18f7f001160fb2a10605196",
+            contract: "src/ens/ManagedRegistry.sol:ManagedRegistry",
+            status: "source-verified",
+            explorer: "https://sepolia.etherscan.io/address/0xbF349F13a31c6854c18f7f001160fb2a10605196#code"
+          },
+          {
+            address: "0xD98d7938D740F5115bb95151F7B0c2d929939BE8",
+            implementation: "0xD1f801BeccF97efF6AAd63EE90688B660F30E522",
+            status: "proxy-verified",
+            runtimeBytes: 45,
+            explorer: "https://sepolia.etherscan.io/address/0xD98d7938D740F5115bb95151F7B0c2d929939BE8#code"
           }
         ]
       },

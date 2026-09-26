@@ -119,9 +119,9 @@
   },
   "vaultArchitecture": "eip1167",
   "verification": {
-    "checkedAt": "2026-09-26T21:38:26.919Z",
+    "checkedAt": "2026-09-26T22:21:36.552Z",
     "chainId": 11155111,
-    "nodeCount": "1",
+    "nodeCount": "6",
     "records": [
       {
         "address": "0xD1f801BeccF97efF6AAd63EE90688B660F30E522",
@@ -171,6 +171,71 @@
         "status": "proxy-verified",
         "runtimeBytes": 45,
         "explorer": "https://sepolia.etherscan.io/address/0x42d383397ad51B56f0Fa55c3Aa29b85659D279cB#code"
+      },
+      {
+        "address": "0xc4c62d210089e5a8e0b7Dca66F5124cd2266c4a9",
+        "contract": "src/ens/ManagedRegistry.sol:ManagedRegistry",
+        "status": "source-verified",
+        "explorer": "https://sepolia.etherscan.io/address/0xc4c62d210089e5a8e0b7Dca66F5124cd2266c4a9#code"
+      },
+      {
+        "address": "0x74bFD71cBbd608158f7598539AF42Ac0E00522A7",
+        "implementation": "0xD1f801BeccF97efF6AAd63EE90688B660F30E522",
+        "status": "proxy-verified",
+        "runtimeBytes": 45,
+        "explorer": "https://sepolia.etherscan.io/address/0x74bFD71cBbd608158f7598539AF42Ac0E00522A7#code"
+      },
+      {
+        "address": "0xbF349F13a31c6854c18f7f001160fb2a10605196",
+        "contract": "src/ens/ManagedRegistry.sol:ManagedRegistry",
+        "status": "source-verified",
+        "explorer": "https://sepolia.etherscan.io/address/0xbF349F13a31c6854c18f7f001160fb2a10605196#code"
+      },
+      {
+        "address": "0xD98d7938D740F5115bb95151F7B0c2d929939BE8",
+        "implementation": "0xD1f801BeccF97efF6AAd63EE90688B660F30E522",
+        "status": "proxy-verified",
+        "runtimeBytes": 45,
+        "explorer": "https://sepolia.etherscan.io/address/0xD98d7938D740F5115bb95151F7B0c2d929939BE8#code"
+      },
+      {
+        "address": "0x849677A1c8C2D8B703db0b03438804a79117d410",
+        "contract": "src/ens/ManagedRegistry.sol:ManagedRegistry",
+        "status": "source-verified",
+        "explorer": "https://sepolia.etherscan.io/address/0x849677A1c8C2D8B703db0b03438804a79117d410#code"
+      },
+      {
+        "address": "0x698abA4a1BBA0CEA529C3289A1f95EC2920f2727",
+        "implementation": "0xD1f801BeccF97efF6AAd63EE90688B660F30E522",
+        "status": "proxy-verified",
+        "runtimeBytes": 45,
+        "explorer": "https://sepolia.etherscan.io/address/0x698abA4a1BBA0CEA529C3289A1f95EC2920f2727#code"
+      },
+      {
+        "address": "0xfA9776dc6267DAb31a84F64e8C5388EC759d95Be",
+        "contract": "src/ens/ManagedRegistry.sol:ManagedRegistry",
+        "status": "source-verified",
+        "explorer": "https://sepolia.etherscan.io/address/0xfA9776dc6267DAb31a84F64e8C5388EC759d95Be#code"
+      },
+      {
+        "address": "0xA98A6f25682BdCb21E3f021795a73fBD7a15751e",
+        "implementation": "0xD1f801BeccF97efF6AAd63EE90688B660F30E522",
+        "status": "proxy-verified",
+        "runtimeBytes": 45,
+        "explorer": "https://sepolia.etherscan.io/address/0xA98A6f25682BdCb21E3f021795a73fBD7a15751e#code"
+      },
+      {
+        "address": "0x764c6410C4C278651272884bED5ff3C997A9F2Dc",
+        "contract": "src/ens/ManagedRegistry.sol:ManagedRegistry",
+        "status": "source-verified",
+        "explorer": "https://sepolia.etherscan.io/address/0x764c6410C4C278651272884bED5ff3C997A9F2Dc#code"
+      },
+      {
+        "address": "0x77C1e3Ae32B29f7643cacC630c3211F5564a84Fa",
+        "implementation": "0xD1f801BeccF97efF6AAd63EE90688B660F30E522",
+        "status": "proxy-verified",
+        "runtimeBytes": 45,
+        "explorer": "https://sepolia.etherscan.io/address/0x77C1e3Ae32B29f7643cacC630c3211F5564a84Fa#code"
       }
     ]
   },

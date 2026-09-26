@@ -1,4 +1,14 @@
-# Current release: kanoki.eth and sidebar repair
+# Current release: Kanoki live demo and wallet controls
+
+## Public multi-vault demo and wallet sign-out — 27 September 2026
+
+- Wallet address now opens a dialog with Sign out and a separate explorer link. App disconnection survives provider account events and reloads until an explicit Connect. Removed the normal Sepolia badge; the actionable wrong-network switch remains. How it works is shown only in the dashboard, with the live-demo entry retained on onboarding.
+- Extended the existing capital.kanoki.eth demo using its existing test tokens: Researcher (node 3), Trader (4), Liquidity (5), and Risk check (6, under Trader). Independent operator keys remain outside Git. No extra token funding or root re-authorization was performed.
+- Real public Sepolia proof: Researcher paid 0.010 Test-USDC through HTTP402/ERC-1271; retry returned the same receipt without another charge. Trader swapped 0.010 USDC; Liquidity opened LP NFT 39890 and collected fees; Risk check's per-action ceilings were narrowed to 0.020. Over-budget, wrong-capability and wrong-operator calls were rejected. Public receipts and checks: deployments/kanoki-payment.json and deployments/kanoki-demo-e2e.json. Existing root LP NFT 39889 is retained.
+- All new ENS registries and vault proxies are explorer-verified. MultiBaas returns the new controller transactions with canonical receipt verification; USDC payment evidence remains separate. The indexer's reported checkpoint can lag the events it returns; the UI preserves that coverage qualification.
+- Fixed the x402 financial test's obsolete manifest.token reference to use the current reviewed USDC entry in manifest.tokens. The new bounded demo runner journals signed transactions, reuses keys/operation IDs and accounts for gas transfers without double-counting their later consumption.
+- Verification: production web build/TypeScript; 38 contract tests plus 71 workspace tests (36 runtime, 22 plugin, 11 MultiBaas, 2 SDK); live 19-tool MCP reads/disabled-write guard; desktop/mobile wallet session, navigation, owner filtering, guided setup, guide and nine-route skeleton tests. The public API/browser demo journey verifies five vaults, two LP positions, x402 receipt and all new indexed transactions. Shell identity assertions wait for the connected wallet so they measure hydrated navigation.
+- Scope: real on-chain demo, protocol, indexer, MCP reads and dashboard. No autonomous model worker was launched; no fresh external jury-machine wallet onboarding was performed. The controlled research seller is local and is not left running. Vercel publication follows the checked main commits.
 
 ## Dashboard shell and controls — 27 September 2026
 
