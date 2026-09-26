@@ -1,16 +1,29 @@
 import assert from 'node:assert/strict';
 import { createServer } from 'node:http';
-import { spawn, execFile } from 'node:child_process';
-import { promisify } from 'node:util';
-import { mkdtemp, mkdir, rm, writeFile } from 'node:fs/promises';
+import { spawn } from 'node:child_process';
+import { lstat, mkdtemp, mkdir, readFile, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
-import { join } from 'node:path';
+import { isAbsolute, join } from 'node:path';
 import { InferenceBroker, WorkerSessions, companionServer, startWorkerGateway, workerDockerArgs } from '../dist/index.js';
 
+const privateFile = async path => {
+  if (!isAbsolute(path ?? '')) throw new Error('private file path must be absolute');
+  const info = await lstat(path);
+  if (!info.isFile() || info.isSymbolicLink() || info.uid !== process.getuid() || (info.mode & 0o777) !== 0o600) {
+    throw new Error('private file must belong to this user and have mode 0600');
+  }
+  return readFile(path, 'utf8');
+};
+
+const configPath = process.env.ACT_RUNTIME_CONFIG;
+const config = JSON.parse(await privateFile(configPath));
+if (!config.providerTokenFile || config.upstream !== 'http://100.91.160.81:8317/v1') {
+  throw new Error('acceptance requires providerTokenFile and the HomeBox CLIProxyAPI endpoint');
+}
 const imageId = process.env.ACT_WORKER_IMAGE_ID;
 if (!/^sha256:[a-f0-9]{64}$/.test(imageId ?? '')) throw new Error('set ACT_WORKER_IMAGE_ID');
-const { stdout: upstreamKey } = await promisify(execFile)('/usr/local/bin/codexops-proxy-token', [], { encoding: 'utf8' });
-const broker = new InferenceBroker({ upstream: 'http://100.91.160.81:8317/v1', upstreamKey: upstreamKey.trim(), maxBodyBytes: 1_000_000 });
+const upstreamKey = (await privateFile(config.providerTokenFile)).trim();
+const broker = new InferenceBroker({ upstream: config.upstream, upstreamKey, maxBodyBytes: 1_000_000 });
 const brokerServer = broker.server();
 const sessions = new WorkerSessions();
 let toolCalls = 0;
@@ -31,16 +44,21 @@ try {
   const args = await workerDockerArgs({ workerId: 'model', uid: process.getuid(), gid: process.getgid(), runtimeRoot: root, workspace, keyFile, gatewaySocket, imageId, model: 'gpt-6-luna' });
   const child = spawn('docker', args, { stdio: ['pipe', 'pipe', 'pipe'] });
   child.stdin.end('Call the agent-capital-tree getTree tool with rootId "1". Then reply ACT_MODEL_OK only if the tool returns ACT_TOOL_OK.');
-  let stdout = '', stderr = '';
-  child.stdout.on('data', x => { if (stdout.length < 500_000) stdout += x.toString(); });
-  child.stderr.on('data', x => { if (stderr.length < 50_000) stderr += x.toString(); });
+  const marker = 'ACT_MODEL_OK';
+  let markerSeen = false, overlap = '';
+  child.stdout.on('data', x => {
+    const value = overlap + x.toString();
+    if (value.includes(marker)) markerSeen = true;
+    overlap = value.slice(-(marker.length - 1));
+  });
+  child.stderr.on('data', () => {});
   const timer = setTimeout(() => child.kill('SIGTERM'), 180_000);
   const code = await new Promise((resolve, reject) => { child.once('exit', resolve); child.once('error', reject); });
   clearTimeout(timer);
-  console.log(JSON.stringify({ code, toolCalls, stdoutTail: stdout.slice(-2500), stderrTail: stderr.slice(-1000) }));
-  assert.equal(code, 0);
-  assert.ok(toolCalls > 0);
-  assert.match(stdout, /ACT_MODEL_OK/);
+  console.log(JSON.stringify({ code, toolCalls, modelMarkerSeen: markerSeen }));
+  assert.equal(code, 0, 'isolated model worker did not exit successfully');
+  assert.ok(toolCalls > 0, 'isolated model worker did not call the scoped MCP read');
+  assert.ok(markerSeen, 'isolated model worker did not report the expected completion marker');
 } finally {
   if (gateway) await gateway.close();
   await Promise.all([new Promise(r => brokerServer.close(r)), new Promise(r => companion.close(r))]);
