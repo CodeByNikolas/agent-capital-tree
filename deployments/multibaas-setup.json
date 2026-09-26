@@ -1,0 +1,36 @@
+{
+  "status": "configured_live_reads_verified",
+  "chainId": 11155111,
+  "controller": "0x55caFFf719B5FA70c0e8942eEe2C7EE6B8c7Db6b",
+  "deploymentUrl": "https://d7zveyyfkvdbxdbd7n3rk6o3ee.multibaas.com",
+  "contractLabel": "capitalcontroller",
+  "contractVersion": "1.0",
+  "controllerDeploymentBlock": 11781260,
+  "indexingStartBlock": 11783944,
+  "plan": {
+    "name": "Default Plan",
+    "pastLogsMaxDepth": 100,
+    "eventsPerSecond": 2,
+    "apiCallsPerMonth": 30000
+  },
+  "runtimeAccess": {
+    "groups": [
+      "DApp User",
+      "View-Only Administrators"
+    ],
+    "noEditRoles": true,
+    "noWeb3Role": true,
+    "reason": "DApp User alone gets HTTP403 for event-indexing status. View-only metadata access is required by the adapter."
+  },
+  "checks": {
+    "abiRegistered": true,
+    "addressLinked": true,
+    "queryAndStatusRead": true,
+    "root5ResultCount": 0
+  },
+  "limitations": [
+    "Root5 predates indexing and its empty query is not a complete history.",
+    "A fresh root with positive indexed events, canonical comparison and model reallocation remains to be tested.",
+    "The original administrator credential remains local; the derived runtime key is server-only."
+  ]
+}

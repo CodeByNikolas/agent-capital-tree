@@ -1,6 +1,6 @@
 # Agent Capital Tree — verbindlicher Implementierungsplan
 
-Stand: 25. September 2026. Produktentscheidungen sind festgelegt; Implementierung läuft, der tatsächliche Abnahmestand steht in STATUS.md. Dieser Plan ersetzt frühere Brainstorming-Varianten. Nach Kontextkomprimierung zuerst diesen Plan und STATUS.md lesen.
+Stand: 26. September 2026. Produktentscheidungen sind festgelegt; Implementierung läuft, der tatsächliche Abnahmestand steht in STATUS.md. Dieser Plan ersetzt frühere Brainstorming-Varianten. Nach Kontextkomprimierung zuerst diesen Plan und STATUS.md lesen.
 
 ## 1. Produkt, Umfang und Partner
 
@@ -70,7 +70,7 @@ Der Vault behält die PositionManager-NFT und alle Auszahlungen. Worker erhalten
 
 ### Curvegrid MultiBaas: verbindliche Integration
 
-MultiBaas ist unsere indexierte Historie, keine Berechtigungsinstanz. Wir registrieren Controller-ABI und Sepolia-Adresse ab Deployment-Block und aktivieren Event-Synchronisierung. Den Contract müssen wir nicht über MultiBaas deployen; Foundry bleibt unser Contract-Werkzeug.
+MultiBaas ist unsere indexierte Historie, keine Berechtigungsinstanz. Wir registrieren Controller-ABI und Sepolia-Adresse und aktivieren Event-Synchronisierung. Der kostenlose Instanzplan erlaubt nur100 Blöcke Rückblick; nach Nutzerentscheidung vom26.09. gibt es kein bezahltes Upgrade. Tatsächlicher Indexierungsstart ist deshalb Block11783944. Vollständige Historienabnahme erfolgt an einem danach neu erstellten Root. Ältere Roots behalten ihre separaten RPC-/Transaktionsnachweise; ihre fehlende MultiBaas-Historie wird nicht rekonstruiert oder als vollständig ausgegeben. Den Contract müssen wir nicht über MultiBaas deployen; Foundry bleibt unser Contract-Werkzeug.
 
 Der Controller gibt kanonische Events zu Node-Erstellung, Allokation, Rückholung, Policy-/Operatoränderungen, Widerruf und erfolgreichen Swap-/LP-Aktionen aus. Finance-Events enthalten rootId/nodeId, betroffene Tokens und tatsächlich ausgeführte Beträge beziehungsweise tokenId/Liquidität. Externe Event-Meldungen werden ausschließlich von dem beim Controller registrierten Vault akzeptiert; keine frei fälschbare Report-Funktion. Fehlgeschlagene Transaktionen hinterlassen keine Events.
 
@@ -114,7 +114,7 @@ SDK/MCP-Funktionen: `createRoot`, `spawnChild`, `allocateCapital`, `getTree`, `g
 
 Graphitfarbene technische Oberfläche, lesbare Kontraste, grüne aktive Verbindungen, klare Beschriftungen für widerrufen/abgelaufen. Startansicht: Demo ansehen, eigenen Vault erstellen, Plugin installieren. Baum: ENS-Namen, Beziehungen, freie Mittel und Mandate. Details: lokale/geerbte Einschränkungen mit Ursprung, Tokenbestände, LP-Position und tatsächliche Transaktionslinks. Aktives Onchain-Mandat bedeutet nicht, dass ein Agentenprozess gerade läuft. Lokale Fehlversuche bleiben als lokale Diagnose gekennzeichnet.
 
-Jury-Voraussetzungen sind Wallet, Sepolia-ETH, Node.js, Docker, Codex und der oben beschriebene eigene CLIProxyAPI-Zugang. Ablauf: Vercel öffnen → eigene Wallet auf Sepolia → eigenen Root erstellen und Demo-Assets beziehen → CLI-Setup/Plugin installieren und Modellzugang testen → Operator per Wallet binden → Aufgabe in Codex → Aktionen im Dashboard verfolgen → Teilbaum widerrufen → LP schließen → Mittel zurückholen. Die Website erfordert keinen Zugriff auf localhost; der Plugin-Client benötigt keinen öffentlichen Server. Für öffentliche Roots deckt unsere gemeinsame MultiBaas-Instanz die Controller-Historie ab. Eigene Contract-Deployments benötigen eigene Indexer-Konfiguration. Demo ansehen und manuelle Wallet-Aktionen funktionieren auch ohne Modellzugang.
+Jury-Voraussetzungen sind Wallet, Sepolia-ETH, Node.js, Docker, Codex und der oben beschriebene eigene CLIProxyAPI-Zugang. Ablauf: Vercel öffnen → eigene Wallet auf Sepolia → eigenen Root erstellen und Demo-Assets beziehen → CLI-Setup/Plugin installieren und Modellzugang testen → Operator per Wallet binden → Aufgabe in Codex → Aktionen im Dashboard verfolgen → Teilbaum widerrufen → LP schließen → Mittel zurückholen. Die Website erfordert keinen Zugriff auf localhost; der Plugin-Client benötigt keinen öffentlichen Server. Für öffentliche Roots deckt unsere gemeinsame MultiBaas-Instanz die Controller-Historie ab ihrem dokumentierten Indexierungsstart ab; die Oberfläche nennt diese Abdeckungsgrenze. Eigene Contract-Deployments benötigen eigene Indexer-Konfiguration. Demo ansehen und manuelle Wallet-Aktionen funktionieren auch ohne Modellzugang.
 
 ## 3. Arbeitspakete, Freigaben und Veröffentlichung
 
@@ -149,7 +149,7 @@ Ziele: öffentliches GitHub-Repository `CodeByNikolas/agent-capital-tree`; neues
 2. Uniswap: deployed Bytecode/ABIs, Testpool, lokale und anschließend Sepolia Swap-/LP-Probe. Fehlende Liquidität lösen wir durch eigenen Pool; fehlt ein nutzbarer Contract, ist die Freigabe offen.
 3. Runtime: aktuelles Plugin-Paketformat, Modellverfügbarkeit und per-Worker-Inferenzzugang ohne geteilte Host-Credentials; echte Containertrennung. Keine stillschweigende Rückkehr zu gemeinsamem Parent-Key.
 4. Wallet: gepinnte MetaMask-Version im persistenten Playwright-Chromium-Profil, Verbindung und echte Sepolia-Signatur. Ein Mock-Wallet-Test ersetzt diesen Nachweis nicht.
-5. MultiBaas: Sepolia-Instanz, Daten-API-Key, ABI-Link, Historical-Indexing ab Deployment und live ausgeführte Query. Fehlt der Zugang, bleibt diese Integration offen; die Anwendung und Notausstieg können unabhängig weitergebaut werden.
+5. MultiBaas: Sepolia-Instanz, Daten-API-Key, ABI-Link, Indexierungsstart innerhalb des kostenlosen100-Block-Fensters und live ausgeführte Query; der frische Abnahme-Root muss vollständig nach diesem Start liegen. Fehlt der Zugang, bleibt diese Integration offen; die Anwendung und Notausstieg können unabhängig weitergebaut werden.
 
 Sind Freigaben nicht erfüllt, den konkreten Hinderungsgrund in STATUS.md festhalten. Parallele unabhängige Arbeit fortsetzen; den Umfang nicht still reduzieren oder erfolgreiche Integration behaupten. Neue Produktentscheidungen sind nur bei tatsächlichem Wegfall einer Kernvoraussetzung nötig.
 
@@ -192,7 +192,7 @@ Zusätzlich mobile Darstellung, Tastaturbedienung, lesbare Zustände, abgelehnte
 
 Bereits verifiziert: GitHub-Login CodeByNikolas, Vercel-Zugriff auf TUM Blockchain Club, Node/pnpm/Docker/Codex, lokales Playwright-Chromium/Xvfb und Browserbase-Zugang. Foundry muss projekt-/nutzerlokal bereitgestellt werden. Zugang ist kein Nachweis, dass die neue Anwendung bereits existiert.
 
-Noch erforderlich: neu erzeugte Testwallets und Sepolia-ETH nach Gasschätzung; konkrete ENS-Registrierung; MultiBaas-Deployment-URL und eingeschränkter API-Zugang plus administrative Ersteinrichtung. Einen dedizierten RPC nur bei nachgewiesenem Bedarf ergänzen. Uniswap-API-Key ist für direkte Contracts nicht nötig. Keine persönlichen Seed-Phrases anfordern und keine Modellzugänge anderer Anbieter auf HomeBox einrichten.
+Noch erforderlich: ausreichend Sepolia-ETH für den frischen MultiBaas-Abnahme-Root. ENS-Registrierung, Instanz-URL, administrative Ersteinrichtung und eingeschränkter Laufzeit-Key sind inzwischen vorhanden; tatsächliche Nachweise und offene Schritte stehen in STATUS.md. Einen dedizierten RPC nur bei nachgewiesenem Bedarf ergänzen. Uniswap-API-Key ist für direkte Contracts nicht nötig. Keine persönlichen Seed-Phrases anfordern und keine Modellzugänge anderer Anbieter auf HomeBox einrichten.
 
 Abgabe: öffentliche Contracts/Tests/Doku, klare Setup-Anleitung, Team-/Social-Angaben vom Team, eindeutige Codeverweise pro Partner. Uniswap benötigt FEEDBACK.md und Developer Feedback Form mit Link darauf. Curvegrid benötigt README mit Projektsatz, Setup/Tests und ehrlichem MultiBaas-Erfahrungsbericht. ETHGlobal-Abgabe und Feedback-Formular nicht ohne tatsächliche erfolgreiche Übermittlung als erledigt markieren; fehlende Teamangaben erst am entsprechenden Schritt anfordern.
 
