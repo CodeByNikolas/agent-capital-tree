@@ -1,4 +1,6 @@
 import { theme as t } from './dashboard-theme.mjs';
+import { readFileSync } from 'node:fs';
+const mark = readFileSync(new URL('./visual-assets/kanoki-logo-512.png', import.meta.url)).toString('base64');
 export { t };
 export const WIDTH = 1040;
 export const xml = value => String(value).replace(/[&<>"']/g, c => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&apos;' })[c]);
@@ -15,11 +17,12 @@ export function frame(height, title, subtitle, body, footer) {
   return `<svg xmlns="http://www.w3.org/2000/svg" width="${WIDTH}" height="${height}" viewBox="0 0 ${WIDTH} ${height}" role="img" aria-label="${xml(title)}">
     <rect width="${WIDTH}" height="${height}" fill="${t.background}"/>
     ${rect(0, 0, WIDTH, 56, t.background, t.border, 0)}
-    ${text(32, 35, 'Kanoki', { size: 20, display: true, weight: 500 })}
-    ${text(144, 35, 'Agent Capital Tree', { size: 13, color: t.mutedForeground })}
+    <image x="32" y="16" width="24" height="24" href="data:image/png;base64,${mark}"/>
+    ${text(64, 28, 'Kanoki', { size: 20, display: true, weight: 500 })}
+    ${text(64, 48, 'Agent Capital Tree', { size: 13, color: t.mutedForeground })}
     ${text(WIDTH-32, 35, 'sepolia', { size: 13, mono: true, color: t.primary, anchor: 'end' })}
     ${text(32, 112, title, { size: 44, display: true, weight: 500 })}${text(32, 145, subtitle, { color: t.mutedForeground })}
-    ${body}${text(32, height-24, footer, { size: 12, color: t.mutedForeground })}
+    ${body}${text(32, height-24, footer, { size: 13, color: t.mutedForeground })}
   </svg>`;
 }
 export function amount(raw) {

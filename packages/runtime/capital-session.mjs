@@ -94,6 +94,9 @@ export class CapitalSession {
   async prepare({ budgetRaw = '100000', openBrowser = true, expectedBoundOperator, recovery = false }) {
     await this.initialize();
     const tree = await this.client.getTree(BigInt(this.rootId));
+    if (tree.nodes.find(node => String(node.id) === this.rootId)?.revoked) {
+      throw new SetupError('ROOT_REVOKED', 'This root is permanently revoked. Operator replacement cannot reactivate it. No key, funding request or wallet handoff was created. Select an active root or explicitly create a new one.');
+    }
     let operator = await this.localOperator();
     const mismatched = tree.operator.toLowerCase() !== operator?.toLowerCase() && tree.operator !== ZERO;
     if (mismatched && !recovery) throw new SetupError('OPERATOR_RECOVERY_REQUIRED', 'The onchain operator is not this local signer. Call prepareOperatorRecovery with the currently bound operator address. It prepares an OWNER-REVIEWED rebind only; no key import or automatic replacement.');

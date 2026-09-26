@@ -2,18 +2,25 @@
   "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
   "name": "agent-capital-tree",
   "version": "0.1.0",
-  "description": "Inspect and operate bounded Agent Capital Tree mandates through a local companion.",
-  "author": { "name": "CodeByNikolas" },
+  "description": "Kanoki \u2014 Agent Capital Tree. Inspect vaults and request bounded actions through a local companion.",
+  "author": {
+    "name": "CodeByNikolas"
+  },
   "extensions": {
     "com.openai": {
       "interface": {
-        "displayName": "Agent Capital Tree",
-        "shortDescription": "Inspect and operate your delegated capital tree",
-        "longDescription": "Use local MCP tools to inspect mandates and request bounded on-chain actions through your own runtime companion.",
+        "displayName": "Kanoki",
+        "shortDescription": "Agent Capital Tree",
+        "longDescription": "Kanoki \u2014 Agent Capital Tree. Inspect balances, capabilities and inherited limits through your local companion.",
         "developerName": "CodeByNikolas",
         "category": "Productivity",
-        "capabilities": ["Read", "Write"],
-        "defaultPrompt": ["Show my Agent Capital Tree and the effective mandate for each node."]
+        "capabilities": [
+          "Read",
+          "Write"
+        ],
+        "defaultPrompt": [
+          "Show my Kanoki tree and each node\u2019s capabilities."
+        ]
       }
     }
   }
