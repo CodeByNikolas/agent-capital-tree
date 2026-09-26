@@ -88,6 +88,8 @@ interface DashboardProps {
   vaultQuery: string | null;
   nodeQuery?: string | null;
   actionQuery?: WalletActionMode;
+  demoLabel?: string | null;
+  demoBudget?: string | null;
   view: "overview" | "tree" | "activity" | "applications" | "mcp" | "setup";
   tour?: boolean;
   step?: number;
@@ -1243,7 +1245,7 @@ function Footer({ source, walletConnected, vaultQuery }: { source: DataSource; w
   );
 }
 
-export function Dashboard({ data: initialData, deployment, vaultQuery, nodeQuery, actionQuery, view, onboarding = false, tour = false, step = 1 }: DashboardProps) {
+export function Dashboard({ data: initialData, deployment, vaultQuery, nodeQuery, actionQuery, demoLabel, demoBudget, view, onboarding = false, tour = false, step = 1 }: DashboardProps) {
   const router = useRouter();
   const vaultKey = vaultQuery?.toLowerCase() ?? null;
   const [selectedId, setSelectedId] = useState(nodeQuery ?? initialData.rootId);
@@ -1487,7 +1489,9 @@ export function Dashboard({ data: initialData, deployment, vaultQuery, nodeQuery
             notice={notice}
             mode="create-root"
             onModeChange={setWalletActionMode}
-            onRootCreated={(vaultAddress) => router.push(`/setup?vault=${encodeURIComponent(vaultAddress)}`)}
+            onRootCreated={(vaultAddress) => router.push(`/setup?vault=${encodeURIComponent(vaultAddress)}${demoBudget ? `&action=fund-root&budget=${demoBudget}` : ""}`)}
+            demoLabel={demoLabel}
+            demoBudget={demoBudget}
           />}
           <nav className="onboarding-links" aria-label="Explore and get started">
             <Link href="/tree?preview=1"><Layers3 size={18} aria-hidden="true" /><span>Explore sample data</span><ArrowRight size={16} aria-hidden="true" /></Link>
@@ -1572,9 +1576,11 @@ export function Dashboard({ data: initialData, deployment, vaultQuery, nodeQuery
             mode={walletActionMode}
             onModeChange={setWalletActionMode}
             onRootCreated={(vaultAddress) => {
-              setWalletActionMode(null);
-              router.push(`/setup?vault=${encodeURIComponent(vaultAddress)}`);
+              setWalletActionMode(demoBudget ? "fund-root" : null);
+              router.push(`/setup?vault=${encodeURIComponent(vaultAddress)}${demoBudget ? `&action=fund-root&budget=${demoBudget}` : ""}`);
             }}
+            demoLabel={demoLabel}
+            demoBudget={demoBudget}
           />
           <details className="setup-disclosure">
             <summary>Deployment &amp; integration status</summary>

@@ -25,8 +25,8 @@ const installBash = `test -f "$PWD/scripts/mcp-readonly-server.mjs" || { echo 'R
 codex mcp add capital_tree_readonly -- "$(command -v node)" "$PWD/scripts/mcp-readonly-server.mjs"
 codex mcp get capital_tree_readonly --json`;
 
-const chatPrompt = `Use the capital_tree_readonly MCP server's getTree tool with rootId "1". Report source.chainId, source.blockNumber, source.observedAt, node count and root vault. Do not use shell, web browsing, another tool or any write action.`;
-const imagePrompt = `Call capital_tree_readonly.visualizeTree with rootId "1" and show its PNG tree diagram. State the Sepolia block number and observed time. Do not use shell, web or write tools.`;
+const chatPrompt = `Call capital_tree_readonly.getTree with query "hello.agentcapitalusdc.eth". Show the returned tree image in this chat and report its Sepolia block, observed time, Test-USDC balance and actual authorized actions. Do not use shell or web.`;
+const imagePrompt = `For a new test vault, call capital_tree_readonly.prepareRootSetup with label "my-demo-agent" and budgetRaw "100000". Give me its wallet-review link; do not claim any transaction was sent.`;
 
 export function McpPanel({
   deployment,
@@ -148,8 +148,8 @@ export function McpPanel({
         </div>
         <p className="mcp-lede">
           Run these commands from a checkout containing <code>package.json</code>. If you are already in the project,
-          do not clone it again. The automated checks are temporary; the next step registers a persistent two-tool
-          read-only MCP for Codex in the ChatGPT desktop app.
+          do not clone it again. The automated checks are temporary; the next step registers a persistent keyless
+          MCP for Codex in the ChatGPT desktop app.
         </p>
 
         <ol className="setup-steps mcp-steps">
@@ -190,13 +190,13 @@ export function McpPanel({
               <strong>Call it from a new Codex chat</strong>
               <small>
                 Type <code>/mcp</code> in Codex and confirm <code>capital_tree_readonly</code>, then send this prompt.
-                Expect chain 11155111, two demo nodes and a recent block. This is a real MCP tool call, not a dashboard
+                Expect chain 11155111, the hello root and a recent block. This is a real MCP tool call, not a dashboard
                 connection indicator.
               </small>
               <CopyBlock code={chatPrompt} label="read-only Codex chat prompt" />
-              <CopyBlock code={imagePrompt} label="render the live agent tree inside the chat" />
+              <CopyBlock code={imagePrompt} label="prepare a wallet-approved root from chat" />
               <small>
-                The PNG tool result also contains a Mermaid fallback. For an independent foreground connection status
+                Every Tree result contains a PNG and Mermaid fallback from the same block. For an independent foreground connection status
                 window, run <code>pnpm mcp:desktop</code>; Codex and Claude start their own STDIO connections.
               </small>
             </div>
@@ -206,9 +206,9 @@ export function McpPanel({
             <div>
               <strong>Financial actions are a separate setup</strong>
               <small>
-                The full 16-tool plugin needs the authenticated Linux companion, your own wallet/operator, Sepolia RPC
-                and CLIProxyAPI. On Windows use WSL2. Follow <code>docs/local-setup.md</code>; do not reuse the completed
-                demo root. ChatGPT web does not run this local STDIO MCP.
+                Root creation and funding are signed in the browser wallet opened from the chat link. Later Child creation,
+                delegation and recovery use the 16-tool Linux companion, an authorized operator and CLIProxyAPI; no
+                owner-wallet popup is needed for each Child. On Windows use WSL2. ChatGPT web cannot run this local STDIO MCP.
               </small>
             </div>
           </li>
@@ -224,7 +224,7 @@ export function McpPanel({
           </h2>
         </div>
         <ul className="mcp-security-list">
-          <li>The read-only chat server holds no wallet key or provider credential and exposes no write tools.</li>
+          <li>The keyless chat server holds no wallet key or provider credential. Its setup link never signs a transaction.</li>
           <li>In full Linux companion mode, the MCP token is a local <code>0600</code> file, re-issued on every start and never printed to the terminal.</li>
           <li>The companion binds the bearer to the real root/worker context; a model-supplied <code>agentId</code> is rejected.</li>
           <li>On an uncertain write, tools never claim success — reconcile with <code>getOperationStatus</code> or the chain before retrying.</li>

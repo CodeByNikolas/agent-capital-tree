@@ -14,7 +14,7 @@ export const mcpTools: readonly McpTool[] = [
   {
     name: "getTree",
     description:
-      "Read a capital tree at one current RPC block: each node's named authorizedActions, the authorizedCapabilities bitmask, balances and LP state.",
+      "Resolve a root ID, full ENS name or vault address and return JSON plus a chat image from one Sepolia block: actual rights, balances and parent graph.",
     readOnly: true,
   },
   {
