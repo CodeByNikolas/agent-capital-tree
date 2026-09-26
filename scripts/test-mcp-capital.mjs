@@ -20,7 +20,7 @@ async function call(name, args) {
 try {
   await client.connect(transport, { timeout: 60000 });
   const listed = await client.listTools();
-  assert.equal(listed.tools.length, 21);
+  assert.equal(listed.tools.length, 23);
   assert.ok(listed.tools.some(tool => tool.name === 'createChildVault'));
   const rootSetup = await call('prepareRootSetup', { label: 'read-proof-not-created', budgetRaw: '50000', openBrowser: false });
   assert.equal(rootSetup.data.browser.opened, false);
@@ -28,7 +28,7 @@ try {
   assert.equal(setup.data.chainId, 11155111);
   assert.equal(setup.data.mode, 'capital');
   assert.equal(setup.data.writesEnabled, false);
-  const blocked = await call('createChildVault', { operationKey: `0x${'b'.repeat(64)}`, name: 'read-proof-not-sent',
+  const blocked = await call('createChildVault', { expectedRootId: '3', operationKey: `0x${'b'.repeat(64)}`, name: 'read-proof-not-sent',
     asset: '0x1c7D4B196Cb0C7B01d743Fbc6116a902379C7238', amount: '50000', restrictions: {} });
   assert.equal(blocked.data.status, 'blocked');
   assert.equal(blocked.data.transactionSubmitted, false);

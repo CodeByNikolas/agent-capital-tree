@@ -22,7 +22,7 @@ pnpm mcp:capital settings YOUR_INTENDED_ROOT_ENS_NAME --enable-sepolia-writes
 
 ```
 
-First choose a new lowercase root label and derive its ENS name under `agentcapitalvault.eth`. `settings` only prints the registration; the MCP catalog loads before this root exists. After registration, call `prepareRootSetup` to open the wallet setup, sign the root creation, then call `getCapitalSetup` and `prepareCapitalSetup` for the new root. `settings` prints the real command/argument list for Codex STDIO or a Claude `mcpServers` entry. Merge only that entry, preserving unrelated servers. Use one Capital Tree connection for the demo, not the older three-tool read-only server alongside it. Register in PowerShell:
+First choose a new lowercase root label and derive its ENS name under `agentcapitalvault.eth`. `settings` only prints the registration; the MCP catalog loads before this root exists. After registration, call `prepareRootSetup`, sign creation, then **`selectCapitalRoot({query: "your-label.agentcapitalvault.eth"})`**, `getCapitalSetup`, and `prepareCapitalSetup` with the reported `expectedRootId`. Selection changes the current session only and does not require a restart. Reads never change the write target. `settings` prints the real command/argument list for Codex STDIO or a Claude `mcpServers` entry. Preserve unrelated servers. Register in PowerShell:
 
 ```powershell
 $actScript = (Resolve-Path -LiteralPath 'packages/runtime/capital.mjs').Path
@@ -32,7 +32,7 @@ codex mcp get capital_tree_demo --json
 
 ```
 
-Restart that MCP connection/open a new chat once to refresh the tool catalog. There are **21 tools**: 17 companion operations plus four read/setup tools. They remain visible before wallet setup; unavailable optional workers/history/services do not become fake success. The CLI's `--enable-sepolia-writes` is an explicit local gate, not onchain authorization. Omit it for read-only testing. Codex may additionally request tool approval according to its own policy.
+Restart that MCP connection/open a new chat once after updating the server code to refresh the tool catalog. There are **23 tools**: 17 companion operations plus six read/setup helpers. They remain visible before wallet setup; optional workers/history/services report unavailable. The CLI's `--enable-sepolia-writes` is a local gate, not onchain authorization. Every write also confirms `expectedRootId`; profile, signer, chain and native gas are checked before forwarding. A new session starts at its configured root, so explicitly select another root again if needed.
 
 Chat: “Call `getCapitalSetup` for 50000 raw Test-USDC and show every returned image. List all missing requirements. Do not send a transaction.” After the root exists, use `prepareCapitalSetup` only when needed. It reuses an existing matching private profile, or prepares a new agent key for an unbound root, and opens the normal system browser with public address and demo limits prefilled. Review the full address and limits in your wallet. URL parameters are suggestions, not trusted authorization.
 
@@ -42,7 +42,21 @@ The intended short demo: `getCapitalSetup` → `createChildVault` named `my-demo
 
 If an existing bound operator key is not found, point `--runtime-root` at its existing private Linux directory. Never silently create a replacement: rebinding invalidates the authority generation. Multiple matching profiles require explicit selection. Old worker/gas state must be reconciled in worker mode before switching modes. Secrets stay in owner-only Linux storage outside Git and Windows mounts.
 
-Read-only acceptance: `node scripts/test-mcp-capital.mjs` (21 tools, real Sepolia reads, PNGs, disabled write rejected). This is not a public Child/recovery E2E. See STATUS.md. `spawnChild` remains the separate autonomous-worker path and needs Docker plus native Codex authentication (OpenAI API key preferred or ChatGPT login). CLIProxyAPI is an optional explicit provider. The worker instructions below describe the separately configured autonomous path.
+Read-only acceptance: `node scripts/test-mcp-capital.mjs` (23 tools, Sepolia reads, PNGs, disabled write rejected). This is not a public Child/recovery E2E. See STATUS.md. `spawnChild` remains the separate autonomous-worker path and needs Docker plus native Codex authentication (OpenAI API key preferred or ChatGPT login). CLIProxyAPI is optional. These capabilities remain intact on main; capital mode does not configure or launch them.
+
+### Existing owner-bound root: safe recovery
+
+If the bound operator is your wallet but no matching private local signer exists, do **not** import the owner key or repeat funding. Select the intended root, call `getCapitalSetup`, then `prepareOperatorRecovery` with `expectedRootId`, the observed `expectedBoundOperator`, `budgetRaw: "100000"`, and `openBrowser: true`. The tool creates/reuses a separate encrypted local key and lists exact owner-wallet actions. It does not replace the operator onchain. Review the new address, delegate/restrict/reclaim rights and per-action limit. Signing an operator change invalidates older mandates, not ownership or funds. The wallet separately tops the local key up to 0.01 native Sepolia ETH; fees are estimated again before each child write.
+
+The demo budget maximum is **100000 raw units = 0.10 Test-USDC across the whole tree**, not per child or an onchain balance cap. Two `createChildVault` calls with `amount: "20000"`, distinct stable operation keys and narrower rights leave 60000 raw at the root. Retrying each exact key/arguments returns the same child. Never use `allocateCapital` as a retry: that tool is a separate additional transfer, not child-creation reconciliation.
+
+The user's funded historical root is `root-agent.agentcapitalusdc.eth`, vault `0xC9c7926191b7928F838579D74CdA380A66A8CD9A`, **controller `0x17a932987f3cAcFec067c4C1bbE6946963d87F13`**, root 4. It is NOT root 4 on the current `agentcapitalvault.eth` deployment. Its explicit recovery registration adds `--deployment usdc-full-vaults`:
+
+```powershell
+codex mcp add capital_tree_demo -- $actNode $actScript stdio root-agent.agentcapitalusdc.eth --deployment usdc-full-vaults --enable-sepolia-writes
+```
+
+This recovery connection uses the preserved historical manifest and the separate recovery site, does not migrate funds and cannot create new roots. The canonical app stays on the current deployment. `node scripts/test-capital-onboarding.mjs` checks this exact historical root without writes. `--prepare-recovery` prepares a private local key only; `--execute-demo` sends the two authorized 0.02-USDC allocations only after all checks pass and reuses fixed operation keys on repeats. Do not run it before owner authorization and gas are confirmed. Public evidence is written under `artifacts/ui/root-4-*`; no secret is exported.
 
 ## Fast jury check: read-only MCP on Windows, macOS or Linux
 

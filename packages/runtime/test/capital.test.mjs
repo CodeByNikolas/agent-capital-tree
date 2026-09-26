@@ -63,7 +63,7 @@ test('capital companion has no Docker launcher, broker or provider configuration
 });
 
 test('one snapshot checklist lists ALL blockers and distinguishes ETH gas from USDC', () => {
-  const tree = { rootId: 3n, tokens: [TEST_USDC, controller], owner: controller, operator: controller,
+  const tree = { rootId: 3n, totalBalances: [100000n, 0n], tokens: [TEST_USDC, controller], owner: controller, operator: controller,
     nodes: [{ id: 3n, ensName: 'hello.agentcapitalusdc.eth', vault: controller, balances: [100000n, 0n],
       authorizedActions: [], effectivePolicy: { maxAmounts: [0n, 0n], tokenMask: 0 } }],
     source: { chainId: 11155111, blockNumber: 42n } };

@@ -128,9 +128,17 @@ export class OnchainSpawnChain implements SpawnChain {
       if (current.operation.nodeId !== 0n) return;
       const common = { address: this.config.controller, abi: capitalControllerAbi, account: current.account };
       const args = [current.parentId, current.label, current.childAccount.address, current.policy, current.amounts, request.operationKey] as const;
-      const simulation = await this.client.rpc.simulateContract({ ...common, functionName: 'spawnChild', args });
+      await this.client.rpc.simulateContract({ ...common, functionName: 'spawnChild', args });
+      const gas = await this.client.rpc.estimateContractGas({ ...common, functionName: 'spawnChild', args });
+      const fees = await this.client.rpc.estimateFeesPerGas();
+      const gasLimit = gas * 120n / 100n;
+      const required = gasLimit * fees.maxFeePerGas;
+      if (await this.client.rpc.getBalance({ address: current.account.address }) < required) {
+        throw new Error('Insufficient native Sepolia ETH for estimated child transaction fees; no transaction submitted');
+      }
       const wallet = createWalletClient({ account: current.account, chain: sepolia, transport: http(this.config.rpcUrl) });
-      const hash = await wallet.writeContract(simulation.request);
+      const hash = await wallet.writeContract({ ...common, functionName: 'spawnChild', args, gas: gasLimit,
+        maxFeePerGas: fees.maxFeePerGas, maxPriorityFeePerGas: fees.maxPriorityFeePerGas });
       this.#sent.set(current.keyId, hash);
       const receipt = await this.client.rpc.waitForTransactionReceipt({ hash, confirmations: 2, timeout: 120_000 });
       if (receipt.status !== 'success') throw new Error('spawn transaction reverted');

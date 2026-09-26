@@ -1,0 +1,231 @@
+{
+  "observedAt": "2026-09-26T19:56:45.282Z",
+  "controller": "0x17a932987f3cAcFec067c4C1bbE6946963d87F13",
+  "root": "root-agent.agentcapitalusdc.eth",
+  "transactions": [],
+  "worker": "not_requested",
+  "publicWritesRequested": false,
+  "setup": {
+    "mode": "capital",
+    "chainId": 11155111,
+    "rootId": "4",
+    "ensName": "root-agent.agentcapitalusdc.eth",
+    "vault": "0xC9c7926191b7928F838579D74CdA380A66A8CD9A",
+    "owner": "0x4E09c220BD556396Bc255A4DD24F858Bafeba6f5",
+    "boundOperator": "0x4E09c220BD556396Bc255A4DD24F858Bafeba6f5",
+    "localOperator": "0x6a315378E72DA53BE17EE142674A93c7B0DFf13b",
+    "budgetRaw": "100000",
+    "usdcBalanceRaw": "100000",
+    "usdcLimitRaw": "100000",
+    "totalUsdcBalanceRaw": "100000",
+    "fundingShortfallRaw": "0",
+    "onchainRights": [
+      "delegate",
+      "restrict",
+      "reclaim"
+    ],
+    "operatorGasAddress": "0x6a315378E72DA53BE17EE142674A93c7B0DFf13b",
+    "operatorGasWei": "0",
+    "checks": {
+      "localKey": true,
+      "operatorBound": false,
+      "delegation": true,
+      "restriction": true,
+      "recovery": true,
+      "usdcAllowed": true,
+      "usdcLimit": true,
+      "vaultFunded": true,
+      "operatorHasGas": false
+    },
+    "missing": [
+      "operatorBound",
+      "operatorHasGas"
+    ],
+    "prerequisitesMet": false,
+    "source": {
+      "kind": "rpc",
+      "chainId": 11155111,
+      "blockNumber": "11788401",
+      "blockHash": "0xde52ddd9a169ecc618c3bafaaea9b919de52fdcd818922409dce2d9dd7a9efe3",
+      "timestamp": "1790452620",
+      "observedAt": "2026-09-26T19:57:03.735Z"
+    },
+    "gasNote": "A positive ETH balance is not a gas estimate. Each transaction still requires simulation and sufficient fees. USDC approval is not an ETH transfer.",
+    "inference": "Current chat; no background worker, Docker, CLIProxyAPI or model API key required.",
+    "controller": "0x17a932987f3cAcFec067c4C1bbE6946963d87F13",
+    "namespace": "agentcapitalusdc.eth",
+    "activeMcpRootId": "4",
+    "writesEnabled": false,
+    "writeReady": false,
+    "readinessScope": "Setup prerequisites only; each action still requires a fresh policy, balance, simulation and fee check.",
+    "localProfile": "/home/rami/.agent-capital-tree/capital-0x17a932987f3cacfec067c4c1bbe6946963d87f13-4",
+    "toolVersion": "capital-demo-2",
+    "backgroundWorker": "not_requested",
+    "budgetMeaning": "Shared tree capital, not a per-child allowance. Internal delegations are not deposits. The demo input cap is not an onchain balance cap.",
+    "url": "https://agent-capital-tree-silk.vercel.app/setup?vault=root-agent.agentcapitalusdc.eth&action=set-root-operator&operator=0x6a315378E72DA53BE17EE142674A93c7B0DFf13b&budget=100000",
+    "browser": {
+      "opened": false,
+      "method": "not-requested",
+      "walletDetected": false
+    },
+    "walletActions": [
+      {
+        "action": "authorize-agent",
+        "url": "https://agent-capital-tree-silk.vercel.app/setup?vault=root-agent.agentcapitalusdc.eth&action=set-root-operator&operator=0x6a315378E72DA53BE17EE142674A93c7B0DFf13b&budget=100000",
+        "owner": "0x4E09c220BD556396Bc255A4DD24F858Bafeba6f5",
+        "previousOperator": "0x4E09c220BD556396Bc255A4DD24F858Bafeba6f5",
+        "newOperator": "0x6a315378E72DA53BE17EE142674A93c7B0DFf13b",
+        "maxTestUsdcPerActionRaw": "100000",
+        "rights": [
+          "delegate",
+          "restrict",
+          "reclaim"
+        ],
+        "effect": "Owner-signed operator change increments authority generation and invalidates existing mandates (0 existing children). Owner and vault funds are unchanged."
+      },
+      {
+        "action": "fund-agent-gas",
+        "url": "https://agent-capital-tree-silk.vercel.app/setup?vault=root-agent.agentcapitalusdc.eth&action=fund-operator-gas&operator=0x6a315378E72DA53BE17EE142674A93c7B0DFf13b&budget=100000",
+        "recipient": "0x6a315378E72DA53BE17EE142674A93c7B0DFf13b",
+        "asset": "native Sepolia ETH",
+        "targetBalanceWei": "10000000000000000",
+        "amountWei": "10000000000000000",
+        "note": "Top up to 0.01 Sepolia ETH; wallet rechecks the balance before signing. Reserve, not a fee guarantee. Not USDC, not an approval. Unused ETH stays with this local signer."
+      }
+    ],
+    "transactionSubmitted": false,
+    "next": "Owner reviews the listed wallet actions. Existing funding is counted across the tree; do not deposit again. Then call getCapitalSetup in this SAME MCP session; no root-switch restart is needed."
+  },
+  "tree": {
+    "rootId": "4",
+    "owner": "0x4E09c220BD556396Bc255A4DD24F858Bafeba6f5",
+    "operator": "0x4E09c220BD556396Bc255A4DD24F858Bafeba6f5",
+    "generation": "1",
+    "tokens": [
+      "0x1c7D4B196Cb0C7B01d743Fbc6116a902379C7238",
+      "0x892e744064E80211d4a69A9cc0f98FE6815157Cf"
+    ],
+    "nodes": [
+      {
+        "id": "4",
+        "parentId": "0",
+        "rootId": "4",
+        "generation": "1",
+        "depth": 1,
+        "revoked": false,
+        "agent": "0x4E09c220BD556396Bc255A4DD24F858Bafeba6f5",
+        "vault": "0xC9c7926191b7928F838579D74CdA380A66A8CD9A",
+        "registry": "0xE4E51fd9bEB12B77441740F4dfd1274829b5Ddf6",
+        "childRegistry": "0x774C8352C8Ff85bb6455797328102dD792b2399D",
+        "resource": "77050746950920052490574977801336379828262515522371405666088073210826518953984",
+        "label": "root-agent",
+        "policy": {
+          "capabilities": "19599666677828026368",
+          "maxAmounts": [
+            "100000",
+            "0"
+          ],
+          "expiry": "1821916799",
+          "tokenMask": 1,
+          "poolId": "0x0000000000000000000000000000000000000000000000000000000000000000"
+        },
+        "effectivePolicy": {
+          "capabilities": "19599666677828026368",
+          "maxAmounts": [
+            "100000",
+            "0"
+          ],
+          "expiry": "1821916799",
+          "tokenMask": 1,
+          "poolId": "0x0000000000000000000000000000000000000000000000000000000000000000"
+        },
+        "balances": [
+          "100000",
+          "0"
+        ],
+        "position": {
+          "tokenId": "0",
+          "liquidity": "0"
+        },
+        "authorizedCapabilities": "19599666677828026368",
+        "authorizedActions": [
+          "delegate",
+          "restrict",
+          "reclaim"
+        ],
+        "ensName": "root-agent.agentcapitalusdc.eth"
+      }
+    ],
+    "totalBalances": [
+      "100000",
+      "0"
+    ],
+    "source": {
+      "kind": "rpc",
+      "chainId": 11155111,
+      "blockNumber": "11788401",
+      "blockHash": "0xde52ddd9a169ecc618c3bafaaea9b919de52fdcd818922409dce2d9dd7a9efe3",
+      "timestamp": "1790452620",
+      "observedAt": "2026-09-26T19:57:07.477Z"
+    },
+    "selectedNodeId": "4",
+    "mcp": {
+      "mode": "capital",
+      "chainId": 11155111,
+      "rootId": "4",
+      "ensName": "root-agent.agentcapitalusdc.eth",
+      "vault": "0xC9c7926191b7928F838579D74CdA380A66A8CD9A",
+      "owner": "0x4E09c220BD556396Bc255A4DD24F858Bafeba6f5",
+      "boundOperator": "0x4E09c220BD556396Bc255A4DD24F858Bafeba6f5",
+      "localOperator": "0x6a315378E72DA53BE17EE142674A93c7B0DFf13b",
+      "budgetRaw": "100000",
+      "usdcBalanceRaw": "100000",
+      "usdcLimitRaw": "100000",
+      "totalUsdcBalanceRaw": "100000",
+      "fundingShortfallRaw": "0",
+      "onchainRights": [
+        "delegate",
+        "restrict",
+        "reclaim"
+      ],
+      "operatorGasAddress": "0x6a315378E72DA53BE17EE142674A93c7B0DFf13b",
+      "operatorGasWei": "0",
+      "checks": {
+        "localKey": true,
+        "operatorBound": false,
+        "delegation": true,
+        "restriction": true,
+        "recovery": true,
+        "usdcAllowed": true,
+        "usdcLimit": true,
+        "vaultFunded": true,
+        "operatorHasGas": false
+      },
+      "missing": [
+        "operatorBound",
+        "operatorHasGas"
+      ],
+      "prerequisitesMet": false,
+      "source": {
+        "kind": "rpc",
+        "chainId": 11155111,
+        "blockNumber": "11788401",
+        "blockHash": "0xde52ddd9a169ecc618c3bafaaea9b919de52fdcd818922409dce2d9dd7a9efe3",
+        "timestamp": "1790452620",
+        "observedAt": "2026-09-26T19:57:07.477Z"
+      },
+      "gasNote": "A positive ETH balance is not a gas estimate. Each transaction still requires simulation and sufficient fees. USDC approval is not an ETH transfer.",
+      "inference": "Current chat; no background worker, Docker, CLIProxyAPI or model API key required.",
+      "controller": "0x17a932987f3cAcFec067c4C1bbE6946963d87F13",
+      "namespace": "agentcapitalusdc.eth",
+      "activeMcpRootId": "4",
+      "writesEnabled": false,
+      "writeReady": false,
+      "readinessScope": "Setup prerequisites only; each action still requires a fresh policy, balance, simulation and fee check.",
+      "localProfile": "/home/rami/.agent-capital-tree/capital-0x17a932987f3cacfec067c4c1bbe6946963d87f13-4",
+      "toolVersion": "capital-demo-2",
+      "backgroundWorker": "not_requested",
+      "budgetMeaning": "Shared tree capital, not a per-child allowance. Internal delegations are not deposits. The demo input cap is not an onchain balance cap."
+    }
+  }
+}

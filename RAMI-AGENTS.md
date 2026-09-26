@@ -1,5 +1,9 @@
 # RAMI-AGENTS.md — Arbeitsanweisungen für Ramis Agenten
 
+## Current override — main only
+
+User instruction, 26 September: all new commits and pushes go to `main`. Do not continue work on or publish to `work/rami`. Older branch instructions below are historical and superseded. Integrate in an isolated worktree, retain other contributors' changes and distinguish the historical `agentcapitalusdc.eth` recovery controller from the current `agentcapitalvault.eth` deployment. Never repeat completed funding or worker runs.
+
 > **Nur für Ramis Agenten** (Claude Code, Codex, o. Ä.). Rami referenziert diese Datei
 > zu Beginn jeder Session ("lies RAMI-AGENTS.md"). Sie **ersetzt nicht** die geteilte
 > `AGENTS.md` des Projekts, sondern **ergänzt** sie. Der Agent einer anderen Person soll

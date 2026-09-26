@@ -60,12 +60,22 @@ export function capitalClient(rpcUrl: string, controllerAddress: Address): Capit
     await verifyDeployment();
     const block = await read(() => rpc.getBlock(blockNumber === undefined ? {} : { blockNumber }));
     const at = { blockNumber: block.number };
+    // A confirmed InvalidNode revert is distinguishable from a transport outage.
+    const rootIds = async () => {
+      try { return await read(() => controller.read.getRootNodeIds([rootId], at)); }
+      catch (error) {
+        const cause = error instanceof BaseError ? error.walk(item => item instanceof ContractFunctionRevertedError) : undefined;
+        if (cause instanceof ContractFunctionRevertedError && cause.data?.errorName === 'InvalidNode') throw new Error('Root not found in this Sepolia deployment');
+        throw error;
+      }
+    };
     const [ids, owner, operator, generation, token0, token1, namespace] = await Promise.all([
-      read(() => controller.read.getRootNodeIds([rootId], at)), read(() => controller.read.rootOwner([rootId], at)),
+      rootIds(), read(() => controller.read.rootOwner([rootId], at)),
       read(() => controller.read.rootOperator([rootId], at)), read(() => controller.read.rootGeneration([rootId], at)),
       read(() => controller.read.TOKEN0(at)), read(() => controller.read.TOKEN1(at)), read(() => controller.read.namespaceLabel(at)),
     ]);
-    if (!ids.length || ids.length > 32) throw new Error('Invalid root tree');
+    if (!ids.length) throw new Error('Root not found in this Sepolia deployment');
+    if (ids.length > 32) throw new Error('Invalid root tree');
     const tokens = [token0, token1] as const;
     const nodes = await Promise.all(ids.map(async id => {
       const node = await read(() => controller.read.getNode([id], at));

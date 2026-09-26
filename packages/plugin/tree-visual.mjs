@@ -28,7 +28,7 @@ function state(tree, node) {
   if (node.revoked) return 'REVOKED';
   if (BigInt(node.generation) !== BigInt(tree.generation)) return 'STALE MANDATE';
   if (BigInt(node.effectivePolicy.expiry) <= BigInt(tree.source.timestamp)) return 'EXPIRED';
-  return node.authorizedActions?.length ? 'AUTHORIZED' : 'NO ACTIVE RIGHTS';
+  return node.authorizedActions?.length ? 'ONCHAIN RIGHTS' : 'NO ACTIVE RIGHTS';
 }
 
 export function treeAsMermaid(tree) {
@@ -47,7 +47,7 @@ export function treeAsSvg(tree, page = 0) {
   const all = sortedNodes(tree), pages = Math.ceil(all.length/NODES_PER_PAGE);
   if (!Number.isInteger(page) || page < 0 || page >= pages) throw new Error('Invalid tree page');
   const ordered = all.slice(page*NODES_PER_PAGE, (page+1)*NODES_PER_PAGE);
-  let cursor = 266;
+  let cursor = tree.mcp ? 480 : 266;
   const positions = new Map();
   for (const { node, depth } of ordered) {
     const nameLines = lines(node.ensName, 58-depth*4);
@@ -60,15 +60,26 @@ export function treeAsSvg(tree, page = 0) {
   let body = rect(32, 167, 976, 76, t.soft);
   body += text(52, 191, 'FREE TEST-USDC ACROSS VAULTS', { size: 12, color:t.mutedForeground, mono:true });
   body += text(52, 222, amount(total), { size: 25, weight:800 });
-  body += text(438, 191, 'AGENTS', { size: 12, color:t.mutedForeground, mono:true });
+  body += text(438, 191, 'VAULTS', { size: 12, color:t.mutedForeground, mono:true });
   body += text(438, 222, all.length, { size: 25, weight:800 });
   body += text(622, 191, `BLOCK ${tree.source.blockNumber}`, { size: 13, color:t.primary, mono:true });
   body += text(622, 218, tree.source.observedAt, { size:12, mono:true, color:t.mutedForeground });
+  if (tree.mcp) {
+    const m = tree.mcp;
+    body += rect(32, 257, 976, 202, t.card, m.writeReady ? t.ring : t.border);
+    body += text(52, 282, `MCP ROOT #${m.activeMcpRootId} · VIEWED ROOT #${tree.rootId} · ${m.writeReady ? 'SETUP READY / ACTION CHECK REQUIRED' : 'NOT WRITE-READY'}`, {size:13,weight:800,color:m.writeReady?t.primary:t.destructive});
+    body += text(52, 309, `Onchain operator  ${tree.operator}`, {size:13,mono:true});
+    body += text(52, 334, `Local MCP signer  ${m.localOperator ?? 'Not prepared / not selected for this tree'}`, {size:13,mono:true});
+    body += text(52, 359, `Signer match: ${m.checks?.operatorBound ? 'YES' : 'NO'}   Local gas (wei): ${m.operatorGasWei ?? 'NOT CHECKED'}`, {size:13,mono:true,color:t.mutedForeground});
+    body += text(52, 384, `Missing: ${m.missing?.join(', ') || (String(m.activeMcpRootId)!==String(tree.rootId)?'Explicitly select this root before actions':'None; per-action simulation remains required')}`, {size:12,color:t.mutedForeground});
+    body += text(52, 410, 'Chat-managed vaults · This MCP launches no autonomous worker process', {size:13,color:t.primary});
+    body += text(52, 436, `Controller ${m.controller ?? 'See deployment manifest'}`, {size:12,mono:true,color:t.mutedForeground});
+  }
   for (const { node, depth } of ordered) {
     const p = positions.get(String(node.id)), parent = positions.get(String(node.parentId));
     const width = WIDTH-p.x-32, selected = String(tree.selectedNodeId) === String(node.id);
     if (parent) body += `<path d="M ${parent.x+14} ${parent.y+parent.height} V ${p.y+30} H ${p.x}" fill="none" stroke="${t.ring}" stroke-width="2"/>`;
-    const status = state(tree, node), accent = status === 'AUTHORIZED' ? t.primary : t.destructive;
+    const status = state(tree, node), accent = status === 'ONCHAIN RIGHTS' ? t.primary : t.destructive;
     body += rect(p.x,p.y,width,p.height,selected?t.accent:t.card,selected?t.ring:t.border);
     body += rect(p.x+18,p.y+18,30,30,t.soft,t.border,7);
     body += text(p.x+33,p.y+39,depth===0?'R':'A',{ size:15, color:t.primary, weight:800, anchor:'middle' });

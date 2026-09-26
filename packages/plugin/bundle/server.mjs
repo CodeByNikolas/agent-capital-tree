@@ -28522,6 +28522,10 @@ var toolSpecs = {
 
 // src/runtime-client.ts
 var RuntimeError = class extends Error {
+  constructor(message, code) {
+    super(message);
+    this.code = code;
+  }
 };
 var RuntimeClient = class {
   constructor(endpoint, bearer, request = fetch) {
@@ -28554,7 +28558,11 @@ var RuntimeClient = class {
     } catch {
       throw new RuntimeError("Local runtime is unavailable. No operation was confirmed. Reconcile status before retrying a write.");
     }
-    if (!response.ok) throw new RuntimeError(`Local runtime rejected ${name} (HTTP ${response.status}). No success was reported; reconcile status before retrying a write.`);
+    if (!response.ok) {
+      const failure2 = await response.json().catch(() => ({}));
+      if (failure2.code === "INSUFFICIENT_GAS") throw new RuntimeError("Native Sepolia ETH does not cover estimated fees. No transaction submitted.", "INSUFFICIENT_GAS");
+      throw new RuntimeError(`Local runtime rejected ${name} (HTTP ${response.status}). No success was reported; reconcile status before retrying a write.`);
+    }
     try {
       return await response.json();
     } catch {
@@ -30989,7 +30997,7 @@ function state(tree, node2) {
   if (node2.revoked) return "REVOKED";
   if (BigInt(node2.generation) !== BigInt(tree.generation)) return "STALE MANDATE";
   if (BigInt(node2.effectivePolicy.expiry) <= BigInt(tree.source.timestamp)) return "EXPIRED";
-  return node2.authorizedActions?.length ? "AUTHORIZED" : "NO ACTIVE RIGHTS";
+  return node2.authorizedActions?.length ? "ONCHAIN RIGHTS" : "NO ACTIVE RIGHTS";
 }
 function treeAsMermaid(tree) {
   const result = ["flowchart TD"];
@@ -31006,7 +31014,7 @@ function treeAsSvg(tree, page = 0) {
   const all = sortedNodes(tree), pages = Math.ceil(all.length / NODES_PER_PAGE);
   if (!Number.isInteger(page) || page < 0 || page >= pages) throw new Error("Invalid tree page");
   const ordered = all.slice(page * NODES_PER_PAGE, (page + 1) * NODES_PER_PAGE);
-  let cursor = 266;
+  let cursor = tree.mcp ? 454 : 266;
   const positions = /* @__PURE__ */ new Map();
   for (const { node: node2, depth } of ordered) {
     const nameLines = lines(node2.ensName, 58 - depth * 4);
@@ -31019,15 +31027,25 @@ function treeAsSvg(tree, page = 0) {
   let body = rect(32, 167, 976, 76, theme.soft);
   body += text(52, 191, "FREE TEST-USDC ACROSS VAULTS", { size: 12, color: theme.mutedForeground, mono: true });
   body += text(52, 222, amount2(total), { size: 25, weight: 800 });
-  body += text(438, 191, "AGENTS", { size: 12, color: theme.mutedForeground, mono: true });
+  body += text(438, 191, "VAULTS", { size: 12, color: theme.mutedForeground, mono: true });
   body += text(438, 222, all.length, { size: 25, weight: 800 });
   body += text(622, 191, `BLOCK ${tree.source.blockNumber}`, { size: 13, color: theme.primary, mono: true });
   body += text(622, 218, tree.source.observedAt, { size: 12, mono: true, color: theme.mutedForeground });
+  if (tree.mcp) {
+    const m = tree.mcp;
+    body += rect(32, 257, 976, 176, theme.card, m.writeReady ? theme.ring : theme.border);
+    body += text(52, 282, `MCP ROOT #${m.activeMcpRootId} \xB7 VIEWED ROOT #${tree.rootId} \xB7 ${m.writeReady ? "SETUP READY / ACTION CHECK REQUIRED" : "NOT WRITE-READY"}`, { size: 13, weight: 800, color: m.writeReady ? theme.primary : theme.destructive });
+    body += text(52, 309, `Onchain operator  ${tree.operator}`, { size: 13, mono: true });
+    body += text(52, 334, `Local MCP signer  ${m.localOperator ?? "Not prepared / not selected for this tree"}`, { size: 13, mono: true });
+    body += text(52, 359, `Signer match: ${m.checks?.operatorBound ? "YES" : "NO"}   Local gas (wei): ${m.operatorGasWei ?? "NOT CHECKED"}`, { size: 13, mono: true, color: theme.mutedForeground });
+    body += text(52, 384, `Missing: ${m.missing?.join(", ") || (String(m.activeMcpRootId) !== String(tree.rootId) ? "Explicitly select this root before actions" : "None; per-action simulation remains required")}`, { size: 12, color: theme.mutedForeground });
+    body += text(52, 410, "Chat-managed vaults \xB7 This MCP launches no autonomous worker process", { size: 13, color: theme.primary });
+  }
   for (const { node: node2, depth } of ordered) {
     const p = positions.get(String(node2.id)), parent = positions.get(String(node2.parentId));
     const width = WIDTH - p.x - 32, selected = String(tree.selectedNodeId) === String(node2.id);
     if (parent) body += `<path d="M ${parent.x + 14} ${parent.y + parent.height} V ${p.y + 30} H ${p.x}" fill="none" stroke="${theme.ring}" stroke-width="2"/>`;
-    const status = state(tree, node2), accent = status === "AUTHORIZED" ? theme.primary : theme.destructive;
+    const status = state(tree, node2), accent = status === "ONCHAIN RIGHTS" ? theme.primary : theme.destructive;
     body += rect(p.x, p.y, width, p.height, selected ? theme.accent : theme.card, selected ? theme.ring : theme.border);
     body += rect(p.x + 18, p.y + 18, 30, 30, theme.soft, theme.border, 7);
     body += text(p.x + 33, p.y + 39, depth === 0 ? "R" : "A", { size: 15, color: theme.primary, weight: 800, anchor: "middle" });
@@ -31081,6 +31099,8 @@ var titles = {
   createChildVault: "Create a child vault",
   getCapitalSetup: "Capital demo readiness",
   prepareCapitalSetup: "Authorize your chat agent",
+  selectCapitalRoot: "Select the MCP root",
+  prepareOperatorRecovery: "Recover local agent access",
   getPaymentServices: "Available services",
   purchaseService: "Service payment",
   allocateCapital: "Delegate capital",
@@ -31114,14 +31134,20 @@ function toolView(name, args, data, { readOnly = true, isError = false, phase, r
     view.next = phase === "validation" ? "Correct the arguments. The handler was not executed." : readOnly ? "Retry the read once the connection is available." : "Reconcile operation status and chain state before retrying. A timeout does not prove failure.";
     return view;
   }
-  if (name === "getCapitalSetup" || name === "prepareCapitalSetup") {
+  if (["getCapitalSetup", "prepareCapitalSetup", "selectCapitalRoot", "prepareOperatorRecovery"].includes(name)) {
     view.status = d.prerequisitesMet ? "CHAIN CHECKS PASSED \xB7 REVIEW GAS FEES" : "SETUP INCOMPLETE \xB7 NO TRANSACTION";
-    row("Vault", d.ensName);
-    row("Native ETH gas (wei)", d.operatorGasWei);
-    row("Agent address", d.localOperator ?? "Not prepared");
+    row("Vault / active MCP root", `${d.ensName} / #${d.activeMcpRootId}`);
+    row("LOCAL ETH gas (wei)", d.operatorGasWei ?? "Not checked: local signer missing");
+    row("Onchain operator", d.boundOperator);
+    row("Controller", d.controller);
+    row("Onchain rights", d.onchainRights?.join(", ") || "None");
+    row("Local signer / match", `${d.localOperator ?? "Not prepared"} / ${d.checks?.operatorBound ? "MATCH" : "NO MATCH"}`);
     row("Test-USDC balance / limit", `${amount2(d.usdcBalanceRaw ?? 0)} / ${amount2(d.usdcLimitRaw ?? 0)}`);
+    row("Shared tree / still to fund", `${amount2(d.totalUsdcBalanceRaw ?? 0)} / ${amount2(d.fundingShortfallRaw ?? 0)} Test-USDC`);
     row("Missing requirements", Array.isArray(d.missing) ? d.missing.join(" \xB7 ") || "None" : "Unknown");
+    row("Write readiness", d.writeReady ? "Setup checks passed; action simulation and fee check required" : "BLOCKED");
     row("MCP writes", d.writesEnabled ? "Explicitly enabled; onchain policy still enforced" : "Disabled");
+    for (const action of d.walletActions ?? []) row("Wallet action", `${action.action}: ${action.recipient ?? action.newOperator ?? action.vault} ${action.amountWei ? `${action.amountWei} wei` : action.amountRaw ? `${action.amountRaw} raw USDC` : ""}`);
     row("Snapshot block", d.source?.blockNumber);
     row("Observed", d.source?.observedAt);
     row("Inference", "This chat. No Docker, model key or background AI worker.");
@@ -31150,7 +31176,7 @@ function toolView(name, args, data, { readOnly = true, isError = false, phase, r
     if (d.dispatchStatus === "allocation_confirmed_dispatch_unknown") view.status = "ALLOCATION CONFIRMED \xB7 WORKER UNKNOWN";
     if (d.recordedOnchain === false) view.status = "NO ALLOCATION RECORDED";
     row("Node", args.nodeId ?? args.childId ?? d.childId);
-    row("Root", args.rootId ?? d.rootId);
+    row("Target / active MCP root", d.targetRootId ?? args.expectedRootId ?? args.rootId ?? d.rootId);
     row("Transaction", d.transactionHash ?? d.txHash);
     row("Receipt block", d.blockNumber);
     row("Worker dispatch", d.dispatchStatus);
@@ -31258,7 +31284,10 @@ async function visualServer({ name, specs, execute, instructions = "", describeE
   server2.setRequestHandler(CallToolRequestSchema, async (request) => {
     const name2 = request.params.name, spec = Object.hasOwn(specs, name2) ? specs[name2] : void 0;
     const parsed = spec?.schema.safeParse(request.params.arguments ?? {});
-    if (!parsed?.success) return visualResult(name2, {}, spec ? "Invalid tool arguments. Check the required fields and allowed values." : "Unknown tool.", { isError: true, readOnly: spec?.readOnly ?? true, phase: "validation" });
+    if (!parsed?.success) {
+      const details = parsed?.error.issues.filter((issue2) => issue2.code === "custom").map((issue2) => issue2.message);
+      return visualResult(name2, {}, spec ? details?.join(" ") || "Invalid tool arguments. Check the required fields and allowed values. No handler executed." : "Unknown tool.", { isError: true, readOnly: spec?.readOnly ?? true, phase: "validation" });
+    }
     let data;
     try {
       data = await execute(name2, parsed.data);
