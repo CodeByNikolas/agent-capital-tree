@@ -17,12 +17,15 @@ try {
     page.on('pageerror', error => errors.push(error.message));
     await page.route('**/api/roots', route => route.fulfill({ json: { roots: [] } }));
     await page.goto(base, { waitUntil: 'networkidle' });
+    await expect(page.locator('#how-it-works')).toHaveCount(0);
+    await expect(page.getByRole('link', { name: 'Open live demo', exact: true })).toBeVisible();
+    await page.goto(base + '/?preview=1', { waitUntil: 'networkidle' });
     await expect(page.getByRole('heading', { name: 'How it works', exact: true })).toBeVisible();
     await page.getByRole('button', { name: 'Hide', exact: true }).click();
     await expect(page.locator('#how-it-works')).toHaveCount(0);
     await page.getByRole('navigation', { name: 'Guides', exact: true }).getByRole('link', { name: 'How it works' }).click();
     await expect(page.locator('#how-it-works')).toBeVisible();
-    assert.equal(new URL(page.url()).searchParams.has('preview'), false);
+    assert.equal(new URL(page.url()).searchParams.get('preview'), '1');
     await page.getByRole('navigation', { name: 'Guides', exact: true }).getByRole('link', { name: 'MCP guide' }).click();
     await expect(page.getByRole('heading', { name: 'Kanoki in your chat.' })).toBeVisible();
     await expect(page.getByText('Capital-mode availability:', { exact: true })).toBeVisible();

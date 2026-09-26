@@ -309,3 +309,12 @@ input[type="checkbox"] { accent-color: var(--moss); }
 .wallet-address > svg { display: block; }
 .app-topbar-actions > .theme-control { min-height: 36px; padding: var(--space-2) var(--space-3); border: 1px solid var(--ink-muted); background: var(--surface-raised); }
 @media (max-width: 767px) { .wallet-address { gap: 4px; padding: 6px; } .wallet-address > svg { display: none; } .app-topbar-actions > .theme-control { padding: 6px; } }
+
+.wallet-full-address { overflow-wrap: anywhere; font: 13px/24px var(--font-mono); }
+.wallet-signout-note { margin: 0; color: var(--ink-muted); font-size: 13px; }
+
+.live-demo-guide { margin: var(--space-4) 0 var(--space-6); padding: var(--space-4); border: 1px solid var(--line); border-radius: var(--radius-md); background: var(--surface-raised); }
+.live-demo-guide p { margin: var(--space-2) 0; color: var(--ink-muted); }
+.live-demo-guide nav { display: flex; flex-wrap: wrap; gap: var(--space-4); margin: var(--space-3) 0; }
+.live-demo-guide a { display: inline-flex; align-items: center; gap: var(--space-1); color: var(--moss); font-weight: 600; }
+.live-demo-guide small { color: var(--ink-muted); }

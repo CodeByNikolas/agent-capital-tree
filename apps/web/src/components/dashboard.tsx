@@ -32,7 +32,7 @@ import {
   type Address,
 } from "viem";
 import { sepolia } from "viem/chains";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Sidebar as ShadcnSidebar, SidebarContent, SidebarGroup, SidebarGroupContent, SidebarHeader, SidebarInset, SidebarMenu, SidebarMenuButton, SidebarMenuItem, SidebarProvider, SidebarTrigger, useSidebar } from "@/components/ui/sidebar";
@@ -173,26 +173,31 @@ interface InjectedWalletState {
   error: string | null;
   connect: () => Promise<void>;
   switchToSepolia: () => Promise<void>;
+  signOut: () => void;
 }
 
 function useInjectedWallet(): InjectedWalletState {
+  const signedOut = useRef(false);
   const [address, setAddress] = useState<Address | null>(null);
   const [chainId, setChainId] = useState<number | null>(null);
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
+    try { signedOut.current = window.localStorage.getItem("kanoki.wallet.signedOut") === "1"; } catch { /* Session-only when storage is unavailable. */ }
     const provider = window.ethereum;
     if (!provider) return;
 
     const wallet = createWalletClient({ chain: sepolia, transport: custom(provider) });
     void Promise.all([wallet.getAddresses(), wallet.getChainId()]).then(([accounts, activeChain]) => {
+      if (signedOut.current) return;
       setAddress(accounts[0] ?? null);
       setChainId(activeChain);
     }).catch(() => undefined);
     if (!provider.on) return;
 
     const onAccountsChanged = (...args: unknown[]) => {
+      if (signedOut.current) return;
       const accounts = args[0];
       setAddress(Array.isArray(accounts) && typeof accounts[0] === "string" ? (accounts[0] as Address) : null);
       setError(null);
@@ -220,6 +225,10 @@ function useInjectedWallet(): InjectedWalletState {
         wallet.requestAddresses(),
         wallet.getChainId(),
       ]);
+      if (account[0]) {
+        signedOut.current = false;
+        try { window.localStorage.removeItem("kanoki.wallet.signedOut"); } catch { /* Optional persistence. */ }
+      }
       setAddress(account[0] ?? null);
       setChainId(activeChain);
     } catch (cause) {
@@ -243,7 +252,15 @@ function useInjectedWallet(): InjectedWalletState {
     }
   }
 
-  return { address, chainId, pending, error, connect, switchToSepolia };
+  function signOut() {
+    signedOut.current = true;
+    try { window.localStorage.setItem("kanoki.wallet.signedOut", "1"); } catch { /* Session-only when storage is unavailable. */ }
+    setAddress(null);
+    setChainId(null);
+    setError(null);
+  }
+
+  return { address, chainId, pending, error, connect, switchToSepolia, signOut };
 }
 
 interface AssetIdentity {
@@ -457,7 +474,8 @@ function PreviewFlag({ source, compact = false }: { source: DataSource; compact?
 }
 
 function WalletControl({ wallet }: { wallet: InjectedWalletState }) {
-  const { address, chainId, pending, error, connect, switchToSepolia } = wallet;
+  const { address, chainId, pending, error, connect, switchToSepolia, signOut } = wallet;
+  const [open, setOpen] = useState(false);
   if (address) {
     const wrongNetwork = chainId !== sepolia.id;
     return (
@@ -467,16 +485,20 @@ function WalletControl({ wallet }: { wallet: InjectedWalletState }) {
             <span className="network-dot network-dot-warning" />
             {pending ? "Switching…" : "Switch to Sepolia"}
           </button>
-        ) : (
-          <span className="network-button" aria-label="Connected to Sepolia">
-            <span className="network-dot" />
-            sepolia
-          </span>
-        )}
-        <a className="wallet-address" href={`https://sepolia.etherscan.io/address/${address}`} target="_blank" rel="noreferrer" title="View connected wallet on Sepolia Etherscan" aria-label={`View connected wallet ${shortAddress(address)} on Etherscan`}>
+        ) : null}
+        <button className="wallet-address" type="button" aria-label={`Connected wallet ${shortAddress(address)}`} aria-haspopup="dialog" aria-expanded={open} onClick={() => setOpen(true)}>
           <WalletCards size={15} aria-hidden="true" />
           <span>{shortAddress(address)}</span>
-        </a>
+        </button>
+        <Dialog open={open} onOpenChange={setOpen}>
+          <DialogContent>
+            <DialogHeader><DialogTitle>Connected wallet</DialogTitle><DialogDescription>Manage your wallet connection to Kanoki.</DialogDescription></DialogHeader>
+            <code className="wallet-full-address">{address}</code>
+            <a className="button button-secondary" href={`https://sepolia.etherscan.io/address/${address}`} target="_blank" rel="noreferrer">View on Etherscan <ExternalLink size={15} aria-hidden="true" /></a>
+            <Button onClick={() => { signOut(); setOpen(false); }}>Sign out</Button>
+            <p className="wallet-signout-note">Disconnects this app. Your funds and on-chain permissions stay unchanged.</p>
+          </DialogContent>
+        </Dialog>
         {error && <span className="wallet-error" role="status">{error}</span>}
       </div>
     );
@@ -484,7 +506,6 @@ function WalletControl({ wallet }: { wallet: InjectedWalletState }) {
 
   return (
     <div className="wallet-control">
-      <span className="network-button">sepolia</span>
       <button className="button button-primary button-connect" onClick={connect} disabled={pending} type="button">
         <WalletCards size={16} aria-hidden="true" />
         {pending ? "Connecting…" : "Connect"}
@@ -559,10 +580,10 @@ function Topbar({ wallet, view, vaultQuery, selectedId }: { view: DashboardProps
 
 function HelpLinks({ vaultQuery, preview = false }: { vaultQuery: string | null; preview?: boolean }) {
   return <nav className="help-links" aria-label="Guides">
-    <Link href={(vaultQuery || preview ? routeHref("/", vaultQuery) : "/") + "#how-it-works"} onClick={() => {
+    {(vaultQuery || preview) && <Link href={(vaultQuery || preview ? routeHref("/", vaultQuery) : "/") + "#how-it-works"} onClick={() => {
       try { window.localStorage.removeItem("act.onboarding.dismissed"); } catch { /* Optional preference. */ }
       window.dispatchEvent(new Event(ONBOARDING_OPEN_EVENT));
-    }}>How it works</Link>
+    }}>How it works</Link>}
     <Link href={routeHref("/mcp", vaultQuery)}>MCP guide</Link>
   </nav>;
 }
@@ -1307,7 +1328,7 @@ export function Dashboard({ data: initialData, deployment, vaultQuery, nodeQuery
       <main className="onboarding-page">
         <header className="app-topbar"><Link href="/" aria-label="Kanoki overview"><Brand /></Link><div className="app-topbar-actions"><ThemeControl /><WalletControl wallet={wallet} /></div></header>
         <div className="dashboard-content">
-          <HelpLinks vaultQuery={vaultQuery} />
+          <nav className="help-links" aria-label="Guides"><Link href="/mcp">MCP guide</Link></nav>
           <div className="page-heading">
             <h1>{setupOperator ? "Set up Kanoki." : "Create your root vault."}</h1>
             <p>{setupOperator ? "Connect your wallet and confirm the guided setup. Then continue in your chat." : "Create a Sepolia USDC vault for your agent team, or open an existing vault by its ENS name or contract address."}</p>
@@ -1322,7 +1343,6 @@ export function Dashboard({ data: initialData, deployment, vaultQuery, nodeQuery
               <p className="onboarding-create-help">Connect your wallet, choose a name and permissions, then confirm in your wallet. Creation uses Sepolia ETH for gas. You can add USDC after your vault is ready.</p>
             </CardContent>
           </Card>
-          <OnboardingHero context={{ vault: `capital.${deployment.namespaceName}` }} />
           <RootAccessBar vault={null} path="/setup" walletAddress={wallet.address} /></>}
           {walletActionMode === "create-root" && <WalletControlsPanel
             creationOnly
@@ -1390,6 +1410,12 @@ export function Dashboard({ data: initialData, deployment, vaultQuery, nodeQuery
           )}
           {data.source === "direct-rpc" && rootNode?.tokenHoldings[0]?.symbol === "USDC" && BigInt(rootNode.tokenHoldings[0].rawAmount) === 0n && <div className="zero-usdc-notice" role="note"><Coins size={20} aria-hidden="true" /><span><strong>This root has no USDC.</strong> Request Sepolia USDC from Circle, then use Fund root in Setup &amp; control. The owner wallet also needs Sepolia ETH for gas; the vault itself does not.</span><a href="https://faucet.circle.com/" target="_blank" rel="noreferrer">Circle faucet <ArrowUpRight size={15} aria-hidden="true" /></a></div>}
 
+          {data.source === "direct-rpc" && rootNode?.ensName === `capital.${deployment.namespaceName}` && ["overview", "tree"].includes(view) && <section className="live-demo-guide" aria-label="Live demo walkthrough">
+            <strong>One treasury. A team of scoped agents.</strong>
+            <p>Follow real Sepolia capital from the root into Researcher, Trader and Liquidity vaults. Trader delegates a smaller allowance to Risk check. Each vault has its own balance and inherited limits.</p>
+            <nav aria-label="Demo evidence"><Link href={routeHref("/uniswap", vaultQuery)}>Swaps &amp; liquidity <ArrowRight size={14} /></Link><Link href={routeHref("/payments", vaultQuery)}>x402 receipt <ArrowRight size={14} /></Link><Link href={routeHref("/agent-activity", vaultQuery)}>Curvegrid activity <ArrowRight size={14} /></Link></nav>
+            <small>Recorded testnet transactions with separate operator keys. This demo does not imply that autonomous workers are currently running.</small>
+          </section>}
           {view === "overview" && <>
 
 

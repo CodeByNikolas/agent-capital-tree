@@ -16,6 +16,7 @@ try {
       } };
     });
     await page.goto(`${base}/?preview=1`, { waitUntil: 'networkidle' });
+    await expect(page.getByRole('button', { name: /Connected wallet/ })).toBeVisible();
     await page.evaluate(() => {
       window.originalHeader = document.querySelector('.app-topbar');
       window.originalSidebar = document.querySelector('[data-slot="sidebar-wrapper"]');
@@ -41,7 +42,9 @@ try {
       await page.evaluate(() => window.scrollTo(0, 600));
       assert.ok(Math.abs((await page.locator('.app-topbar').boundingBox()).y) <= 1, 'Header scrolled out of view');
     }
-    assert.equal((await page.locator('a.wallet-address').getAttribute('href')).toLowerCase(), 'https://sepolia.etherscan.io/address/0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa');
+    await page.getByRole('button', { name: /Connected wallet/ }).click();
+    assert.equal((await page.getByRole('link', { name: 'View on Etherscan' }).getAttribute('href')).toLowerCase(), 'https://sepolia.etherscan.io/address/0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa');
+    await page.keyboard.press('Escape');
     assert.deepEqual(errors, []);
     await page.close();
   }
