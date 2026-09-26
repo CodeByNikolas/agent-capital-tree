@@ -550,6 +550,8 @@ function requireString(value: unknown, label: string): string {
 }
 
 function requireSafeInteger(value: unknown, label: string): number {
+  // Event Query numeric columns arrive as decimal strings on the live API.
+  if (typeof value === 'string' && /^(0|[1-9]\d*)$/.test(value)) value = Number(value);
   if (typeof value !== 'number' || !Number.isSafeInteger(value) || value < 0) {
     throw new MultiBaasResponseError('/multibaas', `${label} must be a non-negative safe integer`);
   }

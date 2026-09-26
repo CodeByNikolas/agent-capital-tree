@@ -220,6 +220,20 @@ test('malformed MultiBaas query responses fail explicitly', async () => {
   await assert.rejects(client(fetcher).getCapitalActivity('7'), MultiBaasResponseError);
 });
 
+test('accepts decimal-string query blocks but rejects lossy or malformed integers', async () => {
+  let block = '200';
+  const fetcher = async input => {
+    const url = new URL(String(input));
+    if (url.pathname.endsWith('/queries')) return jsonResponse(envelope({ rows: [queryRow('7', txA, rootFundedSignature, block)] }));
+    if (url.pathname.endsWith('/events')) return jsonResponse(envelope([rootFunded(2, tokenA, '90071992547409930')]));
+    return jsonResponse(url.pathname.includes('/contracts/') ? indexingResponse() : chainResponse());
+  };
+  assert.equal((await client(fetcher).getCapitalActivity('7')).items[0].amount, '90071992547409930');
+  for (block of ['9007199254740992', '2e2', '-1', '1.5', '', ' 200', '0200', 1.5, -1]) {
+    await assert.rejects(client(fetcher).getCapitalActivity('7'), /safe integer/);
+  }
+});
+
 test('upstream failures surface without an RPC or other-provider fallback', async () => {
   const paths = [];
   const fetcher = async (input) => {
