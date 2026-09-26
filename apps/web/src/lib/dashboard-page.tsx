@@ -17,5 +17,5 @@ export async function renderDashboard(view: DashboardView, searchParams: Dashboa
   const tour = params.tour === "1";
   const parsedStep = typeof params.step === "string" ? Number.parseInt(params.step, 10) : NaN;
   const step = Number.isFinite(parsedStep) ? parsedStep : 1;
-  return <Dashboard data={previewDashboard} deployment={deployment} onboarding={!vault && params.preview !== "1"} vaultQuery={vault} nodeQuery={node} actionQuery={action} view={view} tour={tour} step={step} />;
+  return <Dashboard data={previewDashboard} deployment={deployment} onboarding={!vault && params.preview !== "1" && view !== "mcp"} vaultQuery={vault} nodeQuery={node} actionQuery={action} view={view} tour={tour} step={step} />;
 }

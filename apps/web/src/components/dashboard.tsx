@@ -477,6 +477,7 @@ const views = [
 ] as const;
 
 function routeHref(path: string, vaultQuery: string | null, nodeId?: string | null): string {
+  if (path === "/mcp" && !vaultQuery) return "/mcp";
   const params = new URLSearchParams();
   if (vaultQuery) params.set("vault", vaultQuery);
   else params.set("preview", "1");
@@ -518,7 +519,7 @@ function AppSidebar({ view, vaultQuery, selectedId, rootLabel, runtimeLabel }: {
 function Topbar({ view, source, wallet, vaultQuery, selectedId }: { view: DashboardProps["view"]; source: DataSource; wallet: InjectedWalletState; vaultQuery: string | null; selectedId: string }) {
   return (
     <header className="app-topbar">
-      <div className="app-topbar-title"><SidebarTrigger aria-label="Toggle navigation" /><span>{views.find((item) => item.id === view)?.title}</span><Badge variant="outline">Test USDC · Sepolia</Badge><Badge variant="outline">{source === "preview" ? "Preview workspace" : source === "direct-rpc" ? "Direct RPC view" : "Local diagnostic"}</Badge></div>
+      <div className="app-topbar-title"><SidebarTrigger aria-label="Toggle navigation" /><span>{views.find((item) => item.id === view)?.title}</span><Badge variant="outline">Test USDC · Sepolia</Badge><Badge variant="outline">{view === "mcp" && !vaultQuery ? "No vault selected" : source === "preview" ? "Preview workspace" : source === "direct-rpc" ? "Direct RPC view" : "Local diagnostic"}</Badge></div>
       <div className="app-topbar-actions"><Link className="app-manage-link app-topbar-guide" href={routeHref("/", vaultQuery)} onClick={() => { try { window.localStorage.removeItem("act.onboarding.dismissed"); } catch { /* storage unavailable */ } window.dispatchEvent(new Event(ONBOARDING_OPEN_EVENT)); }}>How it works</Link><Link className="app-manage-link" href={routeHref("/setup", vaultQuery, selectedId)}>Wallet actions</Link><WalletControl wallet={wallet} /></div>
     </header>
   );
@@ -1490,7 +1491,7 @@ export function Dashboard({ data: initialData, deployment, vaultQuery, nodeQuery
           />}
           <nav className="onboarding-links" aria-label="Explore and get started">
             <Link href="/tree?preview=1"><Layers3 size={18} aria-hidden="true" /><span>Explore sample data</span><ArrowRight size={16} aria-hidden="true" /></Link>
-            <a href="https://github.com/CodeByNikolas/agent-capital-tree/blob/main/docs/local-setup.md"><ExternalLink size={18} aria-hidden="true" /><span>Install companion &amp; MCP</span><ArrowUpRight size={16} aria-hidden="true" /></a>
+            <Link href="/mcp"><Plug size={18} aria-hidden="true" /><span>Verify the MCP</span><ArrowRight size={16} aria-hidden="true" /></Link>
           </nav>
         </div>
       </main>
@@ -1500,12 +1501,12 @@ export function Dashboard({ data: initialData, deployment, vaultQuery, nodeQuery
   return (
     <TooltipProvider delay={150}>
     <SidebarProvider>
-      <AppSidebar view={view} vaultQuery={vaultQuery} selectedId={selectedNode.id} rootLabel={rootNode?.label ?? "Treasury"} runtimeLabel={runtimeLabel} />
+      <AppSidebar view={view} vaultQuery={vaultQuery} selectedId={selectedNode.id} rootLabel={vaultQuery ? rootNode?.label ?? "Treasury" : "No vault"} runtimeLabel={vaultQuery ? runtimeLabel : "No vault selected"} />
       <SidebarInset className="main-shell">
         <Topbar view={view} source={data.source} wallet={wallet} vaultQuery={vaultQuery} selectedId={selectedNode.id} />
         <div className="dashboard-content">
           <GuidedTour active={tour} step={step} />
-          <PreviewNotice data={data} deployment={deployment} />
+          {!(view === "mcp" && !vaultQuery) && <PreviewNotice data={data} deployment={deployment} />}
           <RootAccessBar vault={vaultQuery} path={path} walletAddress={wallet.address} />
           {vaultQuery && <LiveReadNotice rootId={currentSnapshot?.rootId ?? null} vaultQuery={vaultQuery} data={data} loading={currentReadState.status === "loading"} error={liveError} onRetry={() => setTreeRetry((value) => value + 1)} />}
           {data.source !== "preview" && (
@@ -1555,7 +1556,7 @@ export function Dashboard({ data: initialData, deployment, vaultQuery, nodeQuery
               <details className="future-module"><summary><span>Currency conversion & valuation</span><Badge variant="outline" className="future-module-badge">Future work</Badge></summary><p>Not implemented. Display supported assets in a chosen currency using verified price sources. Test USDC is Sepolia faucet funding; DEMO-USD is a valueless quote token. Neither provides a dollar valuation.</p></details>
             </CardContent></Card>
           </>}
-          {view === "mcp" && <McpPanel deployment={deployment} selectedNode={selectedNode} runtimeLabel={runtimeLabel} />}
+          {view === "mcp" && <McpPanel deployment={deployment} selectedNode={vaultQuery ? selectedNode : undefined} runtimeLabel={vaultQuery ? runtimeLabel : "No vault selected"} />}
           {view === "setup" && <>
             <div className="page-heading"><span className="page-kicker">Wallet & integration</span><h1>Setup & control</h1><p>Connect the recorded owner or an authorized agent to manage the selected vault. Each available action is simulated before signing.</p></div>
             <div className="setup-selected"><label htmlFor="setup-node">Selected vault</label><select id="setup-node" value={selectedNode.id} onChange={(event) => setSelectedId(event.target.value)}>{data.nodes.map((node) => <option key={node.id} value={node.id}>{node.ensName}</option>)}</select><span>{sourceLabel(data.source)}</span></div>
