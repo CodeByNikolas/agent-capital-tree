@@ -5,9 +5,17 @@ Stand: 26. September 2026 (Europe/Berlin). Nach Kontextkomprimierung zusammen mi
 ## Aktueller Stand
 
 - Public Repository: https://github.com/CodeByNikolas/agent-capital-tree.
-- Live-Dashboard: https://agent-capital-tree.vercel.app. Aktuelles Deployment `dpl_8c4tsppjGfNxLEDLTNnW6UsViPTJ`, https://agent-capital-tree-3yholcb6f-tumblockchains-projects.vercel.app (Source1a5ef1e). Fünf echte Seiten mit shadcn Sidebar/Badge/Button/Card/Sheet/Table, Agentendetails, System-Hell-/Dunkelmodus und größerer Schrift. Mit frontend-design/impeccable und shadcn-MCP umgesetzt; Sol-High-Subagent und Hauptagent-Review. Kapitaldelegation steht im Mittelpunkt; Uniswap ist eine Anwendung, Payments bleiben Zukunftsumfang.
+- Live-Dashboard: https://agent-capital-tree.vercel.app. Aktuelles Deployment `dpl_2o8euc68kXhziPqot5gZEnjdRAaV`, https://agent-capital-tree-2ewo6ur9g-tumblockchains-projects.vercel.app (Sourcec668ab4). Fünf echte Seiten mit shadcn Sidebar/Badge/Button/Card/Sheet/Table, Agentendetails, System-Hell-/Dunkelmodus und größerer Schrift. Mit frontend-design/impeccable und shadcn-MCP umgesetzt; Sol-High-Subagent und Hauptagent-Review. Kapitaldelegation steht im Mittelpunkt; Uniswap ist eine Anwendung, Payments bleiben Zukunftsumfang.
 - ENSv2/Uniswap und der echte Browser→Codex→Child→Grandchild-Ablauf sind nachgewiesen. Live-MultiBaas, tatsächlicher Master-Modell-Ablauf und vollständige Root9-Rückholung sind ebenfalls nachgewiesen. Gesamtabnahme bleibt für unabhängiges Fremdnutzer-Onboarding und die unten genannten Grenzen offen. Die letzte echte Browser-Owner-Rückholung ist bestanden.
 - Root1 ist der finanzierte Seed und bleibt unberührt. Root2 ist widerrufen und leer. Root5 ist der vollständig widerrufene und geleerte Browser-/Modell-Testbaum; nicht erneut als Runtime starten. Root9 mit Child10/11 ist ebenfalls widerrufen und leer. Abgeschlossene Finanzrunner niemals blind wiederholen.
+
+## Persönlicher Einstieg und lesbare Namen
+
+- Öffentlicher Vercel-Onboarding-/Create-Entry-Browsertest bestanden; keine Signaturen oder neuen Finanztransaktionen.
+- Ohne root-Parameter und ohne explizite Preview startet die Oberfläche mit Root-Onboarding statt Seed-/Beispieldaten. Neuer Root kann nach Wallet-Verbindung erstellt werden. Keine ungeprüfte Aussage über vorhandene Wallet-Roots; Suche nach Vault-Adresse noch nicht implementiert.
+- MCP spawnChild akzeptiert optional name (z.B. researcher); Runtime bindet ihn an den dauerhaften Spawn-Intent und die tatsächliche ENS-Registrierung. Alte namenlose Wiederholungen behalten ihr bisheriges Label. Sieben Plugin- und16 Runtime-Tests bestanden. Neuer Name noch nicht mit einem frischen Sepolia-Spawn abgenommen; Worker-Image muss für neue Tool-Schemas neu gebaut werden.
+- Zusammenhängende Anleitung: [docs/local-setup.md](docs/local-setup.md), Links geprüft. Frontend-Produktionsbuild und Desktop-/Mobil-Onboarding inklusive expliziter Preview bestanden.
+- Serverseitiger Testtoken-Faucet ist nicht implementiert. fundRoot ist Owner-only; direkte Faucet-Transfers benötigen eigene Quoten-/Retry-Sicherung und ehrliche Eventdarstellung. Keine Owner-Schlüssel auf Vercel kopiert.
 
 ## Modul-Roadmap
 
