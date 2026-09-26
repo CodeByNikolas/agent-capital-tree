@@ -9,6 +9,10 @@ Stand: 26. September 2026 (Europe/Berlin). Nach Kontextkomprimierung zusammen mi
 - ENSv2/Uniswap und der echte Browser→Codex→Child→Grandchild-Ablauf sind nachgewiesen. Live-MultiBaas, tatsächlicher Master-Modell-Ablauf und vollständige Root9-Rückholung sind ebenfalls nachgewiesen. Gesamtabnahme bleibt für unabhängiges Fremdnutzer-Onboarding und die unten genannten Grenzen offen. Die letzte echte Browser-Owner-Rückholung ist bestanden.
 - Root1 ist der finanzierte Seed und bleibt unberührt. Root2 ist widerrufen und leer. Root5 ist der vollständig widerrufene und geleerte Browser-/Modell-Testbaum; nicht erneut als Runtime starten. Root9 mit Child10/11 ist ebenfalls widerrufen und leer. Abgeschlossene Finanzrunner niemals blind wiederholen.
 
+## README für Nutzer und Jury
+
+- Einstieg nach Produktablauf, fünf Dashboard-Seiten, Partnerbeiträgen, Setup und überprüfbaren Nachweisen gegliedert. Offene Abnahmen bleiben explizit; alte Funding-Aufforderung entfernt. Alle26 lokalen README-Linkziele und git diff --check geprüft. Reine Dokumentationsänderung, keine erneuten Finanzläufe.
+
 ## Dashboard-Neugestaltung: veröffentlicht und geprüft
 
 - Veröffentlichter Browser-Smoke am26.09.2026 um06:41UTC bestanden:22 zusammengefasste Checks, alle fünf Routen auf Desktop/Mobil in beiden Themes, keine JS-Fehler. Root9 zeigt14 indexierte und14 unabhängig receipt-verifizierte Ereignisse. Beide Berichte in artifacts/ui nennen die öffentliche Vercel-URL; UI-Schutztests ebenfalls bestanden.
