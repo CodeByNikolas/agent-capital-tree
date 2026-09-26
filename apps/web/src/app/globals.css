@@ -399,6 +399,9 @@ button:disabled { cursor: not-allowed; opacity: .55; }
 .demo-root-chip:hover { border-color: var(--ring); background: var(--accent); }
 .demo-root-chip-active { border-color: var(--primary); background: var(--accent); }
 .demo-root-chip-active span { color: var(--foreground); }
+.demo-root-chip-owned { border-color: var(--primary); background: var(--accent); }
+.demo-root-chip-owned strong { color: var(--brand); }
+.demo-root-chip-owned span { color: var(--foreground); }
 .source-toggle { display: inline-flex; align-items: center; gap: 8px; white-space: nowrap; }
 .source-toggle-current { color: var(--quiet); font-size: 14px; font-weight: 700; }
 

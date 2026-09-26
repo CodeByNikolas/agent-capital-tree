@@ -42,7 +42,7 @@ export function OnboardingHero() {
     <section className="panel onboarding-hero" aria-labelledby="onboarding-title">
       <div className="onboarding-intro">
         <span className="onboarding-kicker"><Compass size={15} aria-hidden="true" /> New here? Start with this</span>
-        <h2 id="onboarding-title">Give each AI agent its own wallet — with strict, inherited limits.</h2>
+        <h2 id="onboarding-title">How it works</h2>
         <p>
           Fund a root, authorize a master agent, and let it delegate smaller amounts and narrower permissions
           down a tree of separate on-chain vaults. The human owner keeps an independent recovery path — separate
