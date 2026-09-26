@@ -71,7 +71,13 @@ test('bundled stdio MCP server works from a copied plugin without node_modules',
     await client.connect(transport);
     const listed = await client.listTools();
     assert.ok(listed.tools.some(tool => tool.name === 'getTree'));
-    assert.ok(listed.tools.some(tool => tool.name === 'spawnChild'));
+    const spawn = listed.tools.find(tool => tool.name === 'spawnChild');
+    assert.ok(spawn);
+    assert.match(spawn.description, /native Codex subagents do not create vaults/);
+    assert.match(spawn.description, /10 Sepolia test USDC is 10000000 raw units/);
+    assert.match(spawn.description, /getOperationStatus/);
+    assert.match(spawn.inputSchema.properties.amount.description, /no assumed default/);
+    assert.match(spawn.inputSchema.properties.restrictions.description, /PAY and swap are separate rights/);
     const result = await client.callTool({ name: 'getTree', arguments: { rootId } });
     assert.equal(result.isError, true);
     assert.match(result.content[0].text, /not configured/);
