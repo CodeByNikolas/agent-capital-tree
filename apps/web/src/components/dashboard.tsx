@@ -535,8 +535,6 @@ function PreviewNotice({ data, deployment }: { data: DashboardData; deployment: 
   );
 }
 
-const demoLabels: Record<string, string> = { "1": "Seed liquidity", "5": "4-node hierarchy", "9": "Indexed activity" };
-
 function RootAccessBar({ vault, path, walletAddress }: { vault: string | null; path: string; walletAddress: string | null }) {
   const router = useRouter();
   const [lookupError, setLookupError] = useState<string | null>(null);
@@ -548,12 +546,15 @@ function RootAccessBar({ vault, path, walletAddress }: { vault: string | null; p
   const chips = discovered
     .map((root) => {
       const owned = Boolean(walletLower && root.owner && root.owner.toLowerCase() === walletLower);
+      const leaf = root.ensName ? root.ensName.split(".")[0] : "";
       return {
         id: root.id,
         vault: root.vault,
         owned,
         active: Boolean(vaultLower && root.vault && root.vault.toLowerCase() === vaultLower),
-        sub: owned ? "Your vault" : demoLabels[root.id] ?? (root.revoked ? "Revoked" : root.nodeCount ? `${root.nodeCount} vault${root.nodeCount === 1 ? "" : "s"}` : "Live root"),
+        // Read the label straight from ENS/chain rather than a hardcoded list.
+        label: leaf || `Root ${root.id}`,
+        sub: owned ? "Your vault" : root.revoked ? "Revoked" : `${root.nodeCount} vault${root.nodeCount === 1 ? "" : "s"}`,
       };
     })
     .sort((left, right) => (left.owned === right.owned ? Number(BigInt(left.id) - BigInt(right.id)) : left.owned ? -1 : 1))
@@ -590,7 +591,7 @@ function RootAccessBar({ vault, path, walletAddress }: { vault: string | null; p
               href={`${path}?vault=${encodeURIComponent(chip.vault)}&node=${encodeURIComponent(chip.id)}`}
               aria-current={chip.active ? "true" : undefined}
             >
-              <strong>Root {chip.id}</strong>
+              <strong>{chip.label}</strong>
               <span>{chip.sub}</span>
             </a>
           ))}
