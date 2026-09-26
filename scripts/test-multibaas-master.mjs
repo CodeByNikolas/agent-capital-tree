@@ -415,7 +415,8 @@ try {
   assert.ok(tree.nodes.every(node => !node.revoked && node.position.tokenId === 0n &&
     node.position.liquidity === 0n && node.balances[1] === 0n));
   assert.ok([state.idleId, state.siblingId].every(childId =>
-    tree.nodes.find(node => node.id.toString() === childId).parentId === rootId));
+    tree.nodes.find(node => node.id.toString() === childId).parentId === rootId &&
+    tree.nodes.find(node => node.id.toString() === childId).authorizedCapabilities === 0n));
   if (mode === '--inspect-resume') {
     console.log(JSON.stringify({ ...summary, ready: true, rootId: state.rootId,
       idleId: state.idleId, siblingId: state.siblingId, verifiedSetupReceipts: Object.keys(state.transactions).length,
@@ -535,9 +536,20 @@ try {
     assert.equal(item.item.status, 'completed', `Failed ${item.item.tool} model read`);
     assert.equal(item.item.arguments.rootId, report.rootId);
   }
-  assert.ok(calls.some(item => item.item.tool === 'getCapitalActivity' &&
-    JSON.stringify(item.item.result ?? item.item.output ?? '').includes('multibaas')),
-  'Master activity read did not return MultiBaas source data');
+  const modelHistory = calls.filter(item => item.item.tool === 'getCapitalActivity').flatMap(item => {
+    const output = item.item.result ?? item.item.output;
+    assert.ok(output && !output.isError && Array.isArray(output.content), 'Missing successful MCP history response');
+    return output.content.filter(part => part.type === 'text').map(part => JSON.parse(part.text));
+  });
+  assert.ok(modelHistory.length > 0 && modelHistory.every(page => page.rootId === report.rootId &&
+    page.source?.provider === 'multibaas' && page.verification?.source === 'rpc' &&
+    page.indexing?.indexingStartBlock === config.indexingStartBlock), 'Master did not receive verified Root9 history');
+  const modelItems = modelHistory.flatMap(page => page.items);
+  for (const expected of indexed.items) {
+    assert.ok(modelItems.some(item => item.id === expected.id && item.rootId === report.rootId &&
+      item.provenance.transactionHash === expected.provenance.transactionHash &&
+      confirmed(item)), 'Master history response omitted confirmed setup evidence');
+  }
   const writes = calls.filter(item => ['reclaimAssets', 'allocateCapital'].includes(item.item.tool));
   assert.equal(writes[0].item.arguments.nodeId, report.idleId);
   assert.equal(writes[1].item.arguments.childId, report.siblingId);
