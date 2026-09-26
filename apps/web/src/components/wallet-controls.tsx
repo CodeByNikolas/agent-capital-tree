@@ -97,6 +97,7 @@ function defaultAmounts(policy: Policy | null): readonly [string, string] {
 
 function PolicyFields({
   initialPolicy,
+  createRoot = false,
   demoBudget,
   deployment,
   data,
@@ -106,6 +107,7 @@ function PolicyFields({
   onSubmit,
 }: {
   initialPolicy: Policy | null;
+  createRoot?: boolean;
   demoBudget?: string | null;
   deployment: PublicDeployment;
   data: DashboardData;
@@ -115,16 +117,19 @@ function PolicyFields({
   onSubmit: (draft: PolicyDraft) => Promise<void>;
 }) {
   const labels = tokenLabels(data, deployment);
-  const [selectedPermissions, setSelectedPermissions] = useState<Permission[]>([...(initialPolicy?.permissions ?? (demoBudget ? ["delegate", "restrict", "reclaim"] : []))]);
+  const poolId = initialPolicy?.poolId ?? (demoBudget ? zeroPoolId : deployment.poolId ?? zeroPoolId);
+  const canUsePoolCapabilities = deployment.poolConfigured && poolId !== zeroPoolId;
+  const defaultPermissions = createRoot ? permissions.filter(permission =>
+    (permission !== "pay" || deployment.paymentsSupported) &&
+    (!["swap", "manage-liquidity", "collect-fees", "exit-liquidity"].includes(permission) || canUsePoolCapabilities)) : [];
+  const [selectedPermissions, setSelectedPermissions] = useState<Permission[]>([...(initialPolicy?.permissions ?? (demoBudget ? ["delegate", "restrict", "reclaim"] : defaultPermissions))]);
   const [allowedTokens, setAllowedTokens] = useState<[boolean, boolean]>([
     initialPolicy ? initialPolicy.allowedTokens.includes(initialPolicy.maxActionAmounts[0]?.symbol ?? "") : true,
     initialPolicy ? initialPolicy.allowedTokens.includes(initialPolicy.maxActionAmounts[1]?.symbol ?? "") : !demoBudget,
   ]);
-  const [maxAmounts, setMaxAmounts] = useState<[string, string]>(demoBudget && !initialPolicy ? [(Number(demoBudget) / 1_000_000).toString(), "0"] : [...defaultAmounts(initialPolicy)]);
+  const [maxAmounts, setMaxAmounts] = useState<[string, string]>(demoBudget && !initialPolicy ? [(Number(demoBudget) / 1_000_000).toString(), "0"] : !initialPolicy && createRoot ? ["20", "20"] : [...defaultAmounts(initialPolicy)]);
   const [expiresAt, setExpiresAt] = useState(policyDate(initialPolicy) || expiryDateBeforeNamespace(deployment.namespaceExpiry));
   const [error, setError] = useState<string | null>(null);
-  const poolId = initialPolicy?.poolId ?? (demoBudget ? zeroPoolId : deployment.poolId ?? zeroPoolId);
-  const canUsePoolCapabilities = deployment.poolConfigured && poolId !== zeroPoolId;
 
   function togglePermission(permission: Permission) {
     setSelectedPermissions((current) => current.includes(permission)
@@ -380,6 +385,7 @@ export function WalletControlsPanel({
       {mode === "create-root" && (
         <PolicyFields
           key="create-root"
+          createRoot
           initialPolicy={null}
           demoBudget={demoBudget}
           deployment={deployment}

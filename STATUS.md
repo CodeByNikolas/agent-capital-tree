@@ -2,6 +2,11 @@
 
 As of 26 September 2026. Read this together with PLAN.md after context compaction. Older sections below retain the evidence and acceptance limits known at the time; the newest E2E status is first.
 
+## Root creation defaults
+
+- At the user's request, suggested ENS labels now contain only two words (64 × 64 combinations) without a suffix. Name availability is still enforced by contract simulation. Ordinary new roots start with 20 for both per-action asset limits and all available capabilities enabled. Existing policies and explicit MCP demo budgets retain their values and narrower permissions.
+- Web production build and TypeScript passed. `node scripts/test-root-creation-defaults.mjs` passed desktop/light and mobile/dark browser checks for two-word names, both 20 defaults, eight checked capabilities, editable selections and preserved MCP overrides. The browser used a read-only wallet stub; no transaction was sent.
+
 ## Owner-only vault suggestions
 
 - Root suggestions in onboarding and the dashboard sidebar now filter the RPC directory by the connected wallet's address and the controller's onchain `rootOwner`, rather than sorting owned roots ahead of everyone else's. Disconnected wallets and wallets with no matching roots see no suggestions. Account changes immediately recompute the filter; manual ENS/address lookup remains available.

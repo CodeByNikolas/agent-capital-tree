@@ -19,9 +19,8 @@ const nouns = [
   "stone", "summit", "tiger", "trail", "valley", "wave", "willow", "wren",
 ] as const;
 
-/** 64 × 64 word pairs plus 24 random bits: 36 bits, within the 31-character ENS label limit. */
+/** Two-word suggestions; the contract still enforces name availability. */
 export function generateRootLabel(): string {
-  const bytes = crypto.getRandomValues(new Uint8Array(5));
-  const suffix = Array.from(bytes.slice(2), byte => byte.toString(16).padStart(2, "0")).join("");
-  return `${adjectives[bytes[0] & 63]}-${nouns[bytes[1] & 63]}-${suffix}`;
+  const bytes = crypto.getRandomValues(new Uint8Array(2));
+  return `${adjectives[bytes[0] & 63]}-${nouns[bytes[1] & 63]}`;
 }
