@@ -1,3 +1,12 @@
+## MCP validation and concurrent onboarding review — 27 September
+
+- Connected MCP validation and live tree read passed at Sepolia block 11789135. The session was unselected with no local signer and correctly reported not ready for writes. Plugin tests passed 22/22; keyless STDIO lookup/error/image tests passed at block 11789139; controlled wallet onboarding tests and plugin/runtime builds passed before concurrent onboarding edits.
+- The subsequent WSL runtime run saw concurrent source changes: 31/35 passed. Failures were obsolete budget/consent fixtures, a source/build mismatch, and the existing 10-second CLI startup timeout. This is not acceptance of the new onboarding implementation.
+- Reproduced a new continuation target-binding issue: readiness can report true for selected root 5 while the saved setup identifies root 4. Review also calls for generation-bound completion, terminal polling states, consistent snapshots and verified deployment compatibility. Findings and acceptance gates: [MCP onboarding review](docs/mcp-onboarding-review-2026-09-27.md).
+- Follow-up: workspace typecheck failed in the web package because the new capital-limit functions are absent from its ABI. Live block 11789212 confirmed a local-MCP/public-app controller mismatch (`0x7eDFa3D484d64b6bA3b5b2bcef51147E57133FFB` versus `0xeB2041B486D66aB91140FFcF54B66513D8eC40c8`); the local controller's new limit read did not succeed. Both block public onboarding acceptance.
+- Fetch clarified the mismatch: remote main `a9594c7` already uses the public app's Kanoki controller; this checkout and connected MCP are stale. The evidence above applies to the older local baseline plus concurrent edits, not the latest release. Integrate current main and reconnect/retest the MCP without replacing private profiles.
+- No live financial transaction, owner signature, root selection or private-profile replacement was performed. Concurrent implementation and documentation edits were preserved; public signed onboarding/test acceptance remains open.
+
 # Current release: Kanoki live demo and wallet controls
 
 ## Documentation audit — 27 September 2026
