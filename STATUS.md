@@ -7,6 +7,10 @@
 - Integrated current remote main including kanoki.eth and native macOS capital signing; regenerated the distributed bundle. Old pending agentcapitalvault.eth enrollment remains preserved in its original private controller domain, not silently migrated.
 - OPEN: deploy/verify the new limited controller and authorized namespace, publish its aligned web/MCP manifest, provision the isolated native worker host, safely reattach the existing funded operator if continuing the old enrollment, then obtain wallet signatures and complete the real child/worker E2E. The project responsible person accepted deployment ownership. See [release handoff](docs/shared-capital-limit-release.md).
 
+## Observable dashboard metrics — 27 September 2026
+
+- Removed the unobservable Runtime/Unknown overview metric and MCP connection/runtime status. Overview now has three summary columns, with matching initial skeleton count and responsive layout. Production build/TypeScript passed.
+
 ## Overview vault ENS — 27 September 2026
 
 - The Overview/Setup funding section now displays the full vault ENS name alongside its contract address. Both have independent copy buttons.

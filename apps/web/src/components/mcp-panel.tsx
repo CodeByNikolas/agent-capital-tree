@@ -1,6 +1,5 @@
-import { CircleDashed, Plug, ShieldCheck } from "lucide-react";
+import { Plug, ShieldCheck } from "lucide-react";
 import { CopyBlock } from "@/components/copy-block";
-import { InfoHint } from "@/components/info-hint";
 import { mcpServerMeta, mcpTools } from "@/lib/mcp-tools";
 import type { PublicDeployment } from "@/lib/deployment";
 import type { VaultNode } from "@/lib/dashboard-types";
@@ -30,11 +29,9 @@ const imagePrompt = `For a new test vault, call kanoki.prepareRootSetup with lab
 export function McpPanel({
   deployment,
   selectedNode,
-  runtimeLabel,
 }: {
   deployment: PublicDeployment;
   selectedNode: VaultNode | undefined;
-  runtimeLabel: string;
 }) {
   const demoRoot = `capital.${deployment.namespaceName}`;
   // The separate keyless server always uses the canonical current deployment.
@@ -49,7 +46,6 @@ pnpm mcp:capital settings --enable-sepolia-writes`;
     ["Auth", mcpServerMeta.auth],
     ["Timeouts", `${mcpServerMeta.readTimeout} · ${mcpServerMeta.writeTimeout}`],
     ["Verified with", mcpServerMeta.codexVerified],
-    ["Vault runtime", runtimeLabel],
   ];
 
   const deploymentFacts: [string, string][] = [
@@ -91,11 +87,6 @@ pnpm mcp:capital settings --enable-sepolia-writes`;
             <Plug size={18} aria-hidden="true" /> kanoki
           </h2>
         </div>
-        <div className="mcp-status mcp-status-idle" role="status">
-          <CircleDashed size={16} className="mcp-status-icon" aria-hidden="true" />
-          <span>Local Codex MCP connection not observable here</span>
-        </div>
-        <p className="mcp-lede">Vault runtime state comes from dashboard data <InfoHint term="runtime" />; it does not prove your Codex MCP is connected.</p>
         <div className="mcp-facts-groups">
           <dl className="mcp-facts">
             {serverFacts.map(([key, value]) => (
