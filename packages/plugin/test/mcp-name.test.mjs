@@ -11,7 +11,12 @@ test('marketplace, plugin manifests and MCP registrations consistently use kanok
   const marketplace = await json('../../../.agents/plugins/marketplace.json');
   assert.equal(marketplace.name, 'kanoki');
   assert.equal(marketplace.plugins[0].name, 'kanoki');
-  for (const path of ['../mcp.json', '../.mcp.json']) assert.deepEqual(Object.keys((await json(path)).mcpServers), ['kanoki']);
+  for (const path of ['../mcp.json', '../.mcp.json']) {
+    const servers = (await json(path)).mcpServers;
+    assert.deepEqual(Object.keys(servers), ['kanoki']);
+    assert.match(servers.kanoki.args[0], /capital\.mjs$/);
+    assert.deepEqual(servers.kanoki.args.slice(1), ['stdio','--enable-sepolia-writes']);
+  }
 });
 
 test('the distributed MCP bundle identifies itself as kanoki', async () => {

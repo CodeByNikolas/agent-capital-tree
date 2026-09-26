@@ -3,7 +3,7 @@
     "kanoki": {
       "command": "node",
       "args": [
-        "${PLUGIN_ROOT}/bundle/server.mjs"
+        "${PLUGIN_ROOT}/capital.mjs", "stdio", "--enable-sepolia-writes"
       ]
     }
   }

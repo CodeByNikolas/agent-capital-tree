@@ -20,7 +20,7 @@ const rootId = BigInt(manifest.bootstrap.rootId);
 const controller = manifest.contracts.CapitalController.address;
 const rpcUrl = process.env.ACT_SEPOLIA_RPC_URL ?? 'https://ethereum-sepolia.publicnode.com';
 // Verify the canonical app against the current USDC manifest.
-const appUrl = process.env.ACT_APP_URL ?? 'https://agent-capital-tree.vercel.app';
+const appUrl = process.env.ACT_APP_URL ?? 'https://kanoki-app.vercel.app';
 const chain = capitalClient(rpcUrl, controller);
 const codex = process.env.ACT_CODEX_BIN ?? 'codex';
 const { stdout: version } = await execFile(codex, ['--version'], { timeout: 15_000 });
@@ -84,13 +84,18 @@ try {
   assert.equal((await fetch(`${origin}/v1/tools/spawnChild`, {
     method: 'POST', headers: { authorization: `Bearer ${bearer}` }, body: '{}'
   })).status, 404);
-  const transport = new StdioClientTransport({ ...registered.transport,
-    env: { ...env, ...registered.transport.env, ACT_RUNTIME_URL: origin, ACT_MCP_TOKEN: bearer } });
+  const pluginEnv = { ...env, ...registered.transport.env };
+  delete pluginEnv.ACT_RUNTIME_URL; delete pluginEnv.ACT_MCP_TOKEN;
+  const transport = new StdioClientTransport({ ...registered.transport, env: pluginEnv });
   client = new Client({ name: 'plugin-install-smoke', version: '0.1.0' });
   await client.connect(transport);
   const listed = await client.listTools();
-  assert.deepEqual(listed.tools.map(tool => tool.name).sort(), Object.keys(toolSpecs).sort());
+  assert.equal(listed.tools.length, 19);
+  assert.ok(listed.tools.some(tool => tool.name === 'prepareRootSetup'));
+  assert.ok(listed.tools.some(tool => tool.name === 'createChildVault'));
+  assert.ok(!listed.tools.some(tool => tool.name === 'spawnChild'));
   const result = await client.callTool({ name: 'getTree', arguments: { rootId: rootId.toString() } });
+  console.log(result.structuredContent?._kanoki?.imageLinks?.join('\n') ?? '');
   assert.equal(result.isError, undefined, result.content?.[0]?.text);
   const tree = result.structuredContent;
   assert.equal(tree.rootId, rootId.toString());
@@ -104,7 +109,7 @@ try {
   console.log(JSON.stringify({ pluginId: install.pluginId, cliVersion: version.trim(),
     mcpServer: registered.name, toolCount: listed.tools.length, rootId: tree.rootId,
     nodeCount: tree.nodes.length, chainId: tree.source.chainId,
-    blockNumber: tree.source.blockNumber, imageMimeType: result.content[2].mimeType, writes: 'disabled' }));
+    blockNumber: tree.source.blockNumber, imageMimeType: result.content[2].mimeType, writes: 'none requested or submitted' }));
 } finally {
   await client?.close().catch(() => {});
   if (server) await new Promise(resolve => server.close(resolve));

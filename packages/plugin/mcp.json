@@ -5,7 +5,7 @@
       "type": "stdio",
       "command": "node",
       "args": [
-        "./bundle/server.mjs"
+        "./capital.mjs", "stdio", "--enable-sepolia-writes"
       ],
       "cwd": "${PLUGIN_ROOT}"
     }

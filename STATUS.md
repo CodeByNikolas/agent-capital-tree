@@ -1,3 +1,10 @@
+## Guided Kanoki onboarding — 26 September
+
+- The default plugin now starts 19 capital tools without a runtime server, bearer token or preselected root. A private signer and generated name persist across restarts; matching owner authorization attaches the root automatically.
+- One wallet page guides creation, authorization, USDC approval/funding and native gas. Receipt reconciliation and completed-stage journals protect retries. Existing contracts still require up to five wallet confirmations.
+- Validation: 16 focused Linux runtime tests, 22 plugin tests, guided wallet adapter scenarios, production web build and desktop/mobile browser checks passed. A fresh Codex marketplace installation read live Sepolia block 11788940 without runtime credentials. No transaction was submitted.
+- The user assigned deployment of main to someone with access to kanoki-app.vercel.app. Public deployment and signed setup/child-vault E2E remain open. See docs/guided-onboarding-release.md for the handoff.
+
 ## Release consolidation audit — 26 September
 
 - Confirmed remote main at `fc7c63c` after fetch; its GitHub CI passed both jobs: https://github.com/CodeByNikolas/agent-capital-tree/actions/runs/36273240439. Local workspace typecheck passed; plugin 22/22, SDK 2/2 and MultiBaas 11/11 tests passed. Windows is not the Linux runtime acceptance environment. A WSL run passed 33/34 runtime tests; the CLI-native test hit its 10-second startup timeout and did so again in isolation. This local run is not a full green acceptance claim; concurrent onboarding edits were present.
