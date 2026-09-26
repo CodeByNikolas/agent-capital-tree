@@ -2,6 +2,11 @@
 
 As of 26 September 2026. Read this together with PLAN.md after context compaction.
 
+## Live demo entry
+
+- The onboarding link now says **Open live demo** and opens the real Sepolia tree. The visible **Explore sample data** and sidebar **Preview sample** links are removed. The direct fictional preview URL remains available for explicit read-only checks, but normal navigation no longer offers it.
+- Source `84bbed1` is pushed and deployed to Vercel production (`dpl_9yKFcrmPZWUmzq5FtoGBNebfC8hx`). Web build, typecheck and both CI jobs passed ([run 36241478814](https://github.com/CodeByNikolas/agent-capital-tree/actions/runs/36241478814)). The public six-route browser smoke passed at desktop/light and mobile/dark sizes, including the new onboarding link and absent sample link; see `artifacts/ui/usdc-ui-report.json`. No wallet transaction was sent.
+
 ## Live dashboard loading and navigation follow-up
 
 - The sample-data entry is a fictional frontend preview, not an onchain agent or vault. Live vault routes now render skeletons until their matching root snapshot arrives; failed reads show an error and retry instead of briefly exposing preview or old-root data. Activity and payment tables also show skeleton rows during their initial reads.
