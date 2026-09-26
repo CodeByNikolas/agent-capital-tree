@@ -25,8 +25,11 @@ try {
     const value=Reflect.get(target,key);return typeof value==='function'?value.bind(target):value;
   }});
   const args={rpc:interrupted,signer,directory,name:'transfer',request,confirmations:1};
+  await assert.rejects(journaledTransaction({...args,rpc,name:'too-costly',maxGasCostWei:1n}),/fee ceiling/);
+  assert.equal(await rpc.getTransactionCount(signer.address),0);
   await assert.rejects(journaledTransaction(args),/lost response/);
   const recovered=await journaledTransaction(args);
+  await assert.rejects(journaledTransaction({...args,rpc,maxGasCostWei:1n}),/fee ceiling/);
   const duplicate=await journaledTransaction({...args,rpc});
   assert.equal(recovered.receipt.hash,duplicate.receipt.hash);
   assert.equal(await rpc.getBalance(receiver),parseEther('0.001'));

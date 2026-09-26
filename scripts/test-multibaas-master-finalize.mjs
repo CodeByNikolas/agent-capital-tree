@@ -254,10 +254,14 @@ try {
       ownerRecoveryOrder: prepared.map(item => item.name), writes: 'disabled' }));
   } else {
     const recovered = {};
+    assert.equal(await rpc.getTransactionCount(owner.address, 'pending'), await rpc.getTransactionCount(owner.address, 'latest'),
+      'Owner has an unresolved pending transaction');
     for (const item of prepared) {
       assert.ok(!(await readdir(journal)).includes(`${item.name}.json`), 'Recovery journal appeared; reconcile manually');
+      const remaining = [maxSpend - ownerGas - granted, maxSpend - ownerGas - operatorGas,
+        await rpc.getBalance(owner.address), parseEther('0.025')].reduce((a, b) => a < b ? a : b);
       const { receipt } = await journaledTransaction({ rpc, signer: owner, directory: journal,
-        name: item.name, request: item.request });
+        name: item.name, request: item.request, maxGasCostWei: remaining });
       ownerGas += receipt.gasUsed * receipt.gasPrice;
       assert.ok(ownerGas + granted <= maxSpend && ownerGas + operatorGas <= maxSpend);
       recovered[item.name] = receiptRecord(receipt);
