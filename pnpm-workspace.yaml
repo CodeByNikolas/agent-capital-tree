@@ -6,4 +6,8 @@ packages:
 minimumReleaseAgeExclude:
   - viem@2.56.9
 
-onlyBuiltDependencies: []
+allowBuilds:
+  esbuild: false
+  '@tailwindcss/oxide': false
+  lightningcss: false
+  sharp: false
