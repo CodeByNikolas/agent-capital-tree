@@ -95,7 +95,44 @@ export function capitalClient(rpcUrl: string, controllerAddress: Address): Capit
   return { rpc, controller, verifyDeployment, getTree };
 }
 
+/** A name-addressed authority attestation: what an agent may currently do under its ENS mandate. */
+export type NodeAuthority = {
+  name: string; rootId: string; nodeId: string; agent: Address; vault: Address;
+  active: boolean; revoked: boolean; expiry: string;
+  /** Live per-capability grant, checked on-chain against the node's EAC roles + bounded policy. */
+  capabilities: Record<Capability, boolean>;
+  policy: { maxAmounts: [string, string]; tokenMask: number; poolId: Hex; expiry: string };
+  tokens: readonly [Address, Address];
+  source: CapitalTree['source'];
+};
 
+/**
+ * Resolve the live authority of a single tree node, keyed by its numeric id, into a compact
+ * attestation any caller (a service, another agent) can consume. This is the public, ENS-named
+ * face of the same on-chain oracle (`checkAction` + bounded policy) that gates every action.
+ */
+export async function authorityOf(client: CapitalClient, nodeId: bigint): Promise<NodeAuthority> {
+  const node = await client.controller.read.getNode([nodeId]);
+  const tree = await client.getTree(node.rootId);
+  const named = tree.nodes.find(candidate => candidate.id === nodeId);
+  if (!named) throw new Error('Node is not part of its root tree');
+  const nowSeconds = BigInt(Math.floor(Date.now() / 1000));
+  const active = !named.revoked && named.generation === tree.generation && named.effectivePolicy.expiry > nowSeconds;
+  const capabilities = Object.fromEntries(
+    (Object.keys(financeRoles) as Capability[]).map(capability => [capability, named.authorizedActions.includes(capability)]),
+  ) as Record<Capability, boolean>;
+  return {
+    name: named.ensName, rootId: tree.rootId.toString(), nodeId: named.id.toString(),
+    agent: named.agent, vault: named.vault, active, revoked: named.revoked,
+    expiry: named.effectivePolicy.expiry.toString(), capabilities,
+    policy: {
+      maxAmounts: [named.effectivePolicy.maxAmounts[0].toString(), named.effectivePolicy.maxAmounts[1].toString()],
+      tokenMask: named.effectivePolicy.tokenMask, poolId: named.effectivePolicy.poolId,
+      expiry: named.effectivePolicy.expiry.toString(),
+    },
+    tokens: tree.tokens, source: tree.source,
+  };
+}
 
 /** Decimal strings preserve integer precision across JSON/MCP boundaries. */
 export function jsonSafe(value: unknown): unknown {

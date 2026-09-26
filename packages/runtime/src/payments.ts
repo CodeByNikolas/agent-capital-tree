@@ -76,6 +76,14 @@ async function boundedText(response: Response): Promise<string> {
   return Buffer.concat(parts).toString('utf8');
 }
 
+/**
+ * Vault-custodial x402 (Level 2). This path signs an EIP-3009 authorization with `from = the node's
+ * vault` and gates it on `CapitalController.checkPayment`, which requires a PAYMENT-ENABLED
+ * deployment: a controller exposing `checkPayment` + a `CapitalVault` implementing ERC-1271, plus
+ * USDC as a controller token. The base ACT-A/ACT-B deployment provides none of these — see
+ * `docs/usdc-x402-feasibility.md`. It therefore fails closed with a clear error there (the USDC
+ * token guard below), rather than silently misbehaving.
+ */
 export function paymentHandler(config: PaymentConfig): ToolHandler {
   for (const service of config.services) validateService(service);
   if (new Set(config.services.map(s => s.id)).size !== config.services.length) throw new Error('Duplicate service ID');

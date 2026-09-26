@@ -10,7 +10,7 @@ import {
   type Hex,
 } from "viem";
 import { sepolia } from "viem/chains";
-import { capitalClient } from "@agent-capital-tree/sdk";
+import { authorityOf, capitalClient } from "@agent-capital-tree/sdk";
 import { getPublicDeployment } from "@/lib/deployment";
 import {
   ERC20_TRANSFER_TOPIC,
@@ -130,32 +130,34 @@ export async function verifyPayment(
   const capital = capitalClient(rpcUrl, deployment.controllerAddress);
   const nodeId = requirePositiveInt(payload.nodeId, "bad_node_id");
 
-  let node;
+  // Route the spend through the same ENS/EAC authority oracle that gates every on-chain action,
+  // rather than re-implementing a partial mandate check here. `authorityOf` binds the payer to the
+  // node's agent and reports live, bounded authority (revoked / stale / expired all fail closed).
+  let authority;
   try {
-    node = await capital.controller.read.getNode([nodeId]);
+    authority = await authorityOf(capital, nodeId);
   } catch {
     throw new X402VerificationError("unknown_agent", "No capital-tree node matches the payment.");
   }
-  if (getAddress(node.agent) !== from) {
+  if (getAddress(authority.agent) !== from) {
     throw new X402VerificationError(
       "payer_not_agent",
       "The payer is not the agent bound to the referenced vault.",
     );
   }
+  if (authority.revoked) {
+    throw new X402VerificationError("mandate_revoked", "The paying agent's mandate has been revoked.");
+  }
+  if (!authority.active) {
+    throw new X402VerificationError("mandate_inactive", "The paying agent's mandate is expired or superseded.");
+  }
+  // Phase B: once PAY is an on-chain EAC role, gate spending on it here (one line):
+  //   if (!authority.capabilities.pay) throw new X402VerificationError("missing_pay_role", "…");
+  // The role is already defined off-chain but not yet enforceable on the deployed controller.
 
-  // Derive the authoritative ENS name (do not trust the header's copy) and check the mandate.
-  const tree = await capital.getTree(node.rootId);
-  const named = tree.nodes.find((candidate) => candidate.id === nodeId);
-  if (!named) {
-    throw new X402VerificationError("unknown_agent", "The agent node is not part of its root tree.");
-  }
-  const nowSeconds = BigInt(Math.floor(Date.now() / 1000));
-  if (named.effectivePolicy.expiry <= nowSeconds) {
-    throw new X402VerificationError("mandate_expired", "The paying agent's mandate has expired.");
-  }
   // When USDC is a controller token (post-migration), enforce the on-chain per-action cap too.
-  const usdcIndex = tree.tokens.findIndex((token) => getAddress(token) === USDC_SEPOLIA.address);
-  if (usdcIndex !== -1 && paid > named.effectivePolicy.maxAmounts[usdcIndex]) {
+  const usdcIndex = authority.tokens.findIndex((token) => getAddress(token) === USDC_SEPOLIA.address);
+  if (usdcIndex !== -1 && paid > BigInt(authority.policy.maxAmounts[usdcIndex])) {
     throw new X402VerificationError("over_mandate", "The payment exceeds the agent's USDC mandate cap.");
   }
 
@@ -168,7 +170,7 @@ export async function verifyPayment(
     asset: USDC_SEPOLIA.address,
     amount: payload.amount,
     payTo,
-    payer: { address: from, nodeId: payload.nodeId, ensName: named.ensName },
+    payer: { address: from, nodeId: payload.nodeId, ensName: authority.name },
     service: { id: service.id, ensName: service.ensName },
     settledAtBlock: receipt.blockNumber.toString(),
   };
