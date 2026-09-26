@@ -2,6 +2,12 @@
 
 As of 26 September 2026. Read this together with PLAN.md after context compaction. Older sections below retain the evidence and acceptance limits known at the time; the newest E2E status is first.
 
+## Agent activity report
+
+- Added /agent-activity to the dashboard navigation with a vault selector, exact per-token totals for allocations, delegation, reclaim/recovery and swap inputs/outputs, and the existing receipt-linked event log filtered to that vault. Uses the existing MultiBaas API; x402 remains a separate source.
+- Summaries cover loaded events only, disclose pagination and reported index lag, and distinguish loaded event blocks from the indexer's reported checkpoint. Loading uses skeletons; failed refreshes hide totals. No balance, P&L or lifetime-spend inference is made.
+- Exact-amount regression checks passed for direction, node isolation, duplicate IDs, separate swap assets and large integers. Web TypeScript and production build passed. Desktop/mobile browser checks used the real public Sepolia/MultiBaas read APIs; controlled responses tested skeleton/error states. No wallet transaction was sent.
+
 ## Remaining work/rami integration
 
 - Merged the remaining `work/rami` commit `6f51790`: Kanoki assets, CSS/component/layout building blocks and MCP graphics/formatting. Added the missing pinned Dagre dependency so the layout helper typechecks. Existing root creation defaults, owner filtering, recovery guards and native worker support remain intact.

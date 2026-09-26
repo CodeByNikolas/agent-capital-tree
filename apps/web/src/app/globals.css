@@ -621,3 +621,15 @@ button:disabled { cursor: not-allowed; opacity: .55; }
 .root-name-preview { margin: 8px 0 0; overflow-wrap: anywhere; color: var(--brand); font-family: var(--font-mono); font-size: 14px; }
 .root-name-field .wallet-form-hint { margin-top: 10px; }
 @media (max-width: 600px) { .root-name-input { flex-direction: column; align-items: stretch; } }
+
+/* Agent-level indexed history shares the dashboard's restrained table layout. */
+.agent-report { display: grid; gap: 24px; min-width: 0; }
+.agent-report-picker { display: grid; gap: 8px; font-weight: 600; min-width: 0; }
+.agent-report-picker select { width: 100%; max-width: 640px; min-width: 0; padding: 12px 40px 12px 14px; border: 1px solid var(--border); border-radius: var(--radius); background: var(--background); color: var(--foreground); text-overflow: ellipsis; }
+.agent-report-note, .agent-report-coverage p { color: var(--muted-foreground); font-size: 14px; line-height: 1.6; max-width: 80ch; }
+.agent-report-totals { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); border-top: 1px solid var(--border); }
+.agent-report-totals > div { padding: 16px 16px 16px 0; border-bottom: 1px solid var(--border); }
+.agent-report-totals dt { color: var(--muted-foreground); font-size: 14px; }
+.agent-report-totals dd { margin: 6px 0 0; font-weight: 600; font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
+@media (max-width: 640px) { .agent-report-totals { grid-template-columns: 1fr; } }
+.agent-report-picker select { appearance: none; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%2375807a' stroke-width='2'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 14px center; }

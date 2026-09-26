@@ -69,6 +69,8 @@ import type {
 } from "@/lib/dashboard-types";
 import type { PublicDeployment } from "@/lib/deployment";
 import { formatAmount, formatCompactAmount, formatRoundedAmount } from "@/lib/format-display-amount";
+import { AgentActivity } from "@/components/agent-activity";
+import { agentEvents } from "@/lib/agent-activity";
 import { mobileTreeOrder } from "@/lib/mobile-tree-order";
 
 type InjectedProvider = Parameters<typeof custom>[0] & {
@@ -92,7 +94,7 @@ interface DashboardProps {
   demoLabel?: string | null;
   demoBudget?: string | null;
   setupOperator?: string | null;
-  view: "overview" | "tree" | "activity" | "uniswap" | "payments" | "applications" | "mcp" | "setup";
+  view: "overview" | "tree" | "activity" | "agent-activity" | "uniswap" | "payments" | "applications" | "mcp" | "setup";
   tour?: boolean;
   step?: number;
 }
@@ -493,6 +495,7 @@ function WalletControl({ wallet }: { wallet: InjectedWalletState }) {
 const views = [
   { id: "overview", title: "Overview", path: "/", icon: Layers3 },
   { id: "tree", title: "Agent tree", path: "/tree", icon: GitBranch },
+  { id: "agent-activity", title: "Agent activity", path: "/agent-activity", icon: Fingerprint },
   { id: "activity", title: "Activity", path: "/activity", icon: ActivityIcon },
   { id: "uniswap", title: "Uniswap", path: "/uniswap", icon: ArrowLeftRight },
   { id: "payments", title: "x402 Pay", path: "/payments", icon: Coins },
@@ -1613,6 +1616,9 @@ export function Dashboard({ data: initialData, deployment, vaultQuery, nodeQuery
             <CapitalTree data={data} selectedId={selectedNode.id} onSelect={(id) => { setSelectedId(id); setDetailOpen(true); }} canSpawnVault={canSpawnVault} onRequestSpawn={() => requestAction("spawn-child")} />
             <Dialog open={detailOpen} onOpenChange={(open) => { setDetailOpen(open); if (!open) requestAnimationFrame(() => document.querySelector<HTMLButtonElement>(`${window.matchMedia("(max-width: 720px)").matches ? ".tree-canvas-mobile" : ".tree-canvas-desktop"} .tree-node[data-node-id="${CSS.escape(selectedNode.id)}"]`)?.focus()); }}><DialogContent className="node-detail-dialog"><DialogHeader><DialogTitle>{selectedNode.ensName}</DialogTitle><DialogDescription>{data.source === "preview" ? "Fictional example: no on-chain funds or permissions." : "Current vault funds, authority, and limits from Sepolia."}</DialogDescription></DialogHeader><div className="node-detail-scroll"><MandatePanel data={data} node={selectedNode} canTighten={canTighten} canRevoke={canRevoke} canRecover={canRecover} onRequestAction={requestAction} /></div></DialogContent></Dialog>
           </>}
+          {view === "agent-activity" && <AgentActivity data={data} node={selectedNode} feed={activityFeed} loading={activeActivityState.loading || activeActivityState.loadingMore} error={activeActivityState.loadMoreError} onSelect={setSelectedId} onRetry={() => setActivityRetry(value => value + 1)}>
+            <ActivityPanel data={{ ...dashboardData, activity: activityFeed?.source === "multi-baas" ? agentEvents(activityFeed.page.items, selectedNode.id, data.rootId).map(item => mapIndexedActivity(data, item)) : [] }} feed={activityFeed} loading={activeActivityState.loading} loadingMore={activeActivityState.loadingMore} loadMoreError={activeActivityState.loadMoreError} onRetry={() => setActivityRetry(value => value + 1)} onLoadMore={() => void loadEarlierActivity()} />
+          </AgentActivity>}
           {view === "activity" && <>
             <div className="page-heading"><span className="page-kicker">Indexed on-chain events</span><h1>Activity</h1><p>Capital movement, policy changes, and Uniswap actions for this root. Current balances and permissions come from direct RPC reads.</p></div>
             <ActivityPanel
