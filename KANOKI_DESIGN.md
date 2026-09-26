@@ -16,11 +16,14 @@ The September 26 implementation brief and its corrections govern the app, docume
 - Dark is primary; light is an explicit option. Use only the supplied color, font, spacing and radius tokens. Depth comes from a line border and the raised surface.
 - Moss indicates action and current authority. Gold identifies capital. Signal is reserved for revocation, exceeded limits and the specified unreachable index indicator.
 - Use Fraunces for one display sentence per view, IBM Plex Sans for prose and IBM Plex Mono for amounts, ENS names, addresses, times and hashes. Use the brief's type scale; capability labels are the specified 11px exception.
-- Amounts show six decimals and a unit. USDC uses `--gold-ink`. DEMO-USD is separate, muted and explicitly a test asset. Never add their balances together. Pool quotes state: "Test ratio, not a USD valuation."
+- Dashboard ERC-20 amounts show three decimals and a unit; positive dust below 0.001 remains visible as <0.001. Inputs, raw transaction values and MCP payloads retain exact precision. USDC uses `--gold-ink`. DEMO-USD is separate, muted and explicitly a test asset. Never add their balances together. Pool quotes state: "Test ratio, not a USD valuation."
 - Use line borders and the supplied radius tokens. Hover/focus/state transitions take 150ms ease-out; node entry takes 200ms. Focus is a two-pixel gold outline.
-- Navigation is Overview, Tree, Applications, Activity, Setup. Tree edges are orthogonal and run from parent above to child below. The desktop layout uses dagre; narrow layouts retain the same card structure.
+- The sidebar uses the darker base surface; the dashboard uses the lighter raised surface in both themes.
+- Navigation uses the restored shadcn Sidebar with a mobile Sheet and sticky topbar. Keep all current routes discoverable. Overview action cards have equal widths and bottom-aligned light-green primary buttons.
 - Every node shows all four capabilities: DELEGATE, SWAP, LIQUIDITY, PAY. Missing capabilities are dimmed. Disabled application actions remain visible. Revoke and Exit require confirmation describing their scope.
 - Service settlement has one receipt; retries reuse it. Activity rows have separators, timestamps, node names, right-aligned amounts and transaction links, with truthful MultiBaas coverage.
+
+- Every asynchronous data surface uses visible Skeleton components. Hide stale data during refresh while retaining mounted forms and payment state. Error states must not imply a zero balance.
 
 ## Brand assets
 

@@ -1,4 +1,5 @@
 "use client";
+import { Skeleton } from "@/components/ui/skeleton";
 
 import { useEffect, useRef, useState } from "react";
 import { ServiceCard } from "./treasury-records";
@@ -85,7 +86,7 @@ export function X402Panel({
         </p>
       )}
       {catalogError && <p className="x402-hint">Service catalog unavailable: {catalogError}</p>}
-      {services === null && !catalogError && <p className="x402-hint">Loading services…</p>}
+      {services === null && !catalogError && <div role="status" aria-label="Loading services"><Skeleton className="loading-table-row" /><Skeleton className="loading-table-row" /></div>}
       <div className="x402-services">
         {services?.map(service => <ServiceCard key={purchaseKey(service.id)} service={service} node={node} purchase={purchases[purchaseKey(service.id)]} pending={pendingId === service.id} error={errors[service.id]} canPurchase={purchasable} repeated={!!repeated[purchaseKey(service.id)]} onPurchase={() => void buy(service.id)} />)}
       </div>

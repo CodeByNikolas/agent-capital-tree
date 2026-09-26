@@ -243,3 +243,51 @@ input[type="checkbox"] { accent-color: var(--moss); }
   .position-stats { grid-template-columns: 1fr; gap: 0; }
   .activity-list .activity-row td { width: auto; max-width: 100%; }
 }
+
+/* Dashboard navigation restored using the original shadcn Sidebar component. */
+[data-slot="sidebar-wrapper"] { width: 100%; min-height: 100dvh; }
+[data-slot="sidebar"]:not([data-mobile]) { display: block; flex: 0 0 var(--sidebar-width); width: var(--sidebar-width); border: 0; }
+[data-slot="sidebar-gap"] { width: var(--sidebar-width); }
+[data-slot="sidebar-container"] { position: fixed; inset: 0 auto 0 0; width: var(--sidebar-width); display: flex; z-index: 30; background: var(--surface-raised); border-right: 1px solid var(--line); }
+[data-slot="sidebar-inner"] { display: flex; flex-direction: column; width: 100%; height: 100%; min-width: 0; }
+[data-slot="sidebar"][data-collapsible="offcanvas"] { flex-basis: 0; width: 0; }
+[data-collapsible="offcanvas"] [data-slot="sidebar-gap"] { width: 0; }
+[data-collapsible="offcanvas"] [data-slot="sidebar-container"] { display: none; }
+[data-slot="sidebar-content"] { min-height: 0; overflow-y: auto; padding-top: 0; }
+[data-slot="sidebar-menu-button"] { width: 100%; text-align: left; }
+[data-slot="sidebar-group"] { margin-bottom: var(--space-6); }
+[data-slot="sidebar"][data-mobile="true"] { width: min(88vw, 288px); padding: 16px; }
+[data-slot="sidebar"][data-mobile="true"] > div:not(.sr-only) { display: flex; flex-direction: column; min-height: 0; }
+.app-sidebar .root-access-form { width: 100%; display: flex; flex-direction: column; align-items: stretch; }
+.app-sidebar .root-access-form input { width: 100%; min-width: 0; flex: auto; }
+.app-sidebar .root-access-bar { margin: 0; }
+.app-sidebar-header { padding-top: var(--space-6); }
+.app-sidebar-header .brand-tagline { white-space: normal; }
+.app-topbar { position: sticky; top: 0; z-index: 20; flex-wrap: nowrap; background: var(--surface); }
+.main-shell { display: flex; flex-direction: column; min-height: 100dvh; }
+.main-shell > .dashboard-content { display: flex; flex-direction: column; flex: 1; width: 100%; max-width: none; }
+.main-shell .app-footer { margin-top: auto; }
+.overview-lower { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--space-6); margin: var(--space-8) 0; }
+.overview-lower > [data-slot="card"] { min-width: 0; height: 100%; }
+.overview-lower [data-slot="card-content"] { margin-top: auto; padding-top: var(--space-4); }
+.overview-lower .button { white-space: normal; text-align: center; }
+.button-primary { background: #7FC8A0; border-color: #7FC8A0; color: #0F1A14; }
+.button-primary:hover:not(:disabled) { background: #91D3AF; border-color: #91D3AF; opacity: 1; }
+/* These skeletons do not depend on Tailwind utilities being present. */
+[data-slot="skeleton"] { min-height: 16px; border-radius: var(--radius-sm); background: var(--line); animation: skeleton-pulse 1.5s ease-in-out infinite; }
+.loading-heading { width: min(65%, 360px); height: 42px; margin-bottom: 16px; }
+.loading-description { width: min(90%, 540px); height: 20px; }
+.loading-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 24px; }
+.loading-panel { padding: 24px; border: 1px solid var(--line); border-radius: var(--radius-md); }
+.loading-label { width: 45%; height: 18px; margin-bottom: 16px; }
+.loading-value { width: 65%; height: 32px; margin-bottom: 16px; }
+.loading-line { width: 85%; height: 16px; }
+.loading-table-row { width: 100%; height: 72px; margin: 16px 0; }
+@keyframes skeleton-pulse { 50% { opacity: .45; } }
+@media (max-width: 767px) { [data-slot="sidebar"]:not([data-mobile]) { display: none; } .overview-lower, .loading-grid { grid-template-columns: 1fr; } .app-topbar-title { min-width: 0; font-size: 13px; } .app-topbar-title > span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; } .dashboard-content { padding: 24px 16px; } }
+@media (prefers-reduced-motion: reduce) { [data-slot="skeleton"] { animation: none; } }
+.dashboard-loaded-content { display: flex; flex-direction: column; flex: 1; min-width: 0; }
+[data-slot="sidebar-menu-button"][aria-current="page"] { color: var(--moss); background: var(--moss-soft); }
+/* Dark navigation frames the lighter workspace in both Kanoki themes. */
+[data-slot="sidebar-container"], [data-slot="sidebar"][data-mobile="true"] { background: var(--surface); }
+.main-shell { --surface: var(--surface-raised); }

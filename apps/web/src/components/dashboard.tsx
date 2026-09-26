@@ -40,7 +40,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
-import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { WalletControlsPanel, type WalletActionMode } from "@/components/wallet-controls";
 import { X402Panel } from "@/components/x402-panel";
@@ -67,7 +67,7 @@ import type {
   VaultState,
 } from "@/lib/dashboard-types";
 import type { PublicDeployment } from "@/lib/deployment";
-import { formatAmount } from "@/lib/format-display-amount";
+import { formatAmount, formatExactAmount } from "@/lib/format-display-amount";
 import { ThemeControl, StatusPill, CapabilityPill, Brand, EmptyState } from "@/components/kanoki";
 import { layoutTree, relativeExpiry } from "@/lib/tree-layout";
 import { AgentActivity } from "@/components/agent-activity";
@@ -520,8 +520,8 @@ function AppSidebar({ view, vaultQuery, selectedId, rootLabel, data, readError, 
   return (
     <ShadcnSidebar collapsible="offcanvas" className="app-sidebar">
       <SidebarHeader className="app-sidebar-header">
-        <Link href={routeHref("/", vaultQuery)} className="app-brand" onClick={() => setOpenMobile(false)} aria-label="Agent Capital Tree overview">
-          <span>Agent Capital Tree</span>
+        <Link href={routeHref("/", vaultQuery)} className="app-brand" onClick={() => setOpenMobile(false)} aria-label="Kanoki overview">
+          <Brand />
         </Link>
         <div className="app-workspace"><span className="app-workspace-symbol">{rootLabel.slice(0, 1).toUpperCase()}</span><span><small>Current root</small><strong>{rootLabel}</strong></span></div>
       </SidebarHeader>
@@ -529,7 +529,7 @@ function AppSidebar({ view, vaultQuery, selectedId, rootLabel, data, readError, 
         <SidebarGroup className="app-sidebar-vault">
           <SidebarGroupContent>
             <RootAccessBar vault={vaultQuery} path={views.find((item) => item.id === view)?.path ?? "/"} walletAddress={walletAddress} />
-            {vaultQuery && <LiveReadNotice data={data} error={readError} />}
+            {vaultQuery && data.source !== "preview" && <LiveReadNotice data={data} error={readError} />}
           </SidebarGroupContent>
         </SidebarGroup>
         <SidebarGroup>
@@ -537,7 +537,7 @@ function AppSidebar({ view, vaultQuery, selectedId, rootLabel, data, readError, 
             <SidebarMenu aria-label="Primary navigation">
               {views.map(({ id, title, path, icon: Icon }) => (
                 <SidebarMenuItem key={id}>
-                  <SidebarMenuButton render={<Link href={routeHref(path, vaultQuery, selectedId)} onClick={() => setOpenMobile(false)} />} isActive={view === id} aria-current={(view === id || (id === "applications" && ["uniswap", "payments"].includes(view))) ? "page" : undefined}>
+                  <SidebarMenuButton render={<Link href={routeHref(path, vaultQuery, selectedId)} onClick={() => setOpenMobile(false)} />} isActive={view === id} aria-current={view === id ? "page" : undefined}>
                     <Icon aria-hidden="true" /><span>{title}</span>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
@@ -552,8 +552,7 @@ function AppSidebar({ view, vaultQuery, selectedId, rootLabel, data, readError, 
 
 function Topbar({ wallet, view, vaultQuery, selectedId }: { view: DashboardProps["view"]; source?: DataSource; wallet: InjectedWalletState; vaultQuery: string | null; selectedId: string }) {
   return <header className="app-topbar">
-    <div className="app-topbar-title"><Link href="/" aria-label="Kanoki overview"><Brand /></Link></div>
-    <nav className="header-nav" aria-label="Main navigation">{(["overview", "tree", "applications", "activity", "setup"] as const).map(id => { const item = views.find(v => v.id === id)!; return <Link key={id} href={routeHref(item.path, vaultQuery, selectedId)} aria-current={(view === id || (id === "applications" && ["uniswap", "payments"].includes(view)) || (id === "activity" && view === "agent-activity")) ? "page" : undefined}>{id === "tree" ? "Tree" : id === "setup" ? "Setup" : item.title}</Link>; })}</nav>
+    <div className="app-topbar-title"><SidebarTrigger /><span>{views.find(item => item.id === view)?.title}</span></div>
     <div className="app-topbar-actions"><ThemeControl /><WalletControl wallet={wallet} /></div>
   </header>;
 }
@@ -582,7 +581,7 @@ function RootAccessBar({ vault, path, walletAddress }: { vault: string | null; p
   const router = useRouter();
   const [lookupError, setLookupError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
-  const { roots: discovered } = useDiscoveredRoots();
+  const { roots: discovered, loading: rootsLoading } = useDiscoveredRoots();
 
   const walletLower = walletAddress?.toLowerCase() ?? null;
   const vaultLower = vault?.toLowerCase() ?? null;
@@ -623,7 +622,8 @@ function RootAccessBar({ vault, path, walletAddress }: { vault: string | null; p
       <button className="button button-secondary button-small" type="submit" disabled={loading}>{loading ? "Looking up…" : path === "/setup" ? "Open root vault" : "Open vault"}</button>
       {lookupError && <span role="alert" className="vault-lookup-error">{lookupError}</span>}
     </form>
-    {chips.length > 0 && (
+    {(loading || (rootsLoading && walletAddress)) && <div role="status" aria-label="Loading vault lookup"><Skeleton className="loading-table-row" /></div>}
+    {!rootsLoading && chips.length > 0 && (
       <div className="root-quick-start">
         <span className="root-quick-label">Your root vaults</span>
         <div className="demo-root-chips" role="group" aria-label="Your root vaults on Sepolia">
@@ -819,9 +819,9 @@ function CapitalLedger({ data, node }: { data: DashboardData; node: VaultNode })
         {assets.map((asset) => (
           <div className="capital-ledger-row" role="row" key={asset.key}>
             <span className="capital-ledger-asset" role="cell"><i />{asset.symbol}</span>
-            <strong role="cell" title={`Exact: ${formatAmount(sumAsset(node.tokenHoldings, asset))}`}>{formatAmount(sumAsset(node.tokenHoldings, asset))}</strong>
-            <span role="cell" title={`Exact: ${formatAmount(sumAsset(node.freeCapital, asset))}`}>{formatAmount(sumAsset(node.freeCapital, asset))}</span>
-            <span role="cell" title={allocationHistoryAvailable ? `Exact: ${formatAmount(sumAsset(outgoing, asset))}` : undefined}>{allocationHistoryAvailable ? formatAmount(sumAsset(outgoing, asset)) : "—"}</span>
+            <strong role="cell" title={`Exact: ${formatExactAmount(sumAsset(node.tokenHoldings, asset))}`}>{formatAmount(sumAsset(node.tokenHoldings, asset))}</strong>
+            <span role="cell" title={`Exact: ${formatExactAmount(sumAsset(node.freeCapital, asset))}`}>{formatAmount(sumAsset(node.freeCapital, asset))}</span>
+            <span role="cell" title={allocationHistoryAvailable ? `Exact: ${formatExactAmount(sumAsset(outgoing, asset))}` : undefined}>{allocationHistoryAvailable ? formatAmount(sumAsset(outgoing, asset)) : "—"}</span>
           </div>
         ))}
       </div>
@@ -933,6 +933,7 @@ function ActivityPanel({
   onLoadMore: () => void;
   uniswapOnly?: boolean;
 }) {
+  if ((loading || loadingMore) && data.activitySource !== "preview") return <section className="activity-panel" role="status" aria-label="Loading activity history"><Skeleton className="loading-heading" />{[0, 1, 2].map(row => <Skeleton key={row} className="loading-table-row" />)}</section>;
   const page = feed?.source === "multi-baas" ? feed.page : null;
   const indexLag = page?.indexing.indexGapBlocks;
   const historyCoverage = page
@@ -978,6 +979,8 @@ function PositionsPanel({ data, actions, walletOnSepolia, walletAddress }: { dat
 }
 
 function PaymentsPanel({ history, loading, error }: { history: PaymentHistory | null; loading: boolean; error: string | null }) {
+  if (loading) return <section role="status" aria-label="Loading payment history">{[0, 1, 2].map(row => <Skeleton key={row} className="loading-table-row" />)}</section>;
+  if (error) return <p role="alert">Payment history unavailable: {error}</p>;
   return <section className="payments-panel" aria-label="Vault USDC settlements">
     <div className="payments-heading"><div><h2>Vault USDC settlements</h2><p>On-chain EIP-3009 authorizations paired with Circle USDC transfers from this tree’s vaults.</p></div></div>
       {error && <p className="payment-status payment-status-error" role="alert">{error}</p>}
@@ -1318,20 +1321,23 @@ export function Dashboard({ data: initialData, deployment, vaultQuery, nodeQuery
   }
 
   if (vaultKey && (!currentSnapshot || currentReadState.status === "error")) {
-    return <SidebarProvider>
+    return <TooltipProvider delay={150}><SidebarProvider>
+      <AppSidebar view={view} vaultQuery={vaultQuery} selectedId="" rootLabel={currentSnapshot?.data.nodes[0]?.label ?? "Loading vault…"} data={data} readError={currentReadState.error} walletAddress={wallet.address} />
       <SidebarInset className="main-shell"><Topbar view={view} wallet={wallet} vaultQuery={vaultQuery} selectedId="" />
         <div className="dashboard-content"><DashboardLoading view={view} error={currentReadState.error} onRetry={() => setTreeRetry((value) => value + 1)} /></div>
       </SidebarInset>
-    </SidebarProvider>;
+    </SidebarProvider></TooltipProvider>;
   }
 
   return (
     <TooltipProvider delay={150}>
     <SidebarProvider>
-
+      <AppSidebar view={view} vaultQuery={vaultQuery} selectedId={selectedNode.id} rootLabel={rootNode?.label ?? "No vault selected"} data={data} readError={liveError} walletAddress={wallet.address} />
       <SidebarInset className="main-shell">
         <Topbar view={view} wallet={wallet} vaultQuery={vaultQuery} selectedId={selectedNode.id} />
         <div className="dashboard-content">
+          {currentReadState.status === "loading" && <DashboardLoading view={view} error={null} onRetry={() => setTreeRetry(value => value + 1)} />}
+          <div className="dashboard-loaded-content" hidden={currentReadState.status === "loading"}>
           {view === "overview" && <div className="page-heading"><h1>Overview</h1><p>Balances and authority across your vaults.</p></div>}
           {view === "tree" && <div className="page-heading"><h1>Capital tree</h1><p>Select a node to inspect its balance, capabilities and limits.</p></div>}
           {view === "activity" && <div className="page-heading"><h1>Activity</h1><p>Indexed capital movements and changes to node authority.</p></div>}
@@ -1352,12 +1358,16 @@ export function Dashboard({ data: initialData, deployment, vaultQuery, nodeQuery
             />
           )}
           {data.source === "direct-rpc" && rootNode?.tokenHoldings[0]?.symbol === "USDC" && BigInt(rootNode.tokenHoldings[0].rawAmount) === 0n && <div className="zero-usdc-notice" role="note"><Coins size={20} aria-hidden="true" /><span><strong>This root has no USDC.</strong> Request Sepolia USDC from Circle, then use Fund root in Setup &amp; control. The owner wallet also needs Sepolia ETH for gas; the vault itself does not.</span><a href="https://faucet.circle.com/" target="_blank" rel="noreferrer">Circle faucet <ArrowUpRight size={15} aria-hidden="true" /></a></div>}
-          {!(view === "mcp" && !vaultQuery) && <RootAccessBar vault={vaultQuery} path={views.find(item => item.id === view)?.path ?? "/"} walletAddress={wallet.address} />}
+
           {view === "overview" && <>
 
 
             <SummaryMetrics data={data} />
             <VaultRegister data={data} vaultQuery={vaultQuery} />
+            <div className="overview-lower">
+              <Card><CardHeader><CardTitle>Agent tree</CardTitle><CardDescription>Inspect each vault’s capital, permissions and place in the delegation tree.</CardDescription></CardHeader><CardContent><Button nativeButton={false} render={<Link href={routeHref("/tree", vaultQuery, selectedNode.id)} />}>Explore agent tree <ArrowRight data-icon="inline-end" /></Button></CardContent></Card>
+              <Card><CardHeader><CardTitle>Owner control</CardTitle><CardDescription>Fund your root, authorize an operator and review the independent owner recovery controls.</CardDescription></CardHeader><CardContent><Button nativeButton={false} render={<Link href={routeHref("/setup", vaultQuery)} />}>Review setup &amp; control <ArrowRight data-icon="inline-end" /></Button></CardContent></Card>
+            </div>
           </>}
           {view === "tree" && <>
 
@@ -1368,7 +1378,7 @@ export function Dashboard({ data: initialData, deployment, vaultQuery, nodeQuery
             <ActivityPanel data={{ ...dashboardData, activity: activityFeed?.source === "multi-baas" ? agentEvents(activityFeed.page.items, selectedNode.id, data.rootId).map(item => mapIndexedActivity(data, item)) : [] }} feed={activityFeed} loading={activeActivityState.loading} loadingMore={activeActivityState.loadingMore} loadMoreError={activeActivityState.loadMoreError} onRetry={() => setActivityRetry(value => value + 1)} onLoadMore={() => void loadEarlierActivity()} />
           </AgentActivity>}
           {view === "activity" && <>
-            <div className="application-links"><Button variant="secondary" render={<Link href={routeHref("/agent-activity", vaultQuery, selectedNode.id)} />}>Agent activity</Button></div>
+            <div className="application-links"><Button variant="secondary" nativeButton={false} render={<Link href={routeHref("/agent-activity", vaultQuery, selectedNode.id)} />}>Agent activity</Button></div>
             <ActivityPanel
               data={dashboardData}
               feed={activityFeed}
@@ -1392,7 +1402,7 @@ export function Dashboard({ data: initialData, deployment, vaultQuery, nodeQuery
             <p className="module-footnote">These receipts prove token settlement, not the merchant’s service delivery. Generic contract transactions and currency valuation remain future work.</p>
           </>}
           {view === "applications" && <>
-            <div className="application-links"><Button variant="secondary" render={<Link href={routeHref("/uniswap", vaultQuery, selectedNode.id)} />}>Uniswap activity</Button><Button variant="secondary" render={<Link href={routeHref("/payments", vaultQuery, selectedNode.id)} />}>Payment receipts</Button></div>
+            <div className="application-links"><Button variant="secondary" nativeButton={false} render={<Link href={routeHref("/uniswap", vaultQuery, selectedNode.id)} />}>Uniswap activity</Button><Button variant="secondary" nativeButton={false} render={<Link href={routeHref("/payments", vaultQuery, selectedNode.id)} />}>Payment receipts</Button></div>
 
             <PositionsPanel data={data} actions={actions} walletOnSepolia={walletOnSepolia} walletAddress={wallet.address} />
             <X402Panel node={selectedNode} actions={actions} walletOnSepolia={walletOnSepolia} canPay={selectedAgentConnected} />
@@ -1426,6 +1436,7 @@ export function Dashboard({ data: initialData, deployment, vaultQuery, nodeQuery
           </details>
           </>}
           <Footer source={data.source} vaultQuery={vaultQuery} />
+          </div>
         </div>
       </SidebarInset>
     </SidebarProvider>

@@ -8,6 +8,14 @@
 
 # Kanoki — Status
 
+## Dashboard restoration and three-decimal token display
+
+- Restored the original shadcn Sidebar from Git history, keeping Kanoki branding/tokens, mobile Sheet navigation and all current routes. Sidebar uses the darker base surface; the workspace uses the lighter raised surface in both themes. Sticky topbar remains.
+- Overview action cards have equal widths, bottom-aligned light-green primary buttons, and matching outlines. Retained the compact vault register, separate USDC/DEMO-USD values and existing financial controls.
+- Restored visible Skeleton styling independently of Tailwind utilities, added route-level loading, and covered tree reads, background refresh, activity/payment history, service catalog and root lookup. Background refresh hides old figures without unmounting forms or payment state.
+- All ERC-20 display helpers now round to three decimals using bigint arithmetic; positive dust is <0.001. Exact tooltip inspection, input parsing and transaction amounts retain their precision. MCP payloads are unchanged.
+- Checks: production build/TypeScript, exact-format tests (dust, carry, large integers), and browser tests across nine routes with delayed public read snapshots; both themes at desktop/mobile, equal cards, CTA alignment/color, mobile Escape/focus restoration, retained DOM on refresh, no overflow or page errors. Surface colors checked in both themes. No financial transactions.
+
 ## Quiet UI review — 26 September
 
 The seven remaining preview captures are tracked, including all four README-GIF source frames. PNG decoding passed. These are illustrative UI records, not financial execution evidence.
