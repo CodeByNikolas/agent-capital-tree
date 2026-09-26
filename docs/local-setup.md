@@ -23,11 +23,11 @@ pnpm mcp:chat-verify
 pnpm mcp:settings
 ```
 
-`mcp:verify` creates a fresh temporary Codex profile, installs the local marketplace plugin, confirms exactly one enabled `capital-tree` MCP and all 16 tools, then calls the installed server's `getTree` on the current public USDC root. Its temporary loopback bridge implements **only** `getTree`; a write request is rejected. The profile is removed afterwards. `mcp:chat-verify` starts the permanent-use read-only STDIO server, confirms exactly two read tools (`getTree`, `visualizeTree`), performs a live chain read and checks its PNG diagram. Both tests prove MCP mechanics, not a personal app connection or financial write. `mcp:settings` prints the **actual absolute Node and script paths** for the checkout containing that script, avoiding the nested-checkout path mistake. The host Codex CLI may be newer than the separately pinned Linux worker CLI 0.154.0. `ACT_APP_URL` and `ACT_SEPOLIA_RPC_URL` optionally override public test endpoints; neither is a secret. Do not use these tests to replay the completed payment/root.
+`mcp:verify` creates a fresh temporary Codex profile, installs the local marketplace plugin, confirms exactly one enabled `capital-tree` MCP and all 16 tools, then calls its `getTree` with writes disabled. The profile is removed afterwards. `mcp:chat-verify` tests the permanent-use STDIO server's three keyless tools (`getTree`, `visualizeTree`, `prepareRootSetup`), including live ENS and vault resolution, data plus PNG from one block, and a bounded browser-wallet setup link. These tests do not send a transaction. `mcp:settings` prints the **actual absolute Node and script paths** for this checkout. `ACT_APP_URL` and `ACT_SEPOLIA_RPC_URL` optionally override public endpoints; neither is a secret.
 
 ## Use the read-only MCP in Codex inside the ChatGPT desktop app
 
-The proof above does **not** leave an MCP installed in your personal profile. To use the two read tools in an actual Codex chat, register the local STDIO server once. The exact paths are shown by `pnpm mcp:settings`. In PowerShell:
+The proof above does **not** leave an MCP installed in your personal profile. To use the keyless tools in an actual Codex chat, register the local STDIO server once. The exact paths are shown by `pnpm mcp:settings`. In PowerShell:
 
 ```powershell
 $actScript = (Resolve-Path -LiteralPath 'scripts/mcp-readonly-server.mjs').Path
@@ -49,11 +49,13 @@ The resulting configuration contains only the Node executable and an absolute pa
 
 Open a **new Codex chat** in the ChatGPT desktop app, select this project, type `/mcp` and confirm `capital_tree_readonly` is enabled. Then ask:
 
-> Use the `capital_tree_readonly` MCP server's `getTree` tool with `rootId: "1"`. Report `source.chainId`, `source.blockNumber`, `source.observedAt`, the node count and the root vault. Do not use the shell, web browsing, another tool or any write action.
+> Use `capital_tree_readonly.getTree` with `query: "hello.agentcapitalusdc.eth"`. Show its graph and report its Sepolia block, observation time, root vault, balances and current authorized actions. Do not use shell or another source.
 
-The answer should name Sepolia chain `11155111`, two nodes in the current demo tree and a recent block. Check the block and vault against the [public dashboard](https://agent-capital-tree-silk.vercel.app/tree?vault=0xAc5378EdA34f38A7fd34BB808B1b5492aF499bcf). The dashboard and Codex independently read Sepolia; the browser **cannot inspect the local STDIO session**, so its `/mcp` page shows the connection path and instructions, not an automatic live-connected badge. To remove this personal read-only registration later, run `codex mcp remove capital_tree_readonly` after confirming its name with `codex mcp list`.
+The answer should name Sepolia chain `11155111`, root 3 and a recent block; `hello` currently has no demo funding or active actions. You can also pass a vault address or numeric root ID. The dashboard and Codex independently read Sepolia; the browser **cannot inspect the local STDIO session**. To remove this personal registration later, run `codex mcp remove capital_tree_readonly` after confirming its name with `codex mcp list`.
 
-For the visual tree, ask: “Call `capital_tree_readonly.visualizeTree` with `rootId: "1"` and show its PNG diagram. State its Sepolia block number and observed time.” The image includes actual ENS names, parent/child edges, wallet vaults, Test-USDC balances and permissions; the tool also returns Mermaid text for hosts that do not display MCP image results. In a live Codex CLI test, the host received `text,image`; final rendering inside the ChatGPT desktop UI remains a manual acceptance check.
+Every `getTree` result now contains JSON, a Mermaid fallback and a PNG graph from **one** chain snapshot. `visualizeTree` remains an alias. Ask Codex to show the image, not merely describe it. ChatGPT desktop GUI rendering remains a manual acceptance check.
+
+To start a new demo from the chat, call `prepareRootSetup` with a lowercase ENS label and `budgetRaw: "100000"` (0.10 Test-USDC maximum). Open its direct `/setup` link in a browser with your owner wallet. The browser pre-fills the label, narrow delegate/restrict/reclaim mandate and exact funding amount; review them before signing. The current contracts require separate `createRoot`, optional exact USDC `approve`, `fundRoot`, and `setRootOperator` transactions. The MCP cannot invoke an injected browser wallet inside the chat, and the URL contains no key or token. After creation, return to the chat and read the new ENS name.
 
 ### Keep a visible MCP connection open on your desktop
 
@@ -74,7 +76,7 @@ claude mcp get capital_tree_readonly
 
 For Claude Desktop chat, open **Settings → Developer** and edit its local MCP configuration (`%APPDATA%\Claude\claude_desktop_config.json` on Windows). Merge the `capital_tree_readonly` entry printed by `pnpm mcp:settings` under the existing `mcpServers` object; do not replace other servers. Fully quit and reopen Claude Desktop, then check **+ → Connectors** and Developer connection status. Anthropic documents this [local configuration](https://py.sdk.modelcontextprotocol.io/get-started/real-host/) and the [Desktop connection check](https://support.claude.com/en/articles/10949351-getting-started-with-local-mcp-servers-on-claude-desktop). A packaged `.mcpb` extension for one-click install via Settings → Extensions is **not** supplied yet; do not select a random remote connector, which would require a publicly reachable server. Claude Desktop chat itself has not yet been manually verified with this project.
 
-This is **Codex in the ChatGPT desktop app**, not a normal chat at chatgpt.com. ChatGPT web does not read local Codex config or start this STDIO process; it requires a remote MCP-backed plugin or tunnel, neither of which this project currently provides. The [official distinction](https://learn.chatgpt.com/docs/extend/mcp?surface=cli) matters for jury instructions. Do not confuse this one-tool read-only server with the full 16-tool companion plugin; keep them in separate Codex profiles to avoid duplicate `getTree` tools.
+This is **Codex in the ChatGPT desktop app**, not a normal chat at chatgpt.com. ChatGPT web does not read local Codex config or start this STDIO process. The [official distinction](https://learn.chatgpt.com/docs/extend/mcp?surface=cli) matters for jury instructions. The keyless server prepares the owner-wallet setup but has no financial signer; the full 16-tool companion remains separate. Avoid registering both under different names in the same chat to prevent duplicate `getTree` tools.
 
 ## Full agent actions: Linux companion only
 
@@ -128,29 +130,22 @@ This prints the **public operator address**, not its key. In your root's Setup p
 node packages/runtime/cli.mjs start /absolute/private/config.json
 ```
 
-This starts with public-chain writes disabled. Keep this terminal running. It prints a loopback tools URL and a private root-token file path. Use the exact values in the next step. Restarting rotates the root token.
+This starts with public-chain writes disabled. Keep this terminal running. It writes `mcp-ready.json` and `root-session.token` as owner-only `0600` files under the private runtime directory. Restarting rotates the token; do not copy it into a prompt, config file or command line.
 
 ## 5. Register MCP in Codex CLI
 
-In the Codex profile's `config.toml`, add this single registration; replace the repository path. Do not also enable the marketplace installation in the same profile.
+After building SDK, plugin and runtime, register the private launcher as a **separate full companion MCP**. The command and both arguments must be absolute Linux paths in the same WSL2 distribution that runs the companion. Use your actual checkout and private `runtimeRoot` from the config above. Do not register the keyless and full server together under different names in one chat.
 
 ```toml
 [mcp_servers.capital_tree_root]
 command = "node"
-args = ["/absolute/path/to/agent-capital-tree/packages/plugin/bundle/server.mjs"]
+args = ["/your/linux/checkout/packages/runtime/mcp-stdio.mjs", "/your/private/runtimeRoot"]
 tool_timeout_sec = 300
-env_vars = ["ACT_RUNTIME_URL", "ACT_MCP_TOKEN"]
 ```
 
-In a second Bash terminal, set the printed loopback URL and read the private token without displaying it, then launch Codex using your existing CLIProxyAPI configuration:
+If Codex runs on Windows while the companion runs in WSL2, use `command = "wsl.exe"` and prepend `"--exec", "/absolute/linux/path/to/node"` to `args`; the default WSL distribution must be the one running the companion. Find that Node path with `wsl --exec sh -lc 'command -v node'` in PowerShell. A bare `node` after `wsl --exec` is **not reliable** when Node is installed via nvm: WSL does not load the interactive shell. The launcher validates the private directory/domain/chain, loads the current loopback origin and rotated token inside WSL2, then starts the existing bundled 16-tool MCP without printing either secret. If the companion is stopped, the launcher fails closed. Check registration with `codex mcp get capital_tree_root --json` and restart the chat after changing modes.
 
-```sh
-export ACT_RUNTIME_URL='http://127.0.0.1:PORT_PRINTED_BY_COMPANION'
-export ACT_MCP_TOKEN="$(< /absolute/private/runtime/root-session.token)"
-codex
-```
-
-Use `codex mcp get capital_tree_root --json` to check the registration and 300-second timeout. See the [plugin guide](../packages/plugin/README.md) for installation details and the marketplace-write limitation.
+See the [plugin guide](../packages/plugin/README.md) for the 16 tool schemas. The installed standalone plugin can render a PNG when Sharp is available; otherwise its tree image is SVG with Mermaid fallback. The keyless local chat server has a verified PNG renderer.
 
 ## 6. Read, then perform one controlled spawn
 
@@ -162,7 +157,7 @@ For a write test, stop the companion with Ctrl-C and restart explicitly:
 node packages/runtime/cli.mjs start /absolute/private/config.json --enable-sepolia-writes
 ```
 
-Refresh the printed URL/token in the launching terminal and restart the Codex session. Ask it to use **our MCP `spawnChild`**, with `name: "researcher"`, a fresh operation key, a small allocation and narrower permissions. Give the child only a read-and-report task initially. The name must be lowercase ASCII, begin with a letter, and contain at most 31 letters/digits/hyphens; it must be available under its parent. Reuse the exact same operation key and arguments when reconciling an uncertain result. Never create a new operation key just because the original call timed out.
+Restart Codex and ask it to use **our MCP `spawnChild`**, with `name: "researcher"`, a fresh operation key, at most `100000` raw Test-USDC from a newly funded demo root, and narrower permissions. Give the child only a read-and-report task initially. The name must be lowercase ASCII, begin with a letter, and contain at most 31 letters/digits/hyphens; it must be available under its parent. Reuse the exact same operation key and arguments when reconciling an uncertain result. Never create a new operation key just because the original call timed out. The root operator signs this and later typed management actions under its owner-granted mandate; the human does not sign each Child step.
 
 The companion starts a separate Docker Codex worker after confirmed allocation. A native Codex subagent does not automatically become a capital worker. Verify the new child and its receipt in the dashboard. For another test choose a new name and operation key only after the previous result is known.
 
