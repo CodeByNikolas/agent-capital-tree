@@ -16,6 +16,15 @@ Nutzerentscheidung: Rapid Prototyping, keine Abwärtskompatibilität, kein Legac
 
 ## Jetzt laufend / nächste Schritte
 
+### Neu geplant: portabler lokaler MCP
+
+- Produktentscheidung: kein öffentlicher Remote-MCP und kein Cloud-Signer. Judges betreiben Plugin und Companion auf ihrem eigenen Laptop; Team-Rechner müssen nicht erreichbar sein.
+- Der gebündelte stdio-MCP ist auf dem aktuellen Windows-Arbeitsplatz grün: Typecheck plus 7/7 Plugin-Tests einschließlich Handshake, Tool-Discovery, strikter Schema-Prüfung, Bearer-Weiterleitung und Fail-Closed-Verhalten. Der öffentliche aktuelle USDC-Controller lieferte Root 1 per Direct-RPC mit zwei Knoten. Diese Nachweise beweisen noch keinen portablen Companion.
+- Der aktuelle Blocker ist klar eingegrenzt: Companion, private Dateiprüfungen, Worker-Gateway und Bind-Mounts setzen Linux-UIDs, `0600/0700` und Unix-Sockets voraus. Native Windows-Ausführung scheitert deshalb erwartbar; ein anderer Pfad darf diese Prüfungen nicht einfach abschalten.
+- Die `/mcp`-Darstellung wurde parallel bereits auf 16 Tools einschließlich `getPaymentServices` und `purchaseService` sowie Bash-/PowerShell-Hinweise synchronisiert. Diese abgeschlossene UI-Korrektur ist nicht Teil der noch offenen Runtime-Portierung.
+- Nächste Implementierungsreihenfolge: (1) portable Gateway-/Launcher-Schnittstellen und Negativtests fixieren; (2) internes Docker-Netz mit workergebundenen Gateway-Berechtigungen; (3) Companion-Container und getrennte Volumes; (4) Host-Launcher und Setup/Doctor; (5) Plugin-Manifest/Anleitung; (6) Windows/macOS/Linux-E2E; (7) neuer kleiner Sepolia-Akzeptanzroot.
+- Technisch ungeprüft bleiben insbesondere Docker-Desktop-Netzisolierung auf Windows/macOS, Multi-Arch-Images, sichere Secret-Einspeisung in Named Volumes, Companion-Neustart/Reconciliation und ein echter Finanz-Write aus einem frischen externen Laptop-Profil. Bis zu diesen Nachweisen ist „auf jedem Laptop“ kein erfülltes Abnahmekriterium.
+
 1. Öffentlicher x402-Nachweis bestanden: `deployments/usdc-payment.json`, Tx `0xf91a8d6619bc3f36f33c4dad8855c777c8e96bbcd451d76eba31d131155e55eb`. Child researcher mit PAY-only,0,25USDC Allokation und0,24USDC Rest. Wiederholung ohne Doppelzahlung. Kontrollierter Loopback-Seller; kein autonomer Modellkauf. Runner abgeschlossen, nicht erneut mit neuen Schlüsseln ausführen. MultiBaas sieben Ereignisse gegen kanonische Receipts bestätigt: `deployments/usdc-multibaas.json`.
 2. Staged Contract-Suite bestanden:37 Tests in8 Suites, einschließlich256 Fuzz-Läufen. ARM-solc-js kann bei kaltem Gesamtbuild OOM erzeugen, deshalb `contracts/scripts/test-contracts.sh` verwenden.
 3. Frontend integriert (b7b10a7), Typecheck/Produktionsbuild grün. Lokaler Browser: fünf Seiten, ENS/Adresssuche, Root/Child, mobile/desktop, light/dark, Circle-Faucet/PAY, keine Überbreite, alter root-Parameter404, Onboarding ohne Demobalances. Berichte artifacts/ui/usdc-local-*.json. Keine Walletsignaturen in diesen Tests.

@@ -2,6 +2,18 @@
 
 Stand: 26. September 2026. Produktentscheidungen sind festgelegt; Implementierung läuft, der tatsächliche Abnahmestand steht in STATUS.md. Dieser Plan ersetzt frühere Brainstorming-Varianten. Nach Kontextkomprimierung zuerst diesen Plan und STATUS.md lesen.
 
+## Aktuelle Erweiterung: plattformneutraler lokaler MCP
+
+Nutzerentscheidung 26.09.: Der Jury-Pfad bleibt lokal und selbstverwaltet. Es wird kein öffentlicher Remote-MCP, kein Cloud-Signer und keine dauerhaft gehostete Finanz-Runtime eingeführt. Jeder Nutzer beziehungsweise Judge installiert das Plugin und betreibt den Companion auf seinem eigenen Laptop; Team-Laptops dürfen dabei ausgeschaltet sein. Das Installieren des Plugins allein genügt weiterhin nicht: Finanz- und Worker-Werkzeuge benötigen den laufenden, authentifizierten Companion sowie eigene RPC-, Modell- und Wallet-Voraussetzungen.
+
+Die bestehende Linux-Sicherheitsgrenze wird als plattformneutrales Produkt verpackt, nicht abgeschwächt. Windows, macOS und Linux starten denselben gepinnten Linux-Companion über Docker Desktop beziehungsweise Docker Engine. Ein kleiner Host-Launcher spricht ausschließlich stdio mit Codex und startet den MCP-Prozess per `docker exec -i` innerhalb des Companion-Containers. Root-MCP-Token, Provider-Credentials, Keystores und Journale verlassen das private Docker-Volume nicht. Nutzer müssen keine Unix-Dateirechte, absoluten Linux-Pfade oder `ACT_RUNTIME_URL`/`ACT_MCP_TOKEN` manuell verwalten.
+
+Der vertrauenswürdige Companion darf den Docker-Daemon zur Worker-Orchestrierung verwenden; Worker erhalten niemals den Docker-Socket. Die bisherige hostgebundene Unix-Socket-Brücke wird durch ein internes Docker-Netz und kurzlebige, zufällige Gateway-Berechtigungen ersetzt. Jede Berechtigung ist serverseitig an genau einen Worker, Root, Node, Autoritätsgeneration, Modell, Ablauf und Aufrufrahmen gebunden. Worker bleiben ohne allgemeinen ausgehenden Netzwerkzugriff und erhalten nur ihre eigenen, getrennten Workspace-/Schlüssel-Volumes. Sibling-, Root-, Provider- und Companion-Credentials bleiben unzugänglich. Die unveränderten Onchain-Policies bleiben die letzte Schadensgrenze.
+
+Die portable Auslieferung benötigt gepinnte AMD64- und ARM64-Images, einen idempotenten Setup-/Doctor-/Start-/Stop-Ablauf und ein MCP-Manifest, das nur den Host-Launcher startet. Konfiguration und Secrets werden über einen vertrauenswürdigen Setup-Prozess direkt in ein privates Docker-Volume geschrieben und niemals als Kommandozeilenargument, MCP-Ausgabe oder Repository-Datei transportiert. Unsichere Schreibresultate werden weiterhin über Operationsjournal und Chain-Zustand abgeglichen; Neustarts dürfen keine Transaktion oder Modellaufgabe wiederholen.
+
+Abnahme verlangt je einen frischen Installationslauf auf Windows 11 mit Docker Desktop, macOS ARM64 und Linux AMD64. Auf jeder Plattform müssen Plugin-Installation, MCP-Handshake, Tool-Discovery, aktueller `getTree`-Read und ein kontrollierter Schreibpfad funktionieren. Mindestens ein vollständiger Lauf muss Child-Erstellung, isolierten Worker-Start, Widerruf und Rückholung mit einem neuen kleinen Sepolia-Testroot belegen. Bestehende Seed-Roots und abgeschlossene Finanzrunner werden nicht wiederverwendet. Codex-Hostversionen und Worker-Pin werden getrennt ausgewiesen; ein neuerer Host-Client ändert nicht still den geprüften Worker-Binary-Pin.
+
 ## Aktuelle Erweiterung: offizielles Sepolia-USDC und x402
 
 Nutzerkorrektur26.09.: Rapid Prototyping ohne Abwärtskompatibilität. Das Frontend wird ausschließlich auf die neue USDC-Version umgestellt; keine Versionsauswahl, keine Legacy-Linkauflösung oder Migration. Bereits vorhandenes Onchain-Kapital wird dadurch nicht verändert.
