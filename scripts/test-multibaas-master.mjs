@@ -13,6 +13,29 @@ import { capitalClient, financeRoles } from '../packages/sdk/dist/index.js';
 import { createMultiBaasHistoryClient } from '../packages/multibaas/dist/index.js';
 import { journaledTransaction } from './lib/sepolia-transactions.mjs';
 
+function expectedResumeTransactions(previous, grant) {
+  assert.equal(previous.status, 'incomplete');
+  assert.equal(previous.stage, 'indexed-history');
+  const expected = ['create-root', 'bind-operator', 'fund-root', 'spawn-idle', 'spawn-sibling'];
+  if (previous.transactions?.['approve-act-a']) expected.push('approve-act-a');
+  for (let remaining = grant, index = 0; remaining > 0n; index++) {
+    expected.push(`operator-gas-${index}`);
+    remaining -= remaining > parseEther('0.01') ? parseEther('0.01') : remaining;
+  }
+  assert.deepEqual(Object.keys(previous.transactions).sort(), expected.sort(), 'Unexpected or missing setup receipts');
+  return expected;
+}
+if (process.argv[2] === '--self-test-resume') {
+  const fixture = { status: 'incomplete', stage: 'indexed-history', transactions: Object.fromEntries(
+    ['create-root', 'bind-operator', 'fund-root', 'spawn-idle', 'spawn-sibling',
+      'operator-gas-0', 'operator-gas-1', 'operator-gas-2'].map(name => [name, {}])) };
+  assert.equal(expectedResumeTransactions(fixture, parseEther('0.03')).length, 8);
+  assert.throws(() => expectedResumeTransactions({ ...fixture, stage: 'master-model' }, parseEther('0.03')));
+  assert.throws(() => expectedResumeTransactions({ ...fixture, transactions: {} }, parseEther('0.03')));
+  console.log('resume stage and receipt guards passed');
+  process.exit(0);
+}
+
 // One fresh Sepolia attempt; only an indexed-history failure may resume without setup writes.
 const [configArg, mode] = process.argv.slice(2);
 if (!configArg || !isAbsolute(configArg) ||
@@ -174,7 +197,7 @@ try {
     report.grantedOperatorWei = granted.toString(); await save();
     return receipt;
   };
-  let rootId, operatorAddress, keys, operator, generation, created;
+  let rootId, operatorAddress, keys, operator, generation, created, resumeReport;
   if (!resume) {
     const expiry = BigInt((await rpc.getBlock('latest')).timestamp + 24 * 3600);
     const policy = { capabilities: financeRoles.delegate | financeRoles.reclaim,
@@ -227,6 +250,8 @@ try {
     assert.equal(previous.chainId, 11155111);
     assert.equal(previous.controller.toLowerCase(), config.controller.toLowerCase());
     assert.equal(previous.owner.toLowerCase(), owner.address.toLowerCase());
+    assert.ok(!previous.model?.transcriptSha256 && !previous.checks?.model &&
+      !previous.checks?.indexedSetup, 'Model or companion preparation may already have started');
     assert.match(previous.rootId, /^[1-9]\d*$/);
     rootId = BigInt(previous.rootId);
     assert.ok(![1n, 2n, 5n].includes(rootId));
@@ -236,14 +261,20 @@ try {
     keys = new WorkerKeyStore(join(runtimeRoot, 'keys'));
     operator = (await keys.wallet(`root-${rootId}`)).connect(rpc);
     assert.equal(operator.address.toLowerCase(), operatorAddress.toLowerCase());
-    generation = await controller.rootGeneration(rootId);
-    const expected = ['create-root', 'bind-operator', 'fund-root', 'spawn-idle', 'spawn-sibling'];
-    if (previous.transactions['approve-act-a']) expected.push('approve-act-a');
-    for (let remaining = gasGrant, index = 0; remaining > 0n; index++) {
-      expected.push(`operator-gas-${index}`);
-      remaining -= remaining > parseEther('0.01') ? parseEther('0.01') : remaining;
+    const [latestNonce, pendingNonce] = await Promise.all([
+      rpc.getTransactionCount(operatorAddress, 'latest'), rpc.getTransactionCount(operatorAddress, 'pending')
+    ]);
+    assert.equal(pendingNonce, latestNonce, 'Operator has an unresolved pending transaction');
+    for (const name of ['profile', 'workspace', 'codex.jsonl', 'codex.stderr', 'companion.lock',
+      'identities', 'workers', 'spawn-journal']) {
+      const exists = await lstat(join(runtimeRoot, name)).then(() => true, error => {
+        if (error.code === 'ENOENT') return false;
+        throw error;
+      });
+      assert.ok(!exists, `Runtime/model artifact ${name} exists; refuse resume`);
     }
-    assert.deepEqual(Object.keys(previous.transactions).sort(), expected.sort(), 'Unexpected or missing setup receipts');
+    generation = await controller.rootGeneration(rootId);
+    const expected = expectedResumeTransactions(previous, gasGrant);
     const verified = {};
     for (const name of expected) {
       const signed = Transaction.from(JSON.parse(await readPrivate(join(journal, `${name}.json`))).signed);
@@ -289,7 +320,11 @@ try {
     assert.equal(bind.name, 'setRootOperator');
     assert.equal(bind.args[0], rootId);
     assert.equal(bind.args[1].toLowerCase(), operatorAddress.toLowerCase());
-    assert.deepEqual(bind.args[2].toArray(), rootPolicy.toArray());
+    assert.equal(bind.args[2].capabilities, rootPolicy.capabilities);
+    assert.deepEqual(bind.args[2].maxAmounts.toArray(), rootPolicy.maxAmounts.toArray());
+    assert.equal(bind.args[2].expiry, rootPolicy.expiry);
+    assert.equal(bind.args[2].tokenMask, rootPolicy.tokenMask);
+    assert.equal(bind.args[2].poolId, rootPolicy.poolId);
     if (verified['approve-act-a']) {
       const approved = token.interface.parseTransaction({ data: verified['approve-act-a'].signed.data });
       assert.equal(verified['approve-act-a'].signed.from.toLowerCase(), owner.address.toLowerCase());
@@ -361,15 +396,7 @@ try {
     assert.equal(granted, BigInt(previous.grantedOperatorWei));
     assert.equal(granted, gasGrant);
     assert.ok(spentOwnerGas + granted <= maxSpend && spentOwnerGas + spentOperatorGas <= maxSpend);
-    if (mode === '--inspect-resume') {
-      console.log(JSON.stringify({ ...summary, ready: true, rootId: previous.rootId,
-        idleId: previous.idleId, siblingId: previous.siblingId, verifiedSetupReceipts: expected.length,
-        writes: 'disabled' }));
-      process.exit(0);
-    }
-    report = previous;
-    stage = 'indexed-history';
-    report.status = 'running'; report.resumedAt = new Date().toISOString(); await save();
+    resumeReport = previous;
   }
   const sdk = capitalClient(config.rpcUrl, config.controller);
   const tree = await sdk.getTree(rootId);
@@ -382,12 +409,24 @@ try {
   assert.equal(rootTreeNode.balances[0], rootAmount - 2n * childAmount);
   assert.ok((rootTreeNode.authorizedCapabilities & (financeRoles.delegate | financeRoles.reclaim)) ===
     (financeRoles.delegate | financeRoles.reclaim));
-  assert.equal(tree.nodes.find(node => node.id.toString() === report.idleId).balances[0], childAmount);
-  assert.equal(tree.nodes.find(node => node.id.toString() === report.siblingId).balances[0], childAmount);
+  const state = resumeReport ?? report;
+  assert.equal(tree.nodes.find(node => node.id.toString() === state.idleId).balances[0], childAmount);
+  assert.equal(tree.nodes.find(node => node.id.toString() === state.siblingId).balances[0], childAmount);
   assert.ok(tree.nodes.every(node => !node.revoked && node.position.tokenId === 0n &&
     node.position.liquidity === 0n && node.balances[1] === 0n));
-  assert.ok([report.idleId, report.siblingId].every(childId =>
+  assert.ok([state.idleId, state.siblingId].every(childId =>
     tree.nodes.find(node => node.id.toString() === childId).parentId === rootId));
+  if (mode === '--inspect-resume') {
+    console.log(JSON.stringify({ ...summary, ready: true, rootId: state.rootId,
+      idleId: state.idleId, siblingId: state.siblingId, verifiedSetupReceipts: Object.keys(state.transactions).length,
+      treeBlock: tree.source.blockNumber.toString(), writes: 'disabled' }));
+    process.exit(0);
+  }
+  if (resumeReport) {
+    report = resumeReport;
+    stage = 'indexed-history';
+    report.status = 'running'; report.resumedAt = new Date().toISOString(); await save();
+  }
   const reclaimRequest = await controller.connect(operator).reclaimAssets.populateTransaction(rootId, report.idleId);
   const allocateRequest = await controller.connect(operator).allocateCapital.populateTransaction(rootId, report.siblingId,
     [reallocation, 0n]);
