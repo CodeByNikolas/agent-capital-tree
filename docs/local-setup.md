@@ -6,50 +6,39 @@ Desktop-app environment inheritance and a native macOS runtime have not been ind
 
 A same-host acceptance run using the earlier CLIProxyAPI path completed browser setup, funded MCP spawn, x402 payment and Uniswap swap after the fixes recorded in [the acceptance report](../ACCEPTANCE.md). A subsequent native OpenAI API-key run with real `gpt-6-luna` / `high` responses passed funded MCP spawn, x402 payment and Uniswap swap; see [native evidence](../deployments/jury-openai-native.json). ChatGPT-login financial E2E remains unverified. Keep the owner wallet separate from the runtime operator; never import your owner key into the companion.
 
-## Recommended capital demo: no Docker or CLIProxyAPI
+## Recommended: one-time Kanoki wallet setup
 
-Codex/Claude is already the model. Use it to manage agent **vaults** without launching additional AI processes. The local capital MCP starts the existing signing companion automatically when needed. No hand-written private config, provider API key, bearer copy or separate companion terminal is required. Linux and Windows with Node 22+ in the default WSL distribution are supported; native Windows/macOS signing is not claimed.
+After installing the MCP, ask: **“Set up Kanoki with 0.10 Test-USDC.”** The chat calls `prepareRootSetup` without asking for an ENS name. Open its normal-browser link, connect your owner wallet and click **Set up Kanoki**. Confirm the displayed wallet requests. Return to chat; `getCapitalSetup` automatically recognizes the vault and its saved local signer, including after a restart.
 
-From this checkout (do not create a nested clone):
+The one guided setup creates the root, authorizes the local signer, deposits the shared USDC budget and tops the signer up to 0.01 native Sepolia ETH for gas. Current contracts can require up to five wallet confirmations (creation, authorization, USDC approval, deposit and gas). There is no manual root selection, operator-address copying, JSON profile, bearer token or separate runtime terminal. The owner key never enters the MCP. Completed deposits are never repeated; keep the same link to resume an interrupted setup.
+
+The capital MCP exposes 19 useful tools. Unconfigured history, purchases and autonomous-worker spawning are omitted. `createChildVault` creates funded vaults managed by this chat, not autonomous model processes. Separate autonomous-worker configuration remains available below. Per-action policy and simulated gas checks still apply; funds and gas are finite.
+
+### Install once
+
+Supported signing hosts: Linux, or Windows with Node 22+ in the default WSL distribution. Native macOS/Windows signing and independent-laptop wallet E2E are not claimed. From the checkout:
 
 ```sh
 pnpm --filter @agent-capital-tree/sdk build
 pnpm --filter @agent-capital-tree/multibaas build
 pnpm --filter @agent-capital-tree/plugin build
 pnpm --filter @agent-capital-tree/runtime build
-pnpm mcp:capital check capital.kanoki.eth
-pnpm mcp:capital settings YOUR_INTENDED_ROOT_ENS_NAME --enable-sepolia-writes
-
+pnpm mcp:capital settings --enable-sepolia-writes
 ```
 
-First choose a new lowercase root label and derive its ENS name under `kanoki.eth`. `settings` only prints the registration; the MCP catalog loads before this root exists. After registration, call `prepareRootSetup`, sign creation, then **`selectCapitalRoot({query: "your-label.kanoki.eth"})`**, `getCapitalSetup`, and `prepareCapitalSetup` with the reported `expectedRootId`. Selection changes the current session only and does not require a restart. Reads never change the write target. `settings` prints the real command/argument list for Codex STDIO or a Claude `mcpServers` entry. Preserve unrelated servers. Register in PowerShell:
+Register the printed command as `kanoki`, or install the bundled `kanoki@kanoki` plugin. Both start the same automatic capital flow. Do not register both in one profile. Existing chats need one reconnect after upgrading the MCP.
 
 ```powershell
 $actScript = (Resolve-Path -LiteralPath 'packages/runtime/capital.mjs').Path
 $actNode = (Get-Command node).Source
-codex mcp add kanoki -- $actNode $actScript stdio YOUR_INTENDED_ROOT_ENS_NAME --enable-sepolia-writes
-codex mcp get kanoki --json
-
+codex mcp add kanoki -- $actNode $actScript stdio --enable-sepolia-writes
 ```
 
-Restart that MCP connection/open a new chat once after updating the server code to refresh the tool catalog. There are **23 tools**: 17 companion operations plus six read/setup helpers. They remain visible before wallet setup; optional workers/history/services report unavailable. The CLI's `--enable-sepolia-writes` is a local gate, not onchain authorization. Every write also confirms `expectedRootId`; profile, signer, chain and native gas are checked before forwarding. A new session starts at its configured root, so explicitly select another root again if needed.
+The shared demo budget is 100000 raw units = 0.10 Test-USDC total, not per child and not a contract balance cap. Two children of 20000 each leave 60000 at the root. Reuse each child operation key and identical arguments on uncertain retries. Never repeat a deposit or use a new key to retry an uncertain allocation.
 
-Chat: “Call `getCapitalSetup` for 50000 raw Test-USDC and show every returned image. List all missing requirements. Do not send a transaction.” After the root exists, use `prepareCapitalSetup` only when needed. It reuses an existing matching private profile, or prepares a new agent key for an unbound root, and opens the normal system browser with public address and demo limits prefilled. Review the full address and limits in your wallet. URL parameters are suggestions, not trusted authorization.
+### Advanced existing-root recovery
 
-Your wallet is the **owner**, not automatically an unattended signer. It signs root creation, funding and authorization of the local **agent signing key** (contract name: operator). Afterwards `createChildVault`, `allocateCapital`, `tightenPolicy`, `revokeSubtree` and `reclaimAssets` use that restricted key without another owner signature at every step. No owner key enters the MCP. Native Sepolia-ETH at the agent address pays gas; USDC approval/funding does not supply ETH. A positive gas balance is not proof that it covers the next transaction's fees.
-
-The intended short demo: `getCapitalSetup` → `createChildVault` named `my-demo-child` with raw amount `50000` and appropriately narrower restrictions → `getTree` → restrict/revoke → reclaim → `getTree`. Use a fresh operationKey for a genuinely new child; reuse exactly that key and identical arguments for reconciliation. Do not repeat completed funding, seed or payment transactions. Use a newly created, owner-authorized root for writes. The public `capital` tree is for read-only inspection. `createChildVault` returns `dispatchStatus: not_requested`: real allocated vault, **no autonomous background worker**. A model API per vault is unnecessary; scoped worker APIs are an optional, separate integration.
-
-If an existing bound operator key is not found, point `--runtime-root` at its existing private Linux directory. Never silently create a replacement: rebinding invalidates the authority generation. Multiple matching profiles require explicit selection. Old worker/gas state must be reconciled in worker mode before switching modes. Secrets stay in owner-only Linux storage outside Git and Windows mounts.
-
-Read-only acceptance: `node scripts/test-mcp-capital.mjs` (23 tools, Sepolia reads, PNGs, disabled write rejected). This is not a public Child/recovery E2E. See STATUS.md. `spawnChild` remains the separate autonomous-worker path and needs Docker plus native Codex authentication (OpenAI API key preferred or ChatGPT login). CLIProxyAPI is optional. These capabilities remain intact on main; capital mode does not configure or launch them.
-
-### Existing owner-bound root: safe recovery
-
-If the bound operator is your wallet but no matching private local signer exists, do **not** import the owner key or repeat funding. Select the intended root, call `getCapitalSetup`, then `prepareOperatorRecovery` with `expectedRootId`, the observed `expectedBoundOperator`, `budgetRaw: "100000"`, and `openBrowser: true`. The tool creates/reuses a separate encrypted local key and lists exact owner-wallet actions. It does not replace the operator onchain. Review the new address, delegate/restrict/reclaim rights and per-action limit. Signing an operator change invalidates older mandates, not ownership or funds. The wallet separately tops the local key up to 0.01 native Sepolia ETH; fees are estimated again before each child write.
-
-The demo budget maximum is **100000 raw units = 0.10 Test-USDC across the whole tree**, not per child or an onchain balance cap. Two `createChildVault` calls with `amount: "20000"`, distinct stable operation keys and narrower rights leave 60000 raw at the root. Retrying each exact key/arguments returns the same child. Never use `allocateCapital` as a retry: that tool is a separate additional transfer, not child-creation reconciliation.
-
+Manual `selectCapitalRoot` and `prepareOperatorRecovery` are only for intentionally choosing an existing root with an unavailable signer. They are not part of new-user setup. A permanently revoked root cannot be restored. Historical root 4 is revoked and empty; its local profile was explicitly deleted. Do not fund it or use the obsolete `.main-onboarding` checkout.
 
 ## Fast jury check: read-only MCP on Windows, macOS or Linux
 
@@ -388,7 +377,3 @@ The agent calls `getPaymentServices`, then `purchaseService` with the service ID
 The companion’s service allowlist is a runtime restriction. A compromised operator key can sign payments to other recipients allowed by the onchain PAY policy; this release does not provide an onchain merchant allowlist. Each amount ceiling is per payment, not a cumulative spending budget. The vault’s actual allocated balance remains the total financial exposure. Service responses are untrusted data; neither a valid payment nor this demonstration proves their quality.
 
 For a runnable controlled seller using your own Sepolia wallet, follow [Local x402 demo seller](x402-demo-seller.md). Its shared `scripts/lib/x402-demo-service.mjs` provides a loopback-only 0.01-USDC research endpoint, explicit payer allowlist, official facilitator integration and durable response caching. An interrupted ambiguous settlement fails closed and requires reconciliation instead of charging again. It is not a production merchant platform.
-
-### Start Kanoki without an existing root
-
-`node packages/runtime/capital.mjs settings --enable-sepolia-writes` prints a full 23-tool Kanoki registration with no initial root binding. Use `prepareRootSetup` for an owner-reviewed wallet creation, then `selectCapitalRoot` with the confirmed ENS name. Alternatively select an existing active root. Public tree reads do not select a root; setup and writes require explicit selection. A child vault does not start an autonomous worker.

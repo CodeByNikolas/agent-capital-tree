@@ -1304,10 +1304,10 @@ export function Dashboard({ data: initialData, deployment, vaultQuery, nodeQuery
         <div className="dashboard-content">
           <HelpLinks vaultQuery={vaultQuery} />
           <div className="page-heading">
-            <h1>Create your root vault.</h1>
-            <p>Create a Sepolia USDC vault for your agent team, or open an existing vault by its ENS name or contract address.</p>
+            <h1>{setupOperator ? "Set up Kanoki." : "Create your root vault."}</h1>
+            <p>{setupOperator ? "Connect your wallet and confirm the guided setup. Then continue in your chat." : "Create a Sepolia USDC vault for your agent team, or open an existing vault by its ENS name or contract address."}</p>
           </div>
-          <Card>
+          {!setupOperator && <><Card>
             <CardHeader>
               <CardTitle>Start with your own capital tree</CardTitle>
               <CardDescription>Your wallet owns the main vault. Each agent receives only the capital and permissions you delegate.</CardDescription>
@@ -1318,7 +1318,7 @@ export function Dashboard({ data: initialData, deployment, vaultQuery, nodeQuery
             </CardContent>
           </Card>
           <OnboardingHero context={{ vault: `capital.${deployment.namespaceName}` }} />
-          <RootAccessBar vault={null} path="/setup" walletAddress={wallet.address} />
+          <RootAccessBar vault={null} path="/setup" walletAddress={wallet.address} /></>}
           {walletActionMode === "create-root" && <WalletControlsPanel
             creationOnly
             data={data}
@@ -1331,15 +1331,15 @@ export function Dashboard({ data: initialData, deployment, vaultQuery, nodeQuery
             notice={notice}
             mode="create-root"
             onModeChange={setWalletActionMode}
-            onRootCreated={(vaultAddress) => router.push(`/setup?vault=${encodeURIComponent(vaultAddress)}${demoBudget ? `&action=fund-root&budget=${demoBudget}` : ""}`)}
+            onRootCreated={(vaultAddress) => router.push(setupOperator ? `/tree?vault=${encodeURIComponent(vaultAddress)}` : `/setup?vault=${encodeURIComponent(vaultAddress)}${demoBudget ? `&action=fund-root&budget=${demoBudget}` : ""}`)}
             demoLabel={demoLabel}
             demoBudget={demoBudget}
             setupOperator={setupOperator}
           />}
-          <nav className="onboarding-links" aria-label="Explore and get started">
+          {!setupOperator && <nav className="onboarding-links" aria-label="Explore and get started">
             <Link href={`/tree?vault=capital.${deployment.namespaceName}`}><Layers3 size={18} aria-hidden="true" /><span>Open live demo</span><ArrowRight size={16} aria-hidden="true" /></Link>
             <a href="https://github.com/CodeByNikolas/agent-capital-tree/blob/main/docs/local-setup.md"><ExternalLink size={18} aria-hidden="true" /><span>Install companion &amp; MCP</span><ArrowUpRight size={16} aria-hidden="true" /></a>
-          </nav>
+          </nav>}
         </div>
       </main>
     );

@@ -1,6 +1,6 @@
 # Current release: kanoki.eth and sidebar repair
 
-Concurrent main updates are integrated: unbound capital-MCP startup, help links on all pages, onboarding explanation, and tour context preservation.
+Concurrent main updates are integrated: unbound capital-MCP startup, help links on all pages, tour context preservation, restart-safe guided wallet setup and the standalone 19-tool plugin. The bundled manifest is rebuilt for Kanoki.
 
 - Registered `kanoki.eth` on ENSv2 Sepolia (not Ethereum mainnet); current controller `0xeB2041B486D66aB91140FFcF54B66513D8eC40c8`, ProjectRegistry `0x5bbCfab760376d2E419FC42DA63fA4C5e434DBF6`.
 - Current `deployments/usdc-sepolia.json` now points exclusively to Kanoki. The retired manifest is preserved at `deployments/history/agentcapitalvault-prototype-sepolia.json`. Web and capital MCP no longer offer the previous recovery deployment flag. Earlier evidence below is historical, not proof of current-controller transactions.
@@ -10,7 +10,14 @@ Concurrent main updates are integrated: unbound capital-MCP startup, help links 
 - Restored Overview How it works with hide/reopen and repaired the obsolete numeric-root tour: all six steps use the current ENS name. Sidebar lookup, action button and owned-root suggestions stack vertically on desktop and mobile. The regression reproduced a 26px-wide input after discovery; the fixed production test checks width and non-overlap after wallet changes.
 - Current setup docs, demo links, MCP prompts and seller ENS identity use Kanoki. Namespace ownership and its administrative dependency are explained in `docs/ens-namespace.md`.
 - Signing-profile discovery now skips unrelated directories without a domain file; existing signing-profile permission checks remain strict (regression included).
-- Checks: 38 contract tests; 35 runtime tests; 22 plugin tests; six-step live tour; production web build/TypeScript; nine-route skeleton/layout suite; owner-filtering/sidebar regression; live Curvegrid report; live MCP catalog (23 tools), current-root reads and disabled-write guard using an isolated temporary profile. No autonomous model worker or new x402 settlement was run for this cutover.
+- Checks: 38 contract tests; 36 runtime tests; 22 plugin tests; six-step live tour; production web build/TypeScript; nine-route skeleton/layout suite; owner-filtering/sidebar regression; live Curvegrid report; live MCP catalog (19 tools), current-root reads and disabled-write guard using an isolated temporary profile. No autonomous model worker or new x402 settlement was run for this cutover.
+
+## Guided Kanoki onboarding — 26 September
+
+- The default plugin now starts 19 capital tools without a runtime server, bearer token or preselected root. A private signer and generated name persist across restarts; matching owner authorization attaches the root automatically.
+- One wallet page guides creation, authorization, USDC approval/funding and native gas. Receipt reconciliation and completed-stage journals protect retries. Existing contracts still require up to five wallet confirmations.
+- Validation: 16 focused Linux runtime tests, 22 plugin tests, guided wallet adapter scenarios, production web build and desktop/mobile browser checks passed. A fresh Codex marketplace installation read live Sepolia block 11788940 without runtime credentials. No transaction was submitted.
+- The user assigned deployment of main to someone with access to kanoki-app.vercel.app. Public deployment and signed setup/child-vault E2E remain open. See docs/guided-onboarding-release.md for the handoff.
 
 ## Release consolidation audit — 26 September
 

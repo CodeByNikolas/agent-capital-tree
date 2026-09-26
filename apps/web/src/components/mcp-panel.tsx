@@ -41,8 +41,7 @@ export function McpPanel({
   const chatPrompt = 'Call kanoki.getTree with query "capital.kanoki.eth". Show the returned tree image in this chat and report its Sepolia block, observed time, Test-USDC balance and actual authorized actions. Do not use shell or web.';
   const capitalSnippet = `pnpm --filter @agent-capital-tree/multibaas build
 pnpm --filter @agent-capital-tree/runtime build
-pnpm mcp:capital check ${demoRoot}
-pnpm mcp:capital settings ${demoRoot} --enable-sepolia-writes`;
+pnpm mcp:capital settings --enable-sepolia-writes`;
   const serverFacts: [string, string][] = [
     ["Server name", mcpServerMeta.name],
     ["Transport", mcpServerMeta.transport],
@@ -78,7 +77,7 @@ pnpm mcp:capital settings ${demoRoot} --enable-sepolia-writes`;
         <p>Add the printed STDIO entry in Codex or Claude settings and restart that MCP once after updating its code. The capital connection exposes 23 tools. Use <code>selectCapitalRoot</code> to choose a confirmed root inside the same session; a tree read never changes the write target. No restart is needed for that selection.</p>
         <p><strong>Capital-mode availability:</strong> <code>getTree</code> and <code>getEffectivePolicy</code> read current chain state. Indexed history, paid services and autonomous workers are not configured in this mode. Their tools remain listed and report unavailable; worker mode needs separate configuration. The dashboard’s MultiBaas history is a separate connection.</p>
         <p>Start with <code>getCapitalSetup</code>. A revoked root cannot be reactivated or prepared. Select an active root owned by your wallet, or prepare a new root for your wallet approval. Do not reuse a historical demo root merely because its numeric ID matches.</p>
-        <p>Flow: create root in your normal wallet browser → select its ENS in chat → <code>getCapitalSetup</code> → <code>prepareCapitalSetup</code> → review wallet authorization and remaining funding/gas → create child vaults. If the root is bound to your owner wallet instead of the local signer, <code>prepareOperatorRecovery</code> prepares an explicit owner-reviewed change; it never replaces the operator automatically.</p>
+        <p>One-time setup: ask Kanoki to prepare your vault. Open its setup link, connect your wallet and confirm the guided transactions. Kanoki prepares its local signer, remembers your vault and recognizes confirmation automatically. No ENS copying, root selection, bearer tokens or manual operator setup.</p>
         <p>The demo input maximum is <strong>100000 raw units = 0.10 Test-USDC for the entire tree</strong>, not per child and not a contract balance cap. Two child vaults with 20000 raw units each leave 60000 at the root. Existing deposits are counted; do not fund again. Native Sepolia ETH for the local signer is separate. <code>createChildVault</code> launches no autonomous model process.</p>
         <p>Your wallet remains owner. It authorizes a separate local agent signing key once, with explicit vault limits. The agent needs native Sepolia-ETH for gas as well as Test-USDC in the vault. Wallet login or USDC approval alone is not that authorization or gas payment.</p>
         <p>Ask the chat to check all requirements, then create a child vault, delegate a small budget, show the tree, restrict/revoke and reclaim. <code>createChildVault</code> does not launch an autonomous model worker. Autonomous <code>spawnChild</code> also needs Docker and a model credential; the preferred setup uses a private OpenAI API key and works without CLIProxyAPI.</p>

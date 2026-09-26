@@ -3,6 +3,7 @@ import { access, lstat, readFile, readdir } from 'node:fs/promises';
 import { isAbsolute, join, resolve, relative } from 'node:path';
 import { WorkerKeyStore, prepareRootOperator, capitalReadiness } from './dist/index.js';
 import { openWalletBrowser } from '../../scripts/open-wallet-browser.mjs';
+import { CapitalOnboarding } from './capital-onboarding.mjs';
 
 const ZERO = '0x0000000000000000000000000000000000000000';
 export class SetupError extends Error {
@@ -10,6 +11,7 @@ export class SetupError extends Error {
 }
 export function safeCapitalError(error) {
   if (error instanceof SetupError) return error.message;
+  if (error?.message?.startsWith('ROOT_REVOKED:')) return 'ROOT_REVOKED: Your saved vault is permanently revoked. No replacement, key change or funding was requested.';
   if (error?.code === 'INSUFFICIENT_GAS') return 'INSUFFICIENT_GAS: Local signer has insufficient native Sepolia ETH for the simulated child transaction. No transaction was submitted. Fund native gas, not USDC.';
   if (/^No vault in this Sepolia deployment|^Root not found/.test(error?.message ?? '')) return 'ROOT_NOT_FOUND: No confirmed root matches this identifier at the observed block. If you just signed creation, wait for its receipt; pending status is not known to this MCP.';
   if (/^Enter a positive root ID/.test(error?.message ?? '')) return 'INVALID_ROOT: Use a positive root ID, full kanoki.eth name or vault address.';
@@ -26,6 +28,7 @@ export async function privatePath(path, mode, directory = false) {
 export class CapitalSession {
   constructor({ client, controller, base, repo, query, explicitRoot, writesEnabled, namespace = 'kanoki.eth', walletOrigin = 'https://kanoki-app.vercel.app', closeRuntime = async () => {} }) {
     Object.assign(this, { client, controller, base, repo, query, explicitRoot, writesEnabled, namespace, walletOrigin, closeRuntime });
+    this.onboarding = new CapitalOnboarding(this);
   }
   async matchingDomain(path, rootId) {
     try {
@@ -65,6 +68,7 @@ export class CapitalSession {
     return this.inspect('100000', resolved.tree);
   }
   async initialize() {
+    if (!this.rootId && !this.query) await this.onboarding.resume();
     if (!this.rootId && !this.query) throw new SetupError('ROOT_NOT_SELECTED', 'Select an active root with selectCapitalRoot, or prepare a new root with prepareRootSetup and confirm it in your wallet first.');
     if (!this.rootId) await this.select(this.query);
   }
@@ -85,10 +89,11 @@ export class CapitalSession {
     return (await new WorkerKeyStore(join(path, 'keys')).account(`root-${rootId}`, false)).address;
   }
   async inspect(budgetRaw = '100000', tree) {
+    if (!this.rootId && !this.query) await this.onboarding.resume();
     if (!this.rootId && !this.query) return { status: 'unavailable', mode: 'capital', activeMcpRootId: null,
       controller: this.controller, namespace: this.namespace, writesEnabled: this.writesEnabled, writeReady: false,
       localOperator: null, backgroundWorker: 'not_requested', transactionSubmitted: false,
-      next: 'ROOT_NOT_SELECTED: Full capital tools are available. Use selectCapitalRoot for an existing active root, or prepareRootSetup to create one through your wallet. No private key is created until explicit setup.' };
+      next: 'Call prepareRootSetup to start or resume the single wallet setup. Do not ask the user for an ENS name or manual configuration. After wallet confirmation, call getCapitalSetup again; the root and local signer are recognized automatically.' };
     await this.initialize();
     tree ??= await this.client.getTree(BigInt(this.rootId));
     const local = await this.localOperator();

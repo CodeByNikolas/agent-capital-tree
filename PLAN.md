@@ -12,6 +12,10 @@ Der korrigierte Kanoki-Brief und `KANOKI_DESIGN.md` ersetzen ältere Gestaltungs
 
 ## Current demo: chat-managed capital and autonomous workers
 
+### Guided onboarding supersedes manual setup
+
+The default Kanoki plugin starts the standalone capital MCP without a root argument, runtime URL or bearer token. `prepareRootSetup` prepares a private local signer and a durable generated name, then opens one guided wallet page. The owner reviews creation, operator authorization, exact USDC funding shortfall and up to 0.01 Sepolia ETH gas funding. Existing contracts can require five wallet confirmations. Root discovery and signer attachment happen automatically after authorization and across restarts; normal users do not copy ENS names, select roots or edit configuration. Preserve explicit recovery tools and all authority checks. The default catalog omits unavailable worker, activity and payment tools. A child vault never implies a running worker. A person with project access deploys main to kanoki-app.vercel.app; public deployment and signed onboarding acceptance remain open until verified.
+
 ### Onboarding repair and current delivery target (26 September)
 
 Latest user clarification: **kanoki.eth** is the next onboarding target, and another agent owns its implementation. Confirm its controller, active root and owner-approved budget before financial testing. Historical root-agent.agentcapitalusdc.eth below is revoked and its local profile was deleted by its owner; the former two-child plan must not be replayed. This clarification authorizes no additional deposit or migration. Final deployment to kanoki-app.vercel.app is assigned to the project owner with Vercel access.

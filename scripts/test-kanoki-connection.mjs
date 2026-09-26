@@ -12,8 +12,8 @@ try {
     'root-agent.agentcapitalusdc.eth', '--deployment', 'usdc-full-vaults'], stderr: 'pipe' }), { timeout: 60000 });
   assert.equal(client.getServerVersion().name, 'kanoki');
   const tools = (await client.listTools()).tools;
-  assert.equal(tools.length, 23);
-  assert.match(tools.find(tool => tool.name === 'getCapitalActivity').description, /UNAVAILABLE/);
+  assert.equal(tools.length, 19);
+  assert.equal(tools.some(tool => ['spawnChild','getCapitalActivity','getPaymentServices','purchaseService'].includes(tool.name)), false);
   for (let attempt = 0; attempt < 2; attempt++) {
     const result = await client.callTool({ name: 'getEffectivePolicy', arguments: { nodeId: '4' } }, undefined, { timeout: 120000 });
     const links = result.content.filter(item => item.type === 'text').flatMap(item => item.text.match(/!\[[^\]]*\]\(<[^>]+>\)/g) ?? []);

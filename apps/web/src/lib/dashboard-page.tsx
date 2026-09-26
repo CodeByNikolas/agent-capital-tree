@@ -19,6 +19,6 @@ export async function renderDashboard(view: DashboardView, searchParams: Dashboa
   const step = Number.isFinite(parsedStep) ? parsedStep : 1;
   const demoLabel = typeof params.label === "string" && /^[a-z][a-z0-9-]{0,30}$/.test(params.label) ? params.label : null;
   const demoBudget = typeof params.budget === "string" && /^(?:0|[1-9]\d{0,5})$/.test(params.budget) && Number(params.budget) <= 100000 ? params.budget : null;
-  const setupOperator = vault && typeof params.operator === "string" && /^0x[a-fA-F0-9]{40}$/.test(params.operator) ? params.operator : null;
+  const setupOperator = typeof params.operator === "string" && /^0x[a-fA-F0-9]{40}$/.test(params.operator) ? params.operator : null;
   return <Dashboard data={previewDashboard} deployment={deployment} onboarding={!vault && params.preview !== "1" && view !== "mcp"} vaultQuery={vault} nodeQuery={node} actionQuery={action} demoLabel={demoLabel} demoBudget={demoBudget} setupOperator={setupOperator} view={view} tour={tour} step={step} />;
 }

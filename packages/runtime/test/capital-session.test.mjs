@@ -34,6 +34,38 @@ test('budget errors explain units, shared scope and demo-only cap', () => {
   assert.doesNotMatch(safeCapitalError(new Error('https://provider/SECRET')), /SECRET/);
 });
 
+test('one-time setup preserves its signer and restores the authorized root after restart', { skip: process.platform !== 'linux' }, async () => {
+  const base = await mkdtemp(join(tmpdir(), 'kanoki-onboarding-'));
+  let chainTree;
+  const client = { resolveTree: async () => {
+    if (!chainTree) throw new Error('No vault in this Sepolia deployment matches that name or address');
+    return { tree: chainTree, selectedNodeId: 4n };
+  }, getTree: async () => chainTree, rpc: { getBalance: async () => 10000000000000000n } };
+  const fresh = () => new CapitalSession({ client, controller, base, repo: '/not-private', writesEnabled: true });
+  try {
+    const session = fresh();
+    const first = await session.onboarding.prepare({budgetRaw:'100000',openBrowser:false});
+    assert.match(first.ensName, /^kanoki-[0-9a-f]{16}\./);
+    assert.equal(new URL(first.url).searchParams.get('operator'),first.localOperator);
+    const repeated = await fresh().onboarding.prepare({budgetRaw:'100000',openBrowser:false});
+    assert.equal(repeated.localOperator,first.localOperator);
+    assert.equal(repeated.ensName,first.ensName);
+    assert.equal((await session.inspect()).activeMcpRootId,null);
+    chainTree = tree('4');
+    assert.equal((await session.inspect()).activeMcpRootId,null,'A different bound signer is never adopted');
+    chainTree.operator = first.localOperator;
+    const ready = await session.inspect();
+    assert.equal(ready.activeMcpRootId,'4');
+    assert.equal(ready.writeReady,true);
+    const restarted = await fresh().inspect();
+    assert.equal(restarted.localOperator,first.localOperator);
+    assert.equal(restarted.activeMcpRootId,'4');
+    assert.equal(restarted.writeReady,true);
+    chainTree.nodes[0].revoked = true;
+    await assert.rejects(fresh().inspect(), /ROOT_REVOKED/);
+  } finally { await rm(base,{recursive:true,force:true}); }
+});
+
 test('explicit root selection, owner-bound recovery, no refund, snapshot and signer/gas guards', { skip: process.platform !== 'linux' }, async () => {
   const base = await mkdtemp(join(tmpdir(), 'act-onboarding-'));
   const roots = new Map([['3',tree(3)],['4',tree(4)],['5',tree(5)]]);

@@ -280,6 +280,9 @@ export function WalletControlsPanel({
   const [deadlineLocal, setDeadlineLocal] = useState(defaultDeadlineLocal);
   const [closeError, setCloseError] = useState<string | null>(null);
   const [confirming, setConfirming] = useState(false);
+  const [setupRunning, setSetupRunning] = useState(false);
+  const [setupError, setSetupError] = useState<string | null>(null);
+  const managedSetup = Boolean(creationOnly && setupOperator && demoBudget);
   const labels = tokenLabels(data, deployment);
   const busy = notice?.stage === "simulating" || notice?.stage === "awaiting-wallet" || notice?.stage === "confirming";
   const ownerConnected = Boolean(
@@ -347,14 +350,14 @@ export function WalletControlsPanel({
       <div className="panel-heading">
         <div>
           {!creationOnly && <div className="panel-overline">OWNER &amp; VAULT MANAGEMENT</div>}
-          <h2 id="wallet-controls-title">{creationOnly ? "Name your vault and set its limits" : "Wallet actions"}</h2>
+          <h2 id="wallet-controls-title">{managedSetup ? "Confirm once. Continue in chat." : creationOnly ? "Name your vault and set its limits" : "Wallet actions"}</h2>
         </div>
         {!creationOnly && <span className={`wallet-control-source${deployment.contractsConfigured ? " wallet-control-source-ready" : ""}`}>
           {deployment.contractsConfigured ? deployment.poolConfigured ? "Sepolia pool ready" : "Contracts ready · pool pending" : "Contract deployment pending"}
         </span>}
       </div>
-      {creationOnly ? <p className="wallet-controls-intro">Your connected wallet will own this vault. Choose its public name and the limits for your agents, then confirm creation in your wallet. You only need Sepolia ETH for the network fee now. Add USDC and authorize an agent from the dashboard afterwards.</p> : <p className="wallet-controls-intro">Every action is simulated before your wallet is asked to sign. Get USDC from Circle’s faucet; this dashboard never mints USDC. DEMO-USD is valueless.</p>}
-      {demoBudget && <div className="wallet-action-notice" role="status">
+      {managedSetup ? <p className="wallet-controls-intro">Confirm the wallet requests below once. Kanoki creates your vault, authorizes your local agent and funds its shared budget and gas. Your chat recognizes the finished vault automatically.</p> : creationOnly ? <p className="wallet-controls-intro">Your connected wallet will own this vault. Choose its public name and the limits for your agents, then confirm creation in your wallet. You only need Sepolia ETH for the network fee now. Add USDC and authorize an agent from the dashboard afterwards.</p> : <p className="wallet-controls-intro">Every action is simulated before your wallet is asked to sign. Get USDC from Circle’s faucet; this dashboard never mints USDC. DEMO-USD is valueless.</p>}
+      {demoBudget && !managedSetup && <div className="wallet-action-notice" role="status">
         <strong>Chat demo · {budgetUSDC} Test-USDC shared across the entire tree</strong>
         <span>{demoAlreadyFunded ? "USDC funding is complete. No additional deposit is needed, including after child allocation." : "Fund only the remaining difference after root creation. Child budgets come from this same capital."}</span>
         {setupOperator ? <><span>Local agent: {setupOperator}. {agentMatches ? "Onchain binding matches." : "Owner must review and sign the operator change. This invalidates previous mandates, but does not move vault funds."}</span>
@@ -377,14 +380,34 @@ export function WalletControlsPanel({
         <button className="button button-danger button-small" type="button" disabled={!canOpenRecovery || busy} onClick={() => toggle("owner-recovery")}>Owner recovery</button>
       </div>}
       {!deployment.contractsConfigured && <p className="wallet-controls-pending">Wallet actions unlock when the USDC controller and both configured tokens are deployed.</p>}
-      {deployment.contractsConfigured && !deployment.poolConfigured && <p className="wallet-controls-pending">Root creation, funding, operator binding, and capital controls are available. Swap and LP capabilities remain disabled until the USDC pool is initialized and seeded.</p>}
+      {!managedSetup && deployment.contractsConfigured && !deployment.poolConfigured && <p className="wallet-controls-pending">Root creation, funding, operator binding, and capital controls are available. Swap and LP capabilities remain disabled until the USDC pool is initialized and seeded.</p>}
       {!walletAddress && <p className="wallet-controls-pending">{creationOnly ? "Connect your wallet using the button at the top of the page, then switch to Sepolia to create your vault." : "Connect an injected wallet on Sepolia. Owner and agent actions stay unavailable until the connected account matches on-chain authority."}</p>}
       {walletAddress && !walletOnSepolia && <p className="wallet-controls-pending">Switch your wallet to Sepolia to enable wallet actions. The connected account is not checked for vault authority on another network.</p>}
       {data.source === "direct-rpc" && walletAddress && walletOnSepolia && !ownerConnected && !selectedAgentConnected && !selectedOwnerOrParentAgent && (
         <p className="wallet-controls-pending">This account is neither the recorded root owner nor an authorized agent for the selected vault.</p>
       )}
 
-      {mode === "create-root" && (
+      {managedSetup && <form className="wallet-action-form" onSubmit={async event => {
+        event.preventDefault();
+        if (setupRunning || !setupOperator || !demoBudget || !actions.completeRootSetup) return;
+        setSetupRunning(true); setSetupError(null);
+        try {
+          const vault = await actions.completeRootSetup(rootLabel, setupOperator, demoBudget, {
+            permissions: ["delegate", "restrict", "reclaim"], allowedTokens: [true, false],
+            maxAmounts: [budgetUSDC, "0"], expiresAt: expiryDateBeforeNamespace(deployment.namespaceExpiry), poolId: zeroPoolId,
+          });
+          onRootCreated(vault);
+        } catch (error) { setSetupError(error instanceof Error ? error.message : "Setup paused. Resume with the same link."); }
+        finally { setSetupRunning(false); }
+      }}>
+        <p><strong>{rootLabel}.{deployment.namespaceName}</strong></p>
+        <p>Deposit: <strong>{budgetUSDC} Test-USDC total</strong>, shared by the root and all children. Agent gas reserve: up to <strong>0.01 Sepolia ETH</strong>, plus wallet transaction fees. Completed deposits are skipped when resuming.</p>
+        <p>Agent: <code style={{ overflowWrap: "anywhere" }}>{setupOperator}</code>. Permissions: delegate, restrict and reclaim, with a {budgetUSDC} USDC per-action limit. Your wallet remains the owner.</p>
+        <p>Your wallet may ask for up to five confirmations. Keep this page open. If interrupted, use this same button and link to resume safely.</p>
+        {setupError && <p role="alert">{setupError}</p>}
+        <button type="submit" className="button button-primary" disabled={!canCreateRoot || setupRunning || busy || !actions.completeRootSetup}>{setupRunning ? "Confirm in your wallet…" : "Set up Kanoki"}</button>
+      </form>}
+      {mode === "create-root" && !managedSetup && (
         <PolicyFields
           key="create-root"
           createRoot
