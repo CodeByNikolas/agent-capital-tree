@@ -2,6 +2,12 @@
 
 As of 26 September 2026. Read this together with PLAN.md after context compaction.
 
+## Current workspace follow-up (not yet published)
+
+- The dashboard now has six routes: overview, agent tree, activity, Uniswap, payments, and setup. The old Applications route returns 404. A root with zero Test-USDC shows a Circle faucet link. The Uniswap page groups the fixed-pool actions, position and indexed swap/LP history.
+- The Payments page scans official Circle USDC `AuthorizationUsed` logs for every vault in the selected tree and verifies same-transaction transfers in successful Sepolia receipts. The read-only local check for public Root 1 returned one 0.01 Test-USDC settlement and complete coverage from controller deployment block 11785110 to block 11785472. The UI displays the scan window and labels truncated coverage; it cannot prove merchant service delivery or x402 intent from chain events alone. No financial transaction was sent.
+- The local setup guide now gives an exact ENS/address-to-root-ID lookup step and explains gas ownership. The README has Uniswap line anchors and an AI-use disclosure; partner form and ETHGlobal submission remain open. These changes are local until pushed and deployed.
+
 ## Circle USDC and x402: implemented and published
 
 Product decision: rapid prototyping without backward compatibility or a legacy selector. The new product uses only `deployments/usdc-sepolia.json`, ENS names or contract addresses, and `?vault=`. Reject old `?root=` links. Historical onchain balances remain untouched.

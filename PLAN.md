@@ -40,7 +40,7 @@ World is excluded. Plan for three partners and no fourth integration. Multiple c
 - One allowed Uniswap v4 pool, no custom hook, fixed fee tier and tick range, at most one active LP position per vault.
 - Own Codex plugin and MCP flow; tasks originate in Codex. A Next.js dashboard shows state and supports wallet management actions.
 - Isolated Docker workers with separate keys and workspaces. HomeBox is the demo runtime, not required jury infrastructure.
-- A control panel for tree, inherited rights, capital, balances, LP, and history. No separate username/password system; a wallet connection suffices for transactions.
+- A control panel for tree, inherited rights, capital, balances, LP, payments, and history. No separate username/password system; a wallet connection suffices for owner transactions.
 - No arbitrary-call engine, Uniswap hooks, automatic LP optimization, cloud signer, public runtime relay, or automatic SSH provisioning.
 
 ## 2. Architecture and binding security rules
@@ -143,7 +143,7 @@ Stack: pnpm TypeScript workspace; Next.js, shadcn/ui with Base UI, viem with an 
 | P2 | Managed ENS registries and finance roles | Negative role/operator/lifecycle tests pass |
 | P3 | Capital tree, atomic spawn, emergency exit | Budget, ancestor, idempotency, recovery tests pass |
 | P4 | SDK and shared types | Real contract integration works from TypeScript |
-| P5 | Five-page dashboard | shadcn sidebar, responsive tree/rights and node details, legible text, system theme, labeled samples, wallet guards |
+| P5 | Six-page dashboard | shadcn sidebar, responsive tree/rights and node details, separate Uniswap and payments pages, legible text, system theme, labeled samples, wallet guards |
 | P6 | Isolated runtime and model access | Two workers run with distinct keys and demonstrated separation |
 | P7 | Codex plugin and installation | Fresh profile installs plugin and creates a real child |
 | P8 | Bounded Uniswap swap | Allowed swap succeeds; invalid inputs/recipients fail |

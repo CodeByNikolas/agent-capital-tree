@@ -18,7 +18,9 @@ Use Codex 0.154.0 and independently verify the binary SHA-256. Record the immuta
 
 ## 2. Create your root
 
-Open [Setup](https://agent-capital-tree.vercel.app/setup), connect your Sepolia wallet and create a new root. Get official Test-USDC from the Circle faucet linked in the app, then fund the vault with your owner wallet. DEMO-USD is a separate valueless pool quote; use the separate Get DEMO-USD button for its one-time faucet claim if you want to test liquidity positions. Record your new internal root ID and the current controller address from `deployments/usdc-sepolia.json`. Use your own new root for agent tasks.
+Open [Setup](https://agent-capital-tree.vercel.app/setup), connect your Sepolia wallet and create a new root. Get official Test-USDC from the [Circle faucet](https://faucet.circle.com/), then fund the vault with your owner wallet. DEMO-USD is a separate valueless pool quote; use the separate Get DEMO-USD button for its one-time faucet claim if you want to test liquidity positions. Use your own new root for agent tasks.
+
+The browser navigates by ENS name or vault contract address, but the local Companion configuration still needs the controller’s numeric `rootId`. After creating your root, copy its ENS name or vault address from the dashboard and open `https://agent-capital-tree.vercel.app/api/resolve-root?q=YOUR_ENS_NAME` (replace the name with yours, URL-encoded if necessary). The JSON response has both `rootId` and `vault`; copy **`rootId`** into the config below. This ID is an internal on-chain controller index, not another wallet or contract. Use the current controller address from `deployments/usdc-sepolia.json`.
 
 ## 3. Configure and prepare the operator
 
@@ -42,7 +44,7 @@ Outside the checkout, create a private directory (mode 0700), a JSON config (060
 node packages/runtime/cli.mjs prepare-root /absolute/private/config.json
 ```
 
-This prints the **public operator address**, not its key. In your root's Setup page, use **Bind operator** to authorize that address and set its mandate. Fund the operator address with Sepolia ETH for its transactions; depositing Test-USDC into the vault does not pay gas. `childGasWei` is a separate optional ETH grant for each spawned child; zero gives no grant. Size it from current fees and the task, within the runtime cap described in the runtime guide. A read-only child task does not require child transaction gas.
+This prints the **public operator address**, not its key. In your root's Setup page, use **Bind operator** to authorize that address and set its mandate. The owner wallet needs Sepolia ETH to create/fund roots and bind the operator. The **vault does not need ETH**: it holds Test-USDC and DEMO-USD, while the external signer pays transaction gas. Fund the operator address with Sepolia ETH for its own transactions; depositing Test-USDC into the vault does not pay gas. `childGasWei` is a separate optional ETH grant for each spawned child; zero gives no grant. Size it from current fees and the task, within the runtime cap described in the runtime guide. A read-only child task does not require child transaction gas; x402 settlement gas is normally paid by the service facilitator, while other child on-chain writes need child ETH.
 
 ## 4. Start the companion
 
