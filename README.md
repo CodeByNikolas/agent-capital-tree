@@ -32,7 +32,7 @@ The [runtime guide](packages/runtime/README.md) covers isolated Docker workers, 
 
 Open [live root 5](https://agent-capital-tree.vercel.app/?root=5) for the fresh browser-owner and Codex/model demonstration, the default dashboard for the funded seed root, or [root 2](https://agent-capital-tree.vercel.app/?root=2) for an earlier recovered three-level test tree. Roots 2 and 5 are permanently revoked and empty after their owner-recovery tests. Root 5 preserves the real four-node hierarchy for inspection; use a new root to run agents. The [sample preview](https://agent-capital-tree.vercel.app/?preview=1) uses illustrative records and is not a live root. Root 5 evidence is in the [owner setup](deployments/browser-owner-e2e.json), [Codex/model run](deployments/root-codex-e2e.json), and [browser negative-case report](deployments/browser-negative-cases.json). Reproduce read-only UI/API checks with `ACT_TEST_APP_URL=https://agent-capital-tree.vercel.app node scripts/test-web-smoke.mjs`; sanitized screenshots and the latest report are in [artifacts/ui](artifacts/ui).
 
-For a private MultiBaas data key, run `bash scripts/configure-multibaas.sh` in your own interactive terminal. It stores a restricted DApp User key outside the repository with owner-only permissions. Never paste the key into chat. Contract registration requires separate administrative setup; the data key does not grant it.
+For a private MultiBaas data key, run `bash scripts/configure-multibaas.sh` in your own interactive terminal. It stores a View-Only Administrators API key outside the repository with owner-only permissions. Never paste the key into chat. Contract registration requires separate administrative setup; the view-only key does not grant it.
 
 ## Testnet funding
 
