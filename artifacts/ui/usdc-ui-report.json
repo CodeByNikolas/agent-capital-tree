@@ -1,6 +1,6 @@
 {
   "base": "https://agent-capital-tree.vercel.app",
-  "checkedAt": "2026-09-26T12:20:13.544Z",
+  "checkedAt": "2026-09-26T13:20:43.183Z",
   "checks": [
     "All six routes reject retired root query links with HTTP404",
     "Unselected entry offers root creation and the live demo without a sample-data link",
