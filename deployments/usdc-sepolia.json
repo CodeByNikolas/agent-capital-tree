@@ -1,0 +1,23 @@
+{
+  "chainId": 11155111,
+  "network": "Ethereum Sepolia",
+  "status": "funding-verified-not-integrated",
+  "token": {
+    "address": "0x1c7D4B196Cb0C7B01d743Fbc6116a902379C7238",
+    "symbol": "USDC",
+    "decimals": 6,
+    "issuerAddressSource": "https://developers.circle.com/stablecoins/usdc-contract-addresses",
+    "testnetOnly": true
+  },
+  "funding": {
+    "owner": "0xbCea84Ed1DaFbb59AaF9797Cb4170394db688d34",
+    "verifiedAtBlock": 11784860,
+    "balanceRaw": "20000000",
+    "balanceUSDC": "20.0"
+  },
+  "limitations": [
+    "This records a balance, not a verified individual transfer receipt.",
+    "Existing ACT-A/ACT-B vaults cannot manage or recover this USDC.",
+    "x402 vault payment authorization is not yet implemented."
+  ]
+}

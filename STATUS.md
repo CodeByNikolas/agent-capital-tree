@@ -2,6 +2,12 @@
 
 Stand: 26. September 2026 (Europe/Berlin). Nach Kontextkomprimierung zusammen mit PLAN.md lesen.
 
+## USDC-Erweiterung: in Arbeit
+
+-20 offizielle Circle-Test-USDC auf Ethereum Sepolia beim Test-Owner verifiziert; sechs Dezimalstellen. Öffentliche Mittel bislang unberührt. Manifest `deployments/usdc-sepolia.json` ist ausdrücklich noch kein Contract-Deployment.
+- Lokaler Fork11784932 mit echtem Circle-Proxy bestanden:10USDC Root,2USDC Child,8USDC Root-Rest; falscher Signer/Betragsüberschreitung abgewiesen; komplette Rückholung und Wiederherstellung des lokalen Spenderbestands. `scripts/test-usdc-fork.mjs`, Nachweis `deployments/usdc-fork.json`. Keine öffentlichen Transaktionen, keine USDC-Storage-Overrides. Test ersetzt ENS-Verknüpfung ausschließlich im wegwerfbaren Fork.
+- ERC1271/PAY-Contract-Erweiterung in isoliertem Worktree in Arbeit. x402-HTTP-Flow, neues öffentliches Deployment, USDC-UI und neue MultiBaas-Indexierung noch offen. Offizieller gehosteter x402-Facilitator bewirbt Ethereum Sepolia derzeit nicht; eigener begrenzter Demo-Facilitator erforderlich. Recherche: `docs/usdc-x402-feasibility.md`.
+
 ## Aktueller Stand
 
 - Public Repository: https://github.com/CodeByNikolas/agent-capital-tree.

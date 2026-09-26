@@ -1,0 +1,67 @@
+{
+  "checkedAt": "2026-09-26T08:05:32.527Z",
+  "network": "disposable Ethereum Sepolia fork",
+  "forkBlock": 11784932,
+  "token": {
+    "address": "0x1c7D4B196Cb0C7B01d743Fbc6116a902379C7238",
+    "symbol": "USDC",
+    "decimals": 6,
+    "issuerAddressSource": "https://developers.circle.com/stablecoins/usdc-contract-addresses",
+    "testnetOnly": true
+  },
+  "checks": [
+    "Real Circle USDC proxy reports 6 decimals",
+    "Root funded with 10 USDC; child receives 2; root retains 8",
+    "SDK preserves raw balances and readable ENS child name",
+    "Excess amount and wrong signer rejected",
+    "Owner recovers all USDC; fork donor balance restored"
+  ],
+  "transactions": [
+    {
+      "name": "fork-only-namespace-attachment",
+      "gas": "40432"
+    },
+    {
+      "name": "fork-only-test-funding",
+      "gas": "62147"
+    },
+    {
+      "name": "create-root",
+      "gas": "5323132"
+    },
+    {
+      "name": "bind-operator",
+      "gas": "244380"
+    },
+    {
+      "name": "approve-usdc",
+      "gas": "55437"
+    },
+    {
+      "name": "fund-10-usdc",
+      "gas": "83046"
+    },
+    {
+      "name": "delegate-2-usdc",
+      "gas": "5508077"
+    },
+    {
+      "name": "recover-child",
+      "gas": "89015"
+    },
+    {
+      "name": "recover-root",
+      "gas": "103806"
+    },
+    {
+      "name": "restore-fork-funding",
+      "gas": "40259"
+    }
+  ],
+  "publicTransactionsSent": 0,
+  "limitations": [
+    "No public deployment or token movement",
+    "No USDC Uniswap pool or x402 payment tested",
+    "Namespace replaced only inside disposable fork; public deployment must preserve existing namespace"
+  ]
+}
