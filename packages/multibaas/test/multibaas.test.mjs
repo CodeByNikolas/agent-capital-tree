@@ -51,11 +51,30 @@ const rootFunded = (logIndex, token, amount) => event({
 });
 
 function queryRow(rootId, transactionHash, eventSignature, blockNumber = 200) {
-  return { rootId, transactionHash, eventSignature, blockNumber };
+  return { rootId, transactionHash, eventSignature, blockNumber, blockHash };
 }
 
 function envelope(result) {
   return { status: 200, message: 'OK', result };
+}
+
+function receiptEnvelope(events) {
+  const tx = events[0].transaction;
+  const hex = value => '0x' + BigInt(value).toString(16);
+  const data = { status: '0x1', transactionHash: tx.txHash, blockNumber: hex(tx.blockNumber),
+    transactionIndex: hex(tx.txIndexInBlock), blockHash: tx.blockHash,
+    logs: events.map(({event, transaction}) => {
+      const abi = capitalControllerAbi.find(item => item.type === 'event' && item.name === event.name);
+      const values = Object.fromEntries(event.inputs.map(({name,value}) => [name,value]));
+      const args = Object.fromEntries(abi.inputs.map(input => [input.name, input.type.startsWith('uint') ? BigInt(values[input.name]) : values[input.name]]));
+      const plain = abi.inputs.filter(input => !input.indexed);
+      return { address: event.contract.address, transactionHash: transaction.txHash,
+        blockNumber: hex(transaction.blockNumber), transactionIndex: hex(transaction.txIndexInBlock),
+        blockHash: transaction.blockHash, logIndex: hex(event.indexInLog), removed: false,
+        topics: encodeEventTopics({abi: capitalControllerAbi, eventName: event.name, args}),
+        data: encodeAbiParameters(plain, plain.map(input => args[input.name])) };
+    }) };
+  return envelope({data});
 }
 
 function indexingResponse() {
@@ -139,11 +158,9 @@ test('queries one bounded page, filters to its root, enriches log indexes, sorts
         ],
       }));
     }
-    if (url.pathname.endsWith('/events')) {
-      assert.equal(url.searchParams.get('contract_address'), controllerAddress);
-      assert.equal(url.searchParams.get('tx_hash'), txA);
-      assert.equal(url.searchParams.get('limit'), '250');
-      return jsonResponse(envelope([
+    if (url.pathname.includes('/transactions/receipt/')) {
+      assert.equal(url.pathname.split('/').at(-1), txA);
+      return jsonResponse(receiptEnvelope([
         rootFunded(3, tokenB, '11'),
         rootFunded(2, tokenA, '42'),
         rootFunded(2, tokenA, '42'),
@@ -162,7 +179,7 @@ test('queries one bounded page, filters to its root, enriches log indexes, sorts
   };
 
   const page = await client(fetcher).getCapitalActivity('7');
-  assert.equal(requests.filter(({ url }) => url.pathname.endsWith('/events')).length, 1);
+  assert.equal(requests.filter(({ url }) => url.pathname.includes('/transactions/receipt/')).length, 1);
   assert.equal(page.items.length, 2);
   assert.deepEqual(page.items.map(({ provenance }) => provenance.logIndex), [2, 3]);
   assert.deepEqual(page.items.map(({ id }) => id), [`11155111:${txA}:2`, `11155111:${txA}:3`]);
@@ -185,8 +202,8 @@ test('cursor pages are root-bound and continue at the bounded query offset', asy
       assert.equal(url.searchParams.get('limit'), '2');
       return jsonResponse(envelope({ rows: [queryRow('7', txB, nodeRevokedSignature, 199)] }));
     }
-    if (url.pathname.endsWith('/events')) {
-      return jsonResponse(envelope([event({
+    if (url.pathname.includes('/transactions/receipt/')) {
+      return jsonResponse(receiptEnvelope([event({
         name: 'NodeRevoked',
         signature: nodeRevokedSignature,
         inputs: { rootId: '7', nodeId: '9' },
@@ -225,7 +242,7 @@ test('accepts decimal-string query blocks but rejects lossy or malformed integer
   const fetcher = async input => {
     const url = new URL(String(input));
     if (url.pathname.endsWith('/queries')) return jsonResponse(envelope({ rows: [queryRow('7', txA, rootFundedSignature, block)] }));
-    if (url.pathname.endsWith('/events')) return jsonResponse(envelope([rootFunded(2, tokenA, '90071992547409930')]));
+    if (url.pathname.includes('/transactions/receipt/')) return jsonResponse(receiptEnvelope([rootFunded(2, tokenA, '90071992547409930')]));
     return jsonResponse(url.pathname.includes('/contracts/') ? indexingResponse() : chainResponse());
   };
   assert.equal((await client(fetcher).getCapitalActivity('7')).items[0].amount, '90071992547409930');
@@ -256,7 +273,7 @@ test('same-signature logs split by a page boundary are all retained and overlap 
   const fetcher = async input => {
     const url = new URL(String(input));
     if (url.pathname.endsWith('/queries')) return jsonResponse(envelope({ rows: [queryRow('7', txA, rootFundedSignature)] }));
-    if (url.pathname.endsWith('/events')) return jsonResponse(envelope([rootFunded(2, tokenA, '42'), rootFunded(3, tokenB, '11')]));
+    if (url.pathname.includes('/transactions/receipt/')) return jsonResponse(receiptEnvelope([rootFunded(2, tokenA, '42'), rootFunded(3, tokenB, '11')]));
     if (url.pathname.includes('/contracts/')) return jsonResponse(indexingResponse());
     return jsonResponse(chainResponse());
   };
@@ -275,7 +292,7 @@ test('canonical receipts verify amounts/finality and remove orphaned indexer ent
   const fetcher = async input => {
     const url = new URL(String(input));
     if (url.pathname.endsWith('/queries')) return jsonResponse(envelope({ rows: [queryRow('7', txA, rootFundedSignature)] }));
-    if (url.pathname.endsWith('/events')) return jsonResponse(envelope([rootFunded(2, tokenA, '42')]));
+    if (url.pathname.includes('/transactions/receipt/')) return jsonResponse(receiptEnvelope([rootFunded(2, tokenA, '42')]));
     return jsonResponse(url.pathname.includes('/contracts/') ? indexingResponse() : chainResponse());
   };
   const page = await client(fetcher).getCapitalActivity('7');
@@ -322,7 +339,7 @@ test('strategy history preserves raw swap/LP amounts and NFT identity', async ()
   const fetcher = async input => {
     const url = new URL(String(input));
     if (url.pathname.endsWith('/queries')) return jsonResponse(envelope({rows:definitions.map(([,signature]) => queryRow('7',txA,signature))}));
-    if (url.pathname.endsWith('/events')) return jsonResponse(envelope(definitions.map(([name,signature,inputs],index) => event({name,signature,inputs,logIndex:index,txHash:txA}))));
+    if (url.pathname.includes('/transactions/receipt/')) return jsonResponse(receiptEnvelope(definitions.map(([name,signature,inputs],index) => event({name,signature,inputs,logIndex:index,txHash:txA}))));
     return jsonResponse(url.pathname.includes('/contracts/') ? indexingResponse() : chainResponse());
   };
   const page = await client(fetcher,10).getCapitalActivity('7');
@@ -331,4 +348,33 @@ test('strategy history preserves raw swap/LP amounts and NFT identity', async ()
   assert.equal(page.items[4].tokenId,'912');
   assert.equal(page.items[0].amountOut,'99');
   assert.equal(page.source.activityCoverage,'capital_and_strategy_events');
+});
+
+test('receipt enrichment rejects identity mismatches and never discovers unindexed transactions', async () => {
+  let rows = [];
+  let mutate = () => {};
+  let receipts = 0;
+  const fetcher = async input => {
+    const url = new URL(String(input));
+    if (url.pathname.endsWith('/queries')) return jsonResponse(envelope({rows}));
+    if (url.pathname.includes('/transactions/receipt/')) {
+      receipts++;
+      const body = receiptEnvelope([rootFunded(2, tokenA, '42')]);
+      mutate(body.result.data);
+      return jsonResponse(body);
+    }
+    return jsonResponse(url.pathname.includes('/contracts/') ? indexingResponse() : chainResponse());
+  };
+  assert.deepEqual((await client(fetcher).getCapitalActivity('7')).items, []);
+  assert.equal(receipts, 0);
+  rows = [queryRow('7', txA, rootFundedSignature)];
+  for (mutate of [
+    receipt => { receipt.transactionHash = txB; },
+    receipt => { receipt.status = '0x0'; },
+    receipt => { receipt.logs[0].removed = true; },
+    receipt => { receipt.logs[0].transactionHash = txB; },
+    receipt => { receipt.logs[0].logIndex = '0x20000000000000'; },
+    receipt => { receipt.logs[0].address = tokenB; },
+    receipt => { receipt.blockHash = txB; receipt.logs[0].blockHash = txB; },
+  ]) await assert.rejects(client(fetcher).getCapitalActivity('7'));
 });

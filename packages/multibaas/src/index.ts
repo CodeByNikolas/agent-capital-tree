@@ -1,4 +1,4 @@
-import { createPublicClient, decodeEventLog, http, type Hex, type TransactionReceipt } from 'viem';
+import { createPublicClient, decodeEventLog, http, toEventSignature, type Hex, type TransactionReceipt } from 'viem';
 import { capitalControllerAbi } from '@agent-capital-tree/sdk';
 
 const CHAIN_ID = 11155111;
@@ -32,7 +32,7 @@ export type MultiBaasEventQuery = {
   events: Array<{
     eventName: (typeof INPUT_EVENTS)[number];
     select: Array<{
-      type: 'input' | 'tx_hash' | 'event_signature' | 'block_number';
+      type: 'input' | 'tx_hash' | 'event_signature' | 'block_number' | 'block_hash';
       inputIndex?: number;
       alias: string;
     }>;
@@ -161,6 +161,7 @@ export function buildCapitalActivityQuery(rootId: string, controllerAddress: str
         { type: 'tx_hash', alias: 'transactionHash' },
         { type: 'event_signature', alias: 'eventSignature' },
         { type: 'block_number', alias: 'blockNumber' },
+        { type: 'block_hash', alias: 'blockHash' },
       ],
       filter: { rule: 'and', children: [
         { fieldType: 'input', inputIndex: 0, operator: 'equal', value: canonicalRootId },
@@ -256,8 +257,9 @@ function countQueryRows(rows: unknown[], rootId: string): Map<string, number> {
     }
     const txHash = requireHash(row.transactionHash, 32, 'query row transactionHash');
     const signature = requireString(row.eventSignature, 'query row eventSignature');
-    requireSafeInteger(row.blockNumber, 'query row blockNumber');
-    const key = `${txHash.toLowerCase()}|${signature}`;
+    const blockNumber = requireSafeInteger(row.blockNumber, 'query row blockNumber');
+    const blockHash = requireHash(row.blockHash, 32, 'query row blockHash');
+    const key = `${txHash.toLowerCase()}|${signature}|${blockNumber}|${blockHash.toLowerCase()}`;
     counts.set(key, (counts.get(key) ?? 0) + 1);
   }
   return counts;
@@ -269,29 +271,54 @@ async function readTransactionEvents(
   controllerAddress: string,
   apiKey: string,
   fetcher: typeof fetch,
-): Promise<unknown[]> {
-  const url = new URL(`${apiBase}/events`);
-  url.searchParams.set('tx_hash', txHash);
-  url.searchParams.set('contract_address', controllerAddress);
-  url.searchParams.set('limit', String(MAX_TX_EVENTS));
-  url.searchParams.set('offset', '0');
-  const body = await requestJson(url, 'GET', '/events', apiKey, fetcher);
-  const result = readArrayEnvelope(body, '/events');
-  if (result.length === MAX_TX_EVENTS) {
-    throw new MultiBaasResponseError('/events', `transaction event count reached the ${MAX_TX_EVENTS} row safety bound`);
+): Promise<ParsedEvent[]> {
+  // Event Queries work without the separate, plan-gated /events log store.
+  // Enrich only transactions selected by that index; never discover history via receipts.
+  const endpoint = `/chains/ethereum/transactions/receipt/${txHash}`;
+  const body = requireRecord(await requestJson(new URL(`${apiBase}${endpoint}`), 'GET', endpoint, apiKey, fetcher), endpoint, 'response');
+  requireHttpEnvelope(body, endpoint);
+  const result = requireRecord(body.result, endpoint, 'result');
+  const receipt = requireRecord(result.data, endpoint, 'receipt data');
+  if (requireHash(receipt.transactionHash, 32, 'receipt transaction hash').toLowerCase() !== txHash.toLowerCase() || receipt.status !== '0x1') {
+    throw new MultiBaasResponseError(endpoint, 'receipt transaction identity or status mismatch');
   }
-  return result;
+  const blockNumber = requireHexInteger(receipt.blockNumber, 'receipt block number');
+  const transactionIndex = requireHexInteger(receipt.transactionIndex, 'receipt transaction index');
+  const blockHash = requireHash(receipt.blockHash, 32, 'receipt block hash').toLowerCase();
+  if (!Array.isArray(receipt.logs) || receipt.logs.length > MAX_TX_EVENTS) {
+    throw new MultiBaasResponseError(endpoint, `receipt logs must be an array of at most ${MAX_TX_EVENTS} entries`);
+  }
+  return receipt.logs.flatMap(value => {
+    const log = requireRecord(value, endpoint, 'receipt log');
+    const address = normalizeAddress(log.address, 'log address');
+    if (address !== controllerAddress) return [];
+    if (log.removed !== false || requireHash(log.transactionHash, 32, 'log transaction hash').toLowerCase() !== txHash.toLowerCase() ||
+        requireHexInteger(log.blockNumber, 'log block number') !== blockNumber ||
+        requireHexInteger(log.transactionIndex, 'log transaction index') !== transactionIndex ||
+        requireHash(log.blockHash, 32, 'log block hash').toLowerCase() !== blockHash) {
+      throw new MultiBaasResponseError(endpoint, 'log identity differs from receipt');
+    }
+    if (!Array.isArray(log.topics) || !log.topics.length || typeof log.data !== 'string' || !/^0x(?:[0-9a-f]{2})*$/i.test(log.data)) {
+      throw new MultiBaasResponseError(endpoint, 'malformed receipt log');
+    }
+    const topics = log.topics.map(topic => requireHash(topic, 32, 'log topic') as Hex) as [Hex, ...Hex[]];
+    const decoded = decodeEventLog({ abi: capitalControllerAbi, topics, data: log.data as Hex, strict: true });
+    const definition = capitalControllerAbi.find(item => item.type === 'event' && item.name === decoded.eventName);
+    if (!definition || definition.type !== 'event') throw new UnsupportedMultiBaasEventError(decoded.eventName);
+    return [{ eventName: decoded.eventName, signature: toEventSignature(definition), inputs: new Map(Object.entries(decoded.args).map(([name, value]) => [name, typeof value === 'bigint' ? value.toString() : value])),
+      txHash, blockNumber, transactionIndex, blockHash, eventContractAddress: address,
+      logIndex: requireHexInteger(log.logIndex, 'log index') }];
+  });
 }
 
 function matchAndMapEvents(
-  rawEvents: unknown[],
+  rawEvents: ParsedEvent[],
   expected: Map<string, number>,
   rootId: string,
   controllerAddress: string,
 ): CapitalActivity[] {
   const byIdentity = new Map<string, ParsedEvent>();
-  for (const raw of rawEvents) {
-    const event = parseRawEvent(raw);
+  for (const event of rawEvents) {
     if (event.eventContractAddress !== controllerAddress) {
       throw new MultiBaasResponseError('/events', 'event came from an unexpected contract address');
     }
@@ -312,7 +339,7 @@ function matchAndMapEvents(
   for (const candidate of candidates) {
     const candidateRoot = eventRootId(candidate.inputs, candidate.eventName);
     if (candidateRoot !== rootId) continue;
-    const key = `${candidate.txHash.toLowerCase()}|${candidate.signature}`;
+    const key = `${candidate.txHash.toLowerCase()}|${candidate.signature}|${candidate.blockNumber}|${candidate.blockHash}`;
     const count = expected.get(key) ?? 0;
     if (!selectedSignatures.has(key)) continue;
     // A query page can split two identical event signatures in the same transaction.
@@ -338,32 +365,6 @@ interface ParsedEvent {
   transactionIndex: number;
   blockHash: string;
   eventContractAddress: string;
-}
-
-function parseRawEvent(value: unknown): ParsedEvent {
-  const eventRecord = requireRecord(value, '/events', 'event');
-  const event = requireRecord(eventRecord.event, '/events', 'event details');
-  const tx = requireRecord(eventRecord.transaction, '/events', 'transaction');
-  const eventContract = requireRecord(event.contract, '/events', 'event contract');
-  if (!Array.isArray(event.inputs)) throw new MultiBaasResponseError('/events', 'event inputs must be an array');
-  const inputs = new Map<string, unknown>();
-  for (const inputValue of event.inputs) {
-    const input = requireRecord(inputValue, '/events', 'event input');
-    const name = requireString(input.name, 'event input name');
-    if (inputs.has(name)) throw new MultiBaasResponseError('/events', `duplicate event input ${name}`);
-    inputs.set(name, input.value);
-  }
-  return {
-    eventName: requireString(event.name, 'event name'),
-    signature: requireString(event.signature, 'event signature'),
-    inputs,
-    txHash: requireHash(tx.txHash, 32, 'transaction hash'),
-    logIndex: requireSafeInteger(event.indexInLog, 'log index'),
-    blockNumber: requireSafeInteger(tx.blockNumber, 'block number'),
-    transactionIndex: requireSafeInteger(tx.txIndexInBlock, 'transaction index'),
-    blockHash: requireHash(tx.blockHash, 32, 'block hash'),
-    eventContractAddress: normalizeAddress(eventContract.address, 'event contract address'),
-  };
 }
 
 function mapActivity(event: ParsedEvent, rootId: string, controllerAddress: string): CapitalActivity {
@@ -442,13 +443,6 @@ function readQueryRows(body: unknown, endpoint: string): unknown[] {
   const result = requireRecord(envelope.result, endpoint, 'result');
   if (!Array.isArray(result.rows)) throw new MultiBaasResponseError(endpoint, 'result.rows must be an array');
   return result.rows;
-}
-
-function readArrayEnvelope(body: unknown, endpoint: string): unknown[] {
-  const envelope = requireRecord(body, endpoint, 'response');
-  requireHttpEnvelope(envelope, endpoint);
-  if (!Array.isArray(envelope.result)) throw new MultiBaasResponseError(endpoint, 'result must be an array');
-  return envelope.result;
 }
 
 function readChainStatus(body: unknown): { blockNumber: number } {
@@ -547,6 +541,13 @@ function requireString(value: unknown, label: string): string {
     throw new MultiBaasResponseError('/multibaas', `${label} must be a non-empty string`);
   }
   return value;
+}
+
+function requireHexInteger(value: unknown, label: string): number {
+  if (typeof value !== 'string' || !/^0x(?:0|[1-9a-f][0-9a-f]*)$/i.test(value)) {
+    throw new MultiBaasResponseError('/receipt', label + ' must be a hex quantity');
+  }
+  return requireSafeInteger(Number(BigInt(value)), label);
 }
 
 function requireSafeInteger(value: unknown, label: string): number {
