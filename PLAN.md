@@ -1,236 +1,236 @@
-# Agent Capital Tree — verbindlicher Implementierungsplan
+# Agent Capital Tree — Binding implementation plan
 
-Stand: 26. September 2026. Produktentscheidungen sind festgelegt; Implementierung läuft, der tatsächliche Abnahmestand steht in STATUS.md. Dieser Plan ersetzt frühere Brainstorming-Varianten. Nach Kontextkomprimierung zuerst diesen Plan und STATUS.md lesen.
+As of 26 September 2026. Product decisions are fixed; implementation is in progress, and actual acceptance status is in STATUS.md. This plan supersedes earlier brainstorming. Read it with STATUS.md after context compaction.
 
-## Aktuelle Erweiterung: offizielles Sepolia-USDC und x402
+## Current extension: official Sepolia USDC and x402
 
-Nutzerkorrektur26.09.: Rapid Prototyping ohne Abwärtskompatibilität. Das Frontend wird ausschließlich auf die neue USDC-Version umgestellt; keine Versionsauswahl, keine Legacy-Linkauflösung oder Migration. Bereits vorhandenes Onchain-Kapital wird dadurch nicht verändert.
+User decision, 26 September: rapid prototyping without backward compatibility. Switch the frontend exclusively to the new USDC version. Do not add a version selector, legacy link resolution, or migration. Existing onchain capital remains unchanged.
 
-Nutzerauftrag26.09.: Die bestätigten20 Circle-Test-USDC werden für eine additive USDC-Version genutzt. Bestehende ACT-A/B-Contracts, ENS-Verknüpfungen und Root1 bleiben erhalten. Eine neue Version benötigt einen eigenen ENS-Namespace und neue unveränderliche Factories/Controller. Offizieller Token: `0x1c7D4B196Cb0C7B01d743Fbc6116a902379C7238`, sechs Dezimalstellen, Chain11155111.
+Use the confirmed 20 Circle test USDC for an additive USDC version. Preserve the existing ACT-A/B contracts, ENS links, and root 1. The new version needs a separate ENS namespace and new immutable factories and controller. Official token: `0x1c7D4B196Cb0C7B01d743Fbc6116a902379C7238`, six decimals, chain 11155111.
 
-Reihenfolge: (1) Kapitaldelegation/Rückholung mit echtem Circle-Vertrag lokal forken; (2) enges PAY-Recht und EIP-3009/ERC-1271-Verifikation mit aktuellem ENS-Mandat, exakt gebundenem Empfänger/Betrag/Nonce/Zeitfenster; (3) standardkonformer HTTP402-Ablauf mit ausdrücklich Sepolia-fähigem Facilitator; (4) öffentliche additive Deployment-/Indexierungsabnahme; (5) UI, Companion, Anleitung und Vercel aktualisieren. Keine allgemeinen Transaktionen, keine stillschweigende PAY-Erweiterung vorhandener Policies, kein mint-Aufruf auf Circle-USDC. Bestehende Regeln für Aktionslimits gelten weiterhin; tatsächlicher Vault-Bestand begrenzt Gesamtverbrauch. USDC allein ist noch keine x402-Integration.
+Sequence: (1) fork the real Circle contract locally to prove capital delegation and recovery; (2) implement a narrow PAY right and EIP-3009/ERC-1271 verification against the current ENS mandate, binding recipient, amount, nonce, and time window exactly; (3) use a standards-compliant HTTP 402 flow with a facilitator that explicitly supports Sepolia; (4) accept the additive public deployment and indexing; (5) update UI, companion, setup guide, and Vercel. No generic transactions, implicit PAY expansion of existing policies, or mint calls on Circle USDC. Existing per-action limits still apply; the vault balance bounds total spending. USDC alone is not an x402 integration.
 
-## 1. Produkt, Umfang und Partner
+## 1. Product, scope, and partners
 
-### Dashboard-Neugestaltung (Nutzerauftrag 26.09.)
+### Dashboard redesign, requested 26 September
 
-Die bisherige überladene Ein-Seiten-Ansicht wird durch fünf echte, direkt adressierbare Seiten ersetzt: Übersicht, Agentenbaum, Aktivität, Anwendungen und Einrichtung. shadcn/ui Sidebar ist verbindlich; Badge, Button, Card, Sheet und Table werden nach Bedarf verwendet. Frontend Design, Impeccable und shadcn-MCP begleiten die Umsetzung. Eine ruhige Oberfläche, lesbare Schrift (16px Fließtext, mindestens14px ergänzende Informationen), großzügige Abstände und systemabhängiger Hell-/Dunkelmodus sind Abnahmekriterien.
+Replace the overloaded single view with five addressable pages: Overview, Agent Tree, Activity, Applications, and Setup. Use a shadcn/ui sidebar, adding Badge, Button, Card, Sheet, and Table as needed. Frontend Design, Impeccable, and shadcn MCP support the work. Acceptance requires a calm layout, 16px body text, at least 14px supporting text, ample spacing, and system light/dark mode.
 
-Der Baum erhält den gesamten Arbeitsbereich seiner Seite. Knotenauswahl öffnet verständliche Details zu Kapital, ENS-Namen, tatsächlichen Rechten und geerbten Grenzen. Root-/Preview-Kontext bleibt beim Seitenwechsel erhalten. Die Übersicht enthält nur die wichtigsten Zustandsinformationen und nächste Schritte; ausführliche Historie und LP-Verwaltung liegen auf eigenen Seiten. Das Produkt wird als delegiertes Agentenkapital dargestellt. Trading ist eine vorhandene Anwendung; x402-Service-Einkäufe gehören inzwischen zum USDC-Umfang; allgemeine Transaktionen und Währungsumrechnung bleiben Future Work.
+Give the tree its own full page. Selecting a node opens clear details about capital, ENS name, actual rights, and inherited limits. Preserve root and preview context across pages. Overview shows only key state and next steps; full history and LP management have their own pages. Present the product as delegated agent capital. Trading is an existing application; x402 service purchases are now part of the USDC scope. Generic transactions and currency conversion remain future work.
 
-Alle Live-APIs, Wallet-Aktionen, Owner-Rückholung, Fehler-/Veraltungsgrenzen und die ehrliche MultiBaas-Abdeckungsanzeige bleiben erhalten. Keine neue Contract-Funktion und keine Wiederholung abgeschlossener Finanzläufe für dieses Redesign. GPT-6 Sol High implementiert in separatem Worktree; der Hauptagent prüft Änderungen, aktualisiert den read-only Browser-Smoke, testet Desktop/Mobil, beide Farbschemata, Tastatur/Details und Routenwechsel. Kohärente Änderungen werden einzeln geprüft und committet, danach gepusht und auf Vercel veröffentlicht.
+Preserve live APIs, wallet actions, owner recovery, error and staleness guards, and honest MultiBaas coverage. The redesign adds no contract function and does not rerun completed financial flows. Its separate Sol High worktree is reviewed by the lead agent. Update the read-only browser smoke; test desktop/mobile, both themes, keyboard/details, and route changes. Review and commit coherent changes separately before pushing and publishing on Vercel.
 
-Agent Capital Tree delegiert echtes Kapital entlang eines Agentenbaums. Jeder Agent erhält einen eigenen Vault und ein begrenztes Mandat. Er kann einen Teil seines verfügbaren Kapitals an Sub-Agenten weitergeben, deren Rechte nur enger werden. Der menschliche Eigentümer behält die letzte Rückholbefugnis. Der Root-Agent ist ein vom Menschen autorisierter Operator; seine höhere Modellintelligenz ist keine Sicherheitsannahme.
+Agent Capital Tree delegates real capital along an agent tree. Every agent receives its own vault and bounded mandate. It may transfer some available capital to subagents whose rights can only narrow. The human owner retains final recovery authority. The root agent is a human-authorized operator; model intelligence is not a security assumption.
 
-Das Produkt begrenzt den finanziellen Schadensradius eines kompromittierten Agenten. Es verwaltet keine Modellrechnung und garantiert weder Handelsgewinne noch den Erhalt des ursprünglichen Dollarwerts.
+The product limits the financial blast radius of a compromised agent. It does not pay model bills or guarantee trading profit or preservation of the original dollar value.
 
-| Partner | Konkreter Beitrag | Angestrebte normale Kategorie |
+| Partner | Concrete contribution | Intended regular category |
 | --- | --- | --- |
-| ENS | ENSv2 Enhanced Access Control (EAC) als maßgebliche Rollenquelle; echte Subnames und Registry-Verknüpfungen | Best Use of ENSv2; $3.000 / $2.000 / $1.000 |
-| Uniswap | Begrenzte v4-Swaps und vollständiger LP-Lebenszyklus mit getrenntem Management und Rückholung | Best Uniswap Stack Contribution; $3.000 / $2.000 / $1.000 |
-| Curvegrid | MultiBaas indexiert Kapital- und Aktionshistorie für Dashboard und Master-Agent | Best AI Agent Project ($1.000), ergänzend Best Digital Asset Dashboard ($1.000) |
+| ENS | ENSv2 Enhanced Access Control as the authoritative role source, real subnames, and linked registries | Best Use of ENSv2; $3,000 / $2,000 / $1,000 |
+| Uniswap | Bounded v4 swaps and the full LP lifecycle, with separate management and recovery | Best Uniswap Stack Contribution; $3,000 / $2,000 / $1,000 |
+| Curvegrid | MultiBaas indexing of capital and action history for dashboard and master agent | Best AI Agent Project ($1,000), plus Best Digital Asset Dashboard ($1,000) |
 
-World ist ausgeschlossen. Wir planen drei Partner, keine vierte Integration. Mehrere Kategorien eines Partners sind keine Zusage für kumulierte Gewinne. MultiBaas ist laut Curvegrid-Ausschreibung optional, seine echte Integration gehört jetzt zu unserem Zielumfang.
+World is excluded. Plan for three partners and no fourth integration. Multiple categories from one partner do not promise cumulative prizes. MultiBaas is optional under Curvegrid's rules but its real integration is in scope.
 
-### Verbindlicher MVP
+### Binding MVP
 
-- Ethereum Sepolia (Chain-ID 11155111), maximal drei Agentenebenen einschließlich Root und 32 Knoten je Root.
-- Öffentliches Factory-System für eigene Nutzer-Roots unter einem verifizierten Projekt-ENS-Namespace. Jeder Nutzer braucht nur seine eigene Wallet, kein individuelles ENS-Kauf-Onboarding.
-- Offizielle Circle-Test-USDC und ein eigener, ausdrücklich wertloser sechsstelliger DEMO-USD-Token; keine Rebasing-/Fee-on-transfer-Tokens. Beträge werden ausschließlich in rohen Token-Einheiten abgerechnet.
-- Ein erlaubter Uniswap-v4-Pool ohne Custom Hook, feste Gebührenstufe und fester Tick-Bereich; höchstens eine aktive LP-Position je Vault.
-- Eigener Codex-Plugin-/MCP-Flow; Aufgaben werden in Codex erteilt. Ein Next.js-Dashboard zeigt Zustand und erlaubt Wallet-Verwaltungsaktionen.
-- Isolierte Docker-Worker mit getrennten Schlüsseln und Workspaces. HomeBox ist Demo-Laufzeit, nicht Pflichtinfrastruktur für die Jury.
-- Eigenes Kontrollpanel mit Baum, geerbten Rechten, Kapital, Beständen, LP und Historie. Keine zusätzliche Benutzer-/Passwortverwaltung; Wallet-Verbindung genügt für Transaktionen.
-- Keine Arbitrary-Call-Engine, Uniswap-Hooks, automatische LP-Optimierung, Cloud-Signer, öffentliche Runtime-Relay-Infrastruktur oder automatische SSH-Provisionierung.
+- Ethereum Sepolia, chain ID 11155111; at most three agent levels including root and 32 nodes per root.
+- Public factory for user roots under a verified project ENS namespace. Each user needs only their wallet, not an individual ENS purchase flow.
+- The current version uses official Circle test USDC and a clearly valueless six-decimal DEMO-USD token. Exclude rebasing and fee-on-transfer tokens. Account only in raw token units.
+- One allowed Uniswap v4 pool, no custom hook, fixed fee tier and tick range, at most one active LP position per vault.
+- Own Codex plugin and MCP flow; tasks originate in Codex. A Next.js dashboard shows state and supports wallet management actions.
+- Isolated Docker workers with separate keys and workspaces. HomeBox is the demo runtime, not required jury infrastructure.
+- A control panel for tree, inherited rights, capital, balances, LP, and history. No separate username/password system; a wallet connection suffices for transactions.
+- No arbitrary-call engine, Uniswap hooks, automatic LP optimization, cloud signer, public runtime relay, or automatic SSH provisioning.
 
-## 2. Architektur und verbindliche Sicherheitsregeln
+## 2. Architecture and binding security rules
 
-### ENS-Rollen, Namensbaum und Kapital
+### ENS roles, name tree, and capital
 
-Ein unveränderlicher Controller/Factory, Vaults und angepasste ENSv2 Permissioned Registries bilden den Onchain-Kern. Der Controller verwaltet die Baumstruktur; die registrierten ENS-Ressourcen enthalten die tatsächlichen Finance-Rollen. Numerische Regeln gehören in die Vault-/Controller-Logik und nicht in ENS-Textmetadaten.
+An immutable controller and factory, vaults, and adapted ENSv2 Permissioned Registries form the onchain core. The controller manages the tree; registered ENS resources carry real finance roles. Numeric rules belong in vault/controller logic, not ENS text metadata.
 
-Jeder Knoten bindet eine stabile interne ID, parentId, rootId, Agentenadresse, Vault-Adresse, Registry, Label, ursprüngliche EAC-Ressourcengeneration und Policy. Registry-Nesting bildet wirkliche ENS-Subnames ab; eine bloße Zeichenkette mit Punkten genügt nicht. Die genaue kompatible ENS-Beta-Version und ihr Deployment werden in P1 fixiert.
+Each node binds a stable internal ID, parentId, rootId, agent and vault addresses, registry, label, original EAC resource generation, and policy. Nested registries represent real ENS subnames; a dotted string alone is insufficient. Fix the exact compatible ENS beta version and deployment in P1.
 
-- Native ENS-EAC-Rollen kombinieren nur ROOT_RESOURCE und die jeweilige Ressource innerhalb einer Registry. Sie erben nicht automatisch von übergeordneten ENS-Namen. Unsere Contracts prüfen deshalb die begrenzte Vorfahrenkette bei jeder normalen Aktion.
-- Finance-Rollen unterscheiden Delegation, Swap, LP-Management, Gebührenabholung, regulären LP-Exit, Einschränkung/Widerruf und Rückholung. EAC-Adminrollen werden vom Controller nur über geprüfte Verwaltungsfunktionen genutzt. Worker erhalten keine frei verwendbaren Registry-Adminrechte.
-- Keine regulären Finance-Rollen auf ROOT_RESOURCE. Das Projektteam erhält weder eine Finanz-Admin-Hintertür noch Upgrade-Rechte über Nutzer-Vaults. Registry-Adminrechte eines Controllers sind ausschließlich über nutzerautorisierte Funktionen erreichbar.
-- Namensübertragungen und generische ERC1155-Operatorfreigaben sind für den verwalteten Kapitalbaum deaktiviert. Resolver-, Parent-, Subregistry- und Upgrade-Pfade dürfen keine Rechteumgehung ermöglichen.
-- Jede normale Aktion prüft aktuellen ENS-Registrierungsstatus, Ressourcenbindung, kanonischen Pfad, tatsächlichen Aufrufer, lokale EAC-Rolle, erlaubte Aktion sowie alle Policies und Widerrufsmarker ihrer Vorfahren. Ressourcenwechsel durch Ablauf/Neuregistrierung sperren bestehende Mandate.
-- Policies enthalten erlaubte Fähigkeiten, Tokens/Pool, Höchstbetrag je Aktion/Token und Gültigkeitsende. Effektive Mengenlimits sind das Minimum, Allowlisten die Schnittmenge, Ablauf das früheste Datum. Keine Blacklist parallel zur Allowlist.
-- Kapital wird bei Allokation tatsächlich vom Eltern-Vault an den Child-Vault übertragen. Ein Vault kann nur sein freies Guthaben delegieren. Zuweisungen innerhalb des Baums sind keine neuen Einzahlungen und werden in Root-Summen nicht doppelt gezählt.
-- Aktionslimits begrenzen einzelne Vorgänge; sie sind ausdrücklich keine kumulierten Verlust- oder Umsatzlimits. Der verfügbare Vault-Bestand und die begrenzte Kapitalzufuhr bestimmen die finanzielle Exposition. Handelsumsatz, Kapitalzuweisung und aktueller Bestand werden separat dargestellt.
-- Bestehende Policies können nur eingeschränkt werden. Mehr Kapital wird ausdrücklich durch einen berechtigten Eltern-Agenten zugewiesen; mehr Rechte erfordern einen neuen Knoten. Teilbaum-Widerruf ist im MVP dauerhaft; neue Arbeit erhält neue Knoten und Schlüssel.
-- Eltern dürfen nur eigene Nachfahren verwalten. Das Entziehen einer delegierenden Verwaltungsrolle oder das Widerrufen eines Knotens stoppt dessen delegierte Nachfahren über die geprüfte Autoritätskette. Entzug einer einzelnen lokalen Aktionsrolle ist kein impliziter globaler Widerruf; die Oberfläche unterscheidet diese Vorgänge.
-- Kein beliebiges calldata/delegatecall, kein frei wählbarer Auszahlungsadressat. Nur typisierte, begrenzte Methoden und fest gebundene Adapter. Reentrancy-Schutz und kontrollierte Token-Freigaben gelten auch für Callback-Pfade.
+- Native ENS EAC combines only ROOT_RESOURCE and the local resource within one registry; roles do not automatically inherit from parent names. Contracts check the bounded ancestor chain on every normal action.
+- Separate finance roles for delegation, swaps, LP management, fee collection, regular LP exit, restriction/revocation, and recovery. The controller uses EAC admin roles only through checked management functions; workers get no freely usable registry admin rights.
+- No regular finance roles on ROOT_RESOURCE. The project team has no financial admin backdoor or upgrade right over user vaults. Controller registry administration is reachable only through user-authorized functions.
+- Disable name transfers and generic ERC-1155 operator approvals for the managed capital tree. Resolver, parent, subregistry, and upgrade paths must not bypass rights.
+- Each normal action checks current ENS registration, resource binding, canonical path, actual caller, local EAC role, allowed action, and all ancestor policies and revocation markers. Expiry and re-registration that change a resource disable old mandates.
+- Policies contain capabilities, token/pool allowlists, maximum amount per action and token, and expiry. Effective limits use the minimum amount, intersection of allowlists, and earliest expiry. Do not add a parallel blacklist.
+- Allocation transfers assets from parent vault to child vault. A vault can delegate only free balance. Internal allocation is not new funding and must not be counted twice in root totals.
+- Per-action limits are not cumulative loss or turnover limits. Vault balance and constrained capital inflow bound exposure. Display trading volume, allocated capital, and current balance separately.
+- Existing policies can only tighten. More capital requires an authorized parent allocation; more rights require a new node. Subtree revocation is permanent in the MVP; new work gets new nodes and keys.
+- Parents manage only descendants. Removing a delegation role or revoking a node stops descendants through the checked authority chain. Revoking one local action role is not a global revocation; the UI must distinguish these operations.
+- No arbitrary calldata, delegatecall, or freely chosen payout recipient. Use typed bounded methods and fixed adapters. Reentrancy protection and controlled token approvals include callback paths.
 
-### Eigentümer, Root-Operator und Notausstieg
+### Owner, root operator, and emergency exit
 
-Der menschliche Eigentümer ist unveränderlich am Root hinterlegt. Nur er bindet oder ersetzt den Root-Operator und definiert dessen Mandat. Ein Operatorwechsel invalidiert die alte delegierte Autoritätsgeneration einschließlich ihrer Worker; bestehende Assets bleiben rückholbar. Das Projektteam kann die Nutzer-Wallet nicht ersetzen.
+The human owner is immutable on the root. Only that owner binds or replaces the root operator and sets its mandate. Changing the operator invalidates the old delegated authority generation and workers while assets remain recoverable. The project team cannot replace a user's wallet.
 
-Normale Eltern-Rückholung verlangt eine weiterhin gültige Elternberechtigung. Sie stoppt den Zielzweig, schließt dessen LP-Positionen und führt Mittel stufenweise zu den gebundenen Eltern-Vaults zurück. Bei 32 Knoten darf dies mehrere explizite Transaktionen benötigen; Fortschritt ist sichtbar und wiederaufnehmbar.
+Normal parent recovery requires current parent authority. It stops the target branch, closes its LP positions, and moves funds stepwise to bound parent vaults. With 32 nodes, this may need multiple explicit transactions; show progress and allow resumption.
 
-Der menschliche Eigentümer besitzt zusätzlich einen eng begrenzten, ENS-unabhängigen Notausstieg: dauerhaft sperren, feste bestehende LP-Positionen schließen und Assets an den gebundenen Eltern-Vault beziehungsweise abschließend die Eigentümeradresse zurückholen. Dieser Pfad erlaubt keine neuen Strategien, Swaps, Rechteausweitung oder beliebigen Empfänger. Er bleibt nach ENS-Ablauf, Detachment, Rollenwiderruf, ausgefallener Runtime und ausgefallenem MultiBaas verfügbar.
+The owner also has a narrow ENS-independent emergency exit: permanently disable activity, close existing fixed LP positions, and recover assets to bound parent vaults or ultimately the owner address. It cannot introduce strategies, swaps, broader rights, or arbitrary recipients. It works after ENS expiry, detachment, revocation, runtime failure, or MultiBaas failure.
 
-LP-Management-Widerruf stoppt zukünftige Agentenaktionen, beendet aber weder Preisrisiko noch LP-Exposition. Exit und Rückholung sind eigene Aktionen. Der Eigentümer setzt beim Notausstieg ausdrücklich Mindestoutputs/Deadline; diese dürfen nicht von einem abgelaufenen Agentenmandat blockiert werden. Rückholbar sind verbleibende Assets, nicht ein garantierter ursprünglicher Dollarbetrag.
+Revoking LP management stops future agent actions but does not remove price risk or LP exposure. Exit and recovery are separate actions. The owner explicitly sets minimum outputs and deadline for emergency exit, which an expired mandate cannot block. Remaining assets are recoverable, not a guaranteed original dollar amount.
 
-### Uniswap-Integration
+### Uniswap integration
 
-Der Vault behält die PositionManager-NFT und alle Auszahlungen. Worker erhalten keine NFT-Transfer-/Operatorfreigaben. Ein typisierter Swap-Adapter nutzt die verifizierten v4-Verträge; LP-Operationen rufen den PositionManager direkt auf. Kein Zugriff auf beliebige Router-Kommandos.
+The vault holds the PositionManager NFT and all payouts. Workers receive no NFT transfer or operator approvals. A typed swap adapter uses verified v4 contracts; LP operations call PositionManager directly. There is no access to arbitrary router commands.
 
-- MVP-Aktionen: begrenzter Exact-Input-Swap, Position öffnen/vergrößern, Gebühren sammeln, Position schließen und leeres NFT verbrennen.
-- Jeder Aufruf bindet Pool, Token, Tick-Bereich, Input-Maxima, Output-Minima, Deadline und Vault-Empfänger. Die Policy begrenzt Input und Pool; Output-Minima sind kein oraclebasierter Verlustschutz.
-- Gebührenabholung verwendet den in der fixierten Periphery-Version getesteten Null-Liquiditäts-Increase und darf keine Position verkleinern oder Principal übertragen.
-- Ein eigener kontrollierter Test-Swap erzeugt reale Testpool-Gebühren für die Demo. Eine ertragslose Position wird nicht mit erfundenen Gebühren dargestellt.
-- Kein Subscriber und kein Custom Hook. Autorisierung gehört an die Vault-Grenze; Router-/Hook-Absender sind nicht automatisch die Agentenidentität.
-- Token-/Permit2-Freigaben sind eng auf benötigte Contracts, Beträge und Gültigkeit begrenzt; Restfreigaben werden berücksichtigt und geprüft.
+- MVP actions: bounded exact-input swap, open/increase position, collect fees, close position, burn empty NFT.
+- Bind pool, token, tick range, input maxima, output minima, deadline, and vault recipient on every call. Policy limits input and pool; output minima are not oracle-based loss protection.
+- Fee collection uses the tested zero-liquidity increase in the pinned periphery and must not reduce position liquidity or transfer principal.
+- A controlled test swap creates actual demo-pool fees. Never depict a non-earning position as having earned fees.
+- No subscriber or custom hook. Authorization sits at the vault seam; router/hook senders are not automatically the agent identity.
+- Bound token and Permit2 approvals to required contracts, amounts, and validity; account for and test residual allowances.
 
-### Curvegrid MultiBaas: verbindliche Integration
+### Curvegrid MultiBaas
 
-MultiBaas ist unsere indexierte Historie, keine Berechtigungsinstanz. Wir registrieren Controller-ABI und Sepolia-Adresse und aktivieren Event-Synchronisierung. Der kostenlose Instanzplan erlaubt nur100 Blöcke Rückblick; nach Nutzerentscheidung vom26.09. gibt es kein bezahltes Upgrade. Tatsächlicher Indexierungsstart ist deshalb Block11783944. Vollständige Historienabnahme erfolgt an einem danach neu erstellten Root. Ältere Roots behalten ihre separaten RPC-/Transaktionsnachweise; ihre fehlende MultiBaas-Historie wird nicht rekonstruiert oder als vollständig ausgegeben. Den Contract müssen wir nicht über MultiBaas deployen; Foundry bleibt unser Contract-Werkzeug.
+MultiBaas provides indexed history, never authorization. Register the controller ABI and Sepolia address and enable event synchronization. The free instance plan permits only a 100-block lookback. Per the 26 September user decision, there is no paid upgrade. The original indexing starts at block 11783944; complete history acceptance uses a root created afterward. Older roots retain separate RPC/transaction evidence, and missing MultiBaas history is neither reconstructed nor called complete. Foundry remains the contract deployment tool.
 
-Der Controller gibt kanonische Events zu Node-Erstellung, Allokation, Rückholung, Policy-/Operatoränderungen, Widerruf und erfolgreichen Swap-/LP-Aktionen aus. Finance-Events enthalten rootId/nodeId, betroffene Tokens und tatsächlich ausgeführte Beträge beziehungsweise tokenId/Liquidität. Externe Event-Meldungen werden ausschließlich von dem beim Controller registrierten Vault akzeptiert; keine frei fälschbare Report-Funktion. Fehlgeschlagene Transaktionen hinterlassen keine Events.
+The controller emits canonical events for node creation, allocation, recovery, policy/operator changes, revocation, and successful swap/LP actions. Finance events identify root/node, tokens, actual amounts, and NFT/liquidity as relevant. External event reports are accepted only from the registered vault. Failed transactions emit no events.
 
-- Ein kleiner serverseitiger MultiBaas-Adapter nutzt das offizielle TypeScript-SDK/REST für gefilterte Event Queries und Aggregationen. Vercel hält einen eingeschränkten Daten-API-Key; administrative Einrichtungsschlüssel bleiben lokal.
-- `getCapitalActivity(rootId, cursor)` liefert geordnete, paginierte Onchain-Historie und Datenherkunft. Das Dashboard und ein gleichnamiges MCP-Lesewerkzeug für den Master verwenden diese Darstellung.
-- UI-Aktualisierung zunächst alle zehn Sekunden während sichtbarer Nutzung und nach bestätigten Transaktionen. Keine Webhooks, Queue, eigene Indexer-Datenbank oder langfristige serverseitige Prozessschleife im MVP.
-- Historie unterscheidet Einzahlungen von außen, interne Allokation, Rückholung, Handelsvolumen und Gebühren. Aktuelle Guthaben/LP-Bestände und effektive Rechte stammen aus aktuellen Contract-Abfragen. Kein PnL aus bloßen Kapitalflüssen und keine manipulierbare Testpool-USD-Bewertung.
-- Events werden über chainId/txHash/logIndex dedupliziert, nach Block/Transaktion/Log sortiert und bei erneuter Abfrage ersetzt statt blind angehängt. Indexierungsverzug und Bestätigungsstatus werden sichtbar. Reorg-Tests gleichen gegen kanonische Receipts ab; Chain-Bestätigung ist nicht gleich endgültige Finalität.
-- Einzelne Kindadressen müssen nur zusätzlich registriert werden, falls dort benötigte Events nicht zentral gespiegelt werden. Automatische Factory-Discovery wird nicht vorausgesetzt.
-- Bei MultiBaas-Ausfall zeigt die Historie einen klaren Fehler/veralteten Stand. Direkt gelesener Zustand und Wallet-Notausstieg bleiben nutzbar. Kein stiller RPC-Historienersatz, der eine funktionierende MultiBaas-Integration vortäuscht.
-- Der Master kann anhand bestätigter Aktivität und aktueller Bestände freie Mittel identifizieren und eine erlaubte Rückholung/Neuallokation ausführen. Eine alte oder unvollständige Historie genügt nicht für die Entscheidung; aktuelle Onchain-Prüfung bleibt verpflichtend.
-- MultiBaas erstellt oder verwahrt keine Worker-Schlüssel. Seine optionalen unsignierten Transaktionen und Cloud Wallets sind für unseren MVP nicht notwendig.
+- A small server-side MultiBaas adapter uses the official TypeScript SDK or REST for filtered event queries and aggregation. Vercel holds a scoped data key; admin setup credentials remain local.
+- `getCapitalActivity(rootId, cursor)` returns ordered paginated onchain history with provenance, shared by dashboard and master MCP read tool.
+- Poll every ten seconds while visible and after confirmed transactions. No webhook, queue, separate indexer database, or long-running server loop in the MVP.
+- Distinguish external deposits, internal allocation, recovery, trading volume, and fees. Read current balances, LP, and effective rights directly from contracts. Do not infer PnL from capital flows or show a manipulable demo-pool USD valuation.
+- Deduplicate by chainId/txHash/logIndex; sort by block, transaction, and log; replace observations on refresh. Show index lag and confirmation status. Check reorgs against canonical receipts; a confirmation is not finality.
+- Register child addresses separately only if required events are not reflected centrally. Do not assume automatic factory discovery.
+- On MultiBaas failure, show a clear error or stale history. Keep directly read state and wallet emergency exit usable. Do not silently substitute RPC history and imply MultiBaas is working.
+- The master may use confirmed activity plus current balances to identify free funds and perform an authorized recovery/reallocation. Old or incomplete history alone is insufficient; current onchain checks remain mandatory.
+- MultiBaas neither creates nor holds worker keys. Its optional unsigned transactions and cloud wallets are unnecessary.
 
-### Runtime, Schlüssel und Codex-Plugin
+### Runtime, keys, and Codex plugin
 
-Ein lokaler Companion orchestriert Docker-Worker. Der Mensch autorisiert dessen Root-Operator-Adresse per Wallet-Transaktion. Jeder Worker erhält einen eigenen Schlüssel über einen privaten kurzlebigen Mount sowie eine authentifizierte Verbindung zu seinem MCP-Kontext. Schlüssel erscheinen nicht in Prompts, Tool-Ergebnissen, Logs, Git oder Vercel. Verschlüsselte Schlüssel liegen außerhalb des Projekts. Der lokale Companion entschlüsselt sie mit einem separaten, zufällig erzeugten Passwort in einer nur für den Host-Nutzer lesbaren Datei. Das ermöglicht unbeaufsichtigten Betrieb; die daneben gespeicherte Passwortdatei schützt ausdrücklich nicht vor einem kompromittierten Host oder einem Prozess mit demselben Betriebssystem-Nutzer. Die geprüfte Sicherheitsgrenze ist die Isolation der Worker, keine zusätzliche interaktive Passphrase.
+A local companion orchestrates Docker workers. The human authorizes its root operator address in a wallet transaction. Each worker gets its own key via a short-lived private mount and an authenticated connection to its MCP context. Keys must never appear in prompts, tool output, logs, Git, or Vercel. Encrypted keys live outside the project. The companion decrypts them using a separate random password in a host-user-only file. This permits unattended operation; the nearby password file does not protect against a compromised host or process running as the same OS user. Worker isolation, not an additional interactive passphrase, is the tested boundary.
 
-Worker laufen mit Docker `--network none`. Eine Bridge im Container erreicht ausschließlich den workergebundenen Unix-Socket; der Host-Gateway setzt den tatsächlichen MCP-/Inferenzkontext ein. Loopback im Container ist kein Zugriff auf Host-Loopback. Ausgehender allgemeiner Netzwerkzugriff ist gesperrt. Jeder Worker hat eigenen Workspace, Schlüssel und Socket; pro Worker begrenzte Credentials bleiben beim Companion.
+Workers run with Docker `--network none`. An in-container bridge reaches only its worker-bound Unix socket; the host gateway supplies the actual MCP and inference context. Container loopback is not host loopback. General outbound network access is blocked. Each worker has a separate workspace, key, and socket; scoped per-worker credentials remain with the companion.
 
-Container erhalten weder Host-Home noch vollständiges Codex-Profil/Auth-Verzeichnis, Eltern-/Geschwisterschlüssel oder Docker-Socket. Der Host/Companion ist vertrauenswürdig; Container sind keine Schutzgarantie gegen einen kompromittierten Host. Die Onchain-Vaults begrenzen einen kompromittierten Worker auch bei direktem RPC-Zugriff.
+Containers receive no host home, full Codex profile/auth directory, parent or sibling key, or Docker socket. The host and companion are trusted; containers do not protect against host compromise. Onchain vaults still bound a compromised worker with direct RPC access.
 
-Eigener Spawn-Ablauf statt einer Sicherheitsannahme über natives `spawn_agent`:
+Use an explicit spawn flow, rather than treating native `spawn_agent` as a security boundary:
 
-1. Authentifizierter Eltern-Worker übergibt Aufgabe, Modell, ERC-20-Kapitalzuweisung (Asset und Betrag), zusätzliche Einschränkungen und Idempotenz-ID.
-2. Runtime bereitet Child-Schlüssel/-Adresse vor. Der Aufruf wird fest an den tatsächlichen Elternkontext gebunden; ein modelseitiges agentId-Feld authentifiziert nichts.
-3. Der Eltern-Signer autorisiert eine atomare Transaktion für Knoten-/ENS-Erstellung, Rollen und reale Kapitalzuweisung. `spawnChild` enthält einen bytes32-Operationsschlüssel; der Controller speichert dessen Ergebnis getrennt nach Root, Parent und Autoritätsgeneration zusammen mit einem Hash der Spawn-Parameter. Wiederholung identischer Parameter liefert den vorhandenen Knoten ohne erneute Finanzierung; abweichende Parameter zum selben Schlüssel werden abgewiesen. Kinder werden nur aus einem noch gültigen Mandat erzeugt.
-4. Runtime wartet auf Bestätigung und gleicht unklare Sendestatus anhand des persistenten Operationsjournals und des Contracts ab. Ein wiederholter Request erzeugt keinen zweiten Child-Vault und keine zweite Zuweisung.
-5. Erst dann startet der Worker. Prozessfehler nach Allokation führen zu wiederaufnehmbarem Start oder expliziter Sperrung/Rückholung. Bei einem Reorg wird der Worker gestoppt und der Vorgang erneut abgeglichen.
+1. An authenticated parent worker supplies task, model, ERC-20 asset and amount, additional restrictions, and an idempotency key.
+2. Runtime prepares the child key and address. The call binds to the actual parent context; a model-provided agentId authenticates nothing.
+3. The parent signer authorizes one atomic node/ENS/role/allocation transaction. `spawnChild` carries a bytes32 operation key; the controller stores the result by root, parent, and authority generation with a hash of parameters. Repeating identical parameters returns the existing child without more funding; changing parameters under the same key fails. Children require a current mandate.
+4. Runtime waits for confirmation and reconciles uncertain broadcasts using its persistent journal and the contract. A retry cannot create a second child vault or allocation.
+5. Only then start the worker. A process failure after allocation leads to a resumable launch or explicit revocation and recovery. Stop the worker after a reorg and reconcile again.
 
-Eigenes lokales Runtime-Journal speichert Operationsstatus, öffentliche IDs und Workspace-Zuordnung atomar; Modellaufgaben bleiben lokal. Begrenztes Sepolia-ETH-Gas wird getrennt vom Handelskapital zugeteilt und darf kein unbegrenzter Faucet für Worker werden. Root-/Sibling-Schlüssel und unlimitierte Provider-Credentials werden nie weitergereicht.
+The local runtime journal atomically stores operation state, public IDs, and workspace mapping; model tasks stay local. Provide bounded Sepolia ETH gas separately from trading capital; do not create an unlimited worker faucet. Never forward root/sibling keys or unlimited provider credentials.
 
-Auf HomeBox ist CLIProxyAPI der einzige Inferenzanbieter. Worker verwenden diesen über einen vom Companion vermittelten, pro Worker begrenzten Zugang; ein unbeschränkter Host-Master-Key gehört nicht in den Container. Der verbindlich unterstützte Jury-Pfad benötigt zusätzlich einen eigenen erreichbaren CLIProxyAPI-Zugang (Endpoint, Credential und verfügbares Modell). Das Setup fragt diese Angaben lokal ab, prüft einen echten Modellaufruf und speichert das Credential ausschließlich beim Companion. Ein vorhandenes Codex-Login allein genügt dafür nicht; wir versprechen keine ungeprüfte Weitergabe einer Codex-/ChatGPT-Session an Worker. Unsere Demo stellt der Jury weder Host-Zugänge noch Provider-Schlüssel zur Verfügung. Die unabhängige Installation testet diesen expliziten Weg mit frischem Runtime-/Codex-Profil und getrenntem Testzugang.
+HomeBox uses CLIProxyAPI as its only inference provider. The companion gives each worker limited mediated access; no unrestricted host master key enters a container. Independent jury setup also needs the user's own reachable CLIProxyAPI endpoint, credential, and available model. Collect these locally, test a real model call, and store the credential only with the companion. A Codex login alone is insufficient; do not imply an untested Codex/ChatGPT session handoff. Give the jury neither host access nor provider keys. Test independent installation with fresh runtime/Codex profiles and separate model access.
 
-Codex `SubagentStart`-Hooks existieren, garantieren aber weder isolierte Schlüssel noch eine blockierbare Erstellung. Wir aktivieren keine Hooks. Das Plugin stellt eigene MCP-Werkzeuge und Anleitungen bereit; nicht-interaktive Worker werden über `codex exec --json` gestartet. Ausgewählte CLI-/Plugin-Versionen werden gepinnt und in einem frischen Profil installiert getestet.
+Codex `SubagentStart` hooks exist but guarantee neither isolated keys nor blockable creation. Leave hooks disabled. The plugin provides its own MCP tools and guidance; launch noninteractive workers through `codex exec --json`. Pin CLI/plugin versions and test installation in a fresh profile.
 
-### Öffentliche Schnittstellen und Oberfläche
+### Public interfaces and UI
 
-Gemeinsame TypeScript-Typen und generierte Contract-ABIs definieren Node, Policy, TokenAmount, OperationStatus und Activity. Node-IDs sind keine Autorisierungsnachweise. RPC/MultiBaas-Antworten tragen Block-/Quelleninformationen, finanzielle Mengen sind Integer, keine Floats.
+Shared TypeScript types and generated contract ABIs define Node, Policy, TokenAmount, OperationStatus, and Activity. Node IDs are not proof of authority. RPC and MultiBaas responses include block and source information; financial amounts are integers, never floats.
 
-SDK/MCP-Funktionen: `createRoot`, `spawnChild`, `allocateCapital`, `getTree`, `getEffectivePolicy`, `getCapitalActivity`, `tightenPolicy`, `swap`, `openPosition`, `increasePosition`, `collectFees`, `closePosition`, `revokeSubtree`, `reclaimAssets`. Operatorbindung und Eigentümer-Notausstieg sind Wallet-Aktionen; Root-Schreibzugriff entsteht nicht durch Verbindung mit der Website.
+SDK/MCP functions: `createRoot`, `spawnChild`, `allocateCapital`, `getTree`, `getEffectivePolicy`, `getCapitalActivity`, `tightenPolicy`, `swap`, `openPosition`, `increasePosition`, `collectFees`, `closePosition`, `revokeSubtree`, `reclaimAssets`. Operator binding and owner emergency exit are wallet actions. Connecting to the website does not grant root write access.
 
-Graphitfarbene technische Oberfläche, lesbare Kontraste, grüne aktive Verbindungen, klare Beschriftungen für widerrufen/abgelaufen. Startansicht: Demo ansehen, eigenen Vault erstellen, Plugin installieren. Baum: ENS-Namen, Beziehungen, freie Mittel und Mandate. Details: lokale/geerbte Einschränkungen mit Ursprung, Tokenbestände, LP-Position und tatsächliche Transaktionslinks. Aktives Onchain-Mandat bedeutet nicht, dass ein Agentenprozess gerade läuft. Lokale Fehlversuche bleiben als lokale Diagnose gekennzeichnet.
+Use a graphite technical interface with readable contrast, green active links, and clear revoked/expired labels. Entry points: inspect the demo, create a vault, install the plugin. Show ENS names, relationships, free funds, and mandates in the tree. Details show local and inherited restrictions with their origin, balances, LP position, and real transaction links. An active onchain mandate does not prove an agent process is running. Label local failed attempts as local diagnostics.
 
-Jury-Voraussetzungen sind Wallet, Sepolia-ETH, Node.js, Docker, Codex und der oben beschriebene eigene CLIProxyAPI-Zugang. Ablauf: Vercel öffnen → eigene Wallet auf Sepolia → eigenen Root erstellen und Demo-Assets beziehen → CLI-Setup/Plugin installieren und Modellzugang testen → Operator per Wallet binden → Aufgabe in Codex → Aktionen im Dashboard verfolgen → Teilbaum widerrufen → LP schließen → Mittel zurückholen. Die Website erfordert keinen Zugriff auf localhost; der Plugin-Client benötigt keinen öffentlichen Server. Für öffentliche Roots deckt unsere gemeinsame MultiBaas-Instanz die Controller-Historie ab ihrem dokumentierten Indexierungsstart ab; die Oberfläche nennt diese Abdeckungsgrenze. Eigene Contract-Deployments benötigen eigene Indexer-Konfiguration. Demo ansehen und manuelle Wallet-Aktionen funktionieren auch ohne Modellzugang.
+Jury prerequisites: wallet, Sepolia ETH, Node.js, Docker, Codex, and the user's own CLIProxyAPI access. Flow: open Vercel → connect a Sepolia wallet → create a root and obtain demo assets → install CLI/plugin and test model access → bind operator with wallet → issue a Codex task → follow actions in dashboard → revoke a subtree → close LP → recover funds. The website needs no localhost access; the plugin client needs no public server. The shared MultiBaas instance covers public roots from its documented indexing start; disclose that boundary. Independent contract deployments need their own indexer configuration. Inspecting the demo and manual wallet actions work without model access.
 
-## 3. Arbeitspakete, Freigaben und Veröffentlichung
+## 3. Work packages, gates, and publication
 
-Stack: pnpm TypeScript-Workspace; Next.js, shadcn/ui (Base UI), viem mit injiziertem Wallet-Provider und eigener SVG-Baumansicht; Solidity/Foundry; Docker; Playwright mit Chromium und MetaMask für echte Wallet-E2E-Tests. Vorhandene Tools verwenden, fehlendes Foundry lokal und versioniert installieren. Keine Host-Updates oder Aktivierung automatischer Hooks.
+Stack: pnpm TypeScript workspace; Next.js, shadcn/ui with Base UI, viem with an injected wallet provider, custom SVG tree; Solidity/Foundry; Docker; Playwright with Chromium and MetaMask for real wallet end-to-end tests. Use existing tools and install missing Foundry locally with a pinned version. No host updates or automatic hooks.
 
-| Paket | Inhalt | Abgeschlossen, wenn |
+| Package | Scope | Done when |
 | --- | --- | --- |
-| P0 | Plan/Status/Arbeitsregeln; Workspace, Git und CI | Dokumente persistiert; reproduzierbare Basis und Checks vorhanden |
-| P1 | ENS-Beta/Namespace, v4, Plugin, Browser-Wallet, Provider und MultiBaas prüfen | Konkrete Versionen/ABIs fixiert; reale Aufrufe und lokale Mint/Collect/Exit-Probe erfolgreich |
-| P2 | Verwaltete ENS-Registries und Finance-Rollen | Rollen-/Operator-/Lifecycle-Negativtests bestehen |
-| P3 | Kapitalbaum, atomarer Spawn, Notausstieg | Budget-, Vorfahren-, Idempotenz- und Rückholtests bestehen |
-| P4 | SDK und gemeinsame Typen | Echte Contract-Integration aus TypeScript funktioniert |
-| P5 | Dashboard mit fünf Seiten | shadcn Sidebar, responsive Baum-/Rechteansicht mit Knotendetails, lesbare Typografie, System-Theme und klar markierte Beispieldaten; Wallet-Schutzgrenzen erhalten |
-| P6 | Isolierte Runtime und Modellanbindung | Zwei Worker mit verschiedenen Schlüsseln und nachgewiesener Trennung laufen |
-| P7 | Codex-Plugin/Installation | Frisches Profil installiert Plugin und erzeugt einen echten Child-Knoten |
-| P8 | Begrenzter Uniswap-Swap | Erlaubter Swap gelingt, falsche Inputs/Empfänger scheitern |
-| P9 | LP-Lebenszyklus und Widerruf | Mint/Increase/Collect/Close einschließlich Eltern-/Owner-Exit funktionieren |
-| P10 | MultiBaas und Live-Dashboard | Reale indexierte Events treiben Historie und MCP-Abfrage; Fehlerfall sichtbar |
-| P11 | Unabhängiges Jury-Onboarding | Neue Wallet und frische Runtime benötigen keine Demo-Schlüssel oder privaten Host-Zugänge |
-| P12 | Integrations-, Sicherheits- und Browser-Abnahme | Alle verpflichtenden Tests unten bestanden und überprüft |
-| P13 | Public Repo, Sepolia, HomeBox-Demo, Vercel, Abgabeartefakte | Öffentliche URLs und unabhängiger Ablauf funktionieren; Sponsorbeiträge nachweisbar |
+| P0 | Plan, status, work rules; workspace, Git, CI | Documents saved; reproducible base and checks |
+| P1 | Verify ENS beta/namespace, v4, plugin, browser wallet, provider, MultiBaas | Versions/ABIs pinned; real calls and local mint/collect/exit proof |
+| P2 | Managed ENS registries and finance roles | Negative role/operator/lifecycle tests pass |
+| P3 | Capital tree, atomic spawn, emergency exit | Budget, ancestor, idempotency, recovery tests pass |
+| P4 | SDK and shared types | Real contract integration works from TypeScript |
+| P5 | Five-page dashboard | shadcn sidebar, responsive tree/rights and node details, legible text, system theme, labeled samples, wallet guards |
+| P6 | Isolated runtime and model access | Two workers run with distinct keys and demonstrated separation |
+| P7 | Codex plugin and installation | Fresh profile installs plugin and creates a real child |
+| P8 | Bounded Uniswap swap | Allowed swap succeeds; invalid inputs/recipients fail |
+| P9 | LP lifecycle and revocation | Mint/increase/collect/close and parent/owner exits work |
+| P10 | MultiBaas and live dashboard | Real indexed events drive history and MCP read; failure is visible |
+| P11 | Independent jury onboarding | New wallet and fresh runtime require no demo keys or private host access |
+| P12 | Integration, security, browser acceptance | All mandatory checks below pass and are reviewed |
+| P13 | Public repo, Sepolia, HomeBox demo, Vercel, submission artifacts | Public URLs and independent flow work; partner contributions are evidenced |
 
-Abhängigkeiten: P2/P3 fixieren Interfaces für P4. P5 und P6 können nach P1 parallel laufen. P7 hängt von P4/P6 ab. P8/P9 hängen von Contracts/SDK ab. P10 folgt dem Event-Schema und kann parallel zur UI-Integration erfolgen. Deployment-Testläufe beginnen vor P12; P13 ist die geprüfte Veröffentlichung.
+Dependencies: P2/P3 fix interfaces for P4. P5 and P6 can run after P1 in parallel. P7 depends on P4/P6; P8/P9 depend on contracts/SDK. P10 follows the event schema and can proceed alongside UI integration. Start deployment tests before P12; P13 is verified publication.
 
-Hauptagent verantwortet Architektur, Schnittstellen, Integration und Reviews. Höchstens drei Subagents parallel, je eigene Branch/Worktree und klare Dateiverantwortung. Luna Max übernimmt begrenzte SDK-/Frontend-/Dokumentations-/Testfeatures. Sol Medium übernimmt Contracts, Isolation und Sicherheitsintegration. Änderungen anderer werden nicht zurückgesetzt. Nach jedem Feature relevante Tests, Diff-Review und eigener Commit mit aussagekräftigem Betreff/Begründung. Autor: CodeByNikolas. Kein ungetesteter großer Sammelcommit.
+The lead agent owns architecture, interfaces, integration, and reviews. Use at most three parallel subagents with separate branches/worktrees and explicit file ownership. Luna Max handles bounded SDK, frontend, docs, and tests; Sol Medium handles contracts, isolation, and security integration. Preserve others' edits. After each feature, run relevant tests and diff review, then make an individual commit with meaningful subject and rationale as CodeByNikolas. Avoid untested aggregate commits.
 
-Ziele: öffentliches GitHub-Repository `CodeByNikolas/agent-capital-tree`; neues Vercel-Projekt im Team `tumblockchains-projects`. Veröffentlichung ist bereits autorisiert. Keine Änderungen an bestehenden Projekten. Testschlüssel und private Runtime-Daten bleiben außerhalb des Repositorys; Logs/Screenshots werden auf Secrets geprüft.
+Targets: public GitHub repository `CodeByNikolas/agent-capital-tree`; new Vercel project in `tumblockchains-projects`. Publication is already authorized. Preserve existing projects. Keep test keys and private runtime data out of Git; inspect logs and screenshots for secrets.
 
-### Technische Freigaben vor Integrationsversprechen
+### Technical gates before integration claims
 
-1. ENS: nutzbarer Sepolia-Namespace, tatsächliche ABI-/Source-Kompatibilität, atomare Registrierung/Rolleninitialisierung und Registry-Verknüpfung. EAC kann nicht still durch Metadaten oder eine unabhängige ACL ersetzt werden.
-2. Uniswap: deployed Bytecode/ABIs, Testpool, lokale und anschließend Sepolia Swap-/LP-Probe. Fehlende Liquidität lösen wir durch eigenen Pool; fehlt ein nutzbarer Contract, ist die Freigabe offen.
-3. Runtime: aktuelles Plugin-Paketformat, Modellverfügbarkeit und per-Worker-Inferenzzugang ohne geteilte Host-Credentials; echte Containertrennung. Keine stillschweigende Rückkehr zu gemeinsamem Parent-Key.
-4. Wallet: gepinnte MetaMask-Version im persistenten Playwright-Chromium-Profil, Verbindung und echte Sepolia-Signatur. Ein Mock-Wallet-Test ersetzt diesen Nachweis nicht.
-5. MultiBaas: Sepolia-Instanz, Daten-API-Key, ABI-Link, Indexierungsstart innerhalb des kostenlosen100-Block-Fensters und live ausgeführte Query; der frische Abnahme-Root muss vollständig nach diesem Start liegen. Fehlt der Zugang, bleibt diese Integration offen; die Anwendung und Notausstieg können unabhängig weitergebaut werden.
+1. ENS: usable Sepolia namespace, actual ABI/source compatibility, atomic registration and role initialization, linked registries. Do not silently replace EAC with metadata or an independent ACL.
+2. Uniswap: deployed bytecode/ABIs, test pool, local and then Sepolia swap/LP proof. Create a pool if liquidity is missing; keep the gate open if contracts cannot be used.
+3. Runtime: current plugin format, model availability, per-worker inference without shared host credentials, real container separation. No fallback to one shared parent key.
+4. Wallet: pinned MetaMask in a persistent Playwright Chromium profile, connection, and real Sepolia signature. A mock wallet does not satisfy this gate.
+5. MultiBaas: Sepolia instance, data API key, ABI link, indexing start within the free 100-block window, and live query. The fresh acceptance root must be entirely after that start. If access fails, mark integration open while continuing app and emergency-exit work.
 
-Sind Freigaben nicht erfüllt, den konkreten Hinderungsgrund in STATUS.md festhalten. Parallele unabhängige Arbeit fortsetzen; den Umfang nicht still reduzieren oder erfolgreiche Integration behaupten. Neue Produktentscheidungen sind nur bei tatsächlichem Wegfall einer Kernvoraussetzung nötig.
+Record unmet gates and their concrete blocker in STATUS.md. Continue independent work; do not silently narrow scope or claim an integration succeeded. New product decisions are needed only if a core prerequisite is genuinely lost.
 
-## 4. Test- und Abnahmeplan
+## 4. Test and acceptance plan
 
-### Contracts und Sicherheit
+### Contracts and security
 
-- Neue Finanzabläufe zuerst auf einem wegwerfbaren lokalen Sepolia-Fork prüfen. Erst danach öffentliches Sepolia für echte Wallets, MultiBaas-Indexierung und die veröffentlichte App nutzen; ein Fork ersetzt diese externen Integrationsnachweise nicht. Keine zweite Entwicklungsplattform dafür aufbauen.
-- Kapital bleibt über Transfers erhalten; kein Double-Spend, keine Doppelallokation bei wiederholtem Spawn. Ein Child kann weder Root-/Sibling-Bestände noch deren Freigaben verwenden.
-- Kindregeln werden ausschließlich enger. Vorfahreneinschränkung und Widerruf wirken auf vorhandene Nachfahren, ein Sibling bleibt unabhängig.
-- Direkte RPC-Aufrufe und frei gefälschte MCP-IDs umgehen keine Autorisierung. Resource-Wechsel, Ablauf, Detachment, Namens-/NFT-Transfers und Operator-Approvals erweitern keine Finance-Rechte.
-- ENS-Ausfall oder ungültiger Pfad blockiert normale Aktionen; der menschliche Owner kann verbleibende Assets einschließlich LP zurückholen. Projektoperator und ehemalige Root-Operatoren können dies nicht.
-- LP-NFT bleibt im Vault; Gebührenabholung entnimmt keinen Principal; alle Auszahlungen gehen an gebundene Vaults. Ein Widerruf sperrt Management und lässt den vorgesehenen Notausstieg zu.
-- Manipulierte Routerdaten, falsche Tokens/Pools/Empfänger, zu hohe Beträge, abgelaufene Deadlines, Callback-/Reentrancy-Versuche und unerlaubte Freigaben scheitern.
-- Unit- und Foundry-Fuzztests prüfen Invarianten, eine reale v4-Integration prüft den Protokoll-Lebenszyklus. Negative Tests greifen Contracts direkt an, nicht nur die UI.
+- Test new financial flows first on a disposable local Sepolia fork. Then use public Sepolia for real wallets, MultiBaas indexing, and the published app. A fork does not replace external integration evidence. Do not introduce a second development platform.
+- Capital is conserved through transfers; no double spend or duplicate allocation on repeated spawn. A child cannot use root or sibling balances or allowances.
+- Child policies only narrow. Ancestor restrictions and revocation affect existing descendants while siblings remain independent.
+- Direct RPC calls and forged MCP IDs cannot bypass authorization. Resource changes, expiry, detachment, name/NFT transfers, and operator approvals cannot expand finance rights.
+- ENS failure or an invalid path blocks normal actions, but the human owner can recover remaining assets including LP. Project operators and former root operators cannot.
+- The LP NFT stays in its vault; fee collection cannot remove principal; all payouts go to bound vaults. Revocation blocks management while preserving the intended emergency exit.
+- Reject manipulated router data, wrong tokens/pools/recipients, excessive amounts, expired deadlines, callback or reentrancy attacks, and unauthorized approvals.
+- Unit and Foundry fuzz tests cover invariants; a real v4 integration exercises the protocol lifecycle. Negative tests target contracts directly, not only the UI.
 
-### Runtime und Daten
+### Runtime and data
 
-- Frische Installation, zwei isolierte Worker, Parent-/Sibling-Schlüssel und Docker-Socket unzugänglich; keine Provider-Master-Credentials im Worker.
-- Bestätigte, fehlgeschlagene, doppelte und zunächst unklare Transaktionen; Worker-Startfehler nach Allokation; Prozessneustart, Verlust des lokalen Journals und Reorg erzeugen bei Wiederholung desselben Operationsschlüssels keine zweite Zahlung. Bei verlorenem Schlüssel muss vor einer neuen Spawn-ID der Onchain-Baum abgeglichen werden.
-- MultiBaas-Events stimmen mit Receipts überein; Duplikate/Reorgs werden bereinigt; Indexierungsverzug/API-Ausfall täuscht keine aktuellen Bestände oder erfolgreiche Integrationen vor.
-- Root-Aggregate zählen interne Transfers nicht doppelt. Fremde Direktzahlungen erscheinen über aktuelle Balances. Fehlgeschlagene Aktionen werden nicht als Onchain-Events erfunden.
-- Master liest Historie und aktuelle Bestände, holt tatsächlich freie Mittel zurück und allokiert sie unter gültigen Rechten neu. Nicht dokumentierte Cloud-Automation ist keine Voraussetzung.
+- Test a fresh install and two isolated workers. Parent/sibling keys, Docker socket, and provider master credentials must be unavailable inside workers.
+- Cover confirmed, failed, repeated, and initially ambiguous transactions; worker launch failure after allocation; process restart, journal loss, and reorg. Retrying one operation key cannot pay twice. After key loss, reconcile the onchain tree before issuing a new spawn ID.
+- Match MultiBaas events to receipts, clean up duplicates/reorgs, and ensure index lag or API failure cannot imply current balances or successful integration.
+- Do not double-count internal transfers in root aggregates. Show outside direct transfers through current balances. Never invent onchain events for failed actions.
+- The master reads history and current balances, reclaims actually free funds, and reallocates them under valid rights. Undocumented cloud automation is not required.
 
-### Echter End-to-End-Test auf der veröffentlichten Vercel-App
+### Real end-to-end test on the published Vercel app
 
-Separate Deployment- und Nutzer-Testkonten werden neu erzeugt und außerhalb des Repositories geschützt gespeichert. Der Nutzer erhält nur öffentliche Funding-Adressen und den geschätzten Sepolia-ETH-Bedarf. MetaMask-Einrichtung/Seed-Import wird nicht aufgezeichnet. Browserbase ergänzt öffentliche UI-Tests; Wallet-Signaturen laufen im separaten lokalen Browserprofil.
+Create separate deployment and user test accounts and protect them outside the repository. Give the user only public funding addresses and an estimated Sepolia ETH requirement. Do not record MetaMask setup or seed import. Browserbase supplements public UI checks; wallet signatures use a separate local browser profile.
 
-1. Frische Wallet verbinden, Sepolia auswählen, Root erstellen, Demo-Token beziehen und finanzieren.
-2. Frisches Codex-Profil und Plugin installieren; eigene Runtime starten und Operator über die Wallet binden.
-3. Master delegiert Kapital an Child und Grandchild mit engeren Rechten; Dashboard zeigt reale ENS-Verbindungen und effektive Policy.
-4. Erlaubter Swap sowie LP-Eröffnung/-Vergrößerung gelingen. Kontrollierter zusätzlicher Swap erzeugt Gebühren, Gebührenabholung wird geprüft.
-5. Überschreitung, unerlaubtes Asset und Rechteausweitung scheitern; mindestens ein negativer direkter Onchain-Aufruf belegt Enforcement.
-6. Teilbaum widerrufen; Nachfahren können nicht weiter handeln. Geschwister-Vault bleibt nutzbar.
-7. Runtime stoppen; Owner schließt die bestehende LP-Position und holt verbleibende Assets zurück.
-8. Website neu laden; Zustand, Historie und Explorer-Receipts stimmen überein. MultiBaas-Ausfall verhindert Notausstieg nicht.
+1. Connect a fresh wallet, choose Sepolia, create a root, claim demo tokens, and fund it.
+2. Install a fresh Codex profile and plugin; start a separate runtime and bind the operator through the wallet.
+3. The master delegates to a child and grandchild with narrower rights; dashboard shows real ENS links and effective policy.
+4. An allowed swap and LP open/increase succeed. A controlled additional swap produces fees; verify fee collection.
+5. Excess amount, unsupported asset, and rights expansion fail; at least one direct negative onchain call proves contract enforcement.
+6. Revoke a subtree; descendants stop acting and the sibling vault remains usable.
+7. Stop runtime; the owner closes the existing LP and recovers remaining assets.
+8. Reload the website; state, history, and explorer receipts agree. A MultiBaas outage cannot prevent emergency exit.
 
-Zusätzlich mobile Darstellung, Tastaturbedienung, lesbare Zustände, abgelehnte Wallet-Anfragen, falsches Netzwerk und RPC-Ausfälle testen. Ergebnisbericht nennt Commit, Vercel-Deployment, Contract-Adressen, Versionen, Transaktionsnachweise und bereinigte Screenshots. Keine Fertigmeldung allein aufgrund erfolgreicher Builds oder Mock-Demos.
+Also test mobile layout, keyboard use, legible states, rejected wallet requests, wrong network, and RPC failure. The report records commit, Vercel deployment, contract addresses, versions, transaction evidence, and sanitized screenshots. Builds and mock demos alone do not complete acceptance.
 
-## 5. Voraussetzungen, Nachweise und Quellen
+## 5. Prerequisites, evidence, and sources
 
-Bereits verifiziert: GitHub-Login CodeByNikolas, Vercel-Zugriff auf TUM Blockchain Club, Node/pnpm/Docker/Codex, lokales Playwright-Chromium/Xvfb und Browserbase-Zugang. Foundry muss projekt-/nutzerlokal bereitgestellt werden. Zugang ist kein Nachweis, dass die neue Anwendung bereits existiert.
+Already verified: GitHub login CodeByNikolas; Vercel access to TUM Blockchain Club; Node, pnpm, Docker, Codex, local Playwright Chromium/Xvfb, and Browserbase access. Provide Foundry at project/user scope. Access alone is not proof that a new application exists.
 
-Sepolia-Funding für den frischen MultiBaas-Abnahme-Root ist eingegangen. ENS-Registrierung, Instanz-URL, administrative Ersteinrichtung und eingeschränkter Laufzeit-Key sind vorhanden; tatsächliche Nachweise und offene Schritte stehen in STATUS.md. Einen dedizierten RPC nur bei nachgewiesenem Bedarf ergänzen. Uniswap-API-Key ist für direkte Contracts nicht nötig. Keine persönlichen Seed-Phrases anfordern und keine Modellzugänge anderer Anbieter auf HomeBox einrichten.
+Sepolia funding for the fresh MultiBaas acceptance root arrived. ENS registration, instance URL, initial administrative setup, and scoped runtime key exist. STATUS.md holds actual evidence and open work. Add a dedicated RPC only on demonstrated need. Direct contract use needs no Uniswap API key. Never request personal seed phrases or configure other inference providers on HomeBox.
 
-Abgabe: öffentliche Contracts/Tests/Doku, klare Setup-Anleitung, Team-/Social-Angaben vom Team, eindeutige Codeverweise pro Partner. Uniswap benötigt FEEDBACK.md und Developer Feedback Form mit Link darauf. Curvegrid benötigt README mit Projektsatz, Setup/Tests und ehrlichem MultiBaas-Erfahrungsbericht. ETHGlobal-Abgabe und Feedback-Formular nicht ohne tatsächliche erfolgreiche Übermittlung als erledigt markieren; fehlende Teamangaben erst am entsprechenden Schritt anfordern.
+Submission needs public contracts, tests, and documentation; clear setup instructions; team/social details from the team; and specific code references per partner. Uniswap requires FEEDBACK.md plus the developer feedback form linking to it. Curvegrid requires a README with the project description, setup/tests, and an honest MultiBaas experience report. Do not mark ETHGlobal entry or feedback submission complete without successful delivery. Request missing team details at the submission step.
 
-Primärquellen (am 25.09.2026 recherchiert; live ABI/Deployments bleiben P1):
+Primary sources, researched 25 September 2026; live ABIs and deployments remain subject to P1:
 
 - ENSv2 EAC: https://docs.ens.domains/ensv2/enhanced-access-control/
 - ENSv2 Registry: https://docs.ens.domains/ensv2/permissioned-registry/
-- ENS-Quellstand: https://github.com/ensdomains/contracts-v2/tree/48b3e2d39513b9dd32ef1850877a29009bc807b9
-- Uniswap v4 Deployments: https://developers.uniswap.org/docs/protocols/v4/deployments
-- v4 Periphery: https://github.com/Uniswap/v4-periphery/tree/9969eec44cfdf07e24b41de47f40276a58401976
-- v4 Core: https://github.com/Uniswap/v4-core/tree/46c6834698c48bc4a463a86d8420f4eb1d7f3b75
-- MultiBaas Contract-Verwaltung: https://docs.curvegrid.com/multibaas/manage-contracts
-- MultiBaas Event Queries: https://docs.curvegrid.com/multibaas/event-indexing
+- ENS source: https://github.com/ensdomains/contracts-v2/tree/48b3e2d39513b9dd32ef1850877a29009bc807b9
+- Uniswap v4 deployments: https://developers.uniswap.org/docs/protocols/v4/deployments
+- v4 periphery: https://github.com/Uniswap/v4-periphery/tree/9969eec44cfdf07e24b41de47f40276a58401976
+- v4 core: https://github.com/Uniswap/v4-core/tree/46c6834698c48bc4a463a86d8420f4eb1d7f3b75
+- MultiBaas contract management: https://docs.curvegrid.com/multibaas/manage-contracts
+- MultiBaas event queries: https://docs.curvegrid.com/multibaas/event-indexing
 - MultiBaas API: https://docs.curvegrid.com/multibaas/api/
-- Offizielles Sepolia-/Wallet-/Indexing-Beispiel: https://github.com/curvegrid/matsuri-stablecoin-sample-app
-- Curvegrid-Ausschreibung: https://ethglobal.com/events/tokyo2026/prizes/curvegrid
-- ENS-Ausschreibung: https://ethglobal.com/events/tokyo2026/prizes/ens
-- Uniswap-Ausschreibung: https://ethglobal.com/events/tokyo2026/prizes/uniswap-foundation
-- Uniswap Feedback: https://developers.uniswap.org/hackathon-feedback
-- Codex Hooks: https://learn.chatgpt.com/docs/hooks
-- Codex Plugins: https://developers.openai.com/plugins/build/plugins
-- Playwright Extensions: https://playwright.dev/docs/chrome-extensions
+- Official Sepolia/wallet/indexing example: https://github.com/curvegrid/matsuri-stablecoin-sample-app
+- Curvegrid prize brief: https://ethglobal.com/events/tokyo2026/prizes/curvegrid
+- ENS prize brief: https://ethglobal.com/events/tokyo2026/prizes/ens
+- Uniswap prize brief: https://ethglobal.com/events/tokyo2026/prizes/uniswap-foundation
+- Uniswap feedback: https://developers.uniswap.org/hackathon-feedback
+- Codex hooks: https://learn.chatgpt.com/docs/hooks
+- Codex plugins: https://developers.openai.com/plugins/build/plugins
+- Playwright extensions: https://playwright.dev/docs/chrome-extensions
 
-Abschlussdefinition: Public Repository, echte ENS-/Uniswap-/MultiBaas-Integration, unabhängige Plugin-Installation und vollständiger getesteter Nutzerablauf auf Vercel. Der Plan ist entscheidungsreif; die Implementierung ist erst nach diesen Nachweisen fertig.
+Completion requires a public repository, real ENS/Uniswap/MultiBaas integration, independent plugin installation, and a fully tested user flow on Vercel. The plan is settled; implementation is complete only after those proofs.
