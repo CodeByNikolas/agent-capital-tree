@@ -2,6 +2,11 @@
 
 As of 26 September 2026. Read this together with PLAN.md after context compaction.
 
+## Activity evidence layout
+
+- Activity and Uniswap share a five-column desktop history table modeled on x402 Pay: event/vault, amount, block, finality, and evidence. Finality has a readable status pill; Receipt text and icon stay on one line in Activity, x402 Pay, and wallet action notices. On mobile, Activity rows show labeled amount, block, finality, and evidence below the event instead of hiding these fields in a narrow column. The global Integration status footer link keeps its arrow beside the label.
+- Web typecheck, production build, `git diff --check`, and the scoped layout detector passed. Local production browser checks used read-only public Sepolia API responses: seven Activity rows and one Uniswap row were checked at desktop/dark and mobile/dark, Activity also at desktop/light, and the x402 Receipt link at mobile/dark. Receipt and footer links stayed 20–22 px tall with icons inside their line boxes; Finalized badges were 26 px tall; no page had horizontal overflow. No wallet transaction was sent.
+
 ## Overview card alignment and runtime copy
 
 - The Overview's two lower actions now share the Connect wallet button's theme colors and align at the bottom of equal-height cards on desktop. Both cards use the same border, radius, and surface as the metric cards. The public runtime metric now shows an unknown value when node runtime status is unknown, with an explanation that local companion status is unavailable onchain; it no longer reports a false zero for live trees.

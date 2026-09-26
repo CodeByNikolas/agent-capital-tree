@@ -1067,9 +1067,9 @@ function ActivityPanel({
         </div>
       </div>
       <Table className="activity-list" id="activity-list">
-        <TableHeader><TableRow><TableHead>Event</TableHead><TableHead>Vault and details</TableHead><TableHead>Amount and block</TableHead><TableHead>Source</TableHead></TableRow></TableHeader>
+        <TableHeader><TableRow><TableHead>Event and vault</TableHead><TableHead>Amount</TableHead><TableHead>Block</TableHead><TableHead>Finality</TableHead><TableHead>Evidence</TableHead></TableRow></TableHeader>
         <TableBody>
-        {loading && !feed && data.source !== "preview" && Array.from({ length: 3 }, (_, index) => <TableRow key={`loading-${index}`}><TableCell colSpan={4}><Skeleton className="loading-table-row" /></TableCell></TableRow>)}
+        {loading && !feed && data.source !== "preview" && Array.from({ length: 3 }, (_, index) => <TableRow key={`loading-${index}`}><TableCell colSpan={5}><Skeleton className="loading-table-row" /></TableCell></TableRow>)}
         {data.activity.map((activity, index) => {
           const icon = activity.kind === "capital-assigned"
             ? <ArrowDownLeft size={15} />
@@ -1082,22 +1082,21 @@ function ActivityPanel({
                   : <Coins size={15} />;
           return (
             <TableRow className="activity-row" key={activity.id}>
-              <TableCell><span className={`activity-icon activity-icon-${index}`}>{icon}</span><span className="sr-only">{activityLabels[activity.kind]}</span></TableCell>
-              <TableCell><div className="activity-copy">
-                <strong>{activityLabels[activity.kind]} <span>· {activity.nodeLabel}</span></strong>
-                <small>{activity.description}</small>
+              <TableCell><div className="activity-event">
+                <span className={`activity-icon activity-icon-${index}`}>{icon}</span>
+                <div className="activity-copy"><strong>{activityLabels[activity.kind]} <span>· {activity.nodeLabel}</span></strong><small>{activity.description}</small></div>
               </div></TableCell>
-              <TableCell><div className="activity-meta">
-                {activity.amount && <strong>{formatAmount(activity.amount)} <span>{activity.amount.symbol}</span></strong>}
-                <time dateTime={activity.timestamp}>{activity.timestamp ? `${new Date(activity.timestamp).toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit", timeZone: "UTC" })} UTC` : activity.blockNumber !== undefined ? `Block ${activity.blockNumber.toLocaleString()}` : ""}</time>
-                {activity.finality && <small className={`activity-finality activity-finality-${activity.finality}`}>{activity.finality.replaceAll("_", " ")}</small>}
+              <TableCell className="activity-amount" data-label="Amount">{activity.amount ? <strong>{formatAmount(activity.amount)} <span>{activity.amount.symbol}</span></strong> : "—"}</TableCell>
+              <TableCell className="activity-block" data-label="Block"><span>{activity.blockNumber !== undefined ? activity.blockNumber.toLocaleString() : "—"}</span>{activity.timestamp && <time dateTime={activity.timestamp}>{new Date(activity.timestamp).toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit", timeZone: "UTC" })} UTC</time>}</TableCell>
+              <TableCell data-label="Finality">{activity.finality ? <span className={`activity-finality activity-finality-${activity.finality}`}>{activity.finality.replaceAll("_", " ")}</span> : "—"}</TableCell>
+              <TableCell data-label="Evidence"><div className="activity-evidence">
                 {activity.transactionHash && activity.source === "multi-baas" && data.chainId === sepolia.id && (
                   <a className="activity-transaction-link" href={`https://sepolia.etherscan.io/tx/${activity.transactionHash}`} target="_blank" rel="noreferrer">
-                    Receipt <ExternalLink size={9} aria-hidden="true" />
+                    Receipt <ExternalLink size={13} aria-hidden="true" />
                   </a>
                 )}
+                <Badge variant="outline">{activity.source === "preview" ? "Preview" : activity.source === "multi-baas" ? "Indexed" : "Local"}</Badge>
               </div></TableCell>
-              <TableCell><Badge variant="outline">{activity.source === "preview" ? "Preview" : activity.source === "multi-baas" ? "Indexed" : "Local"}</Badge></TableCell>
             </TableRow>
           );
         })}
