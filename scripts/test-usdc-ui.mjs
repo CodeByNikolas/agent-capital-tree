@@ -41,10 +41,10 @@ try {
         await page.getByRole('button',{name:'Toggle navigation'}).click();
       }
       await expect(page.locator('.app-workspace strong')).toContainText('capital', {timeout:60000});
-      await expect(page.locator('.app-topbar').getByText('Sepolia', {exact:true})).toBeVisible();
       await expect(page.getByRole('button', {name: 'Refresh', exact:true})).toHaveCount(0);
       assert(!/Runtime status unknown|Current state was read|Wallet authority and runtime connectivity/.test(await page.locator('body').innerText()));
       if(width<600){await page.keyboard.press('Escape');await expect(page.getByRole('dialog')).toHaveCount(0);}
+      await expect(page.locator('.app-topbar').getByText('Sepolia', {exact:true})).toBeVisible();
       assert(!/ACT-A|ACT-B|Live root \d/.test(await page.locator('body').innerText()), `${path} current asset/identity labels`);
       assert(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth), `${path} ${width}px overflow`);
       if(path==='/tree') {
@@ -75,6 +75,17 @@ try {
       checks.push(`${path} ${colorScheme} ${width}px: live ENS lookup, no legacy assets, no horizontal overflow`);
     }
   }
+  await page.setViewportSize({width:1440,height:1000});
+  await page.goto(`${base}/payments?vault=${vault}`);
+  await expect(page.locator('.payment-table tbody tr')).toHaveCount(1,{timeout:60000});
+  const refreshed = await Promise.all([
+    page.waitForResponse(response => response.url().includes('/api/tree?') && response.ok(), {timeout:45000}),
+    page.waitForResponse(response => response.url().includes('/api/activity?') && response.ok(), {timeout:45000}),
+    page.waitForResponse(response => response.url().includes('/api/payments?') && response.ok(), {timeout:45000}),
+  ]);
+  assert.equal(refreshed.length, 3);
+  await expect(page.locator('.payment-table tbody tr')).toContainText('0.010 USDC');
+  checks.push('Tree, activity and payments refresh automatically without a refresh button; settlement row stays visible');
   assert.equal((await page.request.get(`${base}/applications?vault=${vault}`)).status(),404);
   assert.deepEqual(errors,[]);
   const report={base,checkedAt:new Date().toISOString(),checks,transactionsSent:0,realWalletTested:false};
